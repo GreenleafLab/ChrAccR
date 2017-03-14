@@ -156,8 +156,9 @@ DsNOMe.bisSNP <- function(inputFns, sampleAnnot, genome, sampleIds=rownames(samp
 
 
 	logger.start("Merging bed files")
-		prefMerged <- file.path(tmpDir, "methCalls")
-		mergeBisSNPMethCalls(fns, prefMerged, wd=tmpDir)
+		#setConfigElement("tmpDir","/TL/deep/projects/nobackup/fmueller/tmp/readData_nome_20170313_155826_6e78e54c658")
+		prefMerged <- file.path(getConfigElement("tmpDir"), "methCalls")
+		mergeBisSNPMethCalls(fns, prefMerged, wd=getConfigElement("tmpDir"))
 		# mergeBisSNPMethCalls(fns[c(4,11,20)], ffff, wd="/DEEP_fhgfs/projects/fmueller/tmp/blubb", cleanup=FALSE)
 		# mergeBisSNPMethCalls(fns, prefMerged, wd="/DEEP_fhgfs/projects/fmueller/tmp/blubb", cleanup=FALSE)
 	logger.completed()
@@ -181,7 +182,9 @@ DsNOMe.bisSNP <- function(inputFns, sampleAnnot, genome, sampleIds=rownames(samp
 		dtCovg <- fread(paste0(prefMerged, ".covg.bed"), sep="\t", header=TRUE)
 		cm <- dtCovg[,5:ncol(dtCovg), with=FALSE] #matrix of coverage values
 		rm(dtCovg) # clean up to save space
+	logger.completed()
 
+	logger.start("Creating DsNOMe object")
 		if (ncol(mm)!=ncol(cm)) logger.error("Methylation and coverage matrices have different numbers of columns")
 		if (!all(colnames(mm)==colnames(cm))) logger.error("Methylation and coverage matrices have incompatible column names")
 		if (nrow(mm)!=nrow(cm)) logger.error("Methylation and coverage matrices have different numbers of rows")
@@ -189,14 +192,8 @@ DsNOMe.bisSNP <- function(inputFns, sampleAnnot, genome, sampleIds=rownames(samp
 
 		mm <- mm[,sampleIds,with=FALSE]
 		cm <- cm[,sampleIds,with=FALSE]
-	logger.completed()
 
-	obj <- new("DsNOMe",
-		coord,
-		meth,
-		covg,
-		sampleAnnot,
-		genome
-	)
+		obj <- DsNOMe(gr, mm, cm, sampleAnnot, genome)
+	logger.completed()
 	return(obj)
 }

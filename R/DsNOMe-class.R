@@ -60,6 +60,24 @@ setMethod("initialize","DsNOMe",
 	}
 )
 
+#' @param siteCoord \code{GRanges} object containing coordinates of GC dinucleotides
+#' @param siteMeth  \code{data.table} object containing methylation values for each
+#'                  GC dinucleotide and each sample 
+#' @param siteCovg  \code{data.table} object containing read coverage values for each
+#'                  GC dinucleotide and each sample 
+#' @param sampleAnnot \code{data.frame} object containing sample annotation
+#' @param genome    character string containing genome assembly
+#' @noRd
+DsNOMe <- function(siteCoord, siteMeth, siteCovg, sampleAnnot, genome){
+	obj <- new("DsNOMe",
+		list(sites=siteCoord),
+		list(sites=siteMeth),
+		list(sites=siteCovg),
+		sampleAnnot,
+		genome
+	)
+	return(obj)
+}
 
 ################################################################################
 # Getters
@@ -277,3 +295,8 @@ setMethod("getCovg",
 	}
 )
 #-------------------------------------------------------------------------------
+
+################################################################################
+# Summary functions
+################################################################################
+
