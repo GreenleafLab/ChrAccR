@@ -1,0 +1,15 @@
+Package: ChrAccR
+Analyzing chromatin accessibility data in R
+Description: Tools for analyzing chromatin accessibility data in R. Currently supports NOMe-seq data analysis
+Author: Fabian Mueller
+Maintainer: Fabian Mueller <fmueller@mpi-inf.mpg.de>
+Date: 2017-03-14
+Suggests:
+    muRtools
+Depends:
+	GenomicRanges,
+    ggplot2,
+    RnBeads
+License: GPL-2
+Version: 0.1
+
