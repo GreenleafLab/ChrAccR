@@ -3,6 +3,7 @@
 ################################################################################
 .config <- new.env()
 .config$tmpDir <- tempdir()
+.config$cleanMem <- TRUE
 
 #' setConfigElement
 #'
@@ -15,6 +16,9 @@
 #' \describe{
 #'   \item{\bold{\code{tmpDir}}\code{ = temdir()}}{
 #'        \code{Directory for temporary files. Must be existing.}
+#'   }
+#'   \item{\bold{\code{cleanMem}}\code{ = TRUE}}{
+#'        \code{During runtime, regularly clean-out the memory in order to reduce memory overuse}
 #'   }
 #' }
 #' @author Fabian Mueller

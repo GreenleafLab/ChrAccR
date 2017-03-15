@@ -168,32 +168,41 @@ DsNOMe.bisSNP <- function(inputFns, sampleAnnot, genome, sampleIds=rownames(samp
 		# dtMeth <- read.table(paste0(prefMerged, ".methlvl.bed"), sep="\t", header=TRUE, check.names=FALSE)
 		# dtMeth <- fread(paste0(prefMerged, ".methlvl.bed"), sep="\t", header=TRUE, nrows=1000)
 		dtMeth <- fread(paste0(prefMerged, ".methlvl.bed"), sep="\t", header=TRUE)
+		# format(object.size(dtMeth), units = "Gb")
 		#adjust coordinates of - strand
 		dtMeth[strand=="+", start:=start-1L]
 		dtMeth[strand=="+", end:=end-1L]
 
+		if (!all(sampleIds %in% colnames(dtMeth))) {
+			logger.error(c("The following sample IDs are missing from the methylation data:", paste(setdiff(sampleIds, colnames(dtMeth)),collapse=",")))
+		}
 		#convert to GRanges
-		gr <- df2granges(as.data.frame(dtMeth[, .(chrom, start, end, strand)]), chrom.col=1L, start.col=2L, end.col=3L, strand.col=4L, coord.format="B0RI", assembly=genome, doSort=FALSE, adjNumChromNames=TRUE)
-		mm <- dtMeth[,5:ncol(dtMeth), with=FALSE]/100 #matrix of methylation levels
-		rm(dtMeth, isPosStrand) # clean up to save space
+		df <- as.data.frame(dtMeth[, .(chrom, start, end, strand)])
+		rownames(df) <- NULL
+		gr <- df2granges(df, chrom.col=1L, start.col=2L, end.col=3L, strand.col=4L, coord.format="B0RI", assembly=genome, doSort=FALSE, adjNumChromNames=grepl("_chr$",genome))
+		cleanMem() #clean-up
+		
+		mm <- dtMeth[,sampleIds, with=FALSE]/100 #matrix of methylation levels
+		rm(dtMeth, df); cleanMem() #clean-up
+		if (nrow(mm)!=length(gr)) logger.error("Not all methylation levels match a genomic coordinate. Maybe the input file contains invalid chromosome names?")
 
 		logger.status("Coverage...")
 		# dtCovg <- read.table(paste0(prefMerged, ".covg.bed"), sep="\t", header=TRUE, check.names=FALSE)
 		dtCovg <- fread(paste0(prefMerged, ".covg.bed"), sep="\t", header=TRUE)
-		cm <- dtCovg[,5:ncol(dtCovg), with=FALSE] #matrix of coverage values
-		rm(dtCovg) # clean up to save space
+		if (!all(sampleIds %in% colnames(dtCovg))) {
+			logger.error(c("The following sample IDs are missing from the methylation data:", paste(setdiff(sampleIds, colnames(dtCovg)),collapse=",")))
+		}
+		cm <- dtCovg[,sampleIds, with=FALSE] #matrix of coverage values
+		rm(dtCovg); cleanMem() #clean-up
 	logger.completed()
 
 	logger.start("Creating DsNOMe object")
 		if (ncol(mm)!=ncol(cm)) logger.error("Methylation and coverage matrices have different numbers of columns")
 		if (!all(colnames(mm)==colnames(cm))) logger.error("Methylation and coverage matrices have incompatible column names")
 		if (nrow(mm)!=nrow(cm)) logger.error("Methylation and coverage matrices have different numbers of rows")
-		if (nrow(mm)!=length(gr)) logger.error("Not all methylation levels match a genomic coordinate") # can be omitted, but leave in for sanity check
-
-		mm <- mm[,sampleIds,with=FALSE]
-		cm <- cm[,sampleIds,with=FALSE]
 
 		obj <- DsNOMe(gr, mm, cm, sampleAnnot, genome)
+		rm(gr, mm, cm); cleanMem() #clean-up
 	logger.completed()
 	return(obj)
 }
