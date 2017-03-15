@@ -158,7 +158,7 @@ DsNOMe.bisSNP <- function(inputFns, sampleAnnot, genome, sampleIds=rownames(samp
 	logger.start("Merging bed files")
 		#setConfigElement("tmpDir","/TL/deep/projects/nobackup/fmueller/tmp/readData_nome_20170313_155826_6e78e54c658")
 		prefMerged <- file.path(getConfigElement("tmpDir"), "methCalls")
-		mergeBisSNPMethCalls(fns, prefMerged, wd=getConfigElement("tmpDir"))
+		mergeBisSNPMethCalls(inputFns, prefMerged, wd=getConfigElement("tmpDir"))
 		# mergeBisSNPMethCalls(fns[c(4,11,20)], ffff, wd="/DEEP_fhgfs/projects/fmueller/tmp/blubb", cleanup=FALSE)
 		# mergeBisSNPMethCalls(fns, prefMerged, wd="/DEEP_fhgfs/projects/fmueller/tmp/blubb", cleanup=FALSE)
 	logger.completed()
