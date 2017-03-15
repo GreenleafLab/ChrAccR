@@ -422,3 +422,39 @@ setMethod("mergeStrands",
 )
 #-------------------------------------------------------------------------------
 
+################################################################################
+# Saving and loading DsNOMe objects
+################################################################################
+#' saveDsNOMe
+#' 
+#' Save a DsNOMe dataset to disk for later loading
+#' @param .object \code{\linkS4class{DsNOMe}} object
+#' @param path    destination to save the object to
+#' @return nothing of particular interest
+#' @author Fabian Mueller
+#' @export
+saveDsNOMe <- function(.object, path){
+	if (dir.exists(path)){
+		logger.error("could not save object. Path already exists")
+	}
+	dir.create(path, recursive=FALSE)
+	dsFn <- file.path(path, "ds.rds")
+	saveRDS(.object, dsFn)
+	invisible(NULL)
+}
+
+#' loadDsNOMe
+#' 
+#' Load a DsNOMe dataset from disk
+#' @param path    Location of saved \code{\linkS4class{DsNOMe}} object
+#' @return \code{\linkS4class{DsNOMe}} object
+#' @author Fabian Mueller
+#' @export
+loadDsNOMe <- function(path){
+	if (!dir.exists(path)){
+		logger.error(c("Could not load object. Path does not exist:", path))
+	}
+	dsFn <- file.path(path, "ds.rds")
+	.object <- readRDS(dsFn)
+	return(.object)
+}
