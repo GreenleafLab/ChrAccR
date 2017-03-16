@@ -179,7 +179,7 @@ DsNOMe.bisSNP <- function(inputFns, sampleAnnot, genome, sampleIds=rownames(samp
 		#convert to GRanges
 		df <- as.data.frame(dtMeth[, .(chrom, start, end, strand)])
 		rownames(df) <- NULL
-		gr <- df2granges(df, chrom.col=1L, start.col=2L, end.col=3L, strand.col=4L, coord.format="B0RI", assembly=genome, doSort=FALSE, adjNumChromNames=grepl("_chr$",genome))
+		gr <- muRtools::df2granges(df, chrom.col=1L, start.col=2L, end.col=3L, strand.col=4L, coord.format="B0RI", assembly=genome, doSort=FALSE, adjNumChromNames=grepl("_chr$",genome))
 		cleanMem() #clean-up
 		
 		mm <- dtMeth[,sampleIds, with=FALSE]/100 #matrix of methylation levels
