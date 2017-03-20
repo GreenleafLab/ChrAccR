@@ -331,6 +331,26 @@ setMethod("getNRegions",
 #-------------------------------------------------------------------------------
 
 ################################################################################
+# Display
+################################################################################
+setMethod("show","DsNOMe",
+	function(object) {
+		ss <- getSamples(object)
+		str.ss <- paste(getSamples(object), collapse=", ")
+		if (length(ss) > 5) str.ss <- paste(c(getSamples(object)[1:5], "..."), collapse=", ")
+		rts <- getRegionTypes(object)
+		str.rts <- "no region types"
+		if (length(rts) > 0) str.rts <- paste0(length(rts), " region types: ", paste(rts, collapse=", "))
+
+		cat("DsNOMe chromatin accessibility dataset \n")
+		cat("contains:\n")
+		cat(" * ", length(ss), " samples: ", str.ss, " \n")
+		cat(" * ", getNRegions(object, "sites"), " GC methylation measurements", "\n")
+		cat(" * ", str.rts, " \n")
+	}
+)
+
+################################################################################
 # Summary functions
 ################################################################################
 if (!isGeneric("mergeStrands")) {
@@ -421,6 +441,136 @@ setMethod("mergeStrands",
 	}
 )
 #-------------------------------------------------------------------------------
+if (!isGeneric("regionAggregation")) {
+	setGeneric(
+		"regionAggregation",
+		function(.object, ...) standardGeneric("regionAggregation"),
+		signature=c(".object")
+	)
+}
+#' regionAggregation-methods
+#'
+#' Aggregate methylation levels and coverage values accross a set of regions
+#'
+#' @param .object \code{\linkS4class{DsNOMe}} object
+#' @param regGr   \code{GRanges} object containing regions to summarize
+#' @param type    character string specifying a name for the region type
+#' @param methAggrFun aggregation function for methylation levels.
+#'                Currently \code{mean}, \code{median}
+#'                and \code{weightedMean} (default) are supported.
+#' @param dropEmpty discard all regions with no observed methylation levels
+#' @return a new \code{\linkS4class{DsNOMe}} object with aggregated regions
+#'
+#' @details
+#' Coverage values are aggregated by summing up coverage values for individual GCs
+#' while the aggregation function for methylation levels is specified by the
+#' \code{methAggrFun} parameter.
+#' 
+#' @rdname regionAggregation-DsNOMe-method
+#' @docType methods
+#' @aliases regionAggregation
+#' @aliases regionAggregation,DsNOMe-method
+#' @author Fabian Mueller
+#' @export
+setMethod("regionAggregation",
+	signature(
+		.object="DsNOMe"
+	),
+	function(
+		.object,
+		regGr,
+		type,
+		methAggrFun="weightedMean",
+		dropEmpty=TRUE
+	) {
+		if (!is.element(methAggrFun, c("mean", "median", "weightedMean"))){
+			logger.error(c("Unknown methylation aggregation function:", methAggrFun))
+		}
+		if (type=="sites"){
+			logger.error("Region type is not allowed to be named 'sites'")
+		}
+		if (is.element(type, getRegionTypes(.object))){
+			logger.warning(c("Overwriting aggregated region type:", type))
+		}
+		#sort the regions
+		coordOrder <- order(as.integer(seqnames(regGr)), start(regGr), end(regGr), as.integer(strand(regGr)))
+		regGr <- regGr[coordOrder]
+
+		siteGr <- getCoord(.object)
+		if (genome(regGr)[1]!=genome(siteGr)[1]){
+			logger.warning(c("Potentially incompatible genome assemblies (object:", genome(siteGr)[1], ", regGr:", genome(regGr)[1], ")"))
+		}
+		oo <- findOverlaps(siteGr, regGr)
+		if (any(duplicated(queryHits(oo)))) logger.info("Some GCs map to multiple regions")
+
+		.object@coord[[type]] <- regGr
+
+		# aggregate coverage (sum)
+		dtC <- data.table(getCovg(.object)[queryHits(oo),], mergedIndex=subjectHits(oo))
+		rr <- dtC[, lapply(.SD, sum, na.rm=TRUE), by=.(mergedIndex)]
+
+		#initialize empty coverage matrix
+		nSamples <- length(getSamples(.object))
+		nRegs    <- length(regGr)
+		emptyVec <- rep(as.integer(NA), nRegs)
+		.object@covg[[type]] <- data.table(emptyVec)
+		for (i in 1:nSamples){
+			.object@covg[[type]][[i]] <- emptyVec
+		}
+		colnames(.object@covg[[type]]) <- colnames(.object@covg[["sites"]])
+
+		.object@covg[[type]][rr[["mergedIndex"]],] <- rr[,!"mergedIndex"]
+		rm(rr); cleanMem() #clean-up
+
+		# aggregate methylation
+		dtM <- data.table(getMeth(.object)[queryHits(oo),], mergedIndex=subjectHits(oo))
+
+		#initialize empty methylation matrix
+		emptyVec <- rep(as.numeric(NA), nRegs)
+		.object@meth[[type]] <- data.table(emptyVec)
+		for (i in 1:nSamples){
+			.object@meth[[type]][[i]] <- emptyVec
+		}
+		colnames(.object@meth[[type]]) <- colnames(.object@meth[["sites"]])
+
+		if (is.element(methAggrFun, c("mean", "median"))){
+			if (methAggrFun=="mean") {
+				rr <- dtM[, lapply(.SD, mean, na.rm=TRUE), by=.(mergedIndex)]
+			} else if (methAggrFun=="median") {
+				rr <- dtM[, lapply(.SD, median, na.rm=TRUE), by=.(mergedIndex)]
+			} else {
+				logger.error(c("Unknown methylation aggregation function:", methAggrFun))
+			}
+			.object@meth[[type]][rr[["mergedIndex"]],] <- rr[,!"mergedIndex"]
+			rm(dtM, dtC, rr); cleanMem() #clean-up
+		} else if (is.element(methAggrFun, c("weightedMean"))){
+			for (cn in setdiff(colnames(dtM), "mergedIndex")){
+				# logger.status(c("sample:", cn))
+				dt <- data.table(meth=dtM[[cn]], covg=dtC[[cn]], mergedIndex=dtM[["mergedIndex"]])
+				dt[,wm:=meth*covg]
+				dtr <- dt[,.(sum(wm, na.rm=TRUE), sum(covg, na.rm=TRUE)), by=.(mergedIndex)]
+				dtr[,weightedSum:=V1/V2]
+				.object@meth[[type]][dtr[["mergedIndex"]], cn] <- dtr[["weightedSum"]]
+				rm(dt, dtr); cleanMem() #clean-up
+			}
+			rm(dtM, dtC); cleanMem() #clean-up
+		} else {
+			logger.error(c("Unknown methylation aggregation function:", methAggrFun))
+		}
+
+		logger.info(c("Aggregated measurements across", nrow(.object@meth[[type]]), "regions"))
+		rows2keep <- rowAnys(!is.na(.object@meth[[type]]))
+		logger.info(c("  of which", sum(rows2keep), "regions contained GCs with measurements"))
+		#discard regions where all methylation levels are unobserved
+		if (dropEmpty){
+			.object@coord[[type]] <- .object@coord[[type]][rows2keep]
+			.object@meth[[type]]  <- .object@meth[[type]][rows2keep,]
+			.object@covg[[type]]  <- .object@covg[[type]][rows2keep,]
+		}
+
+		return(.object)
+	}
+)
 
 ################################################################################
 # Saving and loading DsNOMe objects
