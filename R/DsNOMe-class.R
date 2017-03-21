@@ -440,6 +440,48 @@ setMethod("mergeStrands",
 		return(.object)
 	}
 )
+
+#-------------------------------------------------------------------------------
+if (!isGeneric("getRegionMapping")) {
+	setGeneric(
+		"getRegionMapping",
+		function(.object, ...) standardGeneric("getRegionMapping"),
+		signature=c(".object")
+	)
+}
+#' getRegionMapping-methods
+#'
+#' Retrieve a mapping from regions to GC indices in the dataset
+#'
+#' @param .object \code{\linkS4class{DsNOMe}} object
+#' @param type    character string specifying a name for the region type
+#' @return list containing vectors of indices of GCs for each region of the
+#'         specified type
+#' 
+#' @rdname getRegionMapping-DsNOMe-method
+#' @docType methods
+#' @aliases getRegionMapping
+#' @aliases getRegionMapping,DsNOMe-method
+#' @author Fabian Mueller
+#' @export
+setMethod("getRegionMapping",
+	signature(
+		.object="DsNOMe"
+	),
+	function(
+		.object,
+		type
+	) {
+		siteGr <- getCoord(.object)
+		regGr  <- getCoord(.object, type=type)
+		oo <- findOverlaps(siteGr, regGr)
+		sl <- tapply(queryHits(oo), subjectHits(oo), c)
+
+		res <- rep(list(integer(0)), getNRegions(.object, type=type))
+		res[as.integer(names(sl))] <- sl
+		return(res)
+	}
+)
 #-------------------------------------------------------------------------------
 if (!isGeneric("regionAggregation")) {
 	setGeneric(
