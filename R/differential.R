@@ -256,7 +256,7 @@ computeDiffAcc.rnb.nome <- function(dsn, cmpCols, regionTypes=getRegionTypes(dsn
 		logger.completed()
 	}
 
-	diffmeth <- addComparisonInfo(diffmeth,cmpInfo)
+	diffmeth <- RnBeads:::addComparisonInfo(diffmeth,cmpInfo)
 	logger.completed()
 	return(diffmeth)
 }
