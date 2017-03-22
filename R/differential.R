@@ -155,11 +155,11 @@ computeDiffAcc.rnb.nome.bin.region <- function(dsn, dmtp, inds.g1, inds.g2, regi
 	diffTabs <- list()
 	for (rt in regionTypes){
 		if (skipSites){
-			covMat <- getCovg(dns, rt, asMatrix=TRUE)
-			dmtr <- RnBeads:::computeDiffMeth.bin.site(getMeth(dns,rt), inds.g1, inds.g2, covg=covMat, ...)
+			covMat <- getCovg(dsn, rt, asMatrix=TRUE)
+			dmtr <- RnBeads:::computeDiffMeth.bin.site(getMeth(dsn,rt, asMatrix=TRUE), inds.g1, inds.g2, covg=covMat, ...)
 		} else {
-			inclCov <- !is.null(getCovg(dns, "sites"))
-			regions2sites <- getRegionMapping(dns, rt)
+			inclCov <- !is.null(getCovg(dsn, "sites", asMatrix=TRUE))
+			regions2sites <- getRegionMapping(dsn, rt)
 			dmtr <- RnBeads:::computeDiffTab.default.region(dmtp, regions2sites, includeCovg=inclCov)
 			dmtr4ranks <- RnBeads:::extractRankingCols.region(dmtr)
 			combRank <- RnBeads:::combinedRanking.tab(dmtr4ranks, rerank=FALSE)
