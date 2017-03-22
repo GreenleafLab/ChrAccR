@@ -231,7 +231,7 @@ computeDiffAcc.rnb.nome <- function(dsn, cmpCols, regionTypes=getRegionTypes(dsn
 			)
 			diffmeth <- addDiffMethTable(diffmeth,dm,cmpInfo.cur$comparison,"sites",cmpInfo.cur$group.names)
 		}
-		rnb.cleanMem()
+		cleanMem()
 		if (length(cmpInfo.cur$region.types)>0){
 			if (skipSites){
 				dmr <- computeDiffAcc.rnb.nome.bin.region(dsn, NULL,
