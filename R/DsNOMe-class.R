@@ -366,6 +366,7 @@ if (!isGeneric("mergeStrands")) {
 #' Methylation levels
 #'
 #' @param .object \code{\linkS4class{DsNOMe}} object
+#' @param reaggregate redo region aggregation (only has an effect if there are aggregated regions in the dataset)
 #' @return a new \code{\linkS4class{DsNOMe}} object with the strands merged
 #'
 #' @rdname mergeStrands-DsNOMe-method
@@ -379,7 +380,8 @@ setMethod("mergeStrands",
 		.object="DsNOMe"
 	),
 	function(
-		.object
+		.object,
+		reaggregate=TRUE
 	) {
 		gr <- getCoord(.object)
 		doMerge <- length(unique(seqlevels(gr))) > 1
@@ -430,11 +432,26 @@ setMethod("mergeStrands",
 			.object@meth[["sites"]] <- rr[,colnames(.object@covg[["sites"]]), with=FALSE]
 			rm(dtC, dtM, rr); cleanMem() #clean-up
 			
-			if (length(getRegionTypes(.object))>0){
-				logger.warning("Detected multiple region types. These will be dropped and not be recalculated")
+			# if (length(getRegionTypes(.object))>0){
+			# 	logger.warning("Detected multiple region types. These will be dropped and not be recalculated")
+			# 	.object@coord <- .object@coord["sites"]
+			# 	.object@meth  <- .object@meth["sites"]
+			# 	.object@covg  <- .object@covg["sites"]
+			# }
+			rts <- getRegionTypes(.object)
+			if (reaggregate && length(rts)>0) {
+				logger.start("Recomputing region aggregation")
+				rtGrl <- .object@coord
+
 				.object@coord <- .object@coord["sites"]
 				.object@meth  <- .object@meth["sites"]
 				.object@covg  <- .object@covg["sites"]
+
+				for (rt in rts){
+					logger.status(c(rt, "..."))
+					.object <- regionAggregation(.object, rtGrl[[rt]], rt, dropEmpty=TRUE)
+				}
+				logger.completed()	
 			}
 		}
 		return(.object)
@@ -610,6 +627,148 @@ setMethod("regionAggregation",
 			.object@covg[[type]]  <- .object@covg[[type]][rows2keep,]
 		}
 
+		return(.object)
+	}
+)
+
+################################################################################
+# Maniputlating DsNOMe objects
+################################################################################
+
+#TODO: not tested yet
+if (!isGeneric("removeRegions")) {
+	setGeneric(
+		"removeRegions",
+		function(.object, ...) standardGeneric("removeRegions"),
+		signature=c(".object")
+	)
+}
+#' removeRegions-methods
+#'
+#' Remove the specified sites or regions from an object
+#'
+#' @param .object \code{\linkS4class{DsNOMe}} object
+#' @param indices a vector of indices of sites/regions to be removed. Can be numeric, integer or logical.
+#' @param type    character string specifying a name for the region type (sefault: sites)
+#' @param reaggregate redo region aggregation (only has an effect if type is sites and there are aggregated regions in the dataset)
+#' @return a new \code{\linkS4class{DsNOMe}} object with sites/regions removed
+#' 
+#' @rdname removeRegions-DsNOMe-method
+#' @docType methods
+#' @aliases removeRegions
+#' @aliases removeRegions,DsNOMe-method
+#' @author Fabian Mueller
+#' @export
+setMethod("removeRegions",
+	signature(
+		.object="DsNOMe"
+	),
+	function(
+		.object,
+		indices,
+		type="sites",
+		reaggregate=TRUE
+	) {
+		if (!is.element(type, getRegionTypes(.object, inclSites=TRUE))) logger.error(c("Unsupported region type:", type))
+
+		if (!is.vector(indices) || !(is.numeric(indices) || is.logical(indices))){
+			logger.error(c("Unsupported type for index vector"))
+		}
+		nRegs <- getNRegions(.object, type)
+		inds2keep <- rep(TRUE, nRegs)
+		if (is.numeric(indices)){
+			if (any(indices > nRegs | indices < 1)) {
+				logger.error(c("Invalid values in indices"))
+			}
+			inds2keep[indices] <- FALSE
+		} else if (is.logical(indices)){
+			inds2keep <- !indices
+		}
+		if (sum(inds2keep)>=nRegs){
+			logger.info("Nothing to be done: keeping object as is")
+			return(.object)
+		}
+
+		.object@coord[[type]] <- .object@coord[[type]][inds2keep]
+		.object@meth[[type]]  <- .object@meth[[type]][inds2keep,]
+		.object@covg[[type]]  <- .object@covg[[type]][inds2keep,]
+
+		rts <- setdiff(getRegionTypes(.object), type)
+		if (reaggregate && type == "sites" && length(rts)>0) {
+			logger.start("Recomputing region aggregation")
+			rtGrl <- .object@coord
+
+			.object@coord <- .object@coord["sites"]
+			.object@meth  <- .object@meth["sites"]
+			.object@covg  <- .object@covg["sites"]
+
+			for (rt in rts){
+				logger.status(c(rt, "..."))
+				.object <- regionAggregation(.object, rtGrl[[rt]], rt, dropEmpty=TRUE)
+			}
+			logger.completed()	
+		}
+		return(.object)
+	}
+)
+
+#TODO: not tested yet
+if (!isGeneric("maskMethNA")) {
+	setGeneric(
+		"maskMethNA",
+		function(.object, ...) standardGeneric("maskMethNA"),
+		signature=c(".object")
+	)
+}
+#' maskMethNA-methods
+#'
+#' Set the indices specified in a mask to NA
+#'
+#' @param .object \code{\linkS4class{DsNOMe}} object
+#' @param mask    a mask, i.e. a logical matrix of indices to set to NA
+#' @param type    character string specifying a name for the region type (sefault: sites)
+#' @param reaggregate redo region aggregation (only has an effect if type is sites and there are aggregated regions in the dataset)
+#' @return a new \code{\linkS4class{DsNOMe}} object with sites/regions masked
+#' 
+#' @rdname maskMethNA-DsNOMe-method
+#' @docType methods
+#' @aliases maskMethNA
+#' @aliases maskMethNA,DsNOMe-method
+#' @author Fabian Mueller
+#' @export
+setMethod("maskMethNA",
+	signature(
+		.object="DsNOMe"
+	),
+	function(
+		.object,
+		mask,
+		type="sites",
+		reaggregate=TRUE
+	) {
+		if (!is.element(type, getRegionTypes(.object, inclSites=TRUE))) logger.error(c("Unsupported region type:", type))
+
+		if (!is.logical(mask) || nrow(mask)!=nrow(.object@meth[[type]]) || ncol(mask)!=ncol(.object@meth[[type]])){
+			logger.error(c("Unsupported type for mask matrix"))
+		}
+
+		.object@meth[[type]][mask]  <- NA
+
+		rts <- setdiff(getRegionTypes(.object), type)
+		if (reaggregate && type == "sites" && length(rts)>0) {
+			logger.start("Recomputing region aggregation")
+			rtGrl <- .object@coord
+
+			.object@coord <- .object@coord["sites"]
+			.object@meth  <- .object@meth["sites"]
+			.object@covg  <- .object@covg["sites"]
+
+			for (rt in rts){
+				logger.status(c(rt, "..."))
+				.object <- regionAggregation(.object, rtGrl[[rt]], rt, dropEmpty=TRUE)
+			}
+			logger.completed()
+		}
 		return(.object)
 	}
 )

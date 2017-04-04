@@ -6,10 +6,12 @@
 \alias{mergeStrands,DsNOMe-method}
 \title{mergeStrands-methods}
 \usage{
-\S4method{mergeStrands}{DsNOMe}(.object)
+\S4method{mergeStrands}{DsNOMe}(.object, reaggregate = TRUE)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsNOMe}} object}
+
+\item{reaggregate}{redo region aggregation (only has an effect if there are aggregated regions in the dataset)}
 }
 \value{
 a new \code{\linkS4class{DsNOMe}} object with the strands merged
