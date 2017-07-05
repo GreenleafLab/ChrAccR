@@ -712,7 +712,6 @@ setMethod("removeRegions",
 	}
 )
 
-#TODO: not tested yet
 if (!isGeneric("maskMethNA")) {
 	setGeneric(
 		"maskMethNA",
@@ -726,7 +725,7 @@ if (!isGeneric("maskMethNA")) {
 #'
 #' @param .object \code{\linkS4class{DsNOMe}} object
 #' @param mask    a mask, i.e. a logical matrix of indices to set to NA
-#' @param type    character string specifying a name for the region type (sefault: sites)
+#' @param type    character string specifying a name for the region type (default: sites)
 #' @param reaggregate redo region aggregation (only has an effect if type is sites and there are aggregated regions in the dataset)
 #' @return a new \code{\linkS4class{DsNOMe}} object with sites/regions masked
 #' 
@@ -773,6 +772,66 @@ setMethod("maskMethNA",
 	}
 )
 
+if (!isGeneric("normalizeMeth")) {
+	setGeneric(
+		"normalizeMeth",
+		function(.object, ...) standardGeneric("normalizeMeth"),
+		signature=c(".object")
+	)
+}
+#' normalizeMeth-methods
+#'
+#' Normalize methylation levels
+#'
+#' @param .object \code{\linkS4class{DsNOMe}} object
+#' @param method  normalization method to be applied. Currently only 'quantile' is supported
+#' @param type    character string specifying a name for the region type (default: sites)
+#' @param reaggregate redo region aggregation (only has an effect if type is sites and there are aggregated regions in the dataset)
+#' @return a new \code{\linkS4class{DsNOMe}} object with normalized methylation levels
+#' 
+#' @rdname normalizeMeth-DsNOMe-method
+#' @docType methods
+#' @aliases normalizeMeth
+#' @aliases normalizeMeth,DsNOMe-method
+#' @author Fabian Mueller
+#' @export
+setMethod("normalizeMeth",
+	signature(
+		.object="DsNOMe"
+	),
+	function(
+		.object,
+		type="sites",
+		method="quantile"
+	) {
+		if (!is.element(type, getRegionTypes(.object, inclSites=TRUE))) logger.error(c("Unsupported region type:", type))
+		if (!is.element(method, c("quantile"))) logger.error(c("Unsupported normalization method type:", method))
+
+		if (method == "quantile"){
+			logger.start(c("Performing quantile normalization"))
+				require(preprocessCore)
+				.object@meth[[type]] <- normalize.quantiles(.object@meth[[type]])
+			logger.completed()
+		}
+
+		rts <- setdiff(getRegionTypes(.object), type)
+		if (reaggregate && type == "sites" && length(rts)>0) {
+			logger.start("Recomputing region aggregation")
+			rtGrl <- .object@coord
+
+			.object@coord <- .object@coord["sites"]
+			.object@meth  <- .object@meth["sites"]
+			.object@covg  <- .object@covg["sites"]
+
+			for (rt in rts){
+				logger.status(c(rt, "..."))
+				.object <- regionAggregation(.object, rtGrl[[rt]], rt, dropEmpty=TRUE)
+			}
+			logger.completed()
+		}
+		return(.object)
+	}
+)
 ################################################################################
 # Saving and loading DsNOMe objects
 ################################################################################

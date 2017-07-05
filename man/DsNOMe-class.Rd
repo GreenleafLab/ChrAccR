@@ -36,7 +36,7 @@ A class for storing information on pipeline jobs.
    }
 }
 }
+
 \author{
 Fabian Mueller
 }
-

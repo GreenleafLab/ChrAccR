@@ -2,8 +2,8 @@
 % Please edit documentation in R/DsNOMe-class.R
 \docType{methods}
 \name{getRegionMapping,DsNOMe-method}
-\alias{getRegionMapping}
 \alias{getRegionMapping,DsNOMe-method}
+\alias{getRegionMapping}
 \title{getRegionMapping-methods}
 \usage{
 \S4method{getRegionMapping}{DsNOMe}(.object, type)
@@ -23,4 +23,3 @@ Retrieve a mapping from regions to GC indices in the dataset
 \author{
 Fabian Mueller
 }
-

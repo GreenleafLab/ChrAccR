@@ -18,4 +18,3 @@ clean the system mory by invoking the garbage collector
 \author{
 Fabian Mueller
 }
-

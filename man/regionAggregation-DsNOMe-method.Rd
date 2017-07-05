@@ -2,8 +2,8 @@
 % Please edit documentation in R/DsNOMe-class.R
 \docType{methods}
 \name{regionAggregation,DsNOMe-method}
-\alias{regionAggregation}
 \alias{regionAggregation,DsNOMe-method}
+\alias{regionAggregation}
 \title{regionAggregation-methods}
 \usage{
 \S4method{regionAggregation}{DsNOMe}(.object, regGr, type,
@@ -36,4 +36,3 @@ while the aggregation function for methylation levels is specified by the
 \author{
 Fabian Mueller
 }
-

@@ -18,4 +18,3 @@ Load a DsNOMe dataset from disk
 \author{
 Fabian Mueller
 }
-

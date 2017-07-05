@@ -2,8 +2,8 @@
 % Please edit documentation in R/DsNOMe-class.R
 \docType{methods}
 \name{getMeth,DsNOMe-method}
-\alias{getMeth}
 \alias{getMeth,DsNOMe-method}
+\alias{getMeth}
 \title{getMeth-methods}
 \usage{
 \S4method{getMeth}{DsNOMe}(.object, type = "sites", asMatrix = FALSE)
@@ -25,4 +25,3 @@ Return table of methylation values
 \author{
 Fabian Mueller
 }
-

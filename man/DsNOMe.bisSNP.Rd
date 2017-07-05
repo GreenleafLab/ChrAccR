@@ -25,4 +25,3 @@ Create a DsNOMe dataset from multiple input files in bisSNP output format
 \author{
 Fabian Mueller
 }
-

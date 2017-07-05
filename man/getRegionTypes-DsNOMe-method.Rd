@@ -2,8 +2,8 @@
 % Please edit documentation in R/DsNOMe-class.R
 \docType{methods}
 \name{getRegionTypes,DsNOMe-method}
-\alias{getRegionTypes}
 \alias{getRegionTypes,DsNOMe-method}
+\alias{getRegionTypes}
 \title{getRegionTypes-methods}
 \usage{
 \S4method{getRegionTypes}{DsNOMe}(.object, inclSites = FALSE)
@@ -22,4 +22,3 @@ Return sample IDs in a dataset
 \author{
 Fabian Mueller
 }
-
