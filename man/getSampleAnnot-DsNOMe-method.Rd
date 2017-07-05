@@ -2,8 +2,8 @@
 % Please edit documentation in R/DsNOMe-class.R
 \docType{methods}
 \name{getSampleAnnot,DsNOMe-method}
-\alias{getSampleAnnot}
 \alias{getSampleAnnot,DsNOMe-method}
+\alias{getSampleAnnot}
 \title{getSampleAnnot-methods}
 \usage{
 \S4method{getSampleAnnot}{DsNOMe}(.object)
@@ -20,4 +20,3 @@ Return sample annotation table of a dataset
 \author{
 Fabian Mueller
 }
-

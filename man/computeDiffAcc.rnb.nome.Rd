@@ -7,7 +7,8 @@
 \usage{
 computeDiffAcc.rnb.nome(dsn, cmpCols, regionTypes = getRegionTypes(dsn),
   covgThres = 5L, allPairs = TRUE, adjPairCols = NULL, adjCols = NULL,
-  skipSites = FALSE, disk.dump = rnb.getOption("disk.dump.big.matrices"),
+  skipSites = FALSE, doScale = FALSE,
+  disk.dump = rnb.getOption("disk.dump.big.matrices"),
   disk.dump.dir = tempfile(pattern = "diffMethTables_"), ...)
 }
 \arguments{
@@ -27,6 +28,8 @@ computeDiffAcc.rnb.nome(dsn, cmpCols, regionTypes = getRegionTypes(dsn),
 
 \item{skipSites}{flag indicating whether differential methylation in regions should be computed directly and not from sites. This leads to skipping of site-specific differential methylation}
 
+\item{doScale}{scale the methylation matrix before  computing differential values to have mean 0 and standard deviation 1.}
+
 \item{disk.dump}{Flag indicating whether the resulting differential methylation object should be file backed, ie.e the matrices dumped to disk}
 
 \item{disk.dump.dir}{disk location for file backing of the resulting differential methylation object. Only meaningful if \code{disk.dump=TRUE}.
@@ -45,4 +48,3 @@ Fabian Mueller
 
 Fabian Mueller
 }
-

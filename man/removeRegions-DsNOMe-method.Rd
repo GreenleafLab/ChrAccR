@@ -2,8 +2,8 @@
 % Please edit documentation in R/DsNOMe-class.R
 \docType{methods}
 \name{removeRegions,DsNOMe-method}
-\alias{removeRegions}
 \alias{removeRegions,DsNOMe-method}
+\alias{removeRegions}
 \title{removeRegions-methods}
 \usage{
 \S4method{removeRegions}{DsNOMe}(.object, indices, type = "sites",
@@ -27,4 +27,3 @@ Remove the specified sites or regions from an object
 \author{
 Fabian Mueller
 }
-

@@ -28,7 +28,7 @@ Set a configuration item to a given value
   }
 }
 }
+
 \author{
 Fabian Mueller
 }
-

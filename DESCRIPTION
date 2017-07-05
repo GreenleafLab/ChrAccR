@@ -14,4 +14,4 @@ Depends:
     data.table
 License: GPL-2
 Version: 0.1
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1

@@ -2,8 +2,8 @@
 % Please edit documentation in R/DsNOMe-class.R
 \docType{methods}
 \name{mergeStrands,DsNOMe-method}
-\alias{mergeStrands}
 \alias{mergeStrands,DsNOMe-method}
+\alias{mergeStrands}
 \title{mergeStrands-methods}
 \usage{
 \S4method{mergeStrands}{DsNOMe}(.object, reaggregate = TRUE)
@@ -23,4 +23,3 @@ Methylation levels
 \author{
 Fabian Mueller
 }
-

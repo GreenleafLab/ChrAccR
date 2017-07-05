@@ -20,4 +20,3 @@ Save a DsNOMe dataset to disk for later loading
 \author{
 Fabian Mueller
 }
-

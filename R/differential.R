@@ -138,10 +138,12 @@ getComparisonInfo <- function(dsn, cmpNames=NULL, regionTypes=getRegionTypes(dsn
 ### @param dmtp differential methylation table on the site level (as obtained from \code{\link{RnBeads:::computeDiffMeth.bin.site}})
 ### @param inds.g1 column indices in \code{b} of group 1 members
 ### @param inds.g2 column indices in \code{b} of group 2 members
+### @param regionTypes which region types should be processed for differential analysis.
+### @param doScale     scale the methylation matrix before  computing differential values to have mean 0 and standard deviation 1.
 ### @details
 ### Analogous to \code{RnBeads}' \code{computeDiffMeth.bin.region} function
 ### @return list of differential methylation tables
-computeDiffAcc.rnb.nome.bin.region <- function(dsn, dmtp, inds.g1, inds.g2, regionTypes=getRegionTypes(dsn), ...){
+computeDiffAcc.rnb.nome.bin.region <- function(dsn, dmtp, inds.g1, inds.g2, regionTypes=getRegionTypes(dsn), doScale=FALSE, ...){
 	#sanity checks
 	if (length(union(inds.g1,inds.g2)) != (length(inds.g1)+length(inds.g2))){
 		logger.error("Overlapping sample sets in differential methylation analysis")
@@ -156,7 +158,9 @@ computeDiffAcc.rnb.nome.bin.region <- function(dsn, dmtp, inds.g1, inds.g2, regi
 	for (rt in regionTypes){
 		if (skipSites){
 			covMat <- getCovg(dsn, rt, asMatrix=TRUE)
-			dmtr <- RnBeads:::computeDiffMeth.bin.site(getMeth(dsn,rt, asMatrix=TRUE), inds.g1, inds.g2, covg=covMat, ...)
+			mm <- getMeth(dsn,rt, asMatrix=TRUE)
+			if (doScale) mm <- scale(mm)
+			dmtr <- RnBeads:::computeDiffMeth.bin.site(mm, inds.g1, inds.g2, covg=covMat, ...)
 		} else {
 			inclCov <- !is.null(getCovg(dsn, "sites", asMatrix=TRUE))
 			regions2sites <- getRegionMapping(dsn, rt)
@@ -186,6 +190,7 @@ computeDiffAcc.rnb.nome.bin.region <- function(dsn, dmtp, inds.g1, inds.g2, regi
 #' @param adjPairCols argument passed on to \code{rnb.sample.groups}. See its documentation for details.
 #' @param adjCols     not used yet
 #' @param skipSites   flag indicating whether differential methylation in regions should be computed directly and not from sites. This leads to skipping of site-specific differential methylation
+#' @param doScale     scale the methylation matrix before  computing differential values to have mean 0 and standard deviation 1.
 #' @param disk.dump Flag indicating whether the resulting differential methylation object should be file backed, ie.e the matrices dumped to disk
 #' @param disk.dump.dir disk location for file backing of the resulting differential methylation object. Only meaningful if \code{disk.dump=TRUE}.
 #' 						must be a character specifying an NON-EXISTING valid directory.
@@ -197,6 +202,7 @@ computeDiffAcc.rnb.nome <- function(dsn, cmpCols, regionTypes=getRegionTypes(dsn
 		allPairs=TRUE, adjPairCols=NULL,
 		adjCols=NULL,
 		skipSites=FALSE,
+		doScale=FALSE,
 		disk.dump=rnb.getOption("disk.dump.big.matrices"),disk.dump.dir=tempfile(pattern="diffMethTables_"),
 		...){
 
@@ -223,8 +229,10 @@ computeDiffAcc.rnb.nome <- function(dsn, cmpCols, regionTypes=getRegionTypes(dsn
 			logger.info("Skipping site-specific differential methylation calling")
 			dm <- NULL
 		} else {
+			mm <- getMeth(dsn, asMatrix=TRUE)
+			if (doScale) mm <- scale(mm)
 			dm <- RnBeads:::computeDiffMeth.bin.site(
-					getMeth(dsn, asMatrix=TRUE), inds.g1=cmpInfo.cur$group.inds$group1, inds.g2=cmpInfo.cur$group.inds$group2,
+					mm, inds.g1=cmpInfo.cur$group.inds$group1, inds.g2=cmpInfo.cur$group.inds$group2,
 					covg=getCovg(dsn, asMatrix=TRUE), covg.thres=covgThres,
 					paired=cmpInfo.cur$paired, adjustment.table=cmpInfo.cur$adjustment.table,
 					...
@@ -239,12 +247,14 @@ computeDiffAcc.rnb.nome <- function(dsn, cmpCols, regionTypes=getRegionTypes(dsn
 					regionTypes=cmpInfo.cur$region.types,
 					covg.thres=covgThres,
 					paired=cmpInfo.cur$paired, adjustment.table=cmpInfo.cur$adjustment.table,
+					doScale=doScale,
 					...
 				)
 			} else {
 				dmr <- computeDiffAcc.rnb.nome.bin.region(dsn,dm,
 					cmpInfo.cur$group.inds$group1,cmpInfo.cur$group.inds$group2,
-					regionTypes=cmpInfo.cur$region.types
+					regionTypes=cmpInfo.cur$region.types,
+					doScale=doScale
 				)	
 			}		
 			for (rt in cmpInfo.cur$region.types){

@@ -2,8 +2,8 @@
 % Please edit documentation in R/DsNOMe-class.R
 \docType{methods}
 \name{getCovg,DsNOMe-method}
-\alias{getCovg}
 \alias{getCovg,DsNOMe-method}
+\alias{getCovg}
 \title{getCovg-methods}
 \usage{
 \S4method{getCovg}{DsNOMe}(.object, type = "sites", asMatrix = FALSE)
@@ -25,4 +25,3 @@ Return table of read coverage values
 \author{
 Fabian Mueller
 }
-
