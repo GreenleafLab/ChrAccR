@@ -2,8 +2,8 @@
 % Please edit documentation in R/DsNOMe-class.R
 \docType{methods}
 \name{getCoord,DsNOMe-method}
-\alias{getCoord,DsNOMe-method}
 \alias{getCoord}
+\alias{getCoord,DsNOMe-method}
 \title{getCoord-methods}
 \usage{
 \S4method{getCoord}{DsNOMe}(.object, type = "sites")
@@ -25,3 +25,4 @@ Return coordinates of sites/regions in a dataset
 \author{
 Fabian Mueller
 }
+

@@ -18,3 +18,4 @@ Save the current configuration to a configuration file (JSON)
 \author{
 Fabian Mueller
 }
+

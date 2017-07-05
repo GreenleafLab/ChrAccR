@@ -2,8 +2,8 @@
 % Please edit documentation in R/DsNOMe-class.R
 \docType{methods}
 \name{getNRegions,DsNOMe-method}
-\alias{getNRegions,DsNOMe-method}
 \alias{getNRegions}
+\alias{getNRegions,DsNOMe-method}
 \title{getNRegions-methods}
 \usage{
 \S4method{getNRegions}{DsNOMe}(.object, type = "sites")
@@ -22,3 +22,4 @@ Return the number of regions of a given type
 \author{
 Fabian Mueller
 }
+

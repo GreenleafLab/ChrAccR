@@ -43,3 +43,4 @@ retrieve the comparison information for an DsNOMe object. Analogous to \code{RnB
 \author{
 Fabian Mueller
 }
+

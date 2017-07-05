@@ -2,8 +2,8 @@
 % Please edit documentation in R/DsNOMe-class.R
 \docType{methods}
 \name{maskMethNA,DsNOMe-method}
-\alias{maskMethNA,DsNOMe-method}
 \alias{maskMethNA}
+\alias{maskMethNA,DsNOMe-method}
 \title{maskMethNA-methods}
 \usage{
 \S4method{maskMethNA}{DsNOMe}(.object, mask, type = "sites",
@@ -27,3 +27,4 @@ Set the indices specified in a mask to NA
 \author{
 Fabian Mueller
 }
+

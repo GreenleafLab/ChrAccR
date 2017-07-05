@@ -2,8 +2,8 @@
 % Please edit documentation in R/DsNOMe-class.R
 \docType{methods}
 \name{getSamples,DsNOMe-method}
-\alias{getSamples,DsNOMe-method}
 \alias{getSamples}
+\alias{getSamples,DsNOMe-method}
 \title{getSamples-methods}
 \usage{
 \S4method{getSamples}{DsNOMe}(.object)
@@ -20,3 +20,4 @@ Return sample IDs in a dataset
 \author{
 Fabian Mueller
 }
+

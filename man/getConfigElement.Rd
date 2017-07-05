@@ -18,3 +18,4 @@ Get the value for a configuration item
 \author{
 Fabian Mueller
 }
+

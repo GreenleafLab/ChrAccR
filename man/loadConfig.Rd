@@ -18,3 +18,4 @@ Sets the configuration from a configuration file (JSON)
 \author{
 Fabian Mueller
 }
+
