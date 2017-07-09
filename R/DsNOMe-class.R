@@ -810,7 +810,7 @@ setMethod("normalizeMeth",
 		if (method == "quantile"){
 			logger.start(c("Performing quantile normalization"))
 				require(preprocessCore)
-				.object@meth[[type]] <- normalize.quantiles(.object@meth[[type]])
+				.object@meth[[type]] <- data.table(normalize.quantiles(as.matrix(.object@meth[[type]])))
 			logger.completed()
 		}
 
