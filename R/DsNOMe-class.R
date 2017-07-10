@@ -802,7 +802,8 @@ setMethod("normalizeMeth",
 	function(
 		.object,
 		type="sites",
-		method="quantile"
+		method="quantile",
+		reaggregate=TRUE
 	) {
 		if (!is.element(type, getRegionTypes(.object, inclSites=TRUE))) logger.error(c("Unsupported region type:", type))
 		if (!is.element(method, c("quantile"))) logger.error(c("Unsupported normalization method type:", method))
