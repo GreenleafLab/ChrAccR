@@ -10,14 +10,14 @@ DsNOMe.bisSNP(inputFns, sampleAnnot, genome,
 \arguments{
 \item{inputFns}{a NAMED vector of input file names}
 
-\item{sampleAnnot}{data.frame spcifying the sample annotation table}
+\item{sampleAnnot}{data.frame specifying the sample annotation table}
 
 \item{genome}{genome assembly}
 
 \item{sampleIds}{character vector of sample names}
 }
 \value{
-\code{\linkS4class{Job}} object
+\code{\linkS4class{DsNOMe}} object
 }
 \description{
 Create a DsNOMe dataset from multiple input files in bisSNP output format

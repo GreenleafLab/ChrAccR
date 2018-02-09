@@ -1,23 +1,14 @@
 #' DsNOMe
 #'
-#' A class for storing information on pipeline jobs.
+#' A class for storing NOMe accessibility data
 #'
 #' @section Slots:
 #' \describe{
-#'   \item{\code{coord}}{
-#'		List of coordinates (GRanges objects) for GC dinucleotides (sites) and summarized regions.
-#'   }
 #'   \item{\code{meth}}{
 #'		List of GC methylation for sites and summarized regions.
 #'   }
 #'   \item{\code{covg}}{
 #'		List of GC read coverage for sites and summarized regions.
-#'   }
-#'   \item{\code{sampleAnnot}}{
-#'		Sample annotation Table
-#'   }
-#'   \item{\code{genome}}{
-#'		Genome assembly
 #'   }
 #' }
 #'
@@ -34,12 +25,10 @@
 #' @exportClass DsNOMe
 setClass("DsNOMe",
 	slots = list(
-		coord       = "list",
 		meth        = "list",
-		covg        = "list",
-		sampleAnnot = "data.frame",
-		genome      = "character"
+		covg        = "list"
 	),
+	contains = "DsAcc",
 	package = "ChrAccR"
 )
 setMethod("initialize","DsNOMe",
@@ -82,140 +71,6 @@ DsNOMe <- function(siteCoord, siteMeth, siteCovg, sampleAnnot, genome){
 ################################################################################
 # Getters
 ################################################################################
-if (!isGeneric("getSamples")) {
-	setGeneric(
-		"getSamples",
-		function(.object) standardGeneric("getSamples"),
-		signature=c(".object")
-	)
-}
-#' getSamples-methods
-#'
-#' Return sample IDs in a dataset
-#'
-#' @param .object \code{\linkS4class{DsNOMe}} object
-#' @return Character vector of sample IDs in the dataset
-#'
-#' @rdname getSamples-DsNOMe-method
-#' @docType methods
-#' @aliases getSamples
-#' @aliases getSamples,DsNOMe-method
-#' @author Fabian Mueller
-#' @export
-setMethod("getSamples",
-	signature(
-		.object="DsNOMe"
-	),
-	function(
-		.object
-	) {
-		return(rownames(.object@sampleAnnot))
-	}
-)
-#-------------------------------------------------------------------------------
-if (!isGeneric("getSampleAnnot")) {
-	setGeneric(
-		"getSampleAnnot",
-		function(.object) standardGeneric("getSampleAnnot"),
-		signature=c(".object")
-	)
-}
-#' getSampleAnnot-methods
-#'
-#' Return sample annotation table of a dataset
-#'
-#' @param .object \code{\linkS4class{DsNOMe}} object
-#' @return \code{data.frame} containing sample annotation
-#'
-#' @rdname getSampleAnnot-DsNOMe-method
-#' @docType methods
-#' @aliases getSampleAnnot
-#' @aliases getSampleAnnot,DsNOMe-method
-#' @author Fabian Mueller
-#' @export
-setMethod("getSampleAnnot",
-	signature(
-		.object="DsNOMe"
-	),
-	function(
-		.object
-	) {
-		return(.object@sampleAnnot)
-	}
-)
-#-------------------------------------------------------------------------------
-if (!isGeneric("getRegionTypes")) {
-	setGeneric(
-		"getRegionTypes",
-		function(.object, ...) standardGeneric("getRegionTypes"),
-		signature=c(".object")
-	)
-}
-#' getRegionTypes-methods
-#'
-#' Return sample IDs in a dataset
-#'
-#' @param .object \code{\linkS4class{DsNOMe}} object
-#' @param inclSites include \code{"sites"} in the result
-#' @return Character vector of sample IDs in the dataset
-#'
-#' @rdname getRegionTypes-DsNOMe-method
-#' @docType methods
-#' @aliases getRegionTypes
-#' @aliases getRegionTypes,DsNOMe-method
-#' @author Fabian Mueller
-#' @export
-setMethod("getRegionTypes",
-	signature(
-		.object="DsNOMe"
-	),
-	function(
-		.object,
-		inclSites=FALSE
-	) {
-		res <- names(.object@coord)
-		if (!inclSites) res <- setdiff(res, "sites")
-		return(res)
-	}
-)
-#-------------------------------------------------------------------------------
-if (!isGeneric("getCoord")) {
-	setGeneric(
-		"getCoord",
-		function(.object, ...) standardGeneric("getCoord"),
-		signature=c(".object")
-	)
-}
-#' getCoord-methods
-#'
-#' Return coordinates of sites/regions in a dataset
-#'
-#' @param .object \code{\linkS4class{DsNOMe}} object
-#' @param type    character string specifying the rgion type or \code{"sites"} (default)
-#' @param asMatrix return a matrix instead of a \code{data.table}
-#' @return \code{GRanges} object containing coordinates for covered
-#'         sites/regions
-#'
-#' @rdname getCoord-DsNOMe-method
-#' @docType methods
-#' @aliases getCoord
-#' @aliases getCoord,DsNOMe-method
-#' @author Fabian Mueller
-#' @export
-setMethod("getCoord",
-	signature(
-		.object="DsNOMe"
-	),
-	function(
-		.object,
-		type="sites"
-	) {
-		if (!is.element(type, getRegionTypes(.object, inclSites=TRUE))) logger.error(c("Unsupported region type:", type))
-		res <- .object@coord[[type]]
-		return(res)
-	}
-)
-#-------------------------------------------------------------------------------
 #generic is already defined in minfi package --> redefine
 # if (!isGeneric("getMeth")) {
 	setGeneric(
@@ -294,41 +149,6 @@ setMethod("getCovg",
 		return(res)
 	}
 )
-#-------------------------------------------------------------------------------
-if (!isGeneric("getNRegions")) {
-	setGeneric(
-		"getNRegions",
-		function(.object, ...) standardGeneric("getNRegions"),
-		signature=c(".object")
-	)
-}
-#' getNRegions-methods
-#'
-#' Return the number of regions of a given type
-#'
-#' @param .object \code{\linkS4class{DsNOMe}} object
-#' @param type    character string specifying the rgion type or \code{"sites"} (default)
-#' @return the number of regions of that type
-#'
-#' @rdname getNRegions-DsNOMe-method
-#' @docType methods
-#' @aliases getNRegions
-#' @aliases getNRegions,DsNOMe-method
-#' @author Fabian Mueller
-#' @export
-setMethod("getNRegions",
-	signature(
-		.object="DsNOMe"
-	),
-	function(
-		.object,
-		type="sites"
-	) {
-		if (!is.element(type, getRegionTypes(.object, inclSites=TRUE))) logger.error(c("Unsupported region type:", type))
-		return(length(.object@coord[[type]]))
-	}
-)
-#-------------------------------------------------------------------------------
 
 ################################################################################
 # Display
@@ -835,39 +655,3 @@ setMethod("normalizeMeth",
 		return(.object)
 	}
 )
-################################################################################
-# Saving and loading DsNOMe objects
-################################################################################
-#' saveDsNOMe
-#' 
-#' Save a DsNOMe dataset to disk for later loading
-#' @param .object \code{\linkS4class{DsNOMe}} object
-#' @param path    destination to save the object to
-#' @return nothing of particular interest
-#' @author Fabian Mueller
-#' @export
-saveDsNOMe <- function(.object, path){
-	if (dir.exists(path)){
-		logger.error("could not save object. Path already exists")
-	}
-	dir.create(path, recursive=FALSE)
-	dsFn <- file.path(path, "ds.rds")
-	saveRDS(.object, dsFn)
-	invisible(NULL)
-}
-
-#' loadDsNOMe
-#' 
-#' Load a DsNOMe dataset from disk
-#' @param path    Location of saved \code{\linkS4class{DsNOMe}} object
-#' @return \code{\linkS4class{DsNOMe}} object
-#' @author Fabian Mueller
-#' @export
-loadDsNOMe <- function(path){
-	if (!dir.exists(path)){
-		logger.error(c("Could not load object. Path does not exist:", path))
-	}
-	dsFn <- file.path(path, "ds.rds")
-	.object <- readRDS(dsFn)
-	return(.object)
-}
