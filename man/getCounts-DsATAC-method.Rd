@@ -6,12 +6,12 @@
 \alias{getCounts}
 \title{getCounts-methods}
 \usage{
-\S4method{getCounts}{DsATAC}(.object, type = "signal", asMatrix = FALSE)
+\S4method{getCounts}{DsATAC}(.object, type, asMatrix = FALSE)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}
 
-\item{type}{character string specifying the rgion type or \code{"sites"} (default)}
+\item{type}{character string specifying the region type}
 
 \item{asMatrix}{return a matrix instead of a \code{data.table}}
 }

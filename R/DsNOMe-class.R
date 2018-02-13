@@ -489,6 +489,7 @@ setMethod("removeRegions",
 		type="sites",
 		reaggregate=TRUE
 	) {
+		print("wrong")
 		if (!is.element(type, getRegionTypes(.object, inclSites=TRUE))) logger.error(c("Unsupported region type:", type))
 
 		if (!is.vector(indices) || !(is.numeric(indices) || is.logical(indices))){

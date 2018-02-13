@@ -499,3 +499,62 @@ setMethod("normalizeCounts",
 		return(.object)
 	}
 )
+#-------------------------------------------------------------------------------
+if (!isGeneric("filterLowCovg")) {
+	setGeneric(
+		"filterLowCovg",
+		function(.object, ...) standardGeneric("filterLowCovg"),
+		signature=c(".object")
+	)
+}
+#' filterLowCovg-methods
+#'
+#' Filter regions with low read counts
+#'
+#' @param .object     \code{\linkS4class{DsATAC}} object
+#' @param thresh      regions with read counts below this threshold will be considered lowly covered regions (default: regions with fewer than 1 read will be discarded)
+#' @param reqSamples  the percentile of samples required to meet or exceed the threshold in order for a region to be retained.
+#'                    must be in the interval [0, 1) (default: 0.75 - 75%)
+#' @param regionTypes character vector specifying the names of the region types to which filtering should be applied (default: all region types)
+#' @return a new \code{\linkS4class{DsATAC}} object with low coverage regions removed
+#' 
+#' @rdname filterLowCovg-DsATAC-method
+#' @docType methods
+#' @aliases filterLowCovg
+#' @aliases filterLowCovg,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("filterLowCovg",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		thresh=1L,
+		reqSamples=0.75,
+		regionTypes=getRegionTypes(.object)
+	) {
+		if (!all(regionTypes %in% getRegionTypes(.object))){
+			logger.error(c("Unsupported region type:", paste(setdiff(regionTypes, getRegionTypes(.object)), collapse=", ")))
+		}
+		N <- length(getSamples(.object))
+		numAllowed <- reqSamples
+		if (numAllowed < 1 && numAllowed >=0){
+			numAllowed <- as.integer(ceiling(numAllowed * N))
+		}
+		if (numAllowed > N || numAllowed < 1){
+			logger.error(c("Invalid number of samples. Must be in the interval [0,1) or an integer in [1, n_samples]"))
+		}
+		percAllowed <- round(numAllowed/N, 2)
+		logger.status(c("Removing regions with read counts lower than", thresh, "in more than", N-numAllowed, "samples", paste0("(", (1-percAllowed)*100,"%)")))
+		for (rt in regionTypes){
+			rem <- rowSums(getCounts(.object, rt) >= thresh) < numAllowed
+			nRem <- sum(rem)
+			if (nRem > 0){
+				.object <- removeRegions(.object, rem, rt)
+			}
+			logger.status(c("Removed", nRem, "regions of type", rt))
+		}
+		return(.object)
+	}
+)

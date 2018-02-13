@@ -231,7 +231,6 @@ setMethod("getNRegions",
 		return(length(.object@coord[[type]]))
 	}
 )
-#-------------------------------------------------------------------------------
 
 ################################################################################
 # Display
@@ -255,7 +254,52 @@ setMethod("show","DsAcc",
 ################################################################################
 # Maniputlating DsAcc objects
 ################################################################################
+if (!isGeneric("addSampleAnnotCol")) {
+	setGeneric(
+		"addSampleAnnotCol",
+		function(.object, ...) standardGeneric("addSampleAnnotCol"),
+		signature=c(".object")
+	)
+}
+#' addSampleAnnotCol-methods
+#'
+#' add a sample annotation column to the sample annotation table
+#'
+#' @param .object \code{\linkS4class{DsAcc}} object
+#' @param name    a name for the new column
+#' @param vals    vector of values
+#' @return a new \code{\linkS4class{DsAcc}} object with added sample annotation
+#' 
+#' @rdname addSampleAnnotCol-DsAcc-method
+#' @docType methods
+#' @aliases addSampleAnnotCol
+#' @aliases addSampleAnnotCol,DsAcc-method
+#' @author Fabian Mueller
+#' @export
+setMethod("addSampleAnnotCol",
+	signature(
+		.object="DsAcc"
+	),
+	function(
+		.object,
+		name,
+		vals
+	) {
+		ph <- .object@sampleAnnot
+		if (length(vals)!=ncol(ph)){
+			logger.error(c("vals must contain exactly one value for each sample"))
+		}
+		if (is.element(name, colnames(ph))){
+			logger.warning(c("Replacing sample annotation column:", name))
+		}
+		
+		ph[,name] <- vals
 
+		.object@sampleAnnot <- ph
+		return(.object)
+	}
+)
+#-------------------------------------------------------------------------------
 #TODO: not tested yet
 if (!isGeneric("removeRegions")) {
 	setGeneric(
@@ -289,6 +333,7 @@ setMethod("removeRegions",
 		indices,
 		type
 	) {
+		print("hi")
 		inclSites <- FALSE
 		if (type == "sites") inclSites <- TRUE
 		if (!is.element(type, getRegionTypes(.object, inclSites=inclSites))) logger.error(c("Unsupported region type:", type))
@@ -310,7 +355,7 @@ setMethod("removeRegions",
 			logger.info("Nothing to be done: keeping object as is")
 			return(.object)
 		}
-
+		print("hihi")
 		.object@coord[[type]] <- .object@coord[[type]][inds2keep]
 		return(.object)
 	}
