@@ -113,6 +113,11 @@ setMethod("show","DsATAC",
 		cat("contains:\n")
 		cat(" * ", length(ss), " samples: ", str.ss, " \n")
 		cat(" * ", str.rts, " \n")
+		if (length(rts) > 0) {
+			for (rt in rts){
+				cat(" *  * ", getNRegions(object, rt), "regions of type", rt, " \n")
+			}
+		}
 	}
 )
 
@@ -389,7 +394,7 @@ if (!isGeneric("removeRegions")) {
 #' @param .object \code{\linkS4class{DsATAC}} object
 #' @param indices a vector of indices of sites/regions to be removed. Can be numeric, integer or logical.
 #' @param type    character string specifying a name for the region type (sefault: sites)
-#' @param reaggregate redo region aggregation (only has an effect if type is sites and there are aggregated regions in the dataset)
+## @param reaggregate redo region aggregation (only has an effect if type is sites and there are aggregated regions in the dataset)
 #' @return a new \code{\linkS4class{DsATAC}} object with sites/regions removed
 #' 
 #' @rdname removeRegions-DsATAC-method
@@ -405,8 +410,8 @@ setMethod("removeRegions",
 	function(
 		.object,
 		indices,
-		type="signal",
-		reaggregate=TRUE
+		type
+		# reaggregate=TRUE
 	) {
 		if (!is.element(type, getRegionTypes(.object))) logger.error(c("Unsupported region type:", type))
 
@@ -429,22 +434,22 @@ setMethod("removeRegions",
 		}
 
 		.object@coord[[type]] <- .object@coord[[type]][inds2keep]
-		.object@counts[[type]]  <- .object@meth[[type]][inds2keep,]
+		.object@counts[[type]]  <- .object@counts[[type]][inds2keep,]
 
-		rts <- setdiff(getRegionTypes(.object), type)
-		if (reaggregate && type == "signal" && length(rts)>0) {
-			logger.start("Recomputing region aggregation")
-			rtGrl <- .object@coord
+		# rts <- setdiff(getRegionTypes(.object), type)
+		# if (reaggregate && type == "signal" && length(rts)>0) {
+		# 	logger.start("Recomputing region aggregation")
+		# 	rtGrl <- .object@coord
 
-			.object@coord <- .object@coord["signal"]
-			.object@counts  <- .object@counts["signal"]
+		# 	.object@coord <- .object@coord["signal"]
+		# 	.object@counts  <- .object@counts["signal"]
 
-			for (rt in rts){
-				logger.status(c(rt, "..."))
-				.object <- regionAggregation(.object, rtGrl[[rt]], rt, dropEmpty=TRUE)
-			}
-			logger.completed()	
-		}
+		# 	for (rt in rts){
+		# 		logger.status(c(rt, "..."))
+		# 		.object <- regionAggregation(.object, rtGrl[[rt]], rt, dropEmpty=TRUE)
+		# 	}
+		# 	logger.completed()	
+		# }
 		return(.object)
 	}
 )
@@ -550,10 +555,11 @@ setMethod("filterLowCovg",
 		for (rt in regionTypes){
 			rem <- rowSums(getCounts(.object, rt) >= thresh) < numAllowed
 			nRem <- sum(rem)
+			nRegs <- getNRegions(.object, rt)
 			if (nRem > 0){
 				.object <- removeRegions(.object, rem, rt)
 			}
-			logger.status(c("Removed", nRem, "regions of type", rt))
+			logger.status(c("Removed", nRem, "regions", paste0("(", round(nRem/nRegs, 4)*100, "%)"), "of type", rt))
 		}
 		return(.object)
 	}

@@ -167,6 +167,11 @@ setMethod("show","DsNOMe",
 		cat(" * ", length(ss), " samples: ", str.ss, " \n")
 		cat(" * ", getNRegions(object, "sites"), " GC methylation measurements", "\n")
 		cat(" * ", str.rts, " \n")
+		if (length(rts) > 0) {
+			for (rt in rts){
+				cat(" *  * ", getNRegions(object, rt), "regions of type", rt, " \n")
+			}
+		}
 	}
 )
 
@@ -489,7 +494,6 @@ setMethod("removeRegions",
 		type="sites",
 		reaggregate=TRUE
 	) {
-		print("wrong")
 		if (!is.element(type, getRegionTypes(.object, inclSites=TRUE))) logger.error(c("Unsupported region type:", type))
 
 		if (!is.vector(indices) || !(is.numeric(indices) || is.logical(indices))){

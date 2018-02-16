@@ -6,8 +6,7 @@
 \alias{removeRegions}
 \title{removeRegions-methods}
 \usage{
-\S4method{removeRegions}{DsATAC}(.object, indices, type = "signal",
-  reaggregate = TRUE)
+\S4method{removeRegions}{DsATAC}(.object, indices, type)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}
@@ -15,8 +14,6 @@
 \item{indices}{a vector of indices of sites/regions to be removed. Can be numeric, integer or logical.}
 
 \item{type}{character string specifying a name for the region type (sefault: sites)}
-
-\item{reaggregate}{redo region aggregation (only has an effect if type is sites and there are aggregated regions in the dataset)}
 }
 \value{
 a new \code{\linkS4class{DsATAC}} object with sites/regions removed

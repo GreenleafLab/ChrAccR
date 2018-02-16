@@ -248,6 +248,11 @@ setMethod("show","DsAcc",
 		cat("contains:\n")
 		cat(" * ", length(ss), " samples: ", str.ss, " \n")
 		cat(" * ", str.rts, " \n")
+		if (length(rts) > 0) {
+			for (rt in rts){
+				cat(" *  * ", getNRegions(object, rt), "regions of type", rt, " \n")
+			}
+		}
 	}
 )
 
@@ -333,7 +338,6 @@ setMethod("removeRegions",
 		indices,
 		type
 	) {
-		print("hi")
 		inclSites <- FALSE
 		if (type == "sites") inclSites <- TRUE
 		if (!is.element(type, getRegionTypes(.object, inclSites=inclSites))) logger.error(c("Unsupported region type:", type))
@@ -355,7 +359,6 @@ setMethod("removeRegions",
 			logger.info("Nothing to be done: keeping object as is")
 			return(.object)
 		}
-		print("hihi")
 		.object@coord[[type]] <- .object@coord[[type]][inds2keep]
 		return(.object)
 	}
