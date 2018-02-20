@@ -5,7 +5,8 @@
 \title{getPeakSet.snakeATAC}
 \usage{
 getPeakSet.snakeATAC(sampleAnnot, filePrefixCol, genome, dataDir,
-  sampleIdCol = filePrefixCol, type = "summits_no_fw", unifWidth = 500L)
+  sampleIdCol = filePrefixCol, type = "summits_no_fw", unifWidth = 500L,
+  replicateCol = NA, replicatePercReq = 1)
 }
 \arguments{
 \item{sampleAnnot}{data.frame specifying the sample annotation table}
@@ -21,6 +22,12 @@ getPeakSet.snakeATAC(sampleAnnot, filePrefixCol, genome, dataDir,
 \item{type}{input data type. Currently only "summits_no_fw" (non-overlapping, fixed-width peaks deduced from summits)}
 
 \item{unifWidth}{width of the peaks if the results have uniform peak lengths}
+
+\item{replicateCol}{column name specifying the replicate group for cross-checking coverage across replicates}
+
+\item{replicatePercReq}{percentile of replicates in a group required to contain a peak in order to keep it.
+E.g. a value of 1 (default) means that all replicates in a group are required to contain that peak in order
+to keep it.}
 }
 \value{
 \code{GRanges} object containing consensus peak set
