@@ -5,7 +5,7 @@
 \title{getPeakSet.snakeATAC}
 \usage{
 getPeakSet.snakeATAC(sampleAnnot, filePrefixCol, genome, dataDir,
-  sampleIdCol = filePrefixCol, type = "summits", unifWidth = 500L)
+  sampleIdCol = filePrefixCol, type = "summits_no_fw", unifWidth = 500L)
 }
 \arguments{
 \item{sampleAnnot}{data.frame specifying the sample annotation table}
@@ -18,7 +18,7 @@ getPeakSet.snakeATAC(sampleAnnot, filePrefixCol, genome, dataDir,
 
 \item{sampleIdCol}{column name or index in the sample annotation table containing unique sample identifiers}
 
-\item{type}{input data type. Currently only "insBed" (insertion beds)}
+\item{type}{input data type. Currently only "summits_no_fw" (non-overlapping, fixed-width peaks deduced from summits)}
 
 \item{unifWidth}{width of the peaks if the results have uniform peak lengths}
 }

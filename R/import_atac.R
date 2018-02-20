@@ -102,15 +102,13 @@ getNonOverlappingByScore <- function(gr, scoreCol="score"){
 	i <- 0
 	while (length(gr.rem) > 0){
 		i <- i + 1
-		logger.status(c("iteration", i)) #DEBUG
+		# logger.status(c("iteration", i)) #DEBUG
 		scs <- elementMetadata(gr.rem)[,scoreCol]
 		gr.merged <- reduce(gr.rem, min.gapwidth=0L, with.revmap=TRUE, ignore.strand=TRUE)
-		logger.status(c(".")) #DEBUG
 		maxScoreIdx <- sapply(gr.merged, FUN=function(x){
 			idx <- elementMetadata(x)[,"revmap"][[1]]
 			return(idx[which.max(scs[idx])])
 		})
-		logger.status(c("..")) #DEBUG
 		bait <- gr.rem[maxScoreIdx]
 		res <- c(res, bait)
 		gr.rem <- gr.rem[!overlapsAny(gr.rem, bait, ignore.strand=TRUE)]
@@ -128,13 +126,13 @@ getNonOverlappingByScore <- function(gr, scoreCol="score"){
 #' @param genome       genome assembly
 #' @param dataDir      directory where the files are located
 #' @param sampleIdCol  column name or index in the sample annotation table containing unique sample identifiers
-#' @param type         input data type. Currently only "insBed" (insertion beds)
+#' @param type         input data type. Currently only "summits_no_fw" (non-overlapping, fixed-width peaks deduced from summits)
 #' @param unifWidth    width of the peaks if the results have uniform peak lengths
 #' @return \code{GRanges} object containing consensus peak set
 #' @author Fabian Mueller
 #' @export
-getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sampleIdCol=filePrefixCol, type="summits", unifWidth=500L){
-	if (!is.element(type, c("summits"))){
+getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sampleIdCol=filePrefixCol, type="summits_no_fw", unifWidth=500L){
+	if (!is.element(type, c("summits_no_fw"))){
 		logger.error(c("Unsupported import type:", type))
 	}
 
@@ -142,7 +140,7 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 	rownames(sampleAnnot) <- sampleIds
 
 	inputFns <- c()
-	if (type=="summits"){
+	if (type=="summits_no_fw"){
 		require(rtracklayer)
 		if (nchar(dataDir) > 0){
 			inputFns <- file.path(dataDir, paste0(sampleAnnot[,filePrefixCol], "_summits.bed"))
@@ -157,7 +155,7 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 	}
 
 	res <- NULL
-	if (type=="summits"){
+	if (type=="summits_no_fw"){
 		grl <- list()
 		for (sid in sampleIds){
 			logger.status(c("Reading peak summits from sample:", sid))
@@ -175,7 +173,9 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 		gr <- trim(promoters(gr, upstream=ceiling(unifWidth/2), downstream=ceiling(unifWidth/2)+1)) #extend each summit on each side by 250bp
 		gr <- gr[width(gr)==median(width(gr))] #remove too short regions which might have been trimmed
 
+		logger.start("Retrieving consensus peaks")
 		res <- getNonOverlappingByScore(gr, scoreCol="score_norm")
+		logger.completed()
 		#sort
 		res <- sortSeqlevels(res)
 		res <- sort(res)
