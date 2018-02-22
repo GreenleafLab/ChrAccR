@@ -494,7 +494,7 @@ setMethod("normalizeCounts",
 			logger.start(c("Performing quantile normalization"))
 				require(preprocessCore)
 				for (rt in regionTypes){
-					logger.status(c("Regiomn type:", rt))
+					logger.status(c("Region type:", rt))
 					cnames <- colnames(.object@counts[[rt]])
 					.object@counts[[rt]] <- data.table(normalize.quantiles(as.matrix(.object@counts[[rt]])))
 					colnames(.object@counts[[rt]]) <- cnames

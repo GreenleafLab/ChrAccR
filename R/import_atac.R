@@ -149,16 +149,15 @@ filterUnreplicatedRegions <- function(grl, percReq=1.0){
 	})
 	nClusters <- length(sidxL)
 	nFiltered <- sum(!keepm)
-	logger.info(c("Removed", nFiltered, paste0("(", round(nFiltered/nClusters*100, 2), "%)"), "region clusters covered less than", nReq, "times"))
+	logger.info(c("Removed", nFiltered, "of", nClusters, paste0("(", round(nFiltered/nClusters*100, 2), "%)"), "region clusters covered less than", nReq, "times"))
 	grm <- grm[keepm]
 	idx.all <- sort(unique(unlist(mcols(grm)$revmap))) #vector of all indices
-	gr <- gr[idx.all]
+	gr <- gr[idx.all] # keep only regions which are in the filtered clusters
 
-	# map back to the original indices in the GRangesList
+	# map filtered regions back to the original indices in the input GRangesList
 	for (i in seq_along(grl)) {
 		keep.region.idx <- sort(elementMetadata(gr)[elementMetadata(gr)[,".sIdx"]==i, ".rIdx"])
 		grl[[i]] <- grl[[i]][keep.region.idx]
-		
 	}
 
 	#remove the added columns
