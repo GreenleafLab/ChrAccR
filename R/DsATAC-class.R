@@ -564,3 +564,128 @@ setMethod("filterLowCovg",
 		return(.object)
 	}
 )
+
+################################################################################
+# Analysis Utils
+################################################################################
+if (!isGeneric("getMotifEnrichment")) {
+	setGeneric(
+		"getMotifEnrichment",
+		function(.object, ...) standardGeneric("getMotifEnrichment"),
+		signature=c(".object")
+	)
+}
+#' getMotifEnrichment-methods
+#'
+#' Perform enrichment analysis for (TF) motifs of a query set of regions.
+#' Fisher's Exact Test is employed to test the association of motif present in the
+#' query set against the background of all regions of that type covered in the object
+#'
+#' @param .object     \code{\linkS4class{DsATAC}} object
+#' @param type        character string specifying the region type
+#' @param idx         logical vector or indices of the same length as \code{length(getCoord(.object))}
+#'                    specifies the query set
+#' @param motifs      either a character string (currently only "jaspar" is supported) or an object containing PWMs
+#'                    that can be used by \code{motifmatchr::matchMotifs} (such as an \code{PFMatrixList} object)
+#' @return a \code{data.frame} summarizing Fisher's Exact Test enrichment statistics for each motif
+#' 
+#' @rdname getMotifEnrichment-DsATAC-method
+#' @docType methods
+#' @aliases getMotifEnrichment
+#' @aliases getMotifEnrichment,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("getMotifEnrichment",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		type,
+		idx,
+		motifs="jaspar"
+	) {
+		require(motifmatchr)
+		require(qvalue)
+		res <- NULL
+		#count matrix
+		cm <- ChrAccR::getCounts(.object, type, asMatrix=TRUE)
+		coords <- getCoord(.object, type)
+		if (is.logical(idx)){
+			if (length(idx)!=length(coords)){
+				logger.error(c("Could not get motif enrichment: the supplied index vector is logical, but its length does not match"))
+			}
+		} else if (is.numeric(idx)){
+			idx <- as.integer(idx)
+			if (any(idx < 0 | idx > length(coords))){
+				logger.error(c("Could not get motif enrichment: the supplied index vector numeric but indices are out of range"))
+			}
+			#create logical vector
+			tmp <- idx
+			idx <- rep(FALSE, length(coords))
+			idx[tmp] <- TRUE
+			rm(tmp)
+		} else {
+			logger.error(c("Could not get motif enrichment: invalid index vector"))
+		}
+
+		# get the species name and the genome sequence object based on the object
+		spec <- NULL
+		genomeObj <- NULL
+		if (is.element(.object@genome, c("mm9", "mm10"))){
+			spec <- "Mus musculus"
+			genomePkg <- paste0("BSgenome.Mmusculus.UCSC.", .object@genome)
+			require(genomePkg, character.only=TRUE)
+			genomeObj <- get(genomePkg)
+		} else if (is.element(.object@genome, c("hg18", "hg19", "hg38"))){
+			spec <- "Homo sapiens"
+			genomePkg <- paste0("BSgenome.Hsapiens.UCSC.", .object@genome)
+			require(genomePkg, character.only=TRUE)
+			genomeObj <- get(genomePkg)
+		} else {
+			logger.error(c("Unsupported genome:", .object@genome))
+		}
+
+		# get the motif PWMs
+		if (is.character(motifs)){
+			if (motifs=="jaspar"){
+				motifs <- getJasparMotifs(species=spec)
+			} else {
+				logger.error(c("Unsupported motifs:", motifs))
+			}
+		}
+
+		#MAIN
+		se <- SummarizedExperiment(assays=list(counts=cm), rowRanges=coords)
+		mm <- matchMotifs(motifs, se, genome=genomeObj)
+		regionMotifMatch <- as.matrix(motifMatches(mm))
+
+		motifNames <- colData(mm)[["name"]]
+		names(motifNames) <- NULL
+		if (!any(duplicated(motifNames))){
+			colnames(regionMotifMatch) <- motifNames
+		} else {
+			motifNames <- colnames(regionMotifMatch)
+		}
+
+		res <- do.call("rbind", lapply(motifNames, FUN=function(mo){
+			# hasMotif <- regionMotifMatch[,mo]
+			# a <- sum(hasMotif & idx)
+			# b <- sum(!hasMotif & idx)
+			# c <- sum(hasMotif & !idx)
+			# d <- sum(!hasMotif & !idx)
+			# fr <- fisher.test(matrix(c(a,c,b,d), nrow=2, ncol=2), alternative="greater")
+			fr <- fisher.test(x=idx, y=regionMotifMatch[,mo], alternative="greater")
+			df <- data.frame(
+				pVal=fr$p.value,
+				oddsRatio=fr$estimate
+			)
+			return(df)
+		}))
+		rownames(res) <- motifNames
+		res[,"motif"] <- motifNames
+		res[,"qVal"] <- qvalue(res[,"pVal"])$qvalue
+
+		return(res)
+	}
+)
