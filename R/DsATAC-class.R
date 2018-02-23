@@ -605,7 +605,6 @@ setMethod("getMotifEnrichment",
 		idx,
 		motifs="jaspar"
 	) {
-		require(motifmatchr)
 		require(qvalue)
 		res <- NULL
 		#count matrix
@@ -629,35 +628,11 @@ setMethod("getMotifEnrichment",
 			logger.error(c("Could not get motif enrichment: invalid index vector"))
 		}
 
-		# get the species name and the genome sequence object based on the object
-		spec <- NULL
-		genomeObj <- NULL
-		if (is.element(.object@genome, c("mm9", "mm10"))){
-			spec <- "Mus musculus"
-			genomePkg <- paste0("BSgenome.Mmusculus.UCSC.", .object@genome)
-			require(genomePkg, character.only=TRUE)
-			genomeObj <- get(genomePkg)
-		} else if (is.element(.object@genome, c("hg18", "hg19", "hg38"))){
-			spec <- "Homo sapiens"
-			genomePkg <- paste0("BSgenome.Hsapiens.UCSC.", .object@genome)
-			require(genomePkg, character.only=TRUE)
-			genomeObj <- get(genomePkg)
-		} else {
-			logger.error(c("Unsupported genome:", .object@genome))
-		}
-
-		# get the motif PWMs
-		if (is.character(motifs)){
-			if (motifs=="jaspar"){
-				motifs <- getJasparMotifs(species=spec)
-			} else {
-				logger.error(c("Unsupported motifs:", motifs))
-			}
-		}
-
+		# for motifmatchr
+		mmObjs <- prepareMotifmatchr(.object@genome, motifs)
 		#MAIN
 		se <- SummarizedExperiment(assays=list(counts=cm), rowRanges=coords)
-		mm <- matchMotifs(motifs, se, genome=genomeObj)
+		mm <- matchMotifs(mmObjs[["motifs"]], se, genome=mmObjs[["genome"]])
 		regionMotifMatch <- as.matrix(motifMatches(mm))
 
 		motifNames <- colData(mm)[["name"]]
