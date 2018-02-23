@@ -58,6 +58,7 @@ prepareMotifmatchr <- function(genome, motifs){
 	# get the motif PWMs
 	if (is.character(motifs)){
 		if (motifs=="jaspar"){
+			require(chromVAR)
 			motifs <- getJasparMotifs(species=spec)
 		} else {
 			logger.error(c("Unsupported motifs:", motifs))
