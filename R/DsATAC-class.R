@@ -581,12 +581,12 @@ if (!isGeneric("getMotifEnrichment")) {
 #' Fisher's Exact Test is employed to test the association of motif present in the
 #' query set against the background of all regions of that type covered in the object
 #'
-#' @param .object     \code{\linkS4class{DsATAC}} object
-#' @param type        character string specifying the region type
-#' @param idx         logical vector or indices of the same length as \code{length(getCoord(.object))}
-#'                    specifies the query set
-#' @param motifs      either a character string (currently only "jaspar" is supported) or an object containing PWMs
-#'                    that can be used by \code{motifmatchr::matchMotifs} (such as an \code{PFMatrixList} object)
+#' @param .object    \code{\linkS4class{DsATAC}} object
+#' @param type       character string specifying the region type
+#' @param idx        logical vector or indices of the same length as \code{length(getCoord(.object))}
+#'                   specifies the query set
+#' @param motifs     either a character string (currently only "jaspar" and sets contained in \code{chromVARmotifs} ("homer", "encode", "cisbp") are supported) or an object containing PWMs
+#'                   that can be used by \code{motifmatchr::matchMotifs} (such as an \code{PFMatrixList} or \code{PWMatrixList} object)
 #' @return a \code{data.frame} summarizing Fisher's Exact Test enrichment statistics for each motif
 #' 
 #' @rdname getMotifEnrichment-DsATAC-method
