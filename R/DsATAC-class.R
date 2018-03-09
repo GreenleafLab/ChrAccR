@@ -22,7 +22,8 @@
 #' @exportClass DsATAC
 setClass("DsATAC",
 	slots = list(
-		counts = "list"
+		counts = "list",
+		countTransform = "list"
 	),
 	contains = "DsAcc",
 	package = "ChrAccR"
@@ -37,6 +38,8 @@ setMethod("initialize","DsATAC",
 	) {
 		.Object@coord       <- coord
 		.Object@counts      <- counts
+		.Object@countTransform <- rep(list(character(0)), length(.Object@counts))
+		names(.Object@countTransform) <- names(.Object@counts)
 		.Object@sampleAnnot <- sampleAnnot
 		.Object@genome      <- genome
 		.Object
@@ -236,6 +239,7 @@ setMethod("regionAggregation",
 			.object@counts[[type]][[i]] <- emptyVec
 		}
 		colnames(.object@counts[[type]]) <- getSamples(.object)
+		.object@countTransform[[type]] <- character(0)
 
 		#Aggregate count signal
 		if (!is.null(signal) && is.element(aggrFun, c("sum", "mean", "median"))){
@@ -320,7 +324,8 @@ setMethod("addCountDataFromBam",
 			logger.status(c("Counting reads in region set:", rt))
 			gr <- getCoord(.object, rt)
 			ov.rse <- summarizeOverlaps(gr, fns, mode="Union", ignore.strand=TRUE, inter.feature=FALSE, preprocess.reads=ResizeReads)
-			.object@counts[[rt]][,sids] <- assays(ov.rse)$count 
+			.object@counts[[rt]][,sids] <- assays(ov.rse)$count
+			.object@countTransform[[rt]] <- character(0)
 		}
 
 		return(.object)
@@ -454,35 +459,35 @@ setMethod("removeRegions",
 	}
 )
 #-------------------------------------------------------------------------------
-if (!isGeneric("normalizeCounts")) {
+if (!isGeneric("transformCounts")) {
 	setGeneric(
-		"normalizeCounts",
-		function(.object, ...) standardGeneric("normalizeCounts"),
+		"transformCounts",
+		function(.object, ...) standardGeneric("transformCounts"),
 		signature=c(".object")
 	)
 }
-#' normalizeCounts-methods
+#' transformCounts-methods
 #'
-#' Normalize methylation levels
+#' transform count data for an ATAC seq dataset
 #'
 #' @param .object \code{\linkS4class{DsATAC}} object
-#' @param method  normalization method to be applied. Currently only 'quantile' is supported
+#' @param method  transformation method to be applied. Currently only 'log2', 'quantile' (quantile normalization) and 'RPKM' (RPKM normalization) are supported
 #' @param regionTypes character vector specifying a name for the region type in which count data should be normalized(default: all region types)
 #' @return a new \code{\linkS4class{DsATAC}} object with normalized count data
 #' 
-#' @rdname normalizeCounts-DsATAC-method
+#' @rdname transformCounts-DsATAC-method
 #' @docType methods
-#' @aliases normalizeCounts
-#' @aliases normalizeCounts,DsATAC-method
+#' @aliases transformCounts
+#' @aliases transformCounts,DsATAC-method
 #' @author Fabian Mueller
 #' @export
-setMethod("normalizeCounts",
+setMethod("transformCounts",
 	signature(
 		.object="DsATAC"
 	),
 	function(
 		.object,
-		method="quantile",
+		method="quantileNorm",
 		regionTypes=getRegionTypes(.object)
 	) {
 		if (!all(regionTypes %in% getRegionTypes(.object))){
@@ -498,6 +503,28 @@ setMethod("normalizeCounts",
 					cnames <- colnames(.object@counts[[rt]])
 					.object@counts[[rt]] <- data.table(normalize.quantiles(as.matrix(.object@counts[[rt]])))
 					colnames(.object@counts[[rt]]) <- cnames
+					.object@countTransform[[rt]] <- c("quantileNorm", .object@countTransform[[rt]])
+				}
+			logger.completed()
+		} else if (method == "RPKM"){
+			logger.start(c("Performing RPKM normalization"))
+				for (rt in regionTypes){
+					logger.status(c("Region type:", rt))
+					cnames <- colnames(.object@counts[[rt]])
+					cm <- as.matrix(.object@counts[[rt]])
+					regLen <- width(getCoord(.object, rt))
+					sizeFac <- matrix(colSums(cm, na.rm=TRUE), ncol=ncol(cm), nrow=nrow(cm), byrow=TRUE)
+					.object@counts[[rt]] <- data.table(cm/(regLen * sizeFac) * 1e3 * 1e6)
+					colnames(.object@counts[[rt]]) <- cnames
+					.object@countTransform[[rt]] <- c("RPKM", .object@countTransform[[rt]])
+				}
+			logger.completed()
+		} else if (method == "log2"){
+			logger.start(c("log2 transforming counts"))
+				for (rt in regionTypes){
+					logger.status(c("Region type:", rt))
+					.object@counts[[rt]] <- log2(.object@counts[[rt]])
+					.object@countTransform[[rt]] <- c("log2", .object@countTransform[[rt]])
 				}
 			logger.completed()
 		}
