@@ -546,7 +546,7 @@ if (!isGeneric("filterLowCovg")) {
 #' @param .object     \code{\linkS4class{DsATAC}} object
 #' @param thresh      regions with read counts below this threshold will be considered lowly covered regions (default: regions with fewer than 1 read will be discarded)
 #' @param reqSamples  the percentile of samples required to meet or exceed the threshold in order for a region to be retained.
-#'                    must be in the interval [0, 1) (default: 0.75 - 75%)
+#'                    must be in the interval [0, 1) (default: 0.75 = 75 percent)
 #' @param regionTypes character vector specifying the names of the region types to which filtering should be applied (default: all region types)
 #' @return a new \code{\linkS4class{DsATAC}} object with low coverage regions removed
 #' 
