@@ -238,11 +238,11 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 		#remove overlapping peaks in each sample based on their normalized scores
 		peakSet.cur <- getNonOverlappingByScore(peakSet.cur, scoreCol="score_norm")
 		#add coverage info for all samples
-		elementMetadata(rr)[,paste0(".cov.", sampleIds)] <- FALSE # as.logical(NA)
+		elementMetadata(peakSet.cur)[,paste0(".cov.", sampleIds)] <- FALSE # as.logical(NA)
 
 		if (is.null(res)){
 			#initialize peak set with all peaks from the first sample
-			elementMetadata(rr)[,paste0(".cov.", sid)] <- TRUE
+			elementMetadata(peakSet.cur)[,paste0(".cov.", sid)] <- TRUE
 			res <- peakSet.cur
 		} else {
 			# add new peaks and remove the overlapping ones by taking the peaks with the best score
