@@ -195,6 +195,9 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 	if (!is.element(type, c("summits_no_fw"))){
 		logger.error(c("Unsupported import type:", type))
 	}
+	if (replicatePercReq > 1 || replicatePercReq < 0){
+		logger.error(c("Invalid value for replicatePercReq. Must be in [0,1]"))
+	}
 
 	sampleIds <- as.character(sampleAnnot[,sampleIdCol])
 	rownames(sampleAnnot) <- sampleIds
@@ -252,23 +255,21 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 		}
 	}
 
-	if (is.element(replicateCol, colnames(sampleAnnot))){
+	if (is.element(replicateCol, colnames(sampleAnnot)) && replicatePercReq>0){
 		logger.start("Accounting for peak reproducibility across replicates")
 			groupF <- factor(sampleAnnot[,replicateCol])
 			gRepMat <- matrix(as.logical(NA), nrow=length(res), ncol=nlevels(groupF))
 			colnames(gRepMat) <- levels(groupF)
 			for (gg in levels(groupF)){
-				logger.start(c("Replicate group:", gg))
-					sidsRepl <- sampleIds[groupF==gg]
-					ovMat <- as.matrix(elementMetadata(res)[,paste0(".cov.", sidsRepl)])
-					nReq <- as.integer(ceiling(replicatePercReq * length(sidsRepl)))
-					gRepMat[,gg] <- rowSums(ovMat) >= nReq
-				logger.completed()
+				sidsRepl <- sampleIds[groupF==gg]
+				ovMat <- as.matrix(elementMetadata(res)[,paste0(".cov.", sidsRepl)])
+				nReq <- as.integer(ceiling(replicatePercReq * length(sidsRepl)))
+				gRepMat[,gg] <- rowSums(ovMat) >= nReq
 			}
 			keep <- rowAnys(gRepMat)
 			nTotal <- length(res)
 			nRem <- nTotal - sum(keep)
-			logger.info(c("Removed", nRem, "of", nTotal, "peaks", paste0("(",round(nRem/nTotal*100, 2),"%)", "because they were not reproduced in any replicate group")))
+			logger.info(c("Removed", nRem, "of", nTotal, "peaks", paste0("(",round(nRem/nTotal*100, 2),"%)"), "because they were not reproduced by more than", round(replicatePercReq*100, 2), "% of samples in any replicate group"))
 			res <- res[keep]
 		logger.completed()
 	}
