@@ -118,57 +118,58 @@ getNonOverlappingByScore <- function(gr, scoreCol="score"){
 	return(res)
 }
 #-------------------------------------------------------------------------------
-#' filterUnreplicatedRegions
-#' 
-#' Remove regions that are not covered in a sufficient number of members
-#' @param grl          \code{GRangesList} object containing one element for each group member
-#' @param percReq      percentile required to keep it.
-#'                     E.g. a value of 1 (default) means that all members of a group are required to contain that region in order
-#'                     to keep it.
-#' @return \code{GRangesList} object with regions with insufficient coverage removed
-#' @author Fabian Mueller
-#' @noRd
-filterUnreplicatedRegions <- function(grl, percReq=1.0){
-	nReq <- as.integer(ceiling(percReq * length(grl)))
-	grlu <- unlist(grl, use.names=FALSE)
-	elementMetadata(grlu)[,".sIdx"] <- as.integer(NA) # add a column with the sample index
-	elementMetadata(grlu)[,".rIdx"] <- as.integer(NA) # add a column with the region index
-	grl <- relist(grlu, grl)
-	for (i in seq_along(grl)){
-		elementMetadata(grl[[i]])[,".sIdx"] <- i 
-		elementMetadata(grl[[i]])[,".rIdx"] <- seq_along(grl[[i]]) 
-	}
-	gr <- unlist(grl)
-	grm <- reduce(gr, min.gapwidth=0L, with.revmap=TRUE, ignore.strand=TRUE) #merge overlapping regions
-	revmap <- mcols(grm)$revmap
-	# gr.relist <- relist(gr[unlist(revmap)], revmap)
+# #' filterUnreplicatedRegions
+# #' 
+# #' Remove regions that are not covered in a sufficient number of members
+# #' @param grl          \code{GRangesList} object containing one element for each group member
+# #' @param percReq      percentile required to keep it.
+# #'                     E.g. a value of 1 (default) means that all members of a group are required to contain that region in order
+# #'                     to keep it.
+# #' @return \code{GRangesList} object with regions with insufficient coverage removed
+# #' @author Fabian Mueller
+# #' @noRd
+# filterUnreplicatedRegions <- function(grl, percReq=1.0){
+# 	nReq <- as.integer(ceiling(percReq * length(grl)))
+# 	grlu <- unlist(grl, use.names=FALSE)
+# 	elementMetadata(grlu)[,".sIdx"] <- as.integer(NA) # add a column with the sample index
+# 	elementMetadata(grlu)[,".rIdx"] <- as.integer(NA) # add a column with the region index
+# 	grl <- relist(grlu, grl)
+# 	rm(grlu)
+# 	for (i in seq_along(grl)){
+# 		elementMetadata(grl[[i]])[,".sIdx"] <- i 
+# 		elementMetadata(grl[[i]])[,".rIdx"] <- seq_along(grl[[i]]) 
+# 	}
+# 	gr <- unlist(grl)
+# 	grm <- reduce(gr, min.gapwidth=0L, with.revmap=TRUE, ignore.strand=TRUE) #merge overlapping regions
+# 	revmap <- mcols(grm)$revmap
+# 	# gr.relist <- relist(gr[unlist(revmap)], revmap)
 
-	sidxL <- relist(mcols(gr)[unlist(revmap), ".sIdx"], revmap) # list of sample indices per merged region
-	keepm <- sapply(sidxL, FUN=function(x){
-		res <- length(unique(unlist(x))) >= nReq
-		return(res)
-	})
-	nClusters <- length(sidxL)
-	nFiltered <- sum(!keepm)
-	logger.info(c("Removed", nFiltered, "of", nClusters, paste0("(", round(nFiltered/nClusters*100, 2), "%)"), "region clusters covered less than", nReq, "times"))
-	grm <- grm[keepm]
-	idx.all <- sort(unique(unlist(mcols(grm)$revmap))) #vector of all indices
-	gr <- gr[idx.all] # keep only regions which are in the filtered clusters
+# 	sidxL <- relist(mcols(gr)[unlist(revmap), ".sIdx"], revmap) # list of sample indices per merged region
+# 	keepm <- sapply(sidxL, FUN=function(x){
+# 		res <- length(unique(unlist(x))) >= nReq
+# 		return(res)
+# 	})
+# 	nClusters <- length(sidxL)
+# 	nFiltered <- sum(!keepm)
+# 	logger.info(c("Removed", nFiltered, "of", nClusters, paste0("(", round(nFiltered/nClusters*100, 2), "%)"), "region clusters covered less than", nReq, "times"))
+# 	grm <- grm[keepm]
+# 	idx.all <- sort(unique(unlist(mcols(grm)$revmap))) #vector of all indices
+# 	gr <- gr[idx.all] # keep only regions which are in the filtered clusters
 
-	# map filtered regions back to the original indices in the input GRangesList
-	for (i in seq_along(grl)) {
-		keep.region.idx <- sort(elementMetadata(gr)[elementMetadata(gr)[,".sIdx"]==i, ".rIdx"])
-		grl[[i]] <- grl[[i]][keep.region.idx]
-	}
+# 	# map filtered regions back to the original indices in the input GRangesList
+# 	for (i in seq_along(grl)) {
+# 		keep.region.idx <- sort(elementMetadata(gr)[elementMetadata(gr)[,".sIdx"]==i, ".rIdx"])
+# 		grl[[i]] <- grl[[i]][keep.region.idx]
+# 	}
 
-	#remove the added columns
-	grlu <- unlist(grl, use.names=FALSE)
-	elementMetadata(grlu)[,".sIdx"] <- NULL
-	elementMetadata(grlu)[,".rIdx"] <- NULL
-	grl <- relist(grlu, grl)
+# 	#remove the added columns
+# 	grlu <- unlist(grl, use.names=FALSE)
+# 	elementMetadata(grlu)[,".sIdx"] <- NULL
+# 	elementMetadata(grlu)[,".rIdx"] <- NULL
+# 	grl <- relist(grlu, grl)
 
-	return(grl)
-}
+# 	return(grl)
+# }
 #-------------------------------------------------------------------------------
 #' getPeakSet.snakeATAC
 #' 
@@ -210,47 +211,66 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 		logger.error(c("Missing input files for samples:", paste(missingSamples, collapse=", ")))
 	}
 
+	peakFun <- NULL
 	res <- NULL
 	if (type=="summits_no_fw"){
-		grl <- list()
-		for (sid in sampleIds){
-			logger.status(c("Reading peak summits from sample:", sid))
-			fn <- inputFns[sid]
-			gr.cur <- import(fn, format="BED")
-			gr.cur <- setGenomeProps(gr.cur, genome)
-			gr.cur <- gr.cur[isCanonicalChrom(as.character(seqnames(gr.cur)))]
+		peakFun <- function(fn){
+			rr <- import(fn, format="BED")
+			rr <- setGenomeProps(rr, genome)
+			rr <- rr[isCanonicalChrom(as.character(seqnames(rr)))]
 			# scale scores to their percentiles
-			scs <- elementMetadata(gr.cur)[,"score"]
-			elementMetadata(gr.cur)[,"score_norm"] <- ecdf(scs)(scs)
-			elementMetadata(gr.cur)[,"sampleId"] <- sid
+			scs <- elementMetadata(rr)[,"score"]
+			elementMetadata(rr)[,"score_norm"] <- ecdf(scs)(scs)
+			elementMetadata(rr)[,"sampleId"] <- sid
 			#extend peaks around the summit
-			gr.cur <- trim(promoters(gr.cur, upstream=ceiling(unifWidth/2), downstream=ceiling(unifWidth/2)+1)) #extend each summit on each side by half the width
-			gr.cur <- gr.cur[width(gr.cur)==median(width(gr.cur))] #remove too short regions which might have been trimmed
-			# #remove overlapping peaks in each sample based on their normalized scores
-			# gr.cur <- getNonOverlappingByScore(gr.cur, scoreCol="score_norm")
-			grl[[sid]] <- gr.cur
+			rr <- trim(promoters(rr, upstream=ceiling(unifWidth/2), downstream=ceiling(unifWidth/2)+1)) #extend each summit on each side by half the width
+			rr <- rr[width(rr)==median(width(rr))] #remove too short regions which might have been trimmed
+			return(rr)
 		}
-		grl <- GRangesList(grl)
-		if (is.element(replicateCol, colnames(sampleAnnot))){
-			logger.start("Accounting for coverage across replicates")
-				groupF <- factor(sampleAnnot[,replicateCol])
-				for (gg in levels(groupF)){
-					logger.start(c("Replicate group:", gg))
-						sidsRepl <- sampleIds[groupF==gg]
-						grl[sidsRepl] <- filterUnreplicatedRegions(grl[sidsRepl], replicatePercReq)
-					logger.completed()
-				}
-			logger.completed()
-		}
-
-		gr <- unlist(grl)
-
-		logger.start("Retrieving consensus peaks")
-		res <- getNonOverlappingByScore(gr, scoreCol="score_norm")
-		logger.completed()
-		#sort
-		res <- sortSeqlevels(res)
-		res <- sort(res)
 	}
+
+	for (sid in sampleIds){
+		logger.status(c("Reading peak summits from sample:", sid))
+		peakSet.cur <- peakFun(inputFns[sid])
+		#remove overlapping peaks in each sample based on their normalized scores
+		peakSet.cur <- getNonOverlappingByScore(peakSet.cur, scoreCol="score_norm")
+		#add coverage info for all samples
+		elementMetadata(rr)[,paste0(".cov.", sampleIds)] <- FALSE # as.logical(NA)
+
+		if (is.null(res)){
+			#initialize peak set with all peaks from the first sample
+			elementMetadata(rr)[,paste0(".cov.", sid)] <- TRUE
+			res <- peakSet.cur
+		} else {
+			# add new peaks and remove the overlapping ones by taking the peaks with the best score
+			res <- getNonOverlappingByScore(c(res, peakSet.cur), scoreCol="score_norm")
+			elementMetadata(res)[,paste0(".cov.", sid)] <- overlapsAny(res, peakSet.cur, ignore.strand=TRUE)
+		}
+	}
+
+	if (is.element(replicateCol, colnames(sampleAnnot))){
+		logger.start("Accounting for peak reproducibility across replicates")
+			groupF <- factor(sampleAnnot[,replicateCol])
+			gRepMat <- matrix(as.logical(NA), nrow=length(res), ncol=nlevels(groupF))
+			colnames(gRepMat) <- levels(groupF)
+			for (gg in levels(groupF)){
+				logger.start(c("Replicate group:", gg))
+					sidsRepl <- sampleIds[groupF==gg]
+					ovMat <- as.matrix(elementMetadata(res)[,paste0(".cov.", sidsRepl)])
+					nReq <- as.integer(ceiling(replicatePercReq * length(sidsRepl)))
+					gRepMat[,gg] <- rowSums(ovMat) >= nReq
+				logger.completed()
+			}
+			keep <- rowAnys(gRepMat)
+			nTotal <- length(res)
+			nRem <- nTotal - sum(keep)
+			logger.info(c("Removed", nRem, "of", nTotal, "peaks", paste0("(",round(nRem/nTotal*100, 2),"%)", "because they were not reproduced in any replicate group")))
+			res <- res[keep]
+		logger.completed()
+	}
+
+	#sort
+	res <- sortSeqlevels(res)
+	res <- sort(res)
 	return(res)
 }
