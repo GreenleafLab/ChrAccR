@@ -71,7 +71,8 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, region
 			for (sid in sampleIds){
 				logger.status(c("Importing sample:", sid))
 				fn <- inputFns[sid]
-				grl <- GRangesList(import(fn, format = "BED", genome=genome))
+				grl <- GRangesList(import(fn, format = "BED"))
+				grl[[1]] <- setGenomeProps(grl[[1]], genome)
 				names(grl) <- sid
 				obj <- addCountDataFromGRL(obj, grl)
 				rm(grl)
