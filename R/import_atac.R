@@ -106,8 +106,11 @@ getNonOverlappingByScore <- function(gr, scoreCol="score"){
 		# logger.status(c("iteration", i)) #DEBUG
 		scs <- elementMetadata(gr.rem)[,scoreCol]
 		gr.merged <- reduce(gr.rem, min.gapwidth=0L, with.revmap=TRUE, ignore.strand=TRUE)
-		maxScoreIdx <- sapply(gr.merged, FUN=function(x){
-			idx <- elementMetadata(x)[,"revmap"][[1]]
+		# maxScoreIdx <- sapply(gr.merged, FUN=function(x){
+		# 	idx <- elementMetadata(x)[,"revmap"][[1]]
+		# 	return(idx[which.max(scs[idx])])
+		# }) #too slow
+		maxScoreIdx <- sapply(elementMetadata(gr.merged)[,"revmap"], FUN=function(idx){
 			return(idx[which.max(scs[idx])])
 		})
 		bait <- gr.rem[maxScoreIdx]
