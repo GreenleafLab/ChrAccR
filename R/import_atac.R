@@ -274,7 +274,7 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 	}
 	#remove the helper columns
 	for (sid in sampleIds){
-		elementMetadata(grlu)[,paste0(".cov.", sid)] <- NULL
+		elementMetadata(res)[,paste0(".cov.", sid)] <- NULL
 	}
 	#sort
 	res <- sortSeqlevels(res)
