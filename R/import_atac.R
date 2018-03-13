@@ -215,7 +215,8 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 		for (sid in sampleIds){
 			logger.status(c("Reading peak summits from sample:", sid))
 			fn <- inputFns[sid]
-			gr.cur <- import(fn, format="BED", genome=genome)
+			gr.cur <- import(fn, format="BED")
+			gr.cur <- setGenomeProps(gr.cur, genome, stripChrFromGenome=TRUE)
 			gr.cur <- gr.cur[isCanonicalChrom(as.character(seqnames(gr.cur)))]
 			# scale scores to their percentiles
 			scs <- elementMetadata(gr.cur)[,"score"]
