@@ -116,7 +116,7 @@ getNonOverlappingByScore <- function(gr, scoreCol="score"){
 		bait <- gr.rem[maxScoreIdx]
 		res <- c(res, bait)
 		gr.rem <- gr.rem[!overlapsAny(gr.rem, bait, ignore.strand=TRUE)]
-		logger.info(c(length(gr.rem), "regions left")) #DEBUG
+		# logger.info(c(length(gr.rem), "regions left")) #DEBUG
 	}
 	return(res)
 }
@@ -235,12 +235,13 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 	for (sid in sampleIds){
 		logger.status(c("Reading peak summits from sample:", sid))
 		peakSet.cur <- peakFun(inputFns[sid])
-		#remove overlapping peaks in each sample based on their normalized scores
-		peakSet.cur <- getNonOverlappingByScore(peakSet.cur, scoreCol="score_norm")
+		
 		#add coverage info for all samples
 		elementMetadata(peakSet.cur)[,paste0(".cov.", sampleIds)] <- FALSE # as.logical(NA)
 
 		if (is.null(res)){
+			#remove overlapping peaks in initial sample based on normalized scores
+			peakSet.cur <- getNonOverlappingByScore(peakSet.cur, scoreCol="score_norm")
 			#initialize peak set with all peaks from the first sample
 			elementMetadata(peakSet.cur)[,paste0(".cov.", sid)] <- TRUE
 			res <- peakSet.cur
@@ -271,7 +272,10 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 			res <- res[keep]
 		logger.completed()
 	}
-
+	#remove the helper columns
+	for (sid in sampleIds){
+		elementMetadata(grlu)[,paste0(".cov.", sid)] <- NULL
+	}
 	#sort
 	res <- sortSeqlevels(res)
 	res <- sort(res)
