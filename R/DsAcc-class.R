@@ -31,7 +31,7 @@ setClass("DsAcc",
 		coord       = "list",
 		sampleAnnot = "data.frame",
 		genome      = "character",
-		pkgVersion  = "character"
+		pkgVersion  = "ANY"
 	),
 	package = "ChrAccR"
 )
