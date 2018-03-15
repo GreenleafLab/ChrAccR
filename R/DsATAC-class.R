@@ -511,6 +511,7 @@ setMethod("addInsertionDataFromBam",
 				} else {
 					ga <- readGAlignments(fns[sid], use.names=FALSE)
 				}
+				ga <- setGenomeProps(ga, .object@genome, onlyMainChrs=TRUE)
 				.object@insertions[[sid]] <- getATACinsertion(ga, offsetTn=TRUE)
 			logger.completed()
 		}
