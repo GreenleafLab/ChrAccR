@@ -6,7 +6,7 @@
 \usage{
 DsATAC.snakeATAC(sampleAnnot, filePrefixCol, genome, dataDir,
   regionSets = NULL, sampleIdCol = filePrefixCol, type = "insBed",
-  pairedEnd = TRUE)
+  keepInsertionInfo = TRUE, pairedEnd = TRUE)
 }
 \arguments{
 \item{sampleAnnot}{data.frame specifying the sample annotation table}
@@ -23,7 +23,9 @@ DsATAC.snakeATAC(sampleAnnot, filePrefixCol, genome, dataDir,
 
 \item{type}{input data type. Currently only "insBed" (insertion beds) and "bam" (aligned reads) are supported}
 
-\item{pairedEnd}{is the input data paired-end? Only relevant when \code{type=="insBam"}}
+\item{keepInsertionInfo}{flag indicating whether to maintain the insertion information in the resulting object. Only relevant when \code{type=="insBam"}.}
+
+\item{pairedEnd}{is the input data paired-end? Only relevant when \code{type=="insBam"}.}
 }
 \value{
 \code{\linkS4class{DsATAC}} object

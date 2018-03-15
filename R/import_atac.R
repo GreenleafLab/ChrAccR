@@ -9,11 +9,12 @@
 #' @param regionSets   a list of GRanges objects which contain region sets over which count data will be aggregated
 #' @param sampleIdCol  column name or index in the sample annotation table containing unique sample identifiers
 #' @param type         input data type. Currently only "insBed" (insertion beds) and "bam" (aligned reads) are supported
-#' @param pairedEnd    is the input data paired-end? Only relevant when \code{type=="insBam"}
+#' @param keepInsertionInfo flag indicating whether to maintain the insertion information in the resulting object. Only relevant when \code{type=="insBam"}.
+#' @param pairedEnd    is the input data paired-end? Only relevant when \code{type=="insBam"}.
 #' @return \code{\linkS4class{DsATAC}} object
 #' @author Fabian Mueller
 #' @export
-DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, regionSets=NULL, sampleIdCol=filePrefixCol, type="insBed", pairedEnd=TRUE){
+DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, regionSets=NULL, sampleIdCol=filePrefixCol, type="insBed", keepInsertionInfo=TRUE, pairedEnd=TRUE){
 	if (!is.element(type, c("bam", "insBam", "insBed"))){
 		logger.error(c("Unsupported import type:", type))
 	}
@@ -76,6 +77,10 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, region
 			logger.start(c("Summarizing region counts"))
 				obj <- addCountDataFromGRL(obj, getInsertionSites(obj))
 			logger.completed()
+			# optionally remove insertion information to save space
+			if (!keepInsertionInfo){
+				obj@insertions <- list()
+			}
 		} else if (type=="insBed"){
 			for (i in seq_along(sampleIds)){
 				sid <- sampleIds[i]
