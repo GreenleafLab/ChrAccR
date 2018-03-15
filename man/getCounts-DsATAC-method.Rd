@@ -6,7 +6,7 @@
 \alias{getCounts}
 \title{getCounts-methods}
 \usage{
-\S4method{getCounts}{DsATAC}(.object, type, asMatrix = FALSE)
+\S4method{getCounts}{DsATAC}(.object, type, asMatrix = TRUE)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}

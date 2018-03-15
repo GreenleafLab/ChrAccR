@@ -5,7 +5,8 @@
 \title{DsATAC.snakeATAC}
 \usage{
 DsATAC.snakeATAC(sampleAnnot, filePrefixCol, genome, dataDir,
-  regionSets = NULL, sampleIdCol = filePrefixCol, type = "insBed")
+  regionSets = NULL, sampleIdCol = filePrefixCol, type = "insBed",
+  pairedEnd = TRUE)
 }
 \arguments{
 \item{sampleAnnot}{data.frame specifying the sample annotation table}
@@ -21,6 +22,8 @@ DsATAC.snakeATAC(sampleAnnot, filePrefixCol, genome, dataDir,
 \item{sampleIdCol}{column name or index in the sample annotation table containing unique sample identifiers}
 
 \item{type}{input data type. Currently only "insBed" (insertion beds) and "bam" (aligned reads) are supported}
+
+\item{pairedEnd}{is the input data paired-end? Only relevant when \code{type=="insBam"}}
 }
 \value{
 \code{\linkS4class{DsATAC}} object

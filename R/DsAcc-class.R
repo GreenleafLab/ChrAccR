@@ -30,7 +30,8 @@ setClass("DsAcc",
 	slots = list(
 		coord       = "list",
 		sampleAnnot = "data.frame",
-		genome      = "character"
+		genome      = "character",
+		pkgVersion  = "character"
 	),
 	package = "ChrAccR"
 )
@@ -44,6 +45,7 @@ setMethod("initialize","DsAcc",
 		.Object@coord       <- coord
 		.Object@sampleAnnot <- sampleAnnot
 		.Object@genome      <- genome
+		.Object@pkgVersion  <- packageVersion("ChrAccR")
 		.Object
 	}
 )

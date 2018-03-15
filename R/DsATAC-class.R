@@ -22,6 +22,7 @@
 #' @exportClass DsATAC
 setClass("DsATAC",
 	slots = list(
+		insertions = "list",
 		counts = "list",
 		countTransform = "list"
 	),
@@ -31,17 +32,20 @@ setClass("DsATAC",
 setMethod("initialize","DsATAC",
 	function(
 		.Object,
+		insertions,
 		coord,
 		counts,
 		sampleAnnot,
 		genome
 	) {
+		.Object@insertions  <- insertions
 		.Object@coord       <- coord
 		.Object@counts      <- counts
 		.Object@countTransform <- rep(list(character(0)), length(.Object@counts))
 		names(.Object@countTransform) <- names(.Object@counts)
 		.Object@sampleAnnot <- sampleAnnot
 		.Object@genome      <- genome
+		.Object@pkgVersion  <- packageVersion("ChrAccR")
 		.Object
 	}
 )
@@ -51,6 +55,7 @@ setMethod("initialize","DsATAC",
 #' @noRd
 DsATAC <- function(sampleAnnot, genome){
 	obj <- new("DsATAC",
+		list(),
 		list(),
 		list(),
 		sampleAnnot,
@@ -92,12 +97,72 @@ setMethod("getCounts",
 	function(
 		.object,
 		type,
-		asMatrix=FALSE
+		asMatrix=TRUE
 	) {
 		if (!is.element(type, getRegionTypes(.object))) logger.error(c("Unsupported region type:", type))
 		res <- .object@counts[[type]]
 		if (asMatrix) res <- as.matrix(res)
 		return(res)
+	}
+)
+#-------------------------------------------------------------------------------
+if (!isGeneric("getInsertionSites")) {
+	setGeneric(
+		"getInsertionSites",
+		function(.object, ...) standardGeneric("getInsertionSites"),
+		signature=c(".object")
+	)
+}
+#' getInsertionSites-methods
+#'
+#' Return a list of insertion sites (Tn5 cut sites) for each sample
+#'
+#' @param .object \code{\linkS4class{DsATAC}} object
+#' @param samples sample identifiers
+#' @return \code{GRangesList} containing Tn5 cut sites for each sample
+#'
+#' @rdname getInsertionSites-DsATAC-method
+#' @docType methods
+#' @aliases getInsertionSites
+#' @aliases getInsertionSites,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("getInsertionSites",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		samples=getSamples(.object)
+	) {
+		if (!all(samples %in% getSamples(.object))) logger.error(c("Invalid samples:", paste(setdiff(samples, getSamples(.object)), collapse=", ")))
+		if (!all(samples %in% names(.object@insertions))) logger.error(c("Object does not contain insertion information for samples:", paste(setdiff(samples, names(.object@insertions)), collapse=", ")))
+		res <- list()
+		for (sid in samples){
+			isW <- width(.object@insertions[[sid]])>1 # the insertion site is already width=1 --> single end. For paired end-data all of these should be TRUE
+			grins <- NULL
+			if (any(!isW)){
+				grins <- .object@insertions[[sid]][isW]
+			}
+			if (all(isW)){
+				# paired-end data - default case
+				grins <- c(
+					resize(.object@insertions[[sid]], width=1, fix="start"),
+					resize(.object@insertions[[sid]], width=1, fix="end")
+				)
+			} else if (any(isW)){
+				# mixed paired-end and single-end data
+				logger.warning(c("mixed paired-end and single-end data detected for sample", sid))
+				grins <- c(
+					grins,
+					resize(.object@insertions[[sid]][isW], width=1, fix="start"),
+					resize(.object@insertions[[sid]][isW], width=1, fix="end")
+				)
+			}
+			#sort the result
+			res[[sid]] <- grins[order(as.integer(seqnames(grins)), start(grins), end(grins), as.integer(strand(grins)))]
+		}
+		return(GRangesList(res))
 	}
 )
 ################################################################################
@@ -128,47 +193,47 @@ setMethod("show","DsATAC",
 # Summary functions
 ################################################################################
 
-#-------------------------------------------------------------------------------
-if (!isGeneric("getRegionMapping")) {
-	setGeneric(
-		"getRegionMapping",
-		function(.object, ...) standardGeneric("getRegionMapping"),
-		signature=c(".object")
-	)
-}
-#' getRegionMapping-methods
-#'
-#' Retrieve a mapping from regions to GC indices in the dataset
-#'
-#' @param .object \code{\linkS4class{DsATAC}} object
-#' @param type    character string specifying a name for the region type
-#' @return list containing vectors of indices of GCs for each region of the
-#'         specified type
-#' 
-#' @rdname getRegionMapping-DsATAC-method
-#' @docType methods
-#' @aliases getRegionMapping
-#' @aliases getRegionMapping,DsATAC-method
-#' @author Fabian Mueller
-#' @export
-setMethod("getRegionMapping",
-	signature(
-		.object="DsATAC"
-	),
-	function(
-		.object,
-		type
-	) {
-		baseGr <- getCoord(.object, type="counts")
-		regGr  <- getCoord(.object, type=type)
-		oo <- findOverlaps(baseGr, regGr)
-		sl <- tapply(queryHits(oo), subjectHits(oo), c)
+# #-------------------------------------------------------------------------------
+# if (!isGeneric("getRegionMapping")) {
+# 	setGeneric(
+# 		"getRegionMapping",
+# 		function(.object, ...) standardGeneric("getRegionMapping"),
+# 		signature=c(".object")
+# 	)
+# }
+# #' getRegionMapping-methods
+# #'
+# #' Retrieve a mapping from regions to the indices of counts in the dataset
+# #'
+# #' @param .object \code{\linkS4class{DsATAC}} object
+# #' @param type    character string specifying a name for the region type
+# #' @return list containing vectors of indices of GCs for each region of the
+# #'         specified type
+# #' 
+# #' @rdname getRegionMapping-DsATAC-method
+# #' @docType methods
+# #' @aliases getRegionMapping
+# #' @aliases getRegionMapping,DsATAC-method
+# #' @author Fabian Mueller
+# #' @export
+# setMethod("getRegionMapping",
+# 	signature(
+# 		.object="DsATAC"
+# 	),
+# 	function(
+# 		.object,
+# 		type
+# 	) {
+# 		baseGr <- getCoord(.object, type="counts")
+# 		regGr  <- getCoord(.object, type=type)
+# 		oo <- findOverlaps(baseGr, regGr)
+# 		sl <- tapply(queryHits(oo), subjectHits(oo), c)
 
-		res <- rep(list(integer(0)), getNRegions(.object, type=type))
-		res[as.integer(names(sl))] <- sl
-		return(res)
-	}
-)
+# 		res <- rep(list(integer(0)), getNRegions(.object, type=type))
+# 		res[as.integer(names(sl))] <- sl
+# 		return(res)
+# 	}
+# )
 #-------------------------------------------------------------------------------
 if (!isGeneric("regionAggregation")) {
 	setGeneric(
@@ -214,7 +279,7 @@ setMethod("regionAggregation",
 			logger.error(c("Unknown signal count aggregation function:", aggrFun))
 		}
 		if (!is.null(signal)){
-			if (!is.element(signal, getRegionTypes(.object))){
+			if (!is.element(signal, c(getRegionTypes(.object)), "insertions")){
 				logger.error(c("invalid signal region type", signal))
 			}
 			if (type==signal){
@@ -241,9 +306,11 @@ setMethod("regionAggregation",
 		colnames(.object@counts[[type]]) <- getSamples(.object)
 		.object@countTransform[[type]] <- character(0)
 
-		#Aggregate count signal
-		if (!is.null(signal) && is.element(aggrFun, c("sum", "mean", "median"))){
-			signalGr <- getCoord(.object, "signal")
+		#Aggregate signal
+		doAggr <- FALSE
+		if (!is.null(signal) && !is.element(signal, c("insertions")) && is.element(aggrFun, c("sum", "mean", "median"))){
+			doAggr <- TRUE
+			signalGr <- getCoord(.object, signal)
 			if (genome(regGr)[1]!=genome(signalGr)[1]){
 				logger.warning(c("Potentially incompatible genome assemblies (object:", genome(signalGr)[1], ", regGr:", genome(regGr)[1], ")"))
 			}
@@ -262,7 +329,14 @@ setMethod("regionAggregation",
 			}
 			.object@counts[[type]][rr[["mergedIndex"]],] <- rr[,!"mergedIndex"]
 			rm(dtC, rr); cleanMem() #clean-up
-
+		}
+		if (!is.null(signal) && signal=="insertions"){
+			doAggr <- TRUE
+			for (sid in getSamples(.object)){
+				.object@counts[[type]][,sid] <- countOverlaps(regGr, getInsertionSites(.object, samples=sid)[[1]], ignore.strand=TRUE)			
+			}
+		}
+		if (doAggr){
 			logger.info(c("Aggregated signal counts across", nrow(.object@counts[[type]]), "regions"))
 			rows2keep <- rowAnys(!is.na(.object@counts[[type]]))
 			logger.info(c("  of which", sum(rows2keep), "regions contained signal counts"))
@@ -297,6 +371,7 @@ if (!isGeneric("addCountDataFromBam")) {
 #' @aliases addCountDataFromBam
 #' @aliases addCountDataFromBam,DsATAC-method
 #' @author Fabian Mueller
+#' @noRd
 setMethod("addCountDataFromBam",
 	signature(
 		.object="DsATAC"
@@ -356,6 +431,7 @@ if (!isGeneric("addCountDataFromGRL")) {
 #' @aliases addCountDataFromGRL
 #' @aliases addCountDataFromGRL,DsATAC-method
 #' @author Fabian Mueller
+#' @noRd
 setMethod("addCountDataFromGRL",
 	signature(
 		.object="DsATAC"
@@ -379,6 +455,64 @@ setMethod("addCountDataFromGRL",
 				gr.c <- grl[[sid]]
 				.object@counts[[rt]][,sid] <- countOverlaps(gr.ds, gr.c, ignore.strand=TRUE)
 			}
+		}
+
+		return(.object)
+	}
+)
+#-------------------------------------------------------------------------------
+if (!isGeneric("addInsertionDataFromBam")) {
+	setGeneric(
+		"addInsertionDataFromBam",
+		function(.object, ...) standardGeneric("addInsertionDataFromBam"),
+		signature=c(".object")
+	)
+}
+#' addInsertionDataFromBam-methods
+#'
+#' Add insertion data to DsATAC object based on bam files
+#'
+#' @param .object \code{\linkS4class{DsATAC}} object
+#' @param fns     a named vector of bam file locations. The names must correspond to sample identifiers in the object
+#' @param pairedEnd flag indicating whether the bam files are from paired-end sequencing
+#' @return a new \code{\linkS4class{DsATAC}} object with insertions for each sample
+#'
+#' @rdname addInsertionDataFromBam-DsATAC-method
+#' @docType methods
+#' @aliases addInsertionDataFromBam
+#' @aliases addInsertionDataFromBam,DsATAC-method
+#' @author Fabian Mueller
+#' @noRd
+setMethod("addInsertionDataFromBam",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		fns,
+		pairedEnd=TRUE
+	) {
+		require(GenomicAlignments)
+		sids <- names(fns)
+		if (length(sids)!=length(fns)){
+			logger.error("The vector specifying filenames (fns) must be named")
+		}
+		if (!all(sids %in% getSamples(.object))){
+			logger.error(c("DsATAC dataset does not contain samples:", paste(setdiff(sids, getSamples(.object)), collapse=", ")))
+		}
+		for (sid in sids){
+			logger.start(c("Reading insertion data for sample:", sid))
+				if (!is.null(.object@insertions[[sid]])){
+					logger.warning(c("Overwriting insertion data for sample:", sid))
+				}
+				ga <- NULL
+				if (pairedEnd){
+					ga <- readGAlignments(fns[sid], use.names=FALSE)
+				} else {
+					ga <- readGAlignmentPairs(fns[sid], use.names=TRUE)
+				}
+				.object@insertions[[sid]] <- getATACinsertion(ga, offsetTn=TRUE)
+			logger.completed()
 		}
 
 		return(.object)

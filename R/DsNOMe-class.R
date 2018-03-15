@@ -45,6 +45,7 @@ setMethod("initialize","DsNOMe",
 		.Object@covg        <- covg
 		.Object@sampleAnnot <- sampleAnnot
 		.Object@genome      <- genome
+		.Object@pkgVersion  <- packageVersion("ChrAccR")
 		.Object
 	}
 )
