@@ -507,9 +507,9 @@ setMethod("addInsertionDataFromBam",
 				}
 				ga <- NULL
 				if (pairedEnd){
-					ga <- readGAlignments(fns[sid], use.names=FALSE)
+					ga <- readGAlignmentPairs(fns[sid], use.names=FALSE)
 				} else {
-					ga <- readGAlignmentPairs(fns[sid], use.names=TRUE)
+					ga <- readGAlignments(fns[sid], use.names=FALSE)
 				}
 				.object@insertions[[sid]] <- getATACinsertion(ga, offsetTn=TRUE)
 			logger.completed()
