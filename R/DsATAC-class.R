@@ -306,7 +306,11 @@ setMethod("addCountDataFromBam",
 		fns
 	) {
 		require(GenomicAlignments)
-		
+		# TODO: adjust for Tn5 insertion:
+		# + strand: i + 4
+		# - strand: i - 5
+		# Buenrostro, et al. (2013). Nature Methods, 10(12), 1213–1218. 
+		# For peak-calling and footprinting, we adjusted the read start sites to represent the center of the transposon binding event. Previous descriptions of the Tn5 transposase show that the trans- poson binds as a dimer and inserts two adaptors separated by 9 bp (ref. 11). Therefore, all reads aligning to the + strand were offset by +4 bp, and all reads aligning to the – strand were offset −5 bp
 		ResizeReads <- function(reads, width=1, fix="start", ...) {
 			reads <- as(reads, "GRanges")
 			stopifnot(all(strand(reads) != "*"))
