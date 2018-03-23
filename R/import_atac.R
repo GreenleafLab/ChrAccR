@@ -203,10 +203,12 @@ getNonOverlappingByScore <- function(gr, scoreCol="score"){
 #' @param replicatePercReq percentile of replicates in a group required to contain a peak in order to keep it.
 #'                     E.g. a value of 1 (default) means that all replicates in a group are required to contain that peak in order
 #'                     to keep it.
+#' @param keepOvInfo   keep annotation columns in the elementMetadata of the results specifying whether a consensus peak overlaps with a
+#'                     peak in each sample
 #' @return \code{GRanges} object containing consensus peak set
 #' @author Fabian Mueller
 #' @export
-getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sampleIdCol=filePrefixCol, type="summits_no_fw", unifWidth=500L, replicateCol=NA, replicatePercReq=1.0){
+getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sampleIdCol=filePrefixCol, type="summits_no_fw", unifWidth=500L, replicateCol=NA, replicatePercReq=1.0, keepOvInfo=FALSE){
 	if (!is.element(type, c("summits_no_fw"))){
 		logger.error(c("Unsupported import type:", type))
 	}
@@ -255,18 +257,18 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 		peakSet.cur <- peakFun(inputFns[sid])
 		
 		#add coverage info for all samples
-		elementMetadata(peakSet.cur)[,paste0(".cov.", sampleIds)] <- FALSE # as.logical(NA)
+		elementMetadata(peakSet.cur)[,paste0(".ov.", sampleIds)] <- FALSE # as.logical(NA)
 
 		if (is.null(res)){
 			#remove overlapping peaks in initial sample based on normalized scores
 			peakSet.cur <- getNonOverlappingByScore(peakSet.cur, scoreCol="score_norm")
 			#initialize peak set with all peaks from the first sample
-			elementMetadata(peakSet.cur)[,paste0(".cov.", sid)] <- TRUE
+			elementMetadata(peakSet.cur)[,paste0(".ov.", sid)] <- TRUE
 			res <- peakSet.cur
 		} else {
 			# add new peaks and remove the overlapping ones by taking the peaks with the best score
 			res <- getNonOverlappingByScore(c(res, peakSet.cur), scoreCol="score_norm")
-			elementMetadata(res)[,paste0(".cov.", sid)] <- overlapsAny(res, peakSet.cur, ignore.strand=TRUE)
+			elementMetadata(res)[,paste0(".ov.", sid)] <- overlapsAny(res, peakSet.cur, ignore.strand=TRUE)
 		}
 	}
 
@@ -277,7 +279,7 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 			colnames(gRepMat) <- levels(groupF)
 			for (gg in levels(groupF)){
 				sidsRepl <- sampleIds[groupF==gg]
-				ovMat <- as.matrix(elementMetadata(res)[,paste0(".cov.", sidsRepl)])
+				ovMat <- as.matrix(elementMetadata(res)[,paste0(".ov.", sidsRepl)])
 				nReq <- as.integer(ceiling(replicatePercReq * length(sidsRepl)))
 				gRepMat[,gg] <- rowSums(ovMat) >= nReq
 			}
@@ -288,9 +290,11 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 			res <- res[keep]
 		logger.completed()
 	}
-	#remove the helper columns
-	for (sid in sampleIds){
-		elementMetadata(res)[,paste0(".cov.", sid)] <- NULL
+	if (!keepOvInfo){
+		#remove the helper columns
+		for (sid in sampleIds){
+			elementMetadata(res)[,paste0(".ov.", sid)] <- NULL
+		}
 	}
 	#sort
 	res <- sortSeqlevels(res)
