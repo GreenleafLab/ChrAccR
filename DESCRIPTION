@@ -10,7 +10,7 @@ Suggests:
 Depends:
     GenomicRanges,
     ggplot2,
-    RnBeads,
+    muLogR,
     data.table
 License: GPL-2
 Version: 0.3
