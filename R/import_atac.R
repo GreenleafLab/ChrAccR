@@ -209,6 +209,7 @@ getNonOverlappingByScore <- function(gr, scoreCol="score"){
 #' @author Fabian Mueller
 #' @export
 getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sampleIdCol=filePrefixCol, type="summits_no_fw", unifWidth=500L, replicateCol=NA, replicatePercReq=1.0, keepOvInfo=FALSE){
+	require(matrixStats)
 	if (!is.element(type, c("summits_no_fw"))){
 		logger.error(c("Unsupported import type:", type))
 	}
@@ -286,6 +287,10 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 				gRepMat[,gg] <- rowSums(ovMat) >= nReq
 			}
 			keep <- rowAnys(gRepMat)
+			if (keepOvInfo){
+				colnames(gRepMat) <- paste0(".repr.", colnames(gRepMat))
+				elementMetadata(res) <- cbind(elementMetadata(res), gRepMat)
+			}
 			nTotal <- length(res)
 			nRem <- nTotal - sum(keep)
 			logger.info(c("Removed", nRem, "of", nTotal, "peaks", paste0("(",round(nRem/nTotal*100, 2),"%)"), "because they were not reproduced by more than", round(replicatePercReq*100, 2), "% of samples in any replicate group"))
