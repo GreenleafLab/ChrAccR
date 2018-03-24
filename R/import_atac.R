@@ -237,7 +237,7 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 	peakFun <- NULL
 	res <- NULL
 	if (type=="summits_no_fw"){
-		peakFun <- function(fn){
+		peakFun <- function(fn, sid){
 			rr <- import(fn, format="BED")
 			rr <- setGenomeProps(rr, genome, onlyMainChrs=TRUE)
 			rr <- rr[isCanonicalChrom(as.character(seqnames(rr)))]
@@ -252,9 +252,11 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 		}
 	}
 
+	i <- 0
 	for (sid in sampleIds){
-		logger.status(c("Reading peak summits from sample:", sid))
-		peakSet.cur <- peakFun(inputFns[sid])
+		i <- i + 1
+		logger.status(c("Reading peak summits from sample:", sid, paste0("(",i, " of ", length(sampleIds), ")")))
+		peakSet.cur <- peakFun(inputFns[sid], sid)
 		
 		#add coverage info for all samples
 		elementMetadata(peakSet.cur)[,paste0(".ov.", sampleIds)] <- FALSE # as.logical(NA)
