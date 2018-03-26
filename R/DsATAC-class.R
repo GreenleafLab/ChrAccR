@@ -136,6 +136,7 @@ setMethod("getCountsSE",
 		.object,
 		type
 	) {
+		require(SummarizedExperiment)
 		if (!is.element(type, getRegionTypes(.object))) logger.error(c("Unsupported region type:", type))
 		#count matrix
 		cm <- ChrAccR::getCounts(.object, type, asMatrix=TRUE)
@@ -903,7 +904,8 @@ setMethod("getChromVarDev",
 		type,
 		motifs="jaspar"
 	) {
-		require(qvalue)
+		require(chromVAR)
+		require(motifmatchr)
 		res <- NULL
 
 		countSe <- getCountsSE(.object, type)
