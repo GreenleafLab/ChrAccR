@@ -46,11 +46,11 @@ prepareMotifmatchr <- function(genome, motifs){
 	spec <- organism(genomeObj)
 
 	# get the motif PWMs
-	motifL <- TFBSTools::PFMatrixList()
+	motifL <- TFBSTools::PWMatrixList()
 	if (is.character(motifs)){
 		if (is.element("jaspar", motifs)){
 			require(chromVAR)
-			motifL <- c(motifL, getJasparMotifs(species=spec))
+			motifL <- c(motifL, TFBSTools::toPWM(getJasparMotifs(species=spec)))
 		}
 		if (is.element("homer", motifs)){
 			require(chromVARmotifs)

@@ -909,8 +909,7 @@ setMethod("getChromVarDev",
 
 		countSe <- getCountsSE(.object, type)
 		genomeObj <- getGenomeObject(.object@genome)
-		# hack to override inconsistent naming of genome versions (e.g. hg38 and GRCh38)
-		genome(countSe) <- providerVersion(genomeObj)
+		genome(countSe) <- providerVersion(genomeObj) # hack to override inconsistent naming of genome versions (e.g. hg38 and GRCh38)
 
 		countSe <- addGCBias(countSe, genome=genomeObj)
 
