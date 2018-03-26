@@ -105,6 +105,46 @@ setMethod("getCounts",
 		return(res)
 	}
 )
+
+#-------------------------------------------------------------------------------
+if (!isGeneric("getCountsSE")) {
+	setGeneric(
+		"getCountsSE",
+		function(.object, ...) standardGeneric("getCountsSE"),
+		signature=c(".object")
+	)
+}
+#' getCountsSE-methods
+#'
+#' Return a \code{SummarizedExperiment} object of count values
+#'
+#' @param .object \code{\linkS4class{DsATAC}} object
+#' @param type    character string specifying the region type
+#' @return \code{SummarizedExperiment} containing counts for each region and sample
+#'
+#' @rdname getCountsSE-DsATAC-method
+#' @docType methods
+#' @aliases getCountsSE
+#' @aliases getCountsSE,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("getCountsSE",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		type
+	) {
+		if (!is.element(type, getRegionTypes(.object))) logger.error(c("Unsupported region type:", type))
+		#count matrix
+		cm <- ChrAccR::getCounts(.object, type, asMatrix=TRUE)
+		coords <- getCoord(.object, type)
+		se <- SummarizedExperiment(assays=list(counts=cm), rowRanges=coords)
+		return(se)
+	}
+)
+
 #-------------------------------------------------------------------------------
 if (!isGeneric("getInsertionSites")) {
 	setGeneric(
@@ -826,6 +866,57 @@ setMethod("getMotifEnrichment",
 		rownames(res) <- motifNames
 		res[,"motif"] <- motifNames
 		res[,"qVal"] <- qvalue(res[,"pVal"])$qvalue
+
+		return(res)
+	}
+)
+#-------------------------------------------------------------------------------
+if (!isGeneric("getChromVarDev")) {
+	setGeneric(
+		"getChromVarDev",
+		function(.object, ...) standardGeneric("getChromVarDev"),
+		signature=c(".object")
+	)
+}
+#' getChromVarDev-methods
+#'
+#' Compute chromVar deviations
+#'
+#' @param .object    \code{\linkS4class{DsATAC}} object
+#' @param type       character string specifying the region type
+#' @param motifs     either a character string (currently only "jaspar" and sets contained in \code{chromVARmotifs} ("homer", "encode", "cisbp") are supported) or an object containing PWMs
+#'                   that can be used by \code{motifmatchr::matchMotifs} (such as an \code{PFMatrixList} or \code{PWMatrixList} object)
+#' @return a \code{data.frame} summarizing Fisher's Exact Test enrichment statistics for each motif
+#' 
+#' @rdname getChromVarDev-DsATAC-method
+#' @docType methods
+#' @aliases getChromVarDev
+#' @aliases getChromVarDev,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("getChromVarDev",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		type,
+		motifs="jaspar"
+	) {
+		require(qvalue)
+		res <- NULL
+
+		countSe <- getCountsSE(.object, type)
+		genomeObj <- getGenomeObject(.object@genome)
+
+		countSe <- addGCBias(countSe, genome=genomeObj)
+
+		# for motifmatchr
+		mmObjs <- prepareMotifmatchr(genomeObj, motifs)
+
+		dev <- computeDeviations(object=countSe, annotations=mmObjs)
+
+
 
 		return(res)
 	}

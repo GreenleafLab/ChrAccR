@@ -40,19 +40,9 @@ prepareMotifmatchr <- function(genome, motifs){
 
 	# get the species name and the genome sequence object based on the object
 	spec <- NULL
-	genomeObj <- NULL
-	if (is.element(genome, c("mm9", "mm10"))){
-		spec <- "Mus musculus"
-		genomePkg <- paste0("BSgenome.Mmusculus.UCSC.", genome)
-		require(genomePkg, character.only=TRUE)
-		genomeObj <- get(genomePkg)
-	} else if (is.element(genome, c("hg18", "hg19", "hg38"))){
-		spec <- "Homo sapiens"
-		genomePkg <- paste0("BSgenome.Hsapiens.UCSC.", genome)
-		require(genomePkg, character.only=TRUE)
-		genomeObj <- get(genomePkg)
-	} else {
-		logger.error(c("Unsupported genome:", genome))
+	genomeObj <- genome
+	if (!is.element("BSgenome", class(genomeObj))){
+		genomeObj <- getGenomeObject(genome)
 	}
 
 	# get the motif PWMs
