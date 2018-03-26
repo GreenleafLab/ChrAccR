@@ -19,6 +19,7 @@ Collate:
     'utils.R'
     'config.R'
     'utils_atac.R'
+    'utils_chromVAR.R'
     'DsAcc-class.R'
     'DsATAC-class.R'
     'DsNOMe-class.R'

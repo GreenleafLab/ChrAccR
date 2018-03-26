@@ -914,9 +914,7 @@ setMethod("getChromVarDev",
 		# for motifmatchr
 		mmObjs <- prepareMotifmatchr(genomeObj, motifs)
 
-		dev <- computeDeviations(object=countSe, annotations=mmObjs)
-
-
+		res <- computeDeviations(object=countSe, annotations=mmObjs)
 
 		return(res)
 	}
