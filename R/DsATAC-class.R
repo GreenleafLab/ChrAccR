@@ -141,7 +141,7 @@ setMethod("getCountsSE",
 		#count matrix
 		cm <- ChrAccR::getCounts(.object, type, asMatrix=TRUE)
 		coords <- getCoord(.object, type)
-		se <- SummarizedExperiment(assays=list(counts=cm), rowRanges=coords)
+		se <- SummarizedExperiment(assays=list(counts=cm), rowRanges=coords, colData=DataFrame(getSampleAnnot(.object)))
 		return(se)
 	}
 )
