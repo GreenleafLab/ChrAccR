@@ -39,14 +39,14 @@ prepareMotifmatchr <- function(genome, motifs){
 	res <- list()
 
 	# get the species name and the genome sequence object based on the object
-	spec <- NULL
 	genomeObj <- genome
 	if (!is.element("BSgenome", class(genomeObj))){
 		genomeObj <- getGenomeObject(genome)
 	}
+	spec <- organism(genomeObj)
 
 	# get the motif PWMs
-	motifL <- TFBSTools::PWMatrixList()
+	motifL <- TFBSTools::PFMatrixList()
 	if (is.character(motifs)){
 		if (is.element("jaspar", motifs)){
 			require(chromVAR)

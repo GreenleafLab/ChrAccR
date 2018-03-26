@@ -815,7 +815,6 @@ setMethod("getMotifEnrichment",
 		require(qvalue)
 		res <- NULL
 		#count matrix
-		cm <- ChrAccR::getCounts(.object, type, asMatrix=TRUE)
 		coords <- getCoord(.object, type)
 		if (is.logical(idx)){
 			if (length(idx)!=length(coords)){
@@ -838,7 +837,7 @@ setMethod("getMotifEnrichment",
 		# for motifmatchr
 		mmObjs <- prepareMotifmatchr(.object@genome, motifs)
 		#MAIN
-		se <- SummarizedExperiment(assays=list(counts=cm), rowRanges=coords)
+		se <- getCountsSE(.object, type)
 		mm <- matchMotifs(mmObjs[["motifs"]], se, genome=mmObjs[["genome"]])
 		regionMotifMatch <- as.matrix(motifMatches(mm))
 
@@ -910,13 +909,16 @@ setMethod("getChromVarDev",
 
 		countSe <- getCountsSE(.object, type)
 		genomeObj <- getGenomeObject(.object@genome)
+		# hack to override inconsistent naming of genome versions (e.g. hg38 and GRCh38)
+		genome(countSe) <- providerVersion(genomeObj)
 
 		countSe <- addGCBias(countSe, genome=genomeObj)
 
 		# for motifmatchr
-		mmObjs <- prepareMotifmatchr(genomeObj, motifs)
+		mmInput <- prepareMotifmatchr(genomeObj, motifs)
+		mmObj <- matchMotifs(mmInput[["motifs"]], countSe, genome=genomeObj)
 
-		res <- computeDeviations(object=countSe, annotations=mmObjs)
+		res <- computeDeviations(object=countSe, annotations=mmObj)
 
 		return(res)
 	}
