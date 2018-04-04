@@ -10,11 +10,12 @@
 #' @param sampleIdCol  column name or index in the sample annotation table containing unique sample identifiers
 #' @param type         input data type. Currently only "insBed" (insertion beds) and "bam" (aligned reads) are supported
 #' @param keepInsertionInfo flag indicating whether to maintain the insertion information in the resulting object. Only relevant when \code{type=="insBam"}.
+#' @param bySample     process sample-by-sample to save memory (currently only has an effect for \code{type=="insBam"})
 #' @param pairedEnd    is the input data paired-end? Only relevant when \code{type=="insBam"}.
 #' @return \code{\linkS4class{DsATAC}} object
 #' @author Fabian Mueller
 #' @export
-DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, regionSets=NULL, sampleIdCol=filePrefixCol, type="insBed", keepInsertionInfo=TRUE, pairedEnd=TRUE){
+DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, regionSets=NULL, sampleIdCol=filePrefixCol, type="insBed", keepInsertionInfo=TRUE, bySample=FALSE, pairedEnd=TRUE){
 	if (!is.element(type, c("bam", "insBam", "insBed"))){
 		logger.error(c("Unsupported import type:", type))
 	}
@@ -71,16 +72,31 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, region
 			# print(inputFns)
 			obj <- addCountDataFromBam(obj, inputFns)
 		} else if (type=="insBam"){
-			logger.start(c("Adding insertion data from bam"))
-				obj <- addInsertionDataFromBam(obj, inputFns, pairedEnd=pairedEnd)
-			logger.completed()
-			logger.start(c("Summarizing region counts"))
-				obj <- addCountDataFromGRL(obj, getInsertionSites(obj))
-			logger.completed()
-			# optionally remove insertion information to save space
-			if (!keepInsertionInfo){
-				obj@insertions <- list()
+			if (bySample){
+				logger.start(c("Adding insertion and region count data from bam"))
+					for (i in seq_along(inputFns)){
+						sid <- names(inputFns)[i]
+						obj <- addInsertionDataFromBam(obj, inputFns[i], pairedEnd=pairedEnd)
+						obj <- addCountDataFromGRL(obj, getInsertionSites(obj, samples=sid))
+						# optionally remove insertion information to save space
+						if (!keepInsertionInfo){
+							obj@insertions <- list()
+						}
+					}
+				logger.completed()
+			} else {
+				logger.start(c("Adding insertion data from bam"))
+					obj <- addInsertionDataFromBam(obj, inputFns, pairedEnd=pairedEnd)
+				logger.completed()
+				logger.start(c("Summarizing region counts"))
+					obj <- addCountDataFromGRL(obj, getInsertionSites(obj))
+				logger.completed()
+				# optionally remove insertion information to save space
+				if (!keepInsertionInfo){
+					obj@insertions <- list()
+				}
 			}
+			
 		} else if (type=="insBed"){
 			for (i in seq_along(sampleIds)){
 				sid <- sampleIds[i]
