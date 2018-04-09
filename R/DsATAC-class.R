@@ -673,7 +673,7 @@ setMethod("transformCounts",
 		if (!all(regionTypes %in% getRegionTypes(.object))){
 			logger.error(c("Unsupported region type:", paste(setdiff(regionTypes, getRegionTypes(.object)), collapse=", ")))
 		}
-		if (!is.element(method, c("quantile"))) logger.error(c("Unsupported normalization method type:", method))
+		if (!is.element(method, c("quantile", "log2", "RPKM"))) logger.error(c("Unsupported normalization method type:", method))
 
 		if (method == "quantile"){
 			logger.start(c("Performing quantile normalization"))
