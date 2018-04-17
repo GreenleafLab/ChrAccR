@@ -1033,7 +1033,7 @@ setMethod("exportCountTracks",
 		if (!is.null(groupBy) && is.character(groupBy) && is.element(groupBy, colnames(getSampleAnnot(.object)))){
 			grps <- factor(getSampleAnnot(.object)[,groupBy])
 			cm <- do.call("cbind", tapply(getSamples(.object), grps, FUN=function(sids){
-				rowMeans(cm[,sids], na.rm=TRUE)
+				rowMeans(cm[,sids, drop=FALSE], na.rm=TRUE)
 			}, simplify=FALSE))
 			colnames(cm) <- levels(grps)
 			sampleNames <- levels(grps)
