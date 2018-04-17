@@ -922,3 +922,74 @@ setMethod("getChromVarDev",
 		return(res)
 	}
 )
+
+################################################################################
+# Export
+################################################################################
+if (!isGeneric("exportCountTracks")) {
+	setGeneric(
+		"exportCountTracks",
+		function(.object, ...) standardGeneric("exportCountTracks"),
+		signature=c(".object")
+	)
+}
+#' exportCountTracks-methods
+#'
+#' export count data as genome tracks (e.g. for visualization in the browser)
+#'
+#' @param .object    \code{\linkS4class{DsATAC}} object
+#' @param type       character string specifying the region type
+#' @param outDir     output directory. Must be existing.
+#' @param formats    browser format. Currently only bed and "igv" are supported
+#' @param groupBy    a column in the sample annotation table to group by (the mean will be computed)
+#' @return nothing of particular interest
+#' 
+#' @rdname exportCountTracks-DsATAC-method
+#' @docType methods
+#' @aliases exportCountTracks
+#' @aliases exportCountTracks,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("exportCountTracks",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		type,
+		outDir,
+		formats=c("bed", "igv"),
+		groupBy=NULL
+	) {
+		if (!is.element(type, getRegionTypes(.object))) logger.error(c("Unsupported region type:", type))
+		if (!dir.exists(outDir)) logger.error(c("Output directory:", outDir, "does not exist."))
+		#count matrix
+		cm <- ChrAccR::getCounts(.object, type, asMatrix=TRUE)
+		sampleNames <- getSamples(.object)
+		coords <- getCoord(.object, type)
+		if (!is.null(groupBy) && is.character(groupBy) && is.element(groupBy, colnames(getSampleAnnot(.object)))){
+			grps <- factor(getSampleAnnot(.object)[,groupBy])
+			cm <- do.call("cbind", tapply(getSamples(.object), grps, FUN=function(sids){
+				rowMeans(cm[,sids], na.rm=TRUE)
+			}, simplify=FALSE))
+			colnames(cm) <- levels(grps)
+			sampleNames <- levels(grps)
+		}
+
+		elementMetadata(coords) <- NULL
+		elementMetadata(coords) <- cm
+
+		if (is.element("bed", formats)){
+			for (sn in sampleNames){
+				fn <- file.path(outDir, paste0(sn, "_counts.bed"))
+				granges2bed(coords, fn, score=elementMetadata(coords)[,sn], addAnnotCols=FALSE, colNames=FALSE, doSort=TRUE, bigBed=FALSE)
+			}
+		}
+		if (is.element("igv", formats)){
+			fn <- file.path(outDir, "DsATAC_counts.igv")
+			granges2igv(coords, fn, addStrand=FALSE, addAnnotCols=TRUE, doSort=TRUE, toTDF=TRUE)
+		}
+		#TODO: work in progress
+		invisible(NULL)
+	}
+)
