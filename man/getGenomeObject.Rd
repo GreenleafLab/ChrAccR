@@ -4,10 +4,12 @@
 \alias{getGenomeObject}
 \title{getGenomeObject}
 \usage{
-getGenomeObject(assembly)
+getGenomeObject(assembly, adjChrNames = TRUE)
 }
 \arguments{
 \item{assembly}{string specifying the assembly}
+
+\item{adjChrNames}{should the prefix "chr" be added to main chromosomes if not already present and chrMT be renamed to chrM?}
 }
 \value{
 \code{BSgenome} object

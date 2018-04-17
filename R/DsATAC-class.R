@@ -639,6 +639,69 @@ setMethod("removeRegions",
 	}
 )
 #-------------------------------------------------------------------------------
+#TODO: not tested yet
+if (!isGeneric("removeSamples")) {
+	setGeneric(
+		"removeSamples",
+		function(.object, ...) standardGeneric("removeSamples"),
+		signature=c(".object")
+	)
+}
+#' removeSamples-methods
+#'
+#' Remove samples from a \code{\linkS4class{DsATAC}} object
+#'
+#' @param .object \code{\linkS4class{DsATAC}} object
+#' @param indices a vector of indices of samples to be removed. Can be numeric, integer or logical.
+#' @return a new \code{\linkS4class{DsATAC}} object with sites/regions removed
+#' 
+#' @rdname removeSamples-DsATAC-method
+#' @docType methods
+#' @aliases removeSamples
+#' @aliases removeSamples,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("removeSamples",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		indices
+		# reaggregate=TRUE
+	) {
+		if (!is.vector(indices) || !(is.numeric(indices) || is.logical(indices))){
+			logger.error(c("Unsupported type for index vector"))
+		}
+		nSamples <- length(getSamples(.object))
+		inds2keep <- rep(TRUE, nSamples)
+		if (is.numeric(indices)){
+			if (any(indices > nSamples | indices < 1)) {
+				logger.error(c("Invalid values in indices"))
+			}
+			inds2keep[indices] <- FALSE
+		} else if (is.logical(indices)){
+			inds2keep <- !indices
+		}
+		if (sum(inds2keep)>=nSamples){
+			logger.info("Nothing to be done: keeping object as is")
+			return(.object)
+		}
+		.object@sampleAnnot <- .object@sampleAnnot[inds2keep,]
+
+		for (rt in getRegionTypes(.object)){
+			.object@counts[[rt]]  <- .object@counts[[rt]][,inds2keep]
+		}
+
+		if (length(.object@insertions) == nSamples){
+			.object@insertions <- .object@insertions[inds2keep]
+		}
+		
+		return(.object)
+	}
+)
+
+#-------------------------------------------------------------------------------
 if (!isGeneric("transformCounts")) {
 	setGeneric(
 		"transformCounts",
