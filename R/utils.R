@@ -33,7 +33,7 @@ isCanonicalChrom <- function(ss){
 #'               that can be used by \code{motifmatchr::matchMotifs} (such as an \code{PFMatrixList} or \code{PWMatrixList} object)
 #' @return a list containing objects to be used as arguments for \code{motifmatchr}
 #' @author Fabian Mueller
-#' @noRd
+#' @export
 prepareMotifmatchr <- function(genome, motifs){
 	require(motifmatchr)
 	res <- list()
