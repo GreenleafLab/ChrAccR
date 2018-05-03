@@ -17,7 +17,10 @@ getGenomeObject <- function(assembly, adjChrNames=TRUE){
 	} else if (is.element(assembly, c("GRCh37", "GRCh37_chr"))){
 		require(BSgenome.Hsapiens.1000genomes.hs37d5)
 		res <- BSgenome.Hsapiens.1000genomes.hs37d5
-	} else if (is.element(assembly, c("hg38", "GRCh38", "hg38_chr", "GRCh38_chr"))){
+	} else if (is.element(assembly, c("hg38", "hg38_chr"))){
+		require(BSgenome.Hsapiens.UCSC.hg38)
+		res <- BSgenome.Hsapiens.UCSC.hg38::Hsapiens
+	} else if (is.element(assembly, c("GRCh38", "GRCh38_chr"))){
 		require(BSgenome.Hsapiens.NCBI.GRCh38)
 		res <- BSgenome.Hsapiens.NCBI.GRCh38::Hsapiens
 	} else if (is.element(assembly, c("mm9"))){
