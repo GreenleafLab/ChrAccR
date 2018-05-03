@@ -920,7 +920,7 @@ setMethod("getMotifEnrichment",
 			# d <- sum(!hasMotif & !idx)
 			# fr <- fisher.test(matrix(c(a,c,b,d), nrow=2, ncol=2), alternative="greater")
 			if (length(unique(idx)) < 2 || length(unique(regionMotifMatch[,mo])) < 2){
-				fr <- list(p.value=as.numeric(NA), oddsRatio=as.numeric(NA))
+				fr <- list(p.value=as.numeric(NA), estimate=as.numeric(NA))
 			} else {
 				fr <- fisher.test(x=idx, y=regionMotifMatch[,mo], alternative="greater")
 			}
@@ -933,8 +933,7 @@ setMethod("getMotifEnrichment",
 		res[,"qVal"] <- rep(as.numeric(NA), nrow(res))
 		if (!any(is.na(res[,"pVal"]))) res[,"qVal"] <- qvalue(res[,"pVal"])$qvalue
 		res[,"motif"] <- motifNames
-		rownames(res) <- motifNames		
-
+		rownames(res) <- motifNames
 		return(res)
 	}
 )
