@@ -931,7 +931,19 @@ setMethod("getMotifEnrichment",
 			return(df)
 		}))
 		res[,"qVal"] <- rep(as.numeric(NA), nrow(res))
-		if (!any(is.na(res[,"pVal"]))) res[,"qVal"] <- qvalue(res[,"pVal"])$qvalue
+		if (!any(is.na(res[,"pVal"]))) {
+			res[,"qVal"]  <- tryCatch(
+				 qvalue(res[,"pVal"])$qvalue,
+				 error = function(ee) {
+				 	if (ee$message == "missing or infinite values in inputs are not allowed"){
+				 		return(qvalue(res[,"pVal"], lambda=0)$qvalue)
+				 	} else {
+				 		logger.warning(c("Could not compute qvalues:", ee$message))
+				 		return(rep(as.numeric(NA), nrow(res)))
+				 	}
+				}
+			)
+		}
 		res[,"motif"] <- motifNames
 		rownames(res) <- motifNames
 		return(res)
