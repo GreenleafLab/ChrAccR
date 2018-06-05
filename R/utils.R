@@ -49,6 +49,17 @@ prepareMotifmatchr <- function(genome, motifs){
 	motifL <- TFBSTools::PWMatrixList()
 	if (is.character(motifs)){
 		if (is.element("jaspar", motifs)){
+			# copied code from chromVAR, but updated the JASPAR version
+			opts <- list()
+			opts["species"] <- spec
+			opts["collection"] <- "CORE"
+			mlCur <- TFBSTools::getMatrixSet(JASPAR2018::JASPAR2018, opts)
+			if (!isTRUE(all.equal(TFBSTools::name(mlCur), names(mlCur)))){
+				names(mlCur) <- paste(names(mlCur), TFBSTools::name(mlCur), sep = "_")
+			} 
+			motifL <- c(motifL, TFBSTools::toPWM(mlCur))
+		}
+		if (is.element("jaspar2016", motifs)){
 			require(chromVAR)
 			motifL <- c(motifL, TFBSTools::toPWM(getJasparMotifs(species=spec)))
 		}
