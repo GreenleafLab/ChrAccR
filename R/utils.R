@@ -53,6 +53,7 @@ prepareMotifmatchr <- function(genome, motifs){
 			opts <- list()
 			opts["species"] <- spec
 			opts["collection"] <- "CORE"
+			# gets the non-redundant set by default
 			mlCur <- TFBSTools::getMatrixSet(JASPAR2018::JASPAR2018, opts)
 			if (!isTRUE(all.equal(TFBSTools::name(mlCur), names(mlCur)))){
 				names(mlCur) <- paste(names(mlCur), TFBSTools::name(mlCur), sep = "_")
