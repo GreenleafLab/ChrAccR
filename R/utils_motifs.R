@@ -187,6 +187,7 @@ getMotifDistMat <- function(assembly="hg38", mmObj=NULL, method="jaspar"){
 #'
 #' Retrieve motif clustering of TF motifs
 #'
+#' @param distM        distance matrix (\code{dist} object) containing motif dissimilarities/distances
 #' @param assembly     genome assembly for which the motifs dissimilarity should be retrieved. Only the species information
 #'                     of the assembly is really relevant
 #' @param motifs either a character string (currently only "jaspar" is supported) or an object containing PWMs
@@ -198,14 +199,13 @@ getMotifDistMat <- function(assembly="hg38", mmObj=NULL, method="jaspar"){
 #' @return a matrix of motif DISsimilarities (\code{dist} object)
 #' @author Fabian Mueller
 #' @export
-getMotifClustering <- function(assembly="hg38", motifs="jaspar", distMethod="jaspar", clusterMethod="pam", k=0){
+getMotifClustering <- function(distM, assembly="hg38", motifs="jaspar", clusterMethod="pam", k=0){
 	if (motifs != "jaspar") logger.error(c("Currently motif clustering is only supported for JASPAR motifs"))
 	if (clusterMethod != "pam") logger.error(c("Currently motif clustering is only supported using the PAM clustering method"))
+	if (!is.element("dist", class(distM))) logger.error(c("motif distance matrix must be a dist object"))
 
 	spec <- muRtools::normalize.str(organism(getGenomeObject(assembly)))
-	mmObj <- prepareMotifmatchr(assembly, motifs)
-	pwmL <- mmObj$motifs
-	mDist <- getMotifDistMat(assembly, mmObj, distMethod)
+	motifIds <- labels(distM)
 
 	if (motifs=="jaspar"){
 		if (clusterMethod == "pam"){
@@ -216,9 +216,9 @@ getMotifClustering <- function(assembly="hg38", motifs="jaspar", distMethod="jas
 				cr <- readRDS(fn)
 			} else {
 				require(cluster)
-				clustRes.pam <- pam(mDist, k=k)
+				clustRes.pam <- pam(distM, k=k)
 				clustAssign <- clustRes.pam$medoids[clustRes.pam$clustering]
-				names(clustAssign) <- names(pwmL)
+				names(clustAssign) <- motifIds
 				clustAssignL <- lapply(clustRes.pam$medoids, FUN=function(mm){names(clustAssign)[clustAssign==mm]})
 				names(clustAssignL) <- clustRes.pam$medoids
 				clusterNames <- sapply(seq_along(clustAssignL), FUN=function(i){
@@ -231,8 +231,7 @@ getMotifClustering <- function(assembly="hg38", motifs="jaspar", distMethod="jas
 	}
 	
 	res <- list(
-		pwmL = pwmL,
-		distM = mDist,
+		distM = distM,
 		clustRes = cr
 	)
 	return(res)
