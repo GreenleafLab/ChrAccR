@@ -229,10 +229,5 @@ getMotifClustering <- function(distM, assembly="hg38", motifs="jaspar", clusterM
 			}
 		}
 	}
-	
-	res <- list(
-		distM = distM,
-		clustRes = cr
-	)
-	return(res)
+	return(cr)
 }
