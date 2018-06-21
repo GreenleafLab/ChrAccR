@@ -156,7 +156,7 @@ getMotifDistMat.jaspar <- function(motifIds=NULL, scoreCol="Ncor"){
 getMotifDistMat <- function(assembly="hg38", mmObj=NULL, method="jaspar"){
 	require(TFBSTools)
 	if (method=="jaspar"){
-		spec <- muRtools::normalize.str(getGenomeObject(assembly))
+		spec <- muRtools::normalize.str(organism(getGenomeObject(assembly)))
 		if (is.null(mmObj))	mmObj <- prepareMotifmatchr(assembly, "jaspar")
 		pwmL <- mmObj$motifs
 		fn <- system.file(file.path("extdata", paste0("motifDistMat_jaspar_", spec, ".rds")), package="ChrAccR")
@@ -202,7 +202,7 @@ getMotifClustering <- function(assembly="hg38", motifs="jaspar", distMethod="jas
 	if (motifs != "jaspar") logger.error(c("Currently motif clustering is only supported for JASPAR motifs"))
 	if (clusterMethod != "pam") logger.error(c("Currently motif clustering is only supported using the PAM clustering method"))
 
-	spec <- muRtools::normalize.str(getGenomeObject(assembly))
+	spec <- muRtools::normalize.str(organism(getGenomeObject(assembly)))
 	mmObj <- prepareMotifmatchr(assembly, motifs)
 	pwmL <- mmObj$motifs
 	mDist <- getMotifDistMat(assembly, mmObj, distMethod)
