@@ -40,6 +40,14 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, region
 			inputFns <- sampleAnnot[,filePrefixCol]
 		}
 		names(inputFns) <- sampleIds
+	} else if (type=="covBigWig"){
+		require(rtracklayer)
+		if (nchar(dataDir) > 0){
+			inputFns <- file.path(dataDir, paste0(sampleAnnot[,filePrefixCol], ".100bp_coverage.bw"))
+		} else {
+			inputFns <- sampleAnnot[,filePrefixCol]
+		}
+		names(inputFns) <- sampleIds
 	}
 
 	if (!all(file.exists(inputFns))){
@@ -107,6 +115,18 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, region
 				grl[[1]] <- setGenomeProps(grl[[1]], genome, onlyMainChrs=TRUE)
 				names(grl) <- sid
 				obj <- addCountDataFromGRL(obj, grl)
+				rm(grl)
+			}
+		} else if (type=="covBigWig"){
+			# TODO: check if this actually works
+			for (i in seq_along(sampleIds)){
+				sid <- sampleIds[i]
+				logger.status(c("Importing sample", ":", sid, paste0("(", i, " of ", nSamples, ")")))
+				fn <- inputFns[sid]
+				grl <- GRangesList(import(fn, format = "BigWig"))
+				grl[[1]] <- setGenomeProps(grl[[1]], genome, onlyMainChrs=TRUE)
+				names(grl) <- sid
+				obj <- addSignalDataFromGRL(obj, grl, aggrFun=function(x){mean(x, na.rm=TRUE)})
 				rm(grl)
 			}
 		}

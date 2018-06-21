@@ -502,6 +502,64 @@ setMethod("addCountDataFromGRL",
 	}
 )
 #-------------------------------------------------------------------------------
+if (!isGeneric("addSignalDataFromGRL")) {
+	setGeneric(
+		"addSignalDataFromGRL",
+		function(.object, ...) standardGeneric("addSignalDataFromGRL"),
+		signature=c(".object")
+	)
+}
+#' addSignalDataFromGRL-methods
+#'
+#' Add signal data to DsATAC object based on a list of GRanges objects 
+#'
+#' @param .object \code{\linkS4class{DsATAC}} object
+#' @param grl     NAMED \code{GRangesList} or NAMED list of \code{GRanges} objects. Names must correspond to sample ids in the object
+#' @param aggrFun aggregation method
+#' @return a new \code{\linkS4class{DsATAC}} object with counts/signal for each sample and region set
+#'
+#' @rdname addSignalDataFromGRL-DsATAC-method
+#' @docType methods
+#' @aliases addSignalDataFromGRL
+#' @aliases addSignalDataFromGRL,DsATAC-method
+#' @author Fabian Mueller
+#' @noRd
+setMethod("addSignalDataFromGRL",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		grl,
+		aggrFun=function(x){mean(x, na.rm=TRUE)}
+	) {
+		sids <- names(grl)
+		if (length(sids)!=length(grl)){
+			logger.error("The list of GRanges must be named")
+		}
+		if (!all(sids %in% getSamples(.object))){
+			logger.error(c("DsATAC dataset does not contain samples:", paste(setdiff(sids, getSamples(.object)), collapse=", ")))
+		}
+		rts <- getRegionTypes(.object)
+		for (rt in rts){
+			logger.status(c("Aggregating scores in region set:", rt))
+			gr.ds <- getCoord(.object, rt)
+			for (sid in sids){
+				gr.c <- grl[[sid]]
+				scs <- elementMetadata(gr.c)[,"score"]
+				if (is.null(scs)) {
+					logger.error(c("GRanges must contain a score column (sample", sid, ")"))
+				}
+				# TODO: check for correctness
+				oo <- findOverlaps(gr.ds, gr.c, ignore.strand=TRUE)
+				.object@counts[[rt]][sort(unique(queryHits(oo))), sid] <- tapply(scs[subjectHits(oo)], queryHits(oo), aggrFun)
+			}
+		}
+
+		return(.object)
+	}
+)
+#-------------------------------------------------------------------------------
 if (!isGeneric("addInsertionDataFromBam")) {
 	setGeneric(
 		"addInsertionDataFromBam",
