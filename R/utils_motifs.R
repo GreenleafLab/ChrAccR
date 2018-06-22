@@ -189,7 +189,7 @@ getMotifDistMat <- function(assembly="hg38", mmObj=NULL, method="jaspar"){
 #'
 #' @param distM        distance matrix (\code{dist} object) containing motif dissimilarities/distances. Only required if \code{k>0}.
 #' @param assembly     genome assembly for which the motifs dissimilarity should be retrieved. Only the species information
-#'                     of the assembly is really relevant
+#'                     of the assembly is really relevant.
 #' @param motifs either a character string (currently only "jaspar" is supported) or an object containing PWMs
 #'               that can be used by \code{motifmatchr::matchMotifs} (\code{PWMatrixList} object)
 #' @param distMethod     method of dissimilarity quantification. Currently only \code{'jaspar'} (retrieve motif similarities from the annotation of the JASPAR website) is supported.
