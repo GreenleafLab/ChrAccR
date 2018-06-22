@@ -230,3 +230,82 @@ getMotifClustering <- function(k=0, distM=NULL, assembly="hg38", motifs="jaspar"
 	}
 	return(cr)
 }
+
+################################################################################
+# Motif plotting
+################################################################################
+#' PWMatrixToProbMatrix
+#'
+#' convert a log2probratio PWM (\code{PWMatrix} from TFBSTools package) to a matrix containing probabilities in [0,1]
+#'
+#' @param x log2probratio PWM (\code{PWMatrix} from TFBSTools package)
+#' @return PWM probability matrix with values in 
+#' @author Fabian Mueller [0,1]
+PWMatrixToProbMatrix <- function(x){
+	(2^as.matrix(x))*bg(x)/sum(bg(x))
+}
+
+#' hmSeqLogo
+#'
+#' Draw a sequence motif logo in a Complex Heatmap using grid.
+#' adapted from \code{seqLogo::seqLogo()}
+#'
+#' @param pwm   PWM (from TFBSTools package)
+#' @param x     x center coordinate where the motif should be drawn
+#' @param x     y center coordinate where the motif should be drawn
+#' @param width drawing width
+#' @param height drawing height
+#' @param ic.scale \code{logical} If TRUE, the height of each column is proportional to its information content. Otherwise, all columns have the same height.
+#' @return Draws the motif
+#' @author Fabian Mueller
+#' @export
+hmSeqLogo <- function(pwm, x, y, width, height, ic.scale=TRUE){
+	require(seqLogo)
+	# convert units to numbers
+	unitType <- attr(x, "unit")
+	x <- as.numeric(x)
+	y <- as.numeric(y)
+	width <- as.numeric(width)
+	height <- as.numeric(height)
+
+	# convert the PWM to matrix
+	if (class(pwm) == "pwm") {
+		pwm <- pwm@pwm
+	} else if (class(pwm) == "PWMatrix") {
+		pwm <- PWMatrixToProbMatrix(pwm)
+	} else if (class(pwm) == "data.frame") {
+		pwm <- as.matrix(pwm)
+	} else if (class(pwm) != "matrix"){
+		stop("pwm must be of class matrix or data.frame")
+	}
+	if (any(abs(1 - apply(pwm,2,sum)) > 0.01)) stop("Columns of PWM must add up to 1.0")
+
+	chars <- c("A","C","G","T")
+	letters <- list(x=NULL,y=NULL,id=NULL,fill=NULL)
+	npos <- ncol(pwm)
+
+	if (ic.scale) {
+		facs <- seqLogo:::pwm2ic(pwm)
+		facs <- facs/max(facs) # scale columns to max information content
+	} else {
+		facs <- rep(1, npos)
+	}
+
+	wt <- width / npos
+	x.pos <- x - width/2
+	for (j in 1:npos) {
+		column <- pwm[,j]
+		hts <- 0.99*column*facs[j]*height
+		letterOrder <- order(hts)
+
+		y.pos <- y-height/2
+		for (i in 1:length(chars)) {
+			letter <- chars[letterOrder[i]]
+			ht <- hts[letterOrder[i]]
+			if (ht>0) letters <- seqLogo:::addLetter(letters, letter, x.pos, y.pos, ht, wt)
+			y.pos <- y.pos + ht #+ 0.01
+		}
+		x.pos <- x.pos + wt
+	}
+	grid.polygon(x=unit(letters$x, unitType), y=unit(letters$y, unitType), id=letters$id, gp=gpar(fill=letters$fill,col="transparent"))
+}
