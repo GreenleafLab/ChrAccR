@@ -187,7 +187,7 @@ getMotifDistMat <- function(assembly="hg38", mmObj=NULL, method="jaspar"){
 #'
 #' Retrieve motif clustering of TF motifs
 #'
-#' @param distM        distance matrix (\code{dist} object) containing motif dissimilarities/distances
+#' @param distM        distance matrix (\code{dist} object) containing motif dissimilarities/distances. Only required if \code{k>0}.
 #' @param assembly     genome assembly for which the motifs dissimilarity should be retrieved. Only the species information
 #'                     of the assembly is really relevant
 #' @param motifs either a character string (currently only "jaspar" is supported) or an object containing PWMs
@@ -196,16 +196,15 @@ getMotifDistMat <- function(assembly="hg38", mmObj=NULL, method="jaspar"){
 #' @param clusterMethod  method to be used for motif clustering (currently only \code{'pam'} (PAM - partitioning around medoids) is supported)
 #' @param k            number of clusters. \code{k<1} will result in an automatically selected clustering which is precomputed and stored in \code{ChrAccR}.
 #'                     For \code{distMethod=="jaspar"} and \code{clusterMethod=="pam"} this corresponds to the k corresponding to the best silhouette value before a drop (in the silhouette elbow-curve) occurs
-#' @return a matrix of motif DISsimilarities (\code{dist} object)
+#' @return a list structure containing the clustering result
 #' @author Fabian Mueller
 #' @export
-getMotifClustering <- function(distM, assembly="hg38", motifs="jaspar", clusterMethod="pam", k=0){
+getMotifClustering <- function(distM=NULL, assembly="hg38", motifs="jaspar", clusterMethod="pam", k=0){
 	if (motifs != "jaspar") logger.error(c("Currently motif clustering is only supported for JASPAR motifs"))
 	if (clusterMethod != "pam") logger.error(c("Currently motif clustering is only supported using the PAM clustering method"))
-	if (!is.element("dist", class(distM))) logger.error(c("motif distance matrix must be a dist object"))
+	if (k>0 && !is.element("dist", class(distM))) logger.error(c("motif distance matrix must be a dist object"))
 
 	spec <- muRtools::normalize.str(organism(getGenomeObject(assembly)))
-	motifIds <- labels(distM)
 
 	if (motifs=="jaspar"){
 		if (clusterMethod == "pam"){
@@ -218,7 +217,7 @@ getMotifClustering <- function(distM, assembly="hg38", motifs="jaspar", clusterM
 				require(cluster)
 				clustRes.pam <- pam(distM, k=k)
 				clustAssign <- clustRes.pam$medoids[clustRes.pam$clustering]
-				names(clustAssign) <- motifIds
+				names(clustAssign) <- labels(distM)
 				clustAssignL <- lapply(clustRes.pam$medoids, FUN=function(mm){names(clustAssign)[clustAssign==mm]})
 				names(clustAssignL) <- clustRes.pam$medoids
 				clusterNames <- sapply(seq_along(clustAssignL), FUN=function(i){

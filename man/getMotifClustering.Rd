@@ -4,11 +4,11 @@
 \alias{getMotifClustering}
 \title{getMotifClustering}
 \usage{
-getMotifClustering(distM, assembly = "hg38", motifs = "jaspar",
+getMotifClustering(distM = NULL, assembly = "hg38", motifs = "jaspar",
   clusterMethod = "pam", k = 0)
 }
 \arguments{
-\item{distM}{distance matrix (\code{dist} object) containing motif dissimilarities/distances}
+\item{distM}{distance matrix (\code{dist} object) containing motif dissimilarities/distances. Only required if \code{k>0}.}
 
 \item{assembly}{genome assembly for which the motifs dissimilarity should be retrieved. Only the species information
 of the assembly is really relevant}
@@ -24,7 +24,7 @@ For \code{distMethod=="jaspar"} and \code{clusterMethod=="pam"} this corresponds
 \item{distMethod}{method of dissimilarity quantification. Currently only \code{'jaspar'} (retrieve motif similarities from the annotation of the JASPAR website) is supported.}
 }
 \value{
-a matrix of motif DISsimilarities (\code{dist} object)
+a list structure containing the clustering result
 }
 \description{
 Retrieve motif clustering of TF motifs
