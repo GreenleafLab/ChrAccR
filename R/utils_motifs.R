@@ -242,7 +242,8 @@ getMotifClustering <- function(k=0, distM=NULL, assembly="hg38", motifs="jaspar"
 #' @return PWM probability matrix with values in 
 #' @author Fabian Mueller [0,1]
 PWMatrixToProbMatrix <- function(x){
-	(2^as.matrix(x))*bg(x)/sum(bg(x))
+	require(TFBSTools)
+	(2^as(x, "matrix"))*bg(x)/sum(bg(x))
 }
 
 #' hmSeqLogo
