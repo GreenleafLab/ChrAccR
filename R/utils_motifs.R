@@ -240,9 +240,10 @@ getMotifClustering <- function(k=0, distM=NULL, assembly="hg38", motifs="jaspar"
 #'
 #' @param x log2probratio PWM (\code{PWMatrix} from TFBSTools package)
 #' @return PWM probability matrix with values in 
-#' @author Fabian Mueller [0,1]
+#' @author Fabian Mueller
 PWMatrixToProbMatrix <- function(x){
 	require(TFBSTools)
+	if (class(x) != "PWMatrix") stop("x must be a TFBSTools::PWMatrix object")
 	(2^as(x, "matrix"))*bg(x)/sum(bg(x))
 }
 
