@@ -23,8 +23,8 @@ getATACinsertion <- function(ga, offsetTn=TRUE){
 
 	res <- NULL
 	if (isPaired){
-		r1 <- first(ga)
-		r2 <- second(ga)
+		r1 <- GenomicAlignments::first(ga)
+		r2 <- GenomicAlignments::second(ga)
 		coordMat <- cbind(start(r1), end(r1), start(r2), end(r2))
 		res <- granges(r1)
 		start(res) <- rowMins(coordMat)
