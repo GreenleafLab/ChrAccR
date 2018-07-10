@@ -392,6 +392,84 @@ setMethod("regionAggregation",
 	}
 )
 #-------------------------------------------------------------------------------
+if (!isGeneric("mergeSamples")) {
+	setGeneric(
+		"mergeSamples",
+		function(.object, ...) standardGeneric("mergeSamples"),
+		signature=c(".object")
+	)
+}
+#' mergeSamples-methods
+#'
+#' Merge signal and insertion data across samples
+#'
+#' @param .object \code{\linkS4class{DsATAC}} object
+#' @param mergeGroups  factor or character vector or column name in sample annotation table
+#' @param countAggrFun aggregation function for signal counts.
+#'                Currently \code{sum}, \code{mean} and \code{median} (default) are supported.
+#' @return a new \code{\linkS4class{DsATAC}} object with samples merged
+#'
+#' 
+#' @rdname mergeSamples-DsATAC-method
+#' @docType methods
+#' @aliases mergeSamples
+#' @aliases mergeSamples,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("mergeSamples",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		mergeGroups,
+		countAggrFun="median"
+	) {
+		if (!is.element(countAggrFun, c("sum", "mean", "median"))){
+			logger.error(c("Unknown signal count aggregation function:", countAggrFun))
+		}
+		nSamples <- length(getSamples(.object))
+		ph <- getSampleAnnot(.object)
+		if (is.character(mergeGroups) && length(mergeGroups) == 1 && is.element(mergeGroups, colnames(ph))){
+			mergeGroups <- ph[,mergeGroups]
+		}
+		if (!is.factor(mergeGroups) || !is.character(mergeGroups) || length(mergeGroups) != nrow(ph)){
+			logger.error("Invalid merge groups")
+		}
+		if (is.factor(mergeGroups)) mergeGroups <- as.character(mergeGroups)
+
+		phm <- muRtools::aggregateDf(ph, mergeGroups)
+		mgL <- lapply(rownames(phm), FUN=function(mg){which(mergeGroups==mg)})
+		names(mgL) <- unique(mergeGroups)
+
+		#count data
+		regTypes <- getRegionTypes(.object)
+		for (rt in regTypes){
+			cm <- ChrAccR::getCounts(.object, rt, asMatrix=TRUE)
+			cmm <- do.call("cbind", lapply(mgL, FUN=function(iis){
+				if(countAggrFun=="sum"){
+					return(rowSums(cm[,iis,drop=FALSE], na.rm=TRUE))
+				} else if(countAggrFun=="mean"){
+					return(rowMeans(cm[,iis,drop=FALSE], na.rm=TRUE))
+				} else if(countAggrFun=="median"){
+					return(rowMedians(cm[,iis,drop=FALSE], na.rm=TRUE))
+				}
+			}))
+			.object@counts[[rt]] <- data.table(cmm)
+		}
+
+		#insertion data: concatenate GRanges objects
+		if (length(.object@insertions) == nSamples){
+			insL <- .object@insertions
+			.object@insertions <- lapply(mgL, FUN=function(iis){
+				do.call("c", insL[iis])
+			})
+		}
+
+		return(.object)
+	}
+)
+#-------------------------------------------------------------------------------
 if (!isGeneric("addCountDataFromBam")) {
 	setGeneric(
 		"addCountDataFromBam",

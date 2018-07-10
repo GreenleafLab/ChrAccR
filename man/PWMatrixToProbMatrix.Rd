@@ -16,5 +16,5 @@ PWM probability matrix with values in
 convert a log2probratio PWM (\code{PWMatrix} from TFBSTools package) to a matrix containing probabilities in [0,1]
 }
 \author{
-Fabian Mueller [0,1]
+Fabian Mueller
 }
