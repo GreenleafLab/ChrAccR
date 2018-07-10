@@ -442,6 +442,7 @@ setMethod("mergeSamples",
 		mgL <- lapply(rownames(phm), FUN=function(mg){which(mergeGroups==mg)})
 		names(mgL) <- unique(mergeGroups)
 
+		.object@sampleAnnot <- phm
 		#count data
 		regTypes <- getRegionTypes(.object)
 		for (rt in regTypes){
