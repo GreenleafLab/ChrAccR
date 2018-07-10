@@ -433,7 +433,7 @@ setMethod("mergeSamples",
 		if (is.character(mergeGroups) && length(mergeGroups) == 1 && is.element(mergeGroups, colnames(ph))){
 			mergeGroups <- ph[,mergeGroups]
 		}
-		if (!is.factor(mergeGroups) || !is.character(mergeGroups) || length(mergeGroups) != nrow(ph)){
+		if ((!is.factor(mergeGroups) && !is.character(mergeGroups)) || length(mergeGroups) != nrow(ph)){
 			logger.error("Invalid merge groups")
 		}
 		if (is.factor(mergeGroups)) mergeGroups <- as.character(mergeGroups)
