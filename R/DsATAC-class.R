@@ -443,6 +443,7 @@ setMethod("mergeSamples",
 		names(mgL) <- unique(mergeGroups)
 
 		.object@sampleAnnot <- phm
+
 		#count data
 		regTypes <- getRegionTypes(.object)
 		for (rt in regTypes){
@@ -827,7 +828,7 @@ setMethod("removeSamples",
 		.object@sampleAnnot <- .object@sampleAnnot[inds2keep,]
 
 		for (rt in getRegionTypes(.object)){
-			.object@counts[[rt]]  <- .object@counts[[rt]][,inds2keep]
+			.object@counts[[rt]]  <- .object@counts[[rt]][,..inds2keep]
 		}
 
 		if (length(.object@insertions) == nSamples){
