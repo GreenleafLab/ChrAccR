@@ -40,6 +40,18 @@ prepareMotifmatchr <- function(genome, motifs){
 			} 
 			motifL <- c(motifL, TFBSTools::toPWM(mlCur))
 		}
+		if (is.element("jaspar_vert", motifs)){
+			# JASPER for all vertebrate TFBS
+			opts <- list()
+			opts["tax_group"] <- "vertebrates"
+			opts["collection"] <- "CORE"
+			# gets the non-redundant set by default
+			mlCur <- TFBSTools::getMatrixSet(JASPAR2018::JASPAR2018, opts)
+			if (!isTRUE(all.equal(TFBSTools::name(mlCur), names(mlCur)))){
+				names(mlCur) <- paste(names(mlCur), TFBSTools::name(mlCur), sep = "_")
+			} 
+			motifL <- c(motifL, TFBSTools::toPWM(mlCur))
+		}
 		if (is.element("jaspar2016", motifs)){
 			require(chromVAR)
 			motifL <- c(motifL, TFBSTools::toPWM(getJasparMotifs(species=spec)))
