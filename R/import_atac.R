@@ -345,3 +345,94 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 	res <- sort(res)
 	return(res)
 }
+#-------------------------------------------------------------------------------
+#' getSampleMetrics.snakeATAC
+#' 
+#' Retrieve sample summary statistics from the output a snakeATAC pipline run
+#' @param sampleAnnot  data.frame specifying the sample annotation table. Must have valid rownames corresponding to the sample ids used in
+#'                     the snakeAtac filenames
+#' @param snakeDir     snakeATAC base directory (where the files are located)
+#' @param withPeaks    flag indicating whether to output peak statistics
+#' @return \code{data.frame} containing sample summary statistics. the original sample annotation table will be appended to the summary output
+#' @author Fabian Mueller
+#' @export
+getSampleMetrics.snakeATAC <- function(sampleAnnot, snakeDir, withPeaks=TRUE){
+	require(R.utils) #countLines
+	if (length(rownames(sampleAnnot)) != nrow(sampleAnnot)){
+		logger.error(c("sampleAnnot does not contain valid rownames"))
+	}
+	if (all(rownames(sampleAnnot)==as.character(1:nrow(sampleAnnot)))){
+		logger.warning(c("sampleAnnot has numerical rownames. Should it?"))
+	}
+
+	#compiled countTables - disjoint
+	cct <- readTab(file.path(snakeDir, "output", "bams", "qc", "compiled_counts.disjoint.txt"))
+	colnames(cct) <- c("sampleId", paste0("reads_", colnames(cct)[2:5]))
+	rownames(cct) <- cct$sampleId
+	#initialize metrics summary table
+	sampleMetrics <- cct
+	unknownSamples <- setdiff(cct$sampleId, rownames(sampleAnnot))
+	if (length(unknownSamples) > 0){
+		logger.error(c("The following sample names (ids) could not be found in the sample annotation:", paste(unknownSamples, collapse=", ")))
+	}
+
+	#compiled countTables - stepwise
+	cct <- readTab(file.path(snakeDir, "output", "bams", "qc", "compiled_counts.txt"))
+	colnames(cct) <- c("sampleId", paste0("reads_", colnames(cct)[2:5]))
+	rownames(cct) <- cct$sampleId
+	sampleMetrics <- data.frame(
+		sampleMetrics,
+		cct[sampleMetrics$sampleId,2:ncol(cct)],
+		stringsAsFactors=FALSE
+	)
+
+	#compiled countTables - percent
+	cct <- readTab(file.path(snakeDir, "output", "bams", "qc", "compiled_counts.fraction.txt"))
+	colnames(cct) <- c("sampleId", paste0("readFrac_", colnames(cct)[2:4]))
+	rownames(cct) <- cct$sampleId
+	sampleMetrics <- data.frame(
+		sampleMetrics,
+		cct[sampleMetrics$sampleId,2:ncol(cct)],
+		stringsAsFactors=FALSE
+	)
+
+	#get flagstats numbers
+	cct <- readTab(file.path(snakeDir, "output", "bams", "qc", "compiled_flagstats.txt"))
+	colnames(cct) <- c("sampleId", paste0("flagstat_", colnames(cct)[2:ncol(cct)]))
+	rownames(cct) <- cct$sampleId
+	sampleMetrics <- data.frame(
+		sampleMetrics,
+		cct[sampleMetrics$sampleId,2:ncol(cct)],
+		stringsAsFactors=FALSE
+	)
+
+	# TSS enrichment scores
+	fn <- file.path(snakeDir, "output", "coverage_data", "compiled_TSS.txt")
+	if (file.exists(fn)){
+		cct <- readTab(fn)
+		colnames(cct) <- c("sampleId", "tssEnrichment")
+		rownames(cct) <- cct$sampleId
+		sampleMetrics <- data.frame(
+			sampleMetrics,
+			tssEnrichment=cct[sampleMetrics$sampleId,"tssEnrichment"],
+			stringsAsFactors=FALSE
+		)
+	}
+
+	if (withPeaks){
+		#get the number of called peaks
+		peakDir <- file.path(snakeDir, "output", "peaks")
+		numPeaks <- sapply(sampleMetrics$sampleId, FUN=function(sid){
+			countLines(file.path(peakDir, paste0(sid, "_summits.bed")))
+		})
+		sampleMetrics[,"numPeaks"] <- numPeaks
+	}
+
+	#add sample annotation
+	sampleMetrics <- data.frame(
+		sampleMetrics,
+		sampleAnnot[sampleMetrics$sampleId,],
+		stringsAsFactors=FALSE
+	)
+	return(sampleMetrics)
+}
