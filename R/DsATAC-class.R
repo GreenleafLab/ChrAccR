@@ -440,7 +440,7 @@ setMethod("mergeSamples",
 
 		phm <- muRtools::aggregateDf(ph, mergeGroups)
 		mgL <- lapply(rownames(phm), FUN=function(mg){which(mergeGroups==mg)})
-		names(mgL) <- unique(mergeGroups)
+		names(mgL) <- rownames(phm)
 
 		.object@sampleAnnot <- phm
 
