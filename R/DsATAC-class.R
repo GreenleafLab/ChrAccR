@@ -428,7 +428,8 @@ setMethod("mergeSamples",
 		if (!is.element(countAggrFun, c("sum", "mean", "median"))){
 			logger.error(c("Unknown signal count aggregation function:", countAggrFun))
 		}
-		nSamples <- length(getSamples(.object))
+		sampleNames <- getSamples(.object)
+		nSamples <- length(sampleNames)
 		ph <- getSampleAnnot(.object)
 		if (is.character(mergeGroups) && length(mergeGroups) == 1 && is.element(mergeGroups, colnames(ph))){
 			mergeGroups <- ph[,mergeGroups]
@@ -464,7 +465,13 @@ setMethod("mergeSamples",
 		if (length(.object@insertions) == nSamples){
 			insL <- .object@insertions
 			.object@insertions <- lapply(mgL, FUN=function(iis){
-				do.call("c", insL[iis])
+				rr <- insL[iis]
+				rr <- lapply(seq_along(iis), FUN=function(i){
+					x <- rr[[i]]
+					elementMetadata(x)[,".sample"] <- sampleNames[iis[i]]
+					return(x)
+				})
+				return(do.call("c", rr))
 			})
 		}
 
