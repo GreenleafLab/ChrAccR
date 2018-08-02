@@ -693,7 +693,7 @@ setMethod("addInsertionDataFromBam",
 				}
 				ga <- NULL
 				if (pairedEnd){
-					ga <- readGAlignmentPairs(fns[sid], use.names=FALSE)
+					ga <- readGAlignmentPairs(fns[sid], use.names=FALSE, param=ScanBamParam(flag=scanBamFlag(isProperPair=TRUE)))
 				} else {
 					ga <- readGAlignments(fns[sid], use.names=FALSE)
 				}

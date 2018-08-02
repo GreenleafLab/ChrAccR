@@ -25,10 +25,24 @@ getATACinsertion <- function(ga, offsetTn=TRUE){
 	if (isPaired){
 		r1 <- GenomicAlignments::first(ga)
 		r2 <- GenomicAlignments::second(ga)
-		coordMat <- cbind(start(r1), end(r1), start(r2), end(r2))
 		res <- granges(r1)
-		start(res) <- rowMins(coordMat)
-		end(res) <- rowMaxs(coordMat)
+		# counts on properly paired reads in immune atlas data
+		# --> we have stranded data
+		# sum(start(r1) < start(r2) & end(r2) > end(r1) & strand(res)=="+")/length(r1) # 30%
+		# sum(start(r1) <= start(r2) & end(r2) >= end(r1) & strand(res)=="+")/length(r1) # 50%
+		# sum(start(r2) < start(r1) & end(r2) < end(r1) & strand(res)=="-")/length(r1) # 30%
+		# sum(start(r1) < start(r2) & end(r2) > end(r1) & strand(res)=="-")/length(r1) # 0%
+		# sum(start(r2) < start(r1) & end(r2) < end(r1) & strand(res)=="+")/length(r1) # 0%
+		# sum(start(r1) == start(r2) & end(r1) == end(r2))/length(r1) # 38%
+		# sum(start(r1) < end(r2) & strand(res)=="+")/length(r1) # 50%
+		# sum(start(r1) < end(r2) & strand(res)=="-")/length(r1) # 28%
+		# sum(start(r2) < end(r1) & strand(res)=="-")/length(r1) # 50%
+		# sum(start(r2) < end(r1) & strand(res)=="+")/length(r1) # 28%
+		start(res) <- ifelse(strand(res)=="-", start(r2), start(r1))
+		end(res)   <- ifelse(strand(res)=="-", end(r1), end(r2))
+		# coordMat <- cbind(start(r1), end(r1), start(r2), end(r2))
+		# start(res) <- rowMins(coordMat)
+		# end(res) <- rowMaxs(coordMat)
 		if (offsetTn){
 			# shift inserts inward due to the Tn5 dimer offset:
 			# --> +4bp
@@ -52,3 +66,4 @@ getATACinsertion <- function(ga, offsetTn=TRUE){
 
 	return(res)
 }
+
