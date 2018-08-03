@@ -8,14 +8,14 @@
 #' @param dataDir      directory where the files are located
 #' @param regionSets   a list of GRanges objects which contain region sets over which count data will be aggregated
 #' @param sampleIdCol  column name or index in the sample annotation table containing unique sample identifiers
-#' @param type         input data type. Currently only "insBed" (insertion beds) and "bam" (aligned reads) are supported
+#' @param type         input data type. Currently only "insBed" (insertion beds), "insBed" (insertion info inferred from bam files (aligned reads); default) and "bam" (aligned reads) are supported
 #' @param keepInsertionInfo flag indicating whether to maintain the insertion information in the resulting object. Only relevant when \code{type=="insBam"}.
 #' @param bySample     process sample-by-sample to save memory (currently only has an effect for \code{type=="insBam"})
 #' @param pairedEnd    is the input data paired-end? Only relevant when \code{type=="insBam"}.
 #' @return \code{\linkS4class{DsATAC}} object
 #' @author Fabian Mueller
 #' @export
-DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, regionSets=NULL, sampleIdCol=filePrefixCol, type="insBed", keepInsertionInfo=TRUE, bySample=FALSE, pairedEnd=TRUE){
+DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, regionSets=NULL, sampleIdCol=filePrefixCol, type="insBam", keepInsertionInfo=TRUE, bySample=TRUE, pairedEnd=TRUE){
 	if (!is.element(type, c("bam", "insBam", "insBed"))){
 		logger.error(c("Unsupported import type:", type))
 	}
