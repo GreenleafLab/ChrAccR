@@ -181,23 +181,38 @@ setMethod("getInsertionSites",
 		res <- list()
 		for (sid in samples){
 			isW <- width(.object@fragments[[sid]])>1 # the insertion site is already width=1 --> single end. For paired end-data all of these should be TRUE
-			grins <- NULL
+			grins <- GRanges()
 			if (any(!isW)){
-				grins <- .object@fragments[[sid]][isW]
+				# width==1 --> single-end data
+				grins <- .object@fragments[[sid]][!isW]
 			}
-			if (all(isW)){
-				# paired-end data - default case
-				grins <- c(
-					resize(.object@fragments[[sid]], width=1, fix="start"),
-					resize(.object@fragments[[sid]], width=1, fix="end")
-				)
-			} else if (any(isW)){
-				# mixed paired-end and single-end data
-				logger.warning(c("mixed paired-end and single-end data detected for sample", sid))
+			if (any(isW)){
+				peStarts <- GRanges()
+				peEnds   <- GRanges()
+				if (all(isW)){
+					# paired-end data - default case
+					peStarts <- resize(.object@fragments[[sid]], width=1, fix="start")
+					peEnds   <- resize(.object@fragments[[sid]], width=1, fix="end")
+				} else {
+					# mixed paired-end and single-end data
+					logger.warning(c("mixed paired-end and single-end data detected for sample", sid))
+					peStarts <- resize(.object@fragments[[sid]][isW], width=1, fix="start")
+					peEnds   <- resize(.object@fragments[[sid]][isW], width=1, fix="end")
+				}
+
+				# avoid double counting on neighboring fragments:
+				# only count those insertion sites once that originate from the fragment on the left and another time from the fragment on the right
+				# These incidences should only be taken into account if the fragments have different orientation (+/- strand) since the Tn5 is loaded
+				# with both read1 and read2 adapters
+				peEnds.inv <- peEnds
+				strand(peEnds.inv) <- ifelse(strand(peEnds)=="+", "-", ifelse(strand(peEnds)=="-", "+", "*"))
+				peEnds <- peEnds[!overlapsAny(peEnds.inv, peStarts, ignore.strand=FALSE)] # remove insertion sites from fragment end points that can be found as start points of fragments on the opposite strand
+				strand(peStarts)[overlapsAny(peStarts, peEnds.inv, ignore.strand=FALSE)] <- "*" #set the strand to both if it is supported by a forward and a reverse fragment
+
 				grins <- c(
 					grins,
-					resize(.object@fragments[[sid]][isW], width=1, fix="start"),
-					resize(.object@fragments[[sid]][isW], width=1, fix="end")
+					peStarts,
+					peEnds
 				)
 			}
 			#sort the result

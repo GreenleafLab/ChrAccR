@@ -9,7 +9,7 @@ getATACfragments(ga, offsetTn = TRUE)
 \arguments{
 \item{ga}{\code{GAlignmentPairs} (or \code{GAlignments} for single-end sequencing) object}
 
-\item{offsetTn}{apply offsets for Tn5 dimer cut site (+4bp on genomic + strand; -5bp on genomic - strand)}
+\item{offsetTn}{apply offsets for Tn5 dimer cut site (+4 bp on genomic + strand; -4 bp on genomic - strand)}
 }
 \value{
 \code{GRanges} object containing derived insertions. For paired-end data (recommended), the width of the resulting ranges corresponds to the insert size
