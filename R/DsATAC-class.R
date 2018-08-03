@@ -22,7 +22,7 @@
 #' @exportClass DsATAC
 setClass("DsATAC",
 	slots = list(
-		insertions = "list",
+		fragments = "list",
 		counts = "list",
 		countTransform = "list"
 	),
@@ -32,13 +32,13 @@ setClass("DsATAC",
 setMethod("initialize","DsATAC",
 	function(
 		.Object,
-		insertions,
+		fragments,
 		coord,
 		counts,
 		sampleAnnot,
 		genome
 	) {
-		.Object@insertions  <- insertions
+		.Object@fragments  <- fragments
 		.Object@coord       <- coord
 		.Object@counts      <- counts
 		.Object@countTransform <- rep(list(character(0)), length(.Object@counts))
@@ -177,27 +177,27 @@ setMethod("getInsertionSites",
 		samples=getSamples(.object)
 	) {
 		if (!all(samples %in% getSamples(.object))) logger.error(c("Invalid samples:", paste(setdiff(samples, getSamples(.object)), collapse=", ")))
-		if (!all(samples %in% names(.object@insertions))) logger.error(c("Object does not contain insertion information for samples:", paste(setdiff(samples, names(.object@insertions)), collapse=", ")))
+		if (!all(samples %in% names(.object@fragments))) logger.error(c("Object does not contain insertion information for samples:", paste(setdiff(samples, names(.object@fragments)), collapse=", ")))
 		res <- list()
 		for (sid in samples){
-			isW <- width(.object@insertions[[sid]])>1 # the insertion site is already width=1 --> single end. For paired end-data all of these should be TRUE
+			isW <- width(.object@fragments[[sid]])>1 # the insertion site is already width=1 --> single end. For paired end-data all of these should be TRUE
 			grins <- NULL
 			if (any(!isW)){
-				grins <- .object@insertions[[sid]][isW]
+				grins <- .object@fragments[[sid]][isW]
 			}
 			if (all(isW)){
 				# paired-end data - default case
 				grins <- c(
-					resize(.object@insertions[[sid]], width=1, fix="start"),
-					resize(.object@insertions[[sid]], width=1, fix="end")
+					resize(.object@fragments[[sid]], width=1, fix="start"),
+					resize(.object@fragments[[sid]], width=1, fix="end")
 				)
 			} else if (any(isW)){
 				# mixed paired-end and single-end data
 				logger.warning(c("mixed paired-end and single-end data detected for sample", sid))
 				grins <- c(
 					grins,
-					resize(.object@insertions[[sid]][isW], width=1, fix="start"),
-					resize(.object@insertions[[sid]][isW], width=1, fix="end")
+					resize(.object@fragments[[sid]][isW], width=1, fix="start"),
+					resize(.object@fragments[[sid]][isW], width=1, fix="end")
 				)
 			}
 			#sort the result
@@ -462,9 +462,9 @@ setMethod("mergeSamples",
 		}
 
 		#insertion data: concatenate GRanges objects
-		if (length(.object@insertions) == nSamples){
-			insL <- .object@insertions
-			.object@insertions <- lapply(mgL, FUN=function(iis){
+		if (length(.object@fragments) == nSamples){
+			insL <- .object@fragments
+			.object@fragments <- lapply(mgL, FUN=function(iis){
 				rr <- insL[iis]
 				rr <- lapply(seq_along(iis), FUN=function(i){
 					x <- rr[[i]]
@@ -661,7 +661,7 @@ if (!isGeneric("addInsertionDataFromBam")) {
 #' @param .object \code{\linkS4class{DsATAC}} object
 #' @param fns     a named vector of bam file locations. The names must correspond to sample identifiers in the object
 #' @param pairedEnd flag indicating whether the bam files are from paired-end sequencing
-#' @return a new \code{\linkS4class{DsATAC}} object with insertions for each sample
+#' @return a new \code{\linkS4class{DsATAC}} object with fragments/insertions for each sample
 #'
 #' @rdname addInsertionDataFromBam-DsATAC-method
 #' @docType methods
@@ -688,7 +688,7 @@ setMethod("addInsertionDataFromBam",
 		}
 		for (sid in sids){
 			logger.start(c("Reading insertion data for sample:", sid))
-				if (!is.null(.object@insertions[[sid]])){
+				if (!is.null(.object@fragments[[sid]])){
 					logger.warning(c("Overwriting insertion data for sample:", sid))
 				}
 				ga <- NULL
@@ -698,7 +698,7 @@ setMethod("addInsertionDataFromBam",
 					ga <- readGAlignments(fns[sid], use.names=FALSE)
 				}
 				ga <- setGenomeProps(ga, .object@genome, onlyMainChrs=TRUE)
-				.object@insertions[[sid]] <- getATACinsertion(ga, offsetTn=TRUE)
+				.object@fragments[[sid]] <- getATACfragments(ga, offsetTn=TRUE)
 			logger.completed()
 		}
 
@@ -838,8 +838,8 @@ setMethod("removeSamples",
 			.object@counts[[rt]]  <- .object@counts[[rt]][,..inds2keep]
 		}
 
-		if (length(.object@insertions) == nSamples){
-			.object@insertions <- .object@insertions[inds2keep]
+		if (length(.object@fragments) == nSamples){
+			.object@fragments <- .object@fragments[inds2keep]
 		}
 		
 		return(.object)

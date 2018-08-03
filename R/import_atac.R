@@ -89,7 +89,7 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, region
 							obj <- addCountDataFromGRL(obj, getInsertionSites(obj, samples=sid))
 							# optionally remove insertion information to save space
 							if (!keepInsertionInfo){
-								obj@insertions <- list()
+								obj@fragments <- list()
 							}
 						logger.completed()
 					}
@@ -103,7 +103,7 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, region
 				logger.completed()
 				# optionally remove insertion information to save space
 				if (!keepInsertionInfo){
-					obj@insertions <- list()
+					obj@fragments <- list()
 				}
 			}
 		} else if (type=="insBed"){
