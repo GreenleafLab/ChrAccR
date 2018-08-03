@@ -200,14 +200,15 @@ setMethod("getInsertionSites",
 					peEnds   <- resize(.object@fragments[[sid]][isW], width=1, fix="end")
 				}
 
-				# avoid double counting on neighboring fragments:
-				# only count those insertion sites once that originate from the fragment on the left and another time from the fragment on the right
-				# These incidences should only be taken into account if the fragments have different orientation (+/- strand) since the Tn5 is loaded
-				# with both read1 and read2 adapters
-				peEnds.inv <- peEnds
-				strand(peEnds.inv) <- ifelse(strand(peEnds)=="+", "-", ifelse(strand(peEnds)=="-", "+", "*"))
-				peEnds <- peEnds[!overlapsAny(peEnds.inv, peStarts, ignore.strand=FALSE)] # remove insertion sites from fragment end points that can be found as start points of fragments on the opposite strand
-				strand(peStarts)[overlapsAny(peStarts, peEnds.inv, ignore.strand=FALSE)] <- "*" #set the strand to both if it is supported by a forward and a reverse fragment
+				# # THIS IS NOT VALID: The Tn5 dimer is NOT always loaded with one read1 and one read2 adapter
+				# # avoid double counting on neighboring fragments:
+				# # only count those insertion sites once that originate from the fragment on the left and another time from the fragment on the right
+				# # These incidences should only be taken into account if the fragments have different orientation (+/- strand) since the Tn5 is loaded
+				# # with both read1 and read2 adapters (!WRONG ASSUMPTION!)
+				# peEnds.inv <- peEnds
+				# strand(peEnds.inv) <- ifelse(strand(peEnds)=="+", "-", ifelse(strand(peEnds)=="-", "+", "*"))
+				# peEnds <- peEnds[!overlapsAny(peEnds.inv, peStarts, ignore.strand=FALSE)] # remove insertion sites from fragment end points that can be found as start points of fragments on the opposite strand
+				# strand(peStarts)[overlapsAny(peStarts, peEnds.inv, ignore.strand=FALSE)] <- "*" #set the strand to both if it is supported by a forward and a reverse fragment
 
 				grins <- c(
 					grins,
