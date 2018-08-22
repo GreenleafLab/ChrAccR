@@ -217,7 +217,7 @@ getMotifDistMat <- function(assembly="hg38", mmObj=NULL, method="jaspar"){
 #'                     For \code{distMethod=="jaspar"} and \code{clusterMethod=="pam"} this corresponds to the k corresponding to the best silhouette value before a drop (in the silhouette elbow-curve) occurs
 #' @param distM        distance matrix (\code{dist} object) containing motif dissimilarities/distances. Only required if \code{k>0}.
 #' @param assembly     genome assembly for which the motifs dissimilarity should be retrieved. Only the species information
-#'                     of the assembly is really relevant. Only required if for automatic mode (i.e. \code{k<1}).
+#'                     of the assembly is really relevant. Can be \code{"vert"} for all vertebrate motifs. Only required if for automatic mode (i.e. \code{k<1}).
 #' @param motifs either a character string (currently only "jaspar" is supported) or an object containing PWMs
 #'               that can be used by \code{motifmatchr::matchMotifs} (\code{PWMatrixList} object)
 #' @param distMethod     method of dissimilarity quantification. Currently only \code{'jaspar'} (retrieve motif similarities from the annotation of the JASPAR website) is supported.
@@ -235,7 +235,8 @@ getMotifClustering <- function(k=0, distM=NULL, assembly="hg38", motifs="jaspar"
 		if (clusterMethod == "pam"){
 			if (k<1){
 				#auto
-				spec <- muRtools::normalize.str(organism(getGenomeObject(assembly)))
+				spec <- assembly
+				if (assembly != "vert")	spec <- muRtools::normalize.str(organism(getGenomeObject(assembly)))
 				fn <- system.file(file.path("extdata", paste0("motifClustRes_bestSil_jaspar_", spec, ".rds")), package="ChrAccR")
 				if (!file.exists(fn)) logger.error(c("ChrAccR currently does not contain a precomputed JASPAR motif clustering for species", spec))
 				cr <- readRDS(fn)
