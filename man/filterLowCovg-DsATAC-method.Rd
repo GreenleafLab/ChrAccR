@@ -6,8 +6,8 @@
 \alias{filterLowCovg}
 \title{filterLowCovg-methods}
 \usage{
-\S4method{filterLowCovg}{DsATAC}(.object, thresh = 1L, reqSamples = 0.75,
-  regionTypes = getRegionTypes(.object))
+\S4method{filterLowCovg}{DsATAC}(.object, thresh = 1L,
+  reqSamples = 0.75, regionTypes = getRegionTypes(.object))
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}

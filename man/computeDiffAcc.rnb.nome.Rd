@@ -6,8 +6,9 @@
 \title{computeDiffAcc.rnb.nome}
 \usage{
 computeDiffAcc.rnb.nome(dsn, cmpCols, regionTypes = getRegionTypes(dsn),
-  covgThres = 5L, allPairs = TRUE, adjPairCols = NULL, adjCols = NULL,
-  skipSites = FALSE, disk.dump = rnb.getOption("disk.dump.big.matrices"),
+  covgThres = 5L, allPairs = TRUE, adjPairCols = NULL,
+  adjCols = NULL, skipSites = FALSE,
+  disk.dump = rnb.getOption("disk.dump.big.matrices"),
   disk.dump.dir = tempfile(pattern = "diffMethTables_"), ...)
 }
 \arguments{

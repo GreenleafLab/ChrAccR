@@ -168,7 +168,7 @@ getMotifDistMat.jaspar <- function(motifIds=NULL, scoreCol="Ncor"){
 #' Retrieve motif dissimilarity/distance matrix for TF motifs 
 #'
 #' @param assembly     genome assembly for which the motifs dissimilarity should be retrieved. Only the species information
-#'                     of the assembly is really relevant
+#'                     of the assembly is really relevant. Can be \code{"vert"} for all vertebrate motifs.
 #' @param mmObj        optional motifmatchr object as returned by \code{ChrAccR::prepareMotifmatchr}
 #' @param method       method of dissimilarity quantification. Currently only \code{'jaspar'} (retrieve motif similarities from the annotation of the JASPAR website) is supported.
 #' @return a matrix of motif DISsimilarities (\code{dist} object)
@@ -177,8 +177,13 @@ getMotifDistMat.jaspar <- function(motifIds=NULL, scoreCol="Ncor"){
 getMotifDistMat <- function(assembly="hg38", mmObj=NULL, method="jaspar"){
 	require(TFBSTools)
 	if (method=="jaspar"){
-		spec <- muRtools::normalize.str(organism(getGenomeObject(assembly)))
-		if (is.null(mmObj))	mmObj <- prepareMotifmatchr(assembly, "jaspar")
+		spec <- assembly
+		if (assembly=="vert") {
+			if (is.null(mmObj))	mmObj <- prepareMotifmatchr("hg38", "jaspar_vert")
+		} else {
+			spec <- muRtools::normalize.str(organism(getGenomeObject(assembly)))
+			if (is.null(mmObj))	mmObj <- prepareMotifmatchr(assembly, "jaspar")
+		}
 		pwmL <- mmObj$motifs
 		fn <- system.file(file.path("extdata", paste0("motifDistMat_jaspar_", spec, ".rds")), package="ChrAccR")
 		if (file.exists(fn)){

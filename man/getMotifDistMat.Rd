@@ -8,7 +8,7 @@ getMotifDistMat(assembly = "hg38", mmObj = NULL, method = "jaspar")
 }
 \arguments{
 \item{assembly}{genome assembly for which the motifs dissimilarity should be retrieved. Only the species information
-of the assembly is really relevant}
+of the assembly is really relevant. Can be \code{"vert"} for all vertebrate motifs.}
 
 \item{mmObj}{optional motifmatchr object as returned by \code{ChrAccR::prepareMotifmatchr}}
 
