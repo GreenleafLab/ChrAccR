@@ -114,42 +114,51 @@ getJasparSymbols <- function(ss){
 #' @param scoreCol     namew of the annotation column in the JASPAR annotation that contains the motif similarity
 #' @return a matrix of motif DISsimilarities
 getMotifDistMat.jaspar <- function(motifIds=NULL, scoreCol="Ncor"){
-	#motif comparison table from JASPAR matrix clustering results
-	compFn <- "http://folk.uio.no/azizk/JASPAR_2018_clustering/results/JASPAR_2018_matrix_clustering/vertebrates/JASPAR_2018_matrix_clustering_vertebrates_tables/pairwise_compa.tab"
-	# Format:
-	# ;mode: matches	thresholds:	cor=-1.000000	ncor=-1.000000	w=0	ncor1=-1.000000	ncor2=-1.000000
-	# #id1	id2	name1	name2	cor	Ncor	Ncor1	Ncor2	w1	w2	w	W	Wr	wr1	wr2	strand	offset	uncounted
-	# JASPAR_2018_vertebrates_m1_MA0002.2	JASPAR_2018_vertebrates_m1_MA0002.2	RUNX1	RUNX1	1.000000	1.000000	1.000000	1.000000	11	11	11	11	1.000000	1.000000	1.000000	D	0	41
-	# JASPAR_2018_vertebrates_m1_MA0002.2	JASPAR_2018_vertebrates_m2_MA0003.3	RUNX1	TFAP2A	0.518599	0.432166	0.471454	0.471454	11	11	10	12	0.833333	0.909091	0.909091	R	-1	41
-	# JASPAR_2018_vertebrates_m1_MA0002.2	JASPAR_2018_vertebrates_m3_MA0004.1	RUNX1	Arnt	0.468110	0.255333	0.255333	0.468110	11	6	6	11	0.545455	0.545455	1.000000	D	1	31
-	# JASPAR_2018_vertebrates_m1_MA0002.2	JASPAR_2018_vertebrates_m4_MA0006.1	RUNX1	Ahr::Arnt	0.533152	0.290810	0.290810	0.533152	11	6	6	11	0.545455	0.545455	1.000000	D	1	31
-	# ...
-	compTab <- read.table(compFn, header=TRUE, comment.char=";", "\t", check.names=FALSE, stringsAsFactors=FALSE)
-	colnames(compTab) <- gsub("^#(.+)$", "\\1", colnames(compTab))
-	extractJasparId <- function(ss){
-		sapply(strsplit(ss, "_"), FUN=function(x){x[length(x)]})
-	}
-	compTab[,"motif1"] <- extractJasparId(compTab[,"id1"])
-	compTab[,"motif2"] <- extractJasparId(compTab[,"id2"])
-	motifIdsFromTab <- sort(union(compTab[,"motif1"], compTab[,"motif2"]))
-	if (is.null(motifIds)){
-		motifIds <- motifIdsFromTab
+	fn <- system.file(file.path("extdata", paste0("motifDistMat_jaspar_", scoreCol, ".rds")), package="ChrAccR")
+	if (file.exists(fn)){
+		distMat <- readRDS(fn)
+		if (!is.null(motifIds)){
+			distMat <- distMat[motifIds, motifIds]
+		}
 	} else {
-		unknownMotifIds <- setdiff(motifIds, motifIdsFromTab)
-		if (length(unknownMotifIds) > 0) logger.warning(c("The following motif ids were not found in the JASPAR clustering result table:", paste(unknownMotifIds, collapse=",")))
-	}
-	compTab <- compTab[compTab[,"motif1"] %in% motifIds & compTab[,"motif2"] %in% motifIds,]
+		logger.info(c("ChrAccR currently does not contain a precomputed JASPAR motif dissimilarity matrix for scoretype", scoreCol, "--> dissimilarities will be retrieved from the JASPAR website"))	
+		#motif comparison table from JASPAR matrix clustering results
+		compFn <- "http://folk.uio.no/azizk/JASPAR_2018_clustering/results/JASPAR_2018_matrix_clustering/vertebrates/JASPAR_2018_matrix_clustering_vertebrates_tables/pairwise_compa.tab"
+		# Format:
+		# ;mode: matches	thresholds:	cor=-1.000000	ncor=-1.000000	w=0	ncor1=-1.000000	ncor2=-1.000000
+		# #id1	id2	name1	name2	cor	Ncor	Ncor1	Ncor2	w1	w2	w	W	Wr	wr1	wr2	strand	offset	uncounted
+		# JASPAR_2018_vertebrates_m1_MA0002.2	JASPAR_2018_vertebrates_m1_MA0002.2	RUNX1	RUNX1	1.000000	1.000000	1.000000	1.000000	11	11	11	11	1.000000	1.000000	1.000000	D	0	41
+		# JASPAR_2018_vertebrates_m1_MA0002.2	JASPAR_2018_vertebrates_m2_MA0003.3	RUNX1	TFAP2A	0.518599	0.432166	0.471454	0.471454	11	11	10	12	0.833333	0.909091	0.909091	R	-1	41
+		# JASPAR_2018_vertebrates_m1_MA0002.2	JASPAR_2018_vertebrates_m3_MA0004.1	RUNX1	Arnt	0.468110	0.255333	0.255333	0.468110	11	6	6	11	0.545455	0.545455	1.000000	D	1	31
+		# JASPAR_2018_vertebrates_m1_MA0002.2	JASPAR_2018_vertebrates_m4_MA0006.1	RUNX1	Ahr::Arnt	0.533152	0.290810	0.290810	0.533152	11	6	6	11	0.545455	0.545455	1.000000	D	1	31
+		# ...
+		compTab <- read.table(compFn, header=TRUE, comment.char=";", "\t", check.names=FALSE, stringsAsFactors=FALSE)
+		colnames(compTab) <- gsub("^#(.+)$", "\\1", colnames(compTab))
+		extractJasparId <- function(ss){
+			sapply(strsplit(ss, "_"), FUN=function(x){x[length(x)]})
+		}
+		compTab[,"motif1"] <- extractJasparId(compTab[,"id1"])
+		compTab[,"motif2"] <- extractJasparId(compTab[,"id2"])
+		motifIdsFromTab <- sort(union(compTab[,"motif1"], compTab[,"motif2"]))
+		if (is.null(motifIds)){
+			motifIds <- motifIdsFromTab
+		} else {
+			unknownMotifIds <- setdiff(motifIds, motifIdsFromTab)
+			if (length(unknownMotifIds) > 0) logger.warning(c("The following motif ids were not found in the JASPAR clustering result table:", paste(unknownMotifIds, collapse=",")))
+		}
+		compTab <- compTab[compTab[,"motif1"] %in% motifIds & compTab[,"motif2"] %in% motifIds,]
 
-	scoreMat <- matrix(as.numeric(NA), nrow=length(motifIds), ncol=length(motifIds))
-	colnames(scoreMat) <- rownames(scoreMat) <- motifIds
-	for(i in 1:nrow(compTab)){
-		# if (1 %% 100 == 0) print(i)
-		scoreMat[compTab[i, "motif1"], compTab[i, "motif2"]] <- compTab[i, scoreCol]
-	}
-	distMat <- scoreMat
-	if (is.element(scoreCol, c("cor", "Ncor"))){
-		# for correlation-based similarities the distance is 1-cor
-		distMat <- 1-scoreMat
+		scoreMat <- matrix(as.numeric(NA), nrow=length(motifIds), ncol=length(motifIds))
+		colnames(scoreMat) <- rownames(scoreMat) <- motifIds
+		for(i in 1:nrow(compTab)){
+			# if (1 %% 100 == 0) print(i)
+			scoreMat[compTab[i, "motif1"], compTab[i, "motif2"]] <- compTab[i, scoreCol]
+		}
+		distMat <- scoreMat
+		if (is.element(scoreCol, c("cor", "Ncor"))){
+			# for correlation-based similarities the distance is 1-cor
+			distMat <- 1-scoreMat
+		}
 	}
 	return(distMat)
 }
