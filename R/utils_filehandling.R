@@ -9,6 +9,7 @@
 #' @export
 fastqDirToTable <- function(fqDir, tabFn=NULL){
 	fqs <- list.files(fqDir, pattern=".fastq")
+	fqs <- fqs[!grepl("^Undetermined_S0", fqs)]
 	baseNames <- gsub("_R[12].*\\.fastq(\\.gz)?$", "", fqs)
 	baseNamesU <- unique(baseNames)
 	readNum <- as.integer(gsub("^.*_R([12]).*\\.fastq(\\.gz)?$", "\\1", fqs))
