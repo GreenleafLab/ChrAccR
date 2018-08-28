@@ -4,15 +4,15 @@
 #' @param fqDir   string specifying a directory with fastq files
 #' @param tabFn   filename specifying the where the table should be written to. If NULL (default), the table will just be returned
 #'                as data frame
-#' @param tabFn   (optional) regular expression that fastq file names have to pass
+#' @param pat (optional) regular expression that fastq file names have to pass
 #' @return data frame of parsed annotation
 #' @author Fabian Mueller
 #' @export
-fastqDirToTable <- function(fqDir, tabFn=NULL, pattern=""){
+fastqDirToTable <- function(fqDir, tabFn=NULL, pat=""){
 	fqs <- list.files(fqDir, pattern=".fastq")
 	fqs <- fqs[!grepl("^Undetermined_S0", fqs)]
-	if (nchar(pattern) > 0){
-		fqs <- fqs[grepl(pattern, fqs)]
+	if (nchar(pat) > 0){
+		fqs <- fqs[grepl(pat, fqs)]
 	}
 	baseNames <- gsub("_R[12].*\\.fastq(\\.gz)?$", "", fqs)
 	baseNamesU <- unique(baseNames)

@@ -4,7 +4,7 @@
 \alias{fastqDirToTable}
 \title{fastqDirToTable}
 \usage{
-fastqDirToTable(fqDir, tabFn = NULL, pattern = "")
+fastqDirToTable(fqDir, tabFn = NULL, pat = "")
 }
 \arguments{
 \item{fqDir}{string specifying a directory with fastq files}
@@ -12,7 +12,7 @@ fastqDirToTable(fqDir, tabFn = NULL, pattern = "")
 \item{tabFn}{filename specifying the where the table should be written to. If NULL (default), the table will just be returned
 as data frame}
 
-\item{tabFn}{(optional) regular expression that fastq file names have to pass}
+\item{pat}{(optional) regular expression that fastq file names have to pass}
 }
 \value{
 data frame of parsed annotation
