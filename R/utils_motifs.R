@@ -90,6 +90,52 @@ prepareMotifmatchr <- function(genome, motifs){
 	res[["motifs"]] <- motifL
 	return(res)
 }
+
+#' permutePWMatrix
+#'
+#' randomly permute the columns of a \code{TFBSTools::PWMatrix} object
+#' (strangely the TFBSTools package has a method for \code{PFMatrix} objects, but not for \code{PWMatrix} objects)
+#'
+#' @param pwm   \code{PFMatrix} or \code{PWMatrix} object whose columns will be permuted
+#' @param nperm number of permutations
+#' @return a list of (length \code{nperm}) \code{PFMatrix} or \code{PWMatrix} objects representing the permuted versions
+#' @author Fabian Mueller
+#' @noRd
+##' @export
+permutePWMatrix <- function(pwm, nperm=100){
+	res <- list()
+	if (class(pwm)=="PFMatrix"){
+		res <- lapply(seq_len(nperm), FUN=function(i){TFBSTools::permuteMatrix(pwm, type="intra")})
+	} else if (class(pwm)=="PWMatrix"){
+		mm <- Matrix(pwm)
+		mLength <- ncol(mm)
+		res <- lapply(seq_len(nperm), FUN=function(i){
+			x <- pwm
+			Matrix(x) <- mm[,sample.int(mLength)]
+			return(x)
+		})
+	} else {
+		logger.error(c("Unable to permute motif matrix of type", class(pwm)))
+	}
+	return(res)
+}
+#' permutePWMatrixList
+#'
+#' randomly permute the columns of each element in a list of motif matrix objects
+#'
+#' @param pwmL  a list of \code{PFMatrix} or \code{PWMatrix} objects or a \code{PFMatrixList} or \code{PWMatrixList} object with the matrices to permute
+#' @param nperm number of permutations applied to each matrix
+#' @return a list in which each element is a lists of (length \code{nperm}) \code{PFMatrix} or \code{PWMatrix} objects representing the permuted versions for
+#'         each element in \code{pwmL}
+#' @author Fabian Mueller
+#' @noRd
+##' @export
+permutePWMatrixList <- function(pwmL, nperm=100){
+	res <- lapply(pwmL, FUN=function(x){
+		permutePWMatrix(x, nperm=nperm)
+	})
+	return(res)
+}
 ################################################################################
 # Motif similarity methods
 ################################################################################
