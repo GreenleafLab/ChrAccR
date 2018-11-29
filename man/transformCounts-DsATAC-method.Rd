@@ -12,7 +12,7 @@
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}
 
-\item{method}{transformation method to be applied. Currently only 'log2', 'quantile' (quantile normalization) and 'RPKM' (RPKM normalization) are supported}
+\item{method}{transformation method to be applied. Currently only 'log2', 'quantile' (quantile normalization), 'vst' (DESeq2 Variance Stabilizing Transformation) and 'RPKM' (RPKM normalization) are supported}
 
 \item{regionTypes}{character vector specifying a name for the region type in which count data should be normalized(default: all region types)}
 }

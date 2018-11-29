@@ -528,7 +528,7 @@ setMethod("addCountDataFromBam",
 		# TODO: adjust for Tn5 insertion:
 		# + strand: i + 4
 		# - strand: i - 5
-		# Buenrostro, et al. (2013). Nature Methods, 10(12), 1213–1218. 
+		# Buenrostro, et al. (2013). Nature Methods, 10(12), 1213-1218. 
 		# For peak-calling and footprinting, we adjusted the read start sites to represent the center of the transposon binding event. Previous descriptions of the Tn5 transposase show that the trans- poson binds as a dimer and inserts two adaptors separated by 9 bp (ref. 11). Therefore, all reads aligning to the + strand were offset by +4 bp, and all reads aligning to the – strand were offset −5 bp
 		ResizeReads <- function(reads, width=1, fix="start", ...) {
 			reads <- as(reads, "GRanges")
@@ -875,7 +875,7 @@ if (!isGeneric("transformCounts")) {
 #' transform count data for an ATAC seq dataset
 #'
 #' @param .object \code{\linkS4class{DsATAC}} object
-#' @param method  transformation method to be applied. Currently only 'log2', 'quantile' (quantile normalization) and 'RPKM' (RPKM normalization) are supported
+#' @param method  transformation method to be applied. Currently only 'log2', 'quantile' (quantile normalization), 'vst' (DESeq2 Variance Stabilizing Transformation) and 'RPKM' (RPKM normalization) are supported
 #' @param regionTypes character vector specifying a name for the region type in which count data should be normalized(default: all region types)
 #' @return a new \code{\linkS4class{DsATAC}} object with normalized count data
 #' 
@@ -929,6 +929,17 @@ setMethod("transformCounts",
 					logger.status(c("Region type:", rt))
 					.object@counts[[rt]] <- log2(.object@counts[[rt]])
 					.object@countTransform[[rt]] <- c("log2", .object@countTransform[[rt]])
+				}
+			logger.completed()
+		} else if (method == "vst"){
+			#TODO: Test
+			logger.start(c("Applying DESeq2 VST"))
+				require(DESeq2)
+				for (rt in regionTypes){
+					logger.status(c("Region type:", rt))
+					dds <- DESeqDataSet(getCountsSE(.object, rt), design=~1)
+					.object@counts[[rt]] <- data.table(assay(vst(dds, blind=TRUE)))
+					.object@countTransform[[rt]] <- c("deseq.vst", .object@countTransform[[rt]])
 				}
 			logger.completed()
 		}
