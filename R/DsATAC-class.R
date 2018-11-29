@@ -933,7 +933,6 @@ setMethod("transformCounts",
 				}
 			logger.completed()
 		} else if (method == "vst"){
-			#TODO: Test
 			logger.start(c("Applying DESeq2 VST"))
 				require(DESeq2)
 				for (rt in regionTypes){
