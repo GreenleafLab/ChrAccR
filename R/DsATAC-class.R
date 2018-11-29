@@ -924,10 +924,11 @@ setMethod("transformCounts",
 				}
 			logger.completed()
 		} else if (method == "log2"){
+			c0 <- 1
 			logger.start(c("log2 transforming counts"))
 				for (rt in regionTypes){
 					logger.status(c("Region type:", rt))
-					.object@counts[[rt]] <- log2(.object@counts[[rt]])
+					.object@counts[[rt]] <- log2(.object@counts[[rt]] + c0)
 					.object@countTransform[[rt]] <- c("log2", .object@countTransform[[rt]])
 				}
 			logger.completed()
