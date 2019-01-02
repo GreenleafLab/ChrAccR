@@ -36,7 +36,8 @@ setMethod("initialize","DsATAC",
 		coord,
 		counts,
 		sampleAnnot,
-		genome
+		genome,
+		diskDump
 	) {
 		.Object@fragments  <- fragments
 		.Object@coord       <- coord
@@ -45,6 +46,7 @@ setMethod("initialize","DsATAC",
 		names(.Object@countTransform) <- names(.Object@counts)
 		.Object@sampleAnnot <- sampleAnnot
 		.Object@genome      <- genome
+		.Object@diskDump    <- diskDump
 		.Object@pkgVersion  <- packageVersion("ChrAccR")
 		.Object
 	}
@@ -53,13 +55,14 @@ setMethod("initialize","DsATAC",
 #' @param sampleAnnot \code{data.frame} object containing sample annotation
 #' @param genome    character string containing genome assembly
 #' @noRd
-DsATAC <- function(sampleAnnot, genome){
+DsATAC <- function(sampleAnnot, genome, diskDump=FALSE){
 	obj <- new("DsATAC",
 		list(),
 		list(),
 		list(),
 		sampleAnnot,
-		genome
+		genome,
+		diskDump
 	)
 	return(obj)
 }
@@ -356,10 +359,12 @@ setMethod("regionAggregation",
 		nSamples <- length(getSamples(.object))
 		nRegs    <- length(regGr)
 		emptyVec <- rep(as.integer(NA), nRegs)
-		.object@counts[[type]] <- data.table(emptyVec)
-		for (i in 1:nSamples){
-			.object@counts[[type]][[i]] <- emptyVec
-		}
+		# .object@counts[[type]] <- data.table(emptyVec)
+		# for (i in 1:nSamples){
+		# 	.object@counts[[type]][[i]] <- emptyVec
+		# }
+		.object@counts[[type]] <- matrix(as.integer(NA), nrow=nRegs, ncol=nSamples)
+		if (.object@diskDump) .object@counts[[type]] <- as(.object@counts[[type]], "HDF5Array")
 		colnames(.object@counts[[type]]) <- getSamples(.object)
 		.object@countTransform[[type]] <- character(0)
 
@@ -395,7 +400,10 @@ setMethod("regionAggregation",
 		}
 		if (doAggr){
 			logger.info(c("Aggregated signal counts across", nrow(.object@counts[[type]]), "regions"))
-			rows2keep <- rowAnys(!is.na(.object@counts[[type]]))
+			# rows2keep <- rowAnys(!is.na(.object@counts[[type]]))
+			naMat <- !is.na(.object@counts[[type]])
+			if (.object@diskDump) naMat <- as.matrix(naMat)
+			rows2keep <- rowAnys(naMat)
 			logger.info(c("  of which", sum(rows2keep), "regions contained signal counts"))
 			#discard regions where all signal counts are unobserved
 			if (dropEmpty){
@@ -474,7 +482,10 @@ setMethod("mergeSamples",
 					return(rowMedians(cm[,iis,drop=FALSE], na.rm=TRUE))
 				}
 			}))
-			.object@counts[[rt]] <- data.table(cmm)
+			# .object@counts[[rt]] <- data.table(cmm)
+			.object@counts[[rt]] <- cmm
+			if (.object@diskDump) .object@counts[[rt]] <- as(.object@counts[[rt]], "HDF5Array")
+			
 		}
 
 		#insertion data: concatenate GRanges objects
@@ -529,7 +540,7 @@ setMethod("addCountDataFromBam",
 		# + strand: i + 4
 		# - strand: i - 5
 		# Buenrostro, et al. (2013). Nature Methods, 10(12), 1213-1218. 
-		# For peak-calling and footprinting, we adjusted the read start sites to represent the center of the transposon binding event. Previous descriptions of the Tn5 transposase show that the trans- poson binds as a dimer and inserts two adaptors separated by 9 bp (ref. 11). Therefore, all reads aligning to the + strand were offset by +4 bp, and all reads aligning to the – strand were offset −5 bp
+
 		ResizeReads <- function(reads, width=1, fix="start", ...) {
 			reads <- as(reads, "GRanges")
 			stopifnot(all(strand(reads) != "*"))
@@ -851,7 +862,8 @@ setMethod("removeSamples",
 		.object@sampleAnnot <- .object@sampleAnnot[inds2keep,]
 
 		for (rt in getRegionTypes(.object)){
-			.object@counts[[rt]]  <- .object@counts[[rt]][,..inds2keep]
+			# .object@counts[[rt]]  <- .object@counts[[rt]][,..inds2keep]
+			.object@counts[[rt]]  <- .object@counts[[rt]][,inds2keep]
 		}
 
 		if (length(.object@fragments) == nSamples){
@@ -905,7 +917,12 @@ setMethod("transformCounts",
 				for (rt in regionTypes){
 					logger.status(c("Region type:", rt))
 					cnames <- colnames(.object@counts[[rt]])
-					.object@counts[[rt]] <- data.table(normalize.quantiles(as.matrix(.object@counts[[rt]])))
+					# .object@counts[[rt]] <- data.table(normalize.quantiles(as.matrix(.object@counts[[rt]])))
+					if (.object@diskDump){
+						.object@counts[[rt]] <- as(normalize.quantiles(as.matrix(.object@counts[[rt]])), "HDF5Array")
+					} else {
+						.object@counts[[rt]] <- normalize.quantiles(.object@counts[[rt]])
+					}
 					colnames(.object@counts[[rt]]) <- cnames
 					.object@countTransform[[rt]] <- c("quantileNorm", .object@countTransform[[rt]])
 				}
@@ -915,10 +932,13 @@ setMethod("transformCounts",
 				for (rt in regionTypes){
 					logger.status(c("Region type:", rt))
 					cnames <- colnames(.object@counts[[rt]])
-					cm <- as.matrix(.object@counts[[rt]])
+					# cm <- as.matrix(.object@counts[[rt]])
+					cm <- .object@counts[[rt]]
 					regLen <- width(getCoord(.object, rt))
 					sizeFac <- matrix(colSums(cm, na.rm=TRUE), ncol=ncol(cm), nrow=nrow(cm), byrow=TRUE)
-					.object@counts[[rt]] <- data.table(cm/(regLen * sizeFac) * 1e3 * 1e6)
+					# .object@counts[[rt]] <- data.table(cm/(regLen * sizeFac) * 1e3 * 1e6)
+					.object@counts[[rt]] <- cm/(regLen * sizeFac) * 1e3 * 1e6
+					if (.object@diskDump) .object@counts[[rt]] <- as(.object@counts[[rt]], "HDF5Array")
 					colnames(.object@counts[[rt]]) <- cnames
 					.object@countTransform[[rt]] <- c("RPKM", .object@countTransform[[rt]])
 				}
@@ -938,7 +958,9 @@ setMethod("transformCounts",
 				for (rt in regionTypes){
 					logger.status(c("Region type:", rt))
 					dds <- DESeqDataSet(getCountsSE(.object, rt), design=~1)
-					.object@counts[[rt]] <- data.table(assay(vst(dds, blind=TRUE)))
+					# .object@counts[[rt]] <- data.table(assay(vst(dds, blind=TRUE)))
+					.object@counts[[rt]] <- assay(vst(dds, blind=TRUE))
+					if (.object@diskDump) .object@counts[[rt]] <- as(.object@counts[[rt]], "HDF5Array")
 					.object@countTransform[[rt]] <- c("deseq.vst", .object@countTransform[[rt]])
 				}
 			logger.completed()

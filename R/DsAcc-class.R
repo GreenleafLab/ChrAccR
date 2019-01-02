@@ -31,6 +31,7 @@ setClass("DsAcc",
 		coord       = "list",
 		sampleAnnot = "data.frame",
 		genome      = "character",
+		diskDump    = "logical",
 		pkgVersion  = "ANY"
 	),
 	package = "ChrAccR"
@@ -40,11 +41,13 @@ setMethod("initialize","DsAcc",
 		.Object,
 		coord,
 		sampleAnnot,
-		genome
+		genome,
+		diskDump
 	) {
 		.Object@coord       <- coord
 		.Object@sampleAnnot <- sampleAnnot
 		.Object@genome      <- genome
+		.Object@diskDump    <- diskDump
 		.Object@pkgVersion  <- packageVersion("ChrAccR")
 		.Object
 	}
@@ -53,12 +56,14 @@ setMethod("initialize","DsAcc",
 #' @param siteCoord \code{GRanges} object containing coordinates of GC dinucleotides
 #' @param sampleAnnot \code{data.frame} object containing sample annotation
 #' @param genome    character string containing genome assembly
+#' @param diskDump  should large matrices be stored on disk rather than in main memory
 #' @noRd
-DsAcc <- function(siteCoord, sampleAnnot, genome){
+DsAcc <- function(siteCoord, sampleAnnot, genome, diskDump=FALSE){
 	obj <- new("DsAcc",
 		siteCoord,
 		sampleAnnot,
-		genome
+		genome,
+		diskDump
 	)
 	return(obj)
 }
@@ -373,17 +378,35 @@ setMethod("removeRegions",
 #' Save a DsAcc dataset to disk for later loading
 #' @param .object \code{\linkS4class{DsAcc}} object
 #' @param path    destination to save the object to
-#' @return nothing of particular interest
+#' @param updateDiskRef update disk dumped (HDF5) references (e.g. for count data)
+#' @return (invisibly) The object (with potentially updated disk dumped references)
 #' @author Fabian Mueller
 #' @export
-saveDsAcc <- function(.object, path){
+saveDsAcc <- function(.object, path, updateDiskRef=TRUE){
 	if (dir.exists(path)){
 		logger.error("could not save object. Path already exists")
 	}
 	dir.create(path, recursive=FALSE)
 	dsFn <- file.path(path, "ds.rds")
 	saveRDS(.object, dsFn)
-	invisible(NULL)
+
+	# save region count data as HDF5
+	if (.hasSlot(.object, "diskDump") && .object@diskDump && .hasSlot(.object, "counts") && !is.null(.object@counts) && length(.object@counts) > 0){
+		logger.start("Saving region count data to HDF5")
+			countDir <- file.path(path, "countData")
+			dir.create(countDir)
+			for (i in 1:length(.object@counts)) {
+				rt <- names(.object@counts)[i]
+				logger.status(c("Region type:", rt))
+				if (updateDiskRef){
+					.object@counts[[rt]] <- writeHDF5Array(.object@counts[[rt]], filepath=file.path(countDir, paste0("regionCounts_", i, ".h5")), name=paste0("count_hdf5_", rt))
+				} else {
+					dummy <- writeHDF5Array(.object@counts[[rt]], filepath=file.path(countDir, paste0("regionCounts_", i, ".h5")), name=paste0("count_hdf5_", rt))
+				}
+			}
+		logger.completed()
+	}
+	invisible(.object)
 }
 
 #' loadDsAcc
@@ -399,5 +422,17 @@ loadDsAcc <- function(path){
 	}
 	dsFn <- file.path(path, "ds.rds")
 	.object <- readRDS(dsFn)
+
+	# load region count data from HDF5
+	if (.hasSlot(.object, "diskDump") && .object@diskDump && .hasSlot(.object, "counts") && !is.null(.object@counts) && length(.object@counts) > 0){
+		logger.start("Loading region count data from HDF5")
+			countDir <- file.path(path, "countData")
+			for (i in 1:length(.object@counts)) {
+				rt <- names(.object@counts)[i]
+				logger.status(c("Region type:", rt))
+				.object@counts[[rt]] <- HDF5Array(filepath=file.path(countDir, paste0("regionCounts_", i, ".h5")), name=paste0("count_hdf5_", rt))
+			}
+		logger.completed()
+	}
 	return(.object)
 }

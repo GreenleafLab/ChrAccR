@@ -4,15 +4,17 @@
 \alias{saveDsAcc}
 \title{saveDsAcc}
 \usage{
-saveDsAcc(.object, path)
+saveDsAcc(.object, path, updateDiskRef = TRUE)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsAcc}} object}
 
 \item{path}{destination to save the object to}
+
+\item{updateDiskRef}{update disk dumped (HDF5) references (e.g. for count data)}
 }
 \value{
-nothing of particular interest
+(invisibly) The object (with potentially updated disk dumped references)
 }
 \description{
 Save a DsAcc dataset to disk for later loading
