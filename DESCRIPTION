@@ -4,7 +4,7 @@ Description: Tools for analyzing chromatin accessibility data in R. Currently
     supports NOMe-seq data analysis
 Author: Fabian Mueller
 Maintainer: Fabian Mueller <fmueller@mpi-inf.mpg.de>
-Date: 2018-08-22
+Date: 2019-01-02
 Suggests:
     muRtools
 Depends:
@@ -13,7 +13,7 @@ Depends:
     muLogR,
     data.table
 License: GPL-2
-Version: 0.4
+Version: 0.5
 Collate: 
     'classDefs.R'
     'utils.R'
