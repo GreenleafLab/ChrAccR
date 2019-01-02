@@ -104,7 +104,7 @@ setMethod("getCounts",
 	) {
 		if (!is.element(type, getRegionTypes(.object))) logger.error(c("Unsupported region type:", type))
 		res <- .object@counts[[type]]
-		if (asMatrix) res <- as.matrix(res)
+		if (asMatrix && !is.matrix(res)) res <- as.matrix(res)
 		return(res)
 	}
 )
