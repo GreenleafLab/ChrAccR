@@ -389,7 +389,8 @@ setMethod("regionAggregation",
 			} else {
 				logger.error(c("Unknown signal count aggregation function:", aggrFun))
 			}
-			.object@counts[[type]][rr[["mergedIndex"]],] <- rr[,!"mergedIndex"]
+			# .object@counts[[type]][rr[["mergedIndex"]],] <- rr[,!"mergedIndex"]
+			.object@counts[[type]][rr[["mergedIndex"]],] <- as.matrix(rr[,!"mergedIndex"])
 			rm(dtC, rr); cleanMem() #clean-up
 		}
 		if (!is.null(signal) && signal=="insertions"){
