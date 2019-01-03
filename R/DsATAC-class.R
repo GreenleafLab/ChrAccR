@@ -396,7 +396,7 @@ setMethod("regionAggregation",
 		if (!is.null(signal) && signal=="insertions"){
 			doAggr <- TRUE
 			for (sid in getSamples(.object)){
-				.object@counts[[type]][,sid] <- countOverlaps(regGr, getInsertionSites(.object, samples=sid)[[1]], ignore.strand=TRUE)			
+				.object@counts[[type]][,sid] <- as.matrix(countOverlaps(regGr, getInsertionSites(.object, samples=sid)[[1]], ignore.strand=TRUE))
 			}
 		}
 		if (doAggr){
@@ -559,7 +559,7 @@ setMethod("addCountDataFromBam",
 			logger.status(c("Counting reads in region set:", rt))
 			gr <- getCoord(.object, rt)
 			ov.rse <- summarizeOverlaps(gr, fns, mode="Union", ignore.strand=TRUE, inter.feature=FALSE, preprocess.reads=ResizeReads)
-			.object@counts[[rt]][,sids] <- assays(ov.rse)$count
+			.object@counts[[rt]][,sids] <- as.matrix(assays(ov.rse)$count)
 			.object@countTransform[[rt]] <- character(0)
 		}
 
@@ -609,7 +609,7 @@ setMethod("addCountDataFromGRL",
 			gr.ds <- getCoord(.object, rt)
 			for (sid in sids){
 				gr.c <- grl[[sid]]
-				.object@counts[[rt]][,sid] <- countOverlaps(gr.ds, gr.c, ignore.strand=TRUE)
+				.object@counts[[rt]][,sid] <- as.matrix(countOverlaps(gr.ds, gr.c, ignore.strand=TRUE))
 			}
 		}
 
@@ -667,7 +667,7 @@ setMethod("addSignalDataFromGRL",
 				}
 				# TODO: check for correctness
 				oo <- findOverlaps(gr.ds, gr.c, ignore.strand=TRUE)
-				.object@counts[[rt]][sort(unique(queryHits(oo))), sid] <- tapply(scs[subjectHits(oo)], queryHits(oo), aggrFun)
+				.object@counts[[rt]][sort(unique(queryHits(oo))), sid] <- as.matrix(tapply(scs[subjectHits(oo)], queryHits(oo), aggrFun))
 			}
 		}
 

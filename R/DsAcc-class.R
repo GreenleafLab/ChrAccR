@@ -44,6 +44,10 @@ setMethod("initialize","DsAcc",
 		genome,
 		diskDump
 	) {
+		if (diskDump){
+			require(DelayedArray)
+			require(HDF5Array)
+		}
 		.Object@coord       <- coord
 		.Object@sampleAnnot <- sampleAnnot
 		.Object@genome      <- genome
@@ -392,6 +396,8 @@ saveDsAcc <- function(.object, path, forceDiskDump=FALSE, updateDiskRef=TRUE){
 	# save region count data as HDF5
 	if (.hasSlot(.object, "counts") && !is.null(.object@counts) && length(.object@counts) > 0){
 		if (forceDiskDump || (.hasSlot(.object, "diskDump") && .object@diskDump)){
+			require(DelayedArray)
+			require(HDF5Array)
 			logger.start("Saving region count data to HDF5")
 				countDir <- file.path(path, "countData")
 				dir.create(countDir)
@@ -431,6 +437,8 @@ loadDsAcc <- function(path){
 
 	# load region count data from HDF5
 	if (.hasSlot(.object, "diskDump") && .object@diskDump && .hasSlot(.object, "counts") && !is.null(.object@counts) && length(.object@counts) > 0){
+		require(DelayedArray)
+		require(HDF5Array)
 		logger.start("Loading region count data from HDF5")
 			countDir <- file.path(path, "countData")
 			for (i in 1:length(.object@counts)) {
