@@ -378,34 +378,40 @@ setMethod("removeRegions",
 #' Save a DsAcc dataset to disk for later loading
 #' @param .object \code{\linkS4class{DsAcc}} object
 #' @param path    destination to save the object to
+#' @param forceDiskDump force large matrices (counts) to be stored as HDF5 (even when the object was not created using \code{diskDump=TRUE})
 #' @param updateDiskRef update disk dumped (HDF5) references (e.g. for count data)
 #' @return (invisibly) The object (with potentially updated disk dumped references)
 #' @author Fabian Mueller
 #' @export
-saveDsAcc <- function(.object, path, updateDiskRef=TRUE){
+saveDsAcc <- function(.object, path, forceDiskDump=FALSE, updateDiskRef=TRUE){
 	if (dir.exists(path)){
 		logger.error("could not save object. Path already exists")
 	}
 	dir.create(path, recursive=FALSE)
+
+	# save region count data as HDF5
+	if (.hasSlot(.object, "counts") && !is.null(.object@counts) && length(.object@counts) > 0){
+		if (forceDiskDump || (.hasSlot(.object, "diskDump") && .object@diskDump)){
+			logger.start("Saving region count data to HDF5")
+				countDir <- file.path(path, "countData")
+				dir.create(countDir)
+				for (i in 1:length(.object@counts)) {
+					rt <- names(.object@counts)[i]
+					logger.status(c("Region type:", rt))
+					if (updateDiskRef){
+						.object@counts[[rt]] <- writeHDF5Array(.object@counts[[rt]], filepath=file.path(countDir, paste0("regionCounts_", i, ".h5")), name=paste0("count_hdf5_", rt))
+					} else {
+						dummy <- writeHDF5Array(.object@counts[[rt]], filepath=file.path(countDir, paste0("regionCounts_", i, ".h5")), name=paste0("count_hdf5_", rt))
+					}
+				}
+			logger.completed()
+			.object@diskDump <- TRUE
+		}
+	}
+
 	dsFn <- file.path(path, "ds.rds")
 	saveRDS(.object, dsFn)
 
-	# save region count data as HDF5
-	if (.hasSlot(.object, "diskDump") && .object@diskDump && .hasSlot(.object, "counts") && !is.null(.object@counts) && length(.object@counts) > 0){
-		logger.start("Saving region count data to HDF5")
-			countDir <- file.path(path, "countData")
-			dir.create(countDir)
-			for (i in 1:length(.object@counts)) {
-				rt <- names(.object@counts)[i]
-				logger.status(c("Region type:", rt))
-				if (updateDiskRef){
-					.object@counts[[rt]] <- writeHDF5Array(.object@counts[[rt]], filepath=file.path(countDir, paste0("regionCounts_", i, ".h5")), name=paste0("count_hdf5_", rt))
-				} else {
-					dummy <- writeHDF5Array(.object@counts[[rt]], filepath=file.path(countDir, paste0("regionCounts_", i, ".h5")), name=paste0("count_hdf5_", rt))
-				}
-			}
-		logger.completed()
-	}
 	invisible(.object)
 }
 
