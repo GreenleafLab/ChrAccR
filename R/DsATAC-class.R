@@ -358,7 +358,7 @@ setMethod("regionAggregation",
 		#initialize empty count matrix for new region type
 		nSamples <- length(getSamples(.object))
 		nRegs    <- length(regGr)
-		emptyVec <- rep(as.integer(NA), nRegs)
+		# emptyVec <- rep(as.integer(NA), nRegs)
 		# .object@counts[[type]] <- data.table(emptyVec)
 		# for (i in 1:nSamples){
 		# 	.object@counts[[type]][[i]] <- emptyVec
