@@ -404,10 +404,12 @@ saveDsAcc <- function(.object, path, forceDiskDump=FALSE, updateDiskRef=TRUE){
 				for (i in 1:length(.object@counts)) {
 					rt <- names(.object@counts)[i]
 					logger.status(c("Region type:", rt))
+					sampleNames <- getSamples(.object)
 					# just an assertion to make sure the colnames correspond to the sample ids
-					if (!all(colnames(.object@counts[[rt]])==getSamples(.object))) logger.error("Assertion failed: column names do not correspond to sample names (counts)")
+					if (!all(colnames(.object@counts[[rt]])==sampleNames)) logger.error("Assertion failed: column names do not correspond to sample names (counts)")
 					if (updateDiskRef){
 						.object@counts[[rt]] <- writeHDF5Array(.object@counts[[rt]], filepath=file.path(countDir, paste0("regionCounts_", i, ".h5")), name=paste0("count_hdf5_", rt))
+						colnames(.object@counts[[rt]]) <- sampleNames # reset the column names (workaround for the issue that writeHDF5Array does not write dimnames to HDF5)
 					} else {
 						dummy <- writeHDF5Array(.object@counts[[rt]], filepath=file.path(countDir, paste0("regionCounts_", i, ".h5")), name=paste0("count_hdf5_", rt))
 					}
