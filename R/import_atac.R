@@ -85,7 +85,7 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, region
 					for (i in seq_along(inputFns)){
 						sid <- names(inputFns)[i]
 						logger.start(c("Importing sample", ":", sid, paste0("(", i, " of ", nSamples, ")")))
-							obj <- addInsertionDataFromBam(obj, inputFns[i], pairedEnd=pairedEnd)
+							obj <- addInsertionDataFromBam(obj, inputFns[i], pairedEnd=pairedEnd, .diskDump=obj@diskDump)
 							obj <- addCountDataFromGRL(obj, getInsertionSites(obj, samples=sid))
 							# optionally remove insertion information to save space
 							if (!keepInsertionInfo){
@@ -96,7 +96,7 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, region
 				logger.completed()
 			} else {
 				logger.start(c("Adding insertion data from bam"))
-					obj <- addInsertionDataFromBam(obj, inputFns, pairedEnd=pairedEnd)
+					obj <- addInsertionDataFromBam(obj, inputFns, pairedEnd=pairedEnd, .diskDump=obj@diskDump)
 				logger.completed()
 				logger.start(c("Summarizing region counts"))
 					obj <- addCountDataFromGRL(obj, getInsertionSites(obj))

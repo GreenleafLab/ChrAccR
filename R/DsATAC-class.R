@@ -148,7 +148,49 @@ setMethod("getCountsSE",
 		return(se)
 	}
 )
-
+#-------------------------------------------------------------------------------
+if (!isGeneric("getFragmentGr")) {
+	setGeneric(
+		"getFragmentGr",
+		function(.object, ...) standardGeneric("getFragmentGr"),
+		signature=c(".object")
+	)
+}
+#' getFragmentGr-methods
+#'
+#' Return a a \code{GRanges} object of fragment data} for a given sample
+#'
+#' @param .object \code{\linkS4class{DsATAC}} object
+#' @param sampleId sample identifier
+#' @return \code{GRanges} object containing fragment data
+#'
+#' @rdname getFragmentGr-DsATAC-method
+#' @docType methods
+#' @aliases getFragmentGr
+#' @aliases getFragmentGr,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("getFragmentGr",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		sampleId
+	) {
+		if (!is.element(sampleId, getSamples(.object))) logger.error(c("Invalid samples:", sampleId))
+		if (!is.element(sampleId, names(.object@fragments))) logger.error(c("Object does not contain insertion information for sample:", sampleId))
+		fragGr <- .object@fragments[[sid]]
+		if (is.character(fragGr)){
+			if (file.exists(fragGr)) {
+				fragGr <- readRDS(fragGr)
+			} else {
+				logger.error(c("Could not load fragment data from file:", fragGr))
+			}
+		}
+		return(fragGr)
+	}
+)
 #-------------------------------------------------------------------------------
 if (!isGeneric("getInsertionSites")) {
 	setGeneric(
@@ -183,24 +225,25 @@ setMethod("getInsertionSites",
 		if (!all(samples %in% names(.object@fragments))) logger.error(c("Object does not contain insertion information for samples:", paste(setdiff(samples, names(.object@fragments)), collapse=", ")))
 		res <- list()
 		for (sid in samples){
-			isW <- width(.object@fragments[[sid]])>1 # the insertion site is already width=1 --> single end. For paired end-data all of these should be TRUE
+			fragGr <- getFragmentGr(.object, sid)
+			isW <- width(fragGr)>1 # the insertion site is already width=1 --> single end. For paired end-data all of these should be TRUE
 			grins <- GRanges()
 			if (any(!isW)){
 				# width==1 --> single-end data
-				grins <- .object@fragments[[sid]][!isW]
+				grins <- fragGr[!isW]
 			}
 			if (any(isW)){
 				peStarts <- GRanges()
 				peEnds   <- GRanges()
 				if (all(isW)){
 					# paired-end data - default case
-					peStarts <- resize(.object@fragments[[sid]], width=1, fix="start")
-					peEnds   <- resize(.object@fragments[[sid]], width=1, fix="end")
+					peStarts <- resize(fragGr, width=1, fix="start")
+					peEnds   <- resize(fragGr, width=1, fix="end")
 				} else {
 					# mixed paired-end and single-end data
 					logger.warning(c("mixed paired-end and single-end data detected for sample", sid))
-					peStarts <- resize(.object@fragments[[sid]][isW], width=1, fix="start")
-					peEnds   <- resize(.object@fragments[[sid]][isW], width=1, fix="end")
+					peStarts <- resize(fragGr[isW], width=1, fix="start")
+					peEnds   <- resize(fragGr[isW], width=1, fix="end")
 				}
 
 				# # THIS IS NOT VALID: The Tn5 dimer is NOT always loaded with one read1 and one read2 adapter
@@ -486,7 +529,6 @@ setMethod("mergeSamples",
 			# .object@counts[[rt]] <- data.table(cmm)
 			.object@counts[[rt]] <- cmm
 			if (.object@diskDump) .object@counts[[rt]] <- as(.object@counts[[rt]], "HDF5Array")
-			
 		}
 
 		#insertion data: concatenate GRanges objects
@@ -496,10 +538,23 @@ setMethod("mergeSamples",
 				rr <- insL[iis]
 				rr <- lapply(seq_along(iis), FUN=function(i){
 					x <- rr[[i]]
+					if (is.character(x)){
+						if (file.exists(x)) {
+							x <- readRDS(x)
+						} else {
+							logger.error(c("Could not load fragment data from file:", x))
+						}
+					}
 					elementMetadata(x)[,".sample"] <- sampleNames[iis[i]]
 					return(x)
 				})
-				return(do.call("c", rr))
+				catRes <- do.call("c", rr)
+				if (.object@diskDump) {
+					fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext=".rds")
+					saveRDS(catRes, fn)
+					catRes <- fn
+				}
+				return(catRes)
 			})
 		}
 
@@ -689,6 +744,7 @@ if (!isGeneric("addInsertionDataFromBam")) {
 #' @param .object \code{\linkS4class{DsATAC}} object
 #' @param fns     a named vector of bam file locations. The names must correspond to sample identifiers in the object
 #' @param pairedEnd flag indicating whether the bam files are from paired-end sequencing
+#' @param .diskDump for internal use only (should fragment data be stored as RDS instead of GRanges)
 #' @return a new \code{\linkS4class{DsATAC}} object with fragments/insertions for each sample
 #'
 #' @rdname addInsertionDataFromBam-DsATAC-method
@@ -704,7 +760,8 @@ setMethod("addInsertionDataFromBam",
 	function(
 		.object,
 		fns,
-		pairedEnd=TRUE
+		pairedEnd=TRUE,
+		.diskDump=.object@diskDump
 	) {
 		require(GenomicAlignments)
 		sids <- names(fns)
@@ -726,7 +783,13 @@ setMethod("addInsertionDataFromBam",
 					ga <- readGAlignments(fns[sid], use.names=FALSE)
 				}
 				ga <- setGenomeProps(ga, .object@genome, onlyMainChrs=TRUE)
-				.object@fragments[[sid]] <- getATACfragments(ga, offsetTn=TRUE)
+				fragGr <- getATACfragments(ga, offsetTn=TRUE)
+				if (.diskDump){
+					fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
+					saveRDS(fragGr, fn)
+					fragGr <- fn
+				}
+				.object@fragments[[sid]] <- fragGr
 			logger.completed()
 		}
 

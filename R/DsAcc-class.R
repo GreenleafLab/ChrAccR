@@ -418,6 +418,32 @@ saveDsAcc <- function(.object, path, forceDiskDump=FALSE, updateDiskRef=TRUE){
 			.object@diskDump <- TRUE
 		}
 	}
+	# save fragment data as RDS
+	if (.hasSlot(.object, "fragments") && !is.null(.object@fragments) && length(.object@fragments) > 0){
+		if (forceDiskDump || (.hasSlot(.object, "diskDump") && .object@diskDump)){
+			logger.start("Saving fragment data to RDS")
+				fragDir <- file.path(path, "fragments")
+				dir.create(fragDir)
+				for (i in 1:length(.object@fragments)) {
+					fn <- file.path(fragDir, paste0("fragmentGr_", i, ".rds"))
+					fragGr <- .object@fragments[[i]]
+					if (is.character(fragGr)){
+						if (file.exists(fragGr)) {
+							file.copy(fragGr, fn)
+						} else {
+							logger.error(c("Could not find fragment data in file:", x))
+						}
+					} else {
+						saveRDS(fragGr, fn)
+					}
+					if (updateDiskRef){
+						.object@fragments[[i]] <- fn
+					}
+				}
+			logger.completed()
+			.object@diskDump <- TRUE
+		}
+	}
 
 	dsFn <- file.path(path, "ds.rds")
 	saveRDS(.object, dsFn)
@@ -450,6 +476,15 @@ loadDsAcc <- function(path){
 				logger.status(c("Region type:", rt))
 				.object@counts[[rt]] <- HDF5Array(filepath=file.path(countDir, paste0("regionCounts_", i, ".h5")), name=paste0("count_hdf5_", rt))
 				colnames(.object@counts[[rt]]) <- getSamples(.object) # reset the column names (workaround for the issue that writeHDF5Array does not write dimnames to HDF5)
+			}
+		logger.completed()
+	}
+	# load fragment data from RDS
+	if (.hasSlot(.object, "diskDump") && .object@diskDump && .hasSlot(.object, "fragments") && !is.null(.object@fragments) && length(.object@fragments) > 0){
+		logger.start("Updating fragment RDS file references")
+			fragDir <- file.path(path, "fragments")
+			for (i in 1:length(.object@fragments)) {
+				.object@fragments[[i]] <- file.path(fragDir, paste0("fragmentGr_", i, ".rds"))
 			}
 		logger.completed()
 	}
