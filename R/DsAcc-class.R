@@ -484,7 +484,9 @@ loadDsAcc <- function(path){
 		logger.start("Updating fragment RDS file references")
 			fragDir <- file.path(path, "fragments")
 			for (i in 1:length(.object@fragments)) {
-				.object@fragments[[i]] <- file.path(fragDir, paste0("fragmentGr_", i, ".rds"))
+				fn <- file.path(fragDir, paste0("fragmentGr_", i, ".rds"))
+				if (!file.exists(fn)) logger.error(paste0("Invalid save: Could not find fragment file:", fn))
+				.object@fragments[[i]] <- fn
 			}
 		logger.completed()
 	}
