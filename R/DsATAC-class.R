@@ -180,7 +180,7 @@ setMethod("getFragmentGr",
 	) {
 		if (!is.element(sampleId, getSamples(.object))) logger.error(c("Invalid samples:", sampleId))
 		if (!is.element(sampleId, names(.object@fragments))) logger.error(c("Object does not contain insertion information for sample:", sampleId))
-		fragGr <- .object@fragments[[sid]]
+		fragGr <- .object@fragments[[sampleId]]
 		if (is.character(fragGr)){
 			if (file.exists(fragGr)) {
 				fragGr <- readRDS(fragGr)
