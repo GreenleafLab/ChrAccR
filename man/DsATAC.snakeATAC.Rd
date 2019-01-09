@@ -6,7 +6,8 @@
 \usage{
 DsATAC.snakeATAC(sampleAnnot, filePrefixCol, genome, dataDir,
   regionSets = NULL, sampleIdCol = filePrefixCol, type = "insBam",
-  keepInsertionInfo = TRUE, bySample = TRUE, pairedEnd = TRUE)
+  diskDump = FALSE, keepInsertionInfo = TRUE, bySample = TRUE,
+  pairedEnd = TRUE)
 }
 \arguments{
 \item{sampleAnnot}{data.frame specifying the sample annotation table}
@@ -22,6 +23,8 @@ DsATAC.snakeATAC(sampleAnnot, filePrefixCol, genome, dataDir,
 \item{sampleIdCol}{column name or index in the sample annotation table containing unique sample identifiers}
 
 \item{type}{input data type. Currently only "insBed" (insertion beds), "insBed" (insertion info inferred from bam files (aligned reads); default) and "bam" (aligned reads) are supported}
+
+\item{diskDump}{should large data objects (count matrices, fragment data, ...) be disk-backed to save main memory}
 
 \item{keepInsertionInfo}{flag indicating whether to maintain the insertion information in the resulting object. Only relevant when \code{type=="insBam"}.}
 
