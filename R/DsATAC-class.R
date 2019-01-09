@@ -279,10 +279,16 @@ setMethod("show","DsATAC",
 		rts <- getRegionTypes(object)
 		str.rts <- "no region types"
 		if (length(rts) > 0) str.rts <- paste0(length(rts), " region types: ", paste(rts, collapse=", "))
+		str.frags <- "no fragment data"
+		if (length(object@fragments) > 0) str.frags <- paste0("fragment data for ", length(object@fragments), " samples")
+		str.disk <- "[in memory object]"
+		if (object@diskDump) str.disk <- "[contains disk-backed data]"
 
 		cat("DsATAC chromatin accessibility dataset \n")
+		cat(str.disk, "\n")
 		cat("contains:\n")
 		cat(" * ", length(ss), " samples: ", str.ss, " \n")
+		cat(" * ", str.frags, " \n")
 		cat(" * ", str.rts, " \n")
 		if (length(rts) > 0) {
 			for (rt in rts){
