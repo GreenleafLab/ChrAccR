@@ -562,6 +562,38 @@ setMethod("mergeSamples",
 	}
 )
 #-------------------------------------------------------------------------------
+if (!isGeneric("removeFragmentData")) {
+	setGeneric(
+		"removeFragmentData",
+		function(object) standardGeneric("removeFragmentData"),
+		signature=c("object")
+	)
+}
+#' removeFragmentData-methods
+#'
+#' Removes fragment data from \code{\linkS4class{DsATAC}} object (e.g. to save space)
+#'
+#' @param object	\code{\linkS4class{DsATAC}} object
+#' @return the modified object (without fragment data)
+#'
+#' @rdname removeFragmentData-DsATAC-method
+#' @docType methods
+#' @aliases removeFragmentData
+#' @aliases removeFragmentData,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("removeFragmentData",
+	signature(
+		object="DsATAC"
+	),
+	function(
+		object
+	) {
+		object@fragments <- list()
+		return(object)
+	}
+)
+#-------------------------------------------------------------------------------
 if (!isGeneric("addCountDataFromBam")) {
 	setGeneric(
 		"addCountDataFromBam",
