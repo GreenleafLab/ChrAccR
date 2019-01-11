@@ -20,6 +20,7 @@ Collate:
     'config.R'
     'utils_atac.R'
     'utils_motifs.R'
+    'annotation.R'
     'utils_chromVAR.R'
     'utils_filehandling.R'
     'DsAcc-class.R'
