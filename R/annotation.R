@@ -16,7 +16,7 @@
 getTfAnnot <- function(type="humantfs"){
 	tfAnnot <- NULL
 	if (!is.element(type, c("humantfs"))) logger.error(c("Unknown TF annotation type:", type))
-	fn <- system.file(file.path("extdata", paste0("tfAnnot_", type, ".rds")))
+	fn <- system.file(file.path("extdata", paste0("tfAnnot_", type, ".rds")), package="ChrAccR")
 	if (file.exists(fn)){
 		tfAnnot <- readRDS(fn)
 	} else {
