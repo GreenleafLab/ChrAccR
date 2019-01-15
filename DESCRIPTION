@@ -28,6 +28,7 @@ Collate:
     'DsATAC-class.R'
     'DsNOMe-class.R'
     'import_atac.R'
+    'import_atac_10x.R'
     'importTools_nome.R'
     'differential_nome.R'
     'differential.R'
