@@ -24,7 +24,8 @@ setClass("DsATAC",
 	slots = list(
 		fragments = "list",
 		counts = "list",
-		countTransform = "list"
+		countTransform = "list",
+		sparseCounts = "logical"
 	),
 	contains = "DsAcc",
 	package = "ChrAccR"
@@ -37,7 +38,8 @@ setMethod("initialize","DsATAC",
 		counts,
 		sampleAnnot,
 		genome,
-		diskDump
+		diskDump,
+		sparseCounts
 	) {
 		.Object@fragments  <- fragments
 		.Object@coord       <- coord
@@ -47,6 +49,7 @@ setMethod("initialize","DsATAC",
 		.Object@sampleAnnot <- sampleAnnot
 		.Object@genome      <- genome
 		.Object@diskDump    <- diskDump
+		.Object@sparseCounts <- sparseCounts
 		.Object@pkgVersion  <- packageVersion("ChrAccR")
 		.Object
 	}
@@ -55,14 +58,15 @@ setMethod("initialize","DsATAC",
 #' @param sampleAnnot \code{data.frame} object containing sample annotation
 #' @param genome    character string containing genome assembly
 #' @noRd
-DsATAC <- function(sampleAnnot, genome, diskDump=FALSE){
+DsATAC <- function(sampleAnnot, genome, diskDump=FALSE, sparseCounts=FALSE){
 	obj <- new("DsATAC",
 		list(),
 		list(),
 		list(),
 		sampleAnnot,
 		genome,
-		diskDump
+		diskDump,
+		sparseCounts
 	)
 	return(obj)
 }
@@ -83,7 +87,9 @@ if (!isGeneric("getCounts")) {
 #'
 #' @param .object \code{\linkS4class{DsATAC}} object
 #' @param type    character string specifying the region type
-#' @param asMatrix return a matrix instead of a \code{data.table}
+#' @param i       (optional) row (region) indices
+#' @param j       (optional) column (sample) indices
+#' @param asMatrix return a matrix object instead of the internal representation
 #' @return \code{data.table} or \code{matrix} containing counts for
 #'         each region and sample
 #'
@@ -100,11 +106,20 @@ setMethod("getCounts",
 	function(
 		.object,
 		type,
+		i=NULL,
+		j=NULL,
 		asMatrix=TRUE
 	) {
 		if (!is.element(type, getRegionTypes(.object))) logger.error(c("Unsupported region type:", type))
 		res <- .object@counts[[type]]
-		if (asMatrix && !is.matrix(res)) res <- as.matrix(res)
+		if (!is.null(i)) res <- res[i,,drop=FALSE]
+		if (!is.null(j)) res <- res[,j,drop=FALSE]
+		if (asMatrix && !is.matrix(res)){
+			res <- as.matrix(res)
+			if (.object@sparseCounts){
+				res[res==0] <- NA
+			}
+		}
 		return(res)
 	}
 )
@@ -412,7 +427,12 @@ setMethod("regionAggregation",
 		# for (i in 1:nSamples){
 		# 	.object@counts[[type]][[i]] <- emptyVec
 		# }
-		.object@counts[[type]] <- matrix(as.integer(NA), nrow=nRegs, ncol=nSamples)
+		if (.object@sparseCounts){
+			.object@counts[[type]] <- sparseMatrix(i=c(), j=c(), dims=c(nRegs,nSamples))
+		} else {
+			.object@counts[[type]] <- matrix(as.integer(NA), nrow=nRegs, ncol=nSamples)
+		}
+		
 		if (.object@diskDump) .object@counts[[type]] <- as(.object@counts[[type]], "HDF5Array")
 		colnames(.object@counts[[type]]) <- getSamples(.object)
 		.object@countTransform[[type]] <- character(0)
@@ -427,7 +447,7 @@ setMethod("regionAggregation",
 			}
 			oo <- findOverlaps(signalGr, regGr)
 			if (any(duplicated(queryHits(oo)))) logger.info("Some signals map to multiple regions")
-			dtC <- data.table(getCounts(.object, signal)[queryHits(oo),], mergedIndex=subjectHits(oo))
+			dtC <- data.table(getCounts(.object, signal, i=queryHits(oo)), mergedIndex=subjectHits(oo))
 
 			if (aggrFun=="sum") {
 				rr <- dtC[, lapply(.SD, sum, na.rm=TRUE), by=.(mergedIndex)]
@@ -452,8 +472,8 @@ setMethod("regionAggregation",
 			logger.info(c("Aggregated signal counts across", nrow(.object@counts[[type]]), "regions"))
 			# rows2keep <- rowAnys(!is.na(.object@counts[[type]]))
 			naMat <- !is.na(.object@counts[[type]])
-			if (.object@diskDump) naMat <- as.matrix(naMat)
-			rows2keep <- rowAnys(naMat)
+			if (.object@sparseCounts) naMat <- naMat && .object@counts[[type]] != 0
+			rows2keep <- rowSums(naMat) > 0
 			logger.info(c("  of which", sum(rows2keep), "regions contained signal counts"))
 			#discard regions where all signal counts are unobserved
 			if (dropEmpty){
@@ -461,6 +481,7 @@ setMethod("regionAggregation",
 				.object@counts[[type]]  <- .object@counts[[type]][rows2keep,]
 			}
 		}
+		if (.object@sparseCounts) .object@counts[[type]] <- drop0(.object@counts[[type]])
 
 		return(.object)
 	}
@@ -502,6 +523,9 @@ setMethod("mergeSamples",
 		if (!is.element(countAggrFun, c("sum", "mean", "median"))){
 			logger.error(c("Unknown signal count aggregation function:", countAggrFun))
 		}
+		if (.object@sparseCounts && is.element(countAggrFun, c("mean", "median"))){
+			logger.warning("Mean and median merging of samples can be slow due to conversion of sparse matrices")
+		}
 		sampleNames <- getSamples(.object)
 		nSamples <- length(sampleNames)
 		ph <- getSampleAnnot(.object)
@@ -522,18 +546,28 @@ setMethod("mergeSamples",
 		#count data
 		regTypes <- getRegionTypes(.object)
 		for (rt in regTypes){
-			cm <- ChrAccR::getCounts(.object, rt, asMatrix=TRUE)
+			cm <- ChrAccR::getCounts(.object, rt, asMatrix=FALSE)
 			cmm <- do.call("cbind", lapply(mgL, FUN=function(iis){
+				if (.object@sparseCounts && is.element(countAggrFun, c("mean", "median"))){
+					aggMat <- ChrAccR::getCounts(.object, rt, j=iis, asMatrix=TRUE)
+				} else {
+					aggMat <- cm[,iis,drop=FALSE]
+				}
 				if(countAggrFun=="sum"){
-					return(rowSums(cm[,iis,drop=FALSE], na.rm=TRUE))
+					return(rowSums(aggMat, na.rm=TRUE))
 				} else if(countAggrFun=="mean"){
-					return(rowMeans(cm[,iis,drop=FALSE], na.rm=TRUE))
+					return(rowMeans(aggMat, na.rm=TRUE))
 				} else if(countAggrFun=="median"){
-					return(rowMedians(cm[,iis,drop=FALSE], na.rm=TRUE))
+					return(rowMedians(aggMat, na.rm=TRUE))
 				}
 			}))
 			# .object@counts[[rt]] <- data.table(cmm)
-			.object@counts[[rt]] <- cmm
+			if (.object@sparseCounts) {
+				.object@counts[[rt]] <- as(cmm, "sparseMatrix")
+				.object@counts[[rt]] <- drop0(.object@counts[[rt]])
+			} else {
+				.object@counts[[rt]] <- cmm
+			}
 			if (.object@diskDump) .object@counts[[rt]] <- as(.object@counts[[rt]], "HDF5Array")
 		}
 
@@ -653,6 +687,7 @@ setMethod("addCountDataFromBam",
 			gr <- getCoord(.object, rt)
 			ov.rse <- summarizeOverlaps(gr, fns, mode="Union", ignore.strand=TRUE, inter.feature=FALSE, preprocess.reads=ResizeReads)
 			.object@counts[[rt]][,sids] <- as.matrix(assays(ov.rse)$count)
+			if (.object@sparseCounts) .object@counts[[rt]] <- drop0(.object@counts[[rt]])
 			.object@countTransform[[rt]] <- character(0)
 		}
 
@@ -704,6 +739,7 @@ setMethod("addCountDataFromGRL",
 				gr.c <- grl[[sid]]
 				.object@counts[[rt]][,sid] <- as.matrix(countOverlaps(gr.ds, gr.c, ignore.strand=TRUE))
 			}
+			if (.object@sparseCounts) .object@counts[[rt]] <- drop0(.object@counts[[rt]])
 		}
 
 		return(.object)
@@ -762,6 +798,7 @@ setMethod("addSignalDataFromGRL",
 				oo <- findOverlaps(gr.ds, gr.c, ignore.strand=TRUE)
 				.object@counts[[rt]][sort(unique(queryHits(oo))), sid] <- as.matrix(tapply(scs[subjectHits(oo)], queryHits(oo), aggrFun))
 			}
+			if (.object@sparseCounts) .object@counts[[rt]] <- drop0(.object@counts[[rt]])
 		}
 
 		return(.object)
@@ -1020,10 +1057,12 @@ setMethod("transformCounts",
 					logger.status(c("Region type:", rt))
 					cnames <- colnames(.object@counts[[rt]])
 					# .object@counts[[rt]] <- data.table(normalize.quantiles(as.matrix(.object@counts[[rt]])))
+					.object@counts[[rt]] <- normalize.quantiles(ChrAccR::getCounts(.object, rt, asMatrix=TRUE))
+					if (!.object@diskDump && .object@sparseCounts){
+						.object@counts[[rt]] <- as(.object@counts[[rt]], "sparseMatrix")
+					}
 					if (.object@diskDump){
-						.object@counts[[rt]] <- as(normalize.quantiles(as.matrix(.object@counts[[rt]])), "HDF5Array")
-					} else {
-						.object@counts[[rt]] <- normalize.quantiles(.object@counts[[rt]])
+						.object@counts[[rt]] <- as(.object@counts[[rt]], "HDF5Array")
 					}
 					colnames(.object@counts[[rt]]) <- cnames
 					.object@countTransform[[rt]] <- c("quantileNorm", .object@countTransform[[rt]])
@@ -1048,21 +1087,29 @@ setMethod("transformCounts",
 		} else if (method == "log2"){
 			c0 <- 1
 			logger.start(c("log2 transforming counts"))
+				if (.object@sparseCounts) logger.error("Generating sparse matrix for matrix with possible true zero entries (log2)")
 				for (rt in regionTypes){
 					logger.status(c("Region type:", rt))
-					.object@counts[[rt]] <- log2(.object@counts[[rt]] + c0)
+					idx <- .object@counts[[rt]]!=0
+					.object@counts[[rt]][idx] <- log2(.object@counts[[rt]][idx] + c0)
 					.object@countTransform[[rt]] <- c("log2", .object@countTransform[[rt]])
 				}
 			logger.completed()
 		} else if (method == "vst"){
 			logger.start(c("Applying DESeq2 VST"))
+				if (.object@sparseCounts) logger.warning("Generating sparse matrix for matrix with possible true zero entries (VST)")
 				require(DESeq2)
 				for (rt in regionTypes){
 					logger.status(c("Region type:", rt))
 					dds <- DESeqDataSet(getCountsSE(.object, rt), design=~1)
 					# .object@counts[[rt]] <- data.table(assay(vst(dds, blind=TRUE)))
 					.object@counts[[rt]] <- assay(vst(dds, blind=TRUE))
-					if (.object@diskDump) .object@counts[[rt]] <- as(.object@counts[[rt]], "HDF5Array")
+					if (!.object@diskDump && .object@sparseCounts){
+						.object@counts[[rt]] <- as(.object@counts[[rt]], "sparseMatrix")
+					}
+					if (.object@diskDump){
+						.object@counts[[rt]] <- as(.object@counts[[rt]], "HDF5Array")
+					}
 					.object@countTransform[[rt]] <- c("deseq.vst", .object@countTransform[[rt]])
 				}
 			logger.completed()
