@@ -15,16 +15,12 @@
 #' @author Fabian Mueller
 #' @export
 DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="", regionSets=NULL, addPeakRegions=TRUE, sampleIdCol=sampleDirPrefixCol, diskDump=FALSE, keepInsertionInfo=FALSE){
-
-	# dataDir <- "~/myscratch/scATAC"
 	# sampleAnnot <- data.frame(
 	# 	sampleId=c("sample1", "sample2"),
 	# 	sampleSubDir=c("scATAC_test", "scATAC_test"),
 	# 	stringsAsFactors = FALSE
 	# )
-	# sampleDirPrefixCol <- "sampleSubDir"
-	# sampleIdCol <- "sampleId"
-	# genome <- "hg38"
+	# ds <- DsATAC.cellranger(sampleAnnot, "sampleSubDir", "hg38", dataDir="~/myscratch/scATAC", regionSets=NULL, addPeakRegions=TRUE, sampleIdCol="sampleId", diskDump=FALSE, keepInsertionInfo=TRUE)
 
 	sampleIds <- as.character(sampleAnnot[,sampleIdCol])
 	rownames(sampleAnnot) <- sampleIds
@@ -82,13 +78,13 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 
 	# optionally merge peak sets and add to region sets (peaks.bed)
 	if (addPeakRegions){
-		unifWidth=500L
+		unifWidth=501L
 		logger.start("Retrieving (consensus) non-ovelapping, fixed-width peak set")
 			peakSet <- NULL
 			for (i in seq_along(sampleDirs)){
 				sid <- names(sampleDirs)[i]
 				pGr <- import(file.path(sampleDirs[i], "peaks.bed"), format="BED")
-				pGr <- setGenomeProps(pGr, obj@genome, onlyMainChrs=TRUE)
+				pGr <- setGenomeProps(pGr, genome, onlyMainChrs=TRUE)
 				pGr <- trim(resize(pGr, width=unifWidth, fix="center", ignore.strand=TRUE))
 				pGr <- pGr[width(pGr)==median(width(pGr))] #remove too short regions which might have been trimmed
 				elementMetadata(pGr)[,"dummyScore"] <- 1L # dummy score coloumn. All identical to 1. Results in the first peak of an overlap being selected
@@ -96,12 +92,12 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 				if (is.null(peakSet)){
 					#initialize peak set with all peaks from the first sample
 					#remove overlapping peaks in initial sample based on the dummy score
-					peakSet.cur <- getNonOverlappingByScore(peakSet.cur, scoreCol="dummyScore")
+					peakSet.cur <- getNonOverlappingByScore(pGr, scoreCol="dummyScore")
 					# elementMetadata(peakSet.cur)[,paste0(".ov.", sid)] <- TRUE
 					peakSet <- peakSet.cur
 				} else {
 					# add new peaks and remove the overlapping ones by taking the peaks with the best score
-					peakSet <- getNonOverlappingByScore(c(peakSet, peakSet.cur), scoreCol="dummyScore")
+					peakSet <- getNonOverlappingByScore(c(peakSet, pGr), scoreCol="dummyScore")
 					# elementMetadata(peakSet)[,paste0(".ov.", sid)] <- overlapsAny(peakSet, peakSet.cur, ignore.strand=TRUE)
 				}
 			}
@@ -112,7 +108,7 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 	}
 
 	logger.start("Creating DsATAC object")
-		obj <- ChrAccR:::DsATAC(cellAnnot, genome, diskDump=diskDump, sparseCounts=TRUE)
+		obj <- ChrAccR:::DsATAC(cellAnnot, genome, diskDump=diskDump, diskDump.fragments=keepInsertionInfo, sparseCounts=TRUE)
 		for (rt in names(regionSets)){
 			logger.info(c("Including region set:", rt))
 			obj <- regionAggregation(obj, regionSets[[rt]], rt, signal=NULL, dropEmpty=FALSE)
@@ -138,7 +134,7 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 				logger.completed()
 
 				logger.start("Preparing insertion data")
-					insGrl <- lapply(fragGrl, ChrAccR:::getInsertionSitesFromFragmentGr)
+					insGrl <- lapply(fragGrl, getInsertionSitesFromFragmentGr)
 				logger.completed()
 				logger.start("Summarizing count data")
 					obj <- addCountDataFromGRL(obj, insGrl)
@@ -148,7 +144,7 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 					logger.start("Adding fragment data to data structure")
 						for (cid in names(fragGrl)){
 							fgr <- fragGrl[[cid]]
-							if (diskDump){
+							if (obj@diskDump.fragments){
 								fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
 								saveRDS(fgr, fn)
 								fgr <- fn
