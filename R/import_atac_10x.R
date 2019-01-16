@@ -119,49 +119,47 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 		}
 	logger.completed()
 
-	logger.start("Reading ATAC data")
+	logger.start("Reading scATAC data (fragment data)")
 		nSamples <- length(sampleIds)
-		logger.start(c("Adding insertion and region count data from fragment info"))
-			for (i in seq_along(sampleDirs)){
-				sid <- names(sampleDirs)[i]
-				logger.start(c("Importing sample", ":", sid, paste0("(", i, " of ", nSamples, ")")))
-					sampleIdx <- cellAnnot[,sampleIdCol]==sid
-					barcode2cellId <- cellAnnot[sampleIdx,"cellId"]
-					names(barcode2cellId) <- cellAnnot[sampleIdx,"barcode"]
+		for (i in seq_along(sampleDirs)){
+			sid <- names(sampleDirs)[i]
+			logger.start(c("Importing sample", ":", sid, paste0("(", i, " of ", nSamples, ")")))
+				sampleIdx <- cellAnnot[,sampleIdCol]==sid
+				barcode2cellId <- cellAnnot[sampleIdx,"cellId"]
+				names(barcode2cellId) <- cellAnnot[sampleIdx,"barcode"]
 
-					logger.start("Preparing fragment data")
-						fragGr <- readTab(file.path(sampleDirs[i], "fragments.tsv.gz"), header=FALSE)
-						colnames(fragGr) <- c("chrom", "chromStart", "chromEnd", "barcode", "duplicateCount")
-						fragGr <- df2granges(fragGr, chrom.col=1L, start.col=2L, end.col=3L, strand.col=NULL, coord.format="B1RI", assembly=obj@genome, doSort=TRUE, adjNumChromNames=TRUE)
-						fragGr <- fragGr[elementMetadata(fragGr)[,"barcode"] %in% names(barcode2cellId)] # only take into account fragments that can be mapped to cells
-						fragGrl <- split(fragGr, elementMetadata(fragGr)[,"barcode"])
-						names(fragGrl) <- barcode2cellId[names(fragGrl)]
-					logger.completed()
-
-					logger.start("Preparing insertion data")
-						insGrl <- lapply(fragGrl, ChrAccR:::getInsertionSitesFromFragmentGr)
-					logger.completed()
-					logger.start("Summarizing count data")
-						obj <- ChrAccR:::addCountDataFromGRL(obj, insGrl)
-					logger.completed()
-					
-					if (keepInsertionInfo) {
-						logger.start("Adding fragment data to data structure")
-							for (cid in names(fragGrl)){
-								fgr <- fragGrl[[cid]]
-								if (diskDump){
-									fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
-									saveRDS(fgr, fn)
-									fgr <- fn
-								}
-								obj@fragments[[cid]] <- fgr
-							}
-						logger.completed()
-					}
-					
+				logger.start("Preparing fragment data")
+					fragGr <- readTab(file.path(sampleDirs[i], "fragments.tsv.gz"), header=FALSE)
+					colnames(fragGr) <- c("chrom", "chromStart", "chromEnd", "barcode", "duplicateCount")
+					fragGr <- df2granges(fragGr, chrom.col=1L, start.col=2L, end.col=3L, strand.col=NULL, coord.format="B1RI", assembly=obj@genome, doSort=TRUE, adjNumChromNames=TRUE)
+					fragGr <- fragGr[elementMetadata(fragGr)[,"barcode"] %in% names(barcode2cellId)] # only take into account fragments that can be mapped to cells
+					fragGrl <- split(fragGr, elementMetadata(fragGr)[,"barcode"])
+					names(fragGrl) <- barcode2cellId[names(fragGrl)]
 				logger.completed()
-			}
-		logger.completed()
+
+				logger.start("Preparing insertion data")
+					insGrl <- lapply(fragGrl, ChrAccR:::getInsertionSitesFromFragmentGr)
+				logger.completed()
+				logger.start("Summarizing count data")
+					obj <- addCountDataFromGRL(obj, insGrl)
+				logger.completed()
+				
+				if (keepInsertionInfo) {
+					logger.start("Adding fragment data to data structure")
+						for (cid in names(fragGrl)){
+							fgr <- fragGrl[[cid]]
+							if (diskDump){
+								fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
+								saveRDS(fgr, fn)
+								fgr <- fn
+							}
+							obj@fragments[[cid]] <- fgr
+						}
+					logger.completed()
+				}
+				
+			logger.completed()
+		}
 	logger.completed()
 	
 	return(obj)
