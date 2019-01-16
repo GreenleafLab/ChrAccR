@@ -25,7 +25,8 @@ setClass("DsATAC",
 		fragments = "list",
 		counts = "list",
 		countTransform = "list",
-		sparseCounts = "logical"
+		sparseCounts = "logical",
+		diskDump.fragments = "logical"
 	),
 	contains = "DsAcc",
 	package = "ChrAccR"
@@ -39,6 +40,7 @@ setMethod("initialize","DsATAC",
 		sampleAnnot,
 		genome,
 		diskDump,
+		diskDump.fragments,
 		sparseCounts
 	) {
 		.Object@fragments  <- fragments
@@ -49,6 +51,7 @@ setMethod("initialize","DsATAC",
 		.Object@sampleAnnot <- sampleAnnot
 		.Object@genome      <- genome
 		.Object@diskDump    <- diskDump
+		.Object@diskDump.fragments <- diskDump.fragments
 		.Object@sparseCounts <- sparseCounts
 		.Object@pkgVersion  <- packageVersion("ChrAccR")
 		.Object
@@ -58,7 +61,7 @@ setMethod("initialize","DsATAC",
 #' @param sampleAnnot \code{data.frame} object containing sample annotation
 #' @param genome    character string containing genome assembly
 #' @noRd
-DsATAC <- function(sampleAnnot, genome, diskDump=FALSE, sparseCounts=FALSE){
+DsATAC <- function(sampleAnnot, genome, diskDump=FALSE, diskDump.fragments=TRUE, sparseCounts=FALSE){
 	obj <- new("DsATAC",
 		list(),
 		list(),
@@ -66,6 +69,7 @@ DsATAC <- function(sampleAnnot, genome, diskDump=FALSE, sparseCounts=FALSE){
 		sampleAnnot,
 		genome,
 		diskDump,
+		diskDump.fragments,
 		sparseCounts
 	)
 	return(obj)
@@ -258,6 +262,7 @@ setMethod("show","DsATAC",
 		if (length(rts) > 0) str.rts <- paste0(length(rts), " region types: ", paste(rts, collapse=", "))
 		str.frags <- "no fragment data"
 		if (length(object@fragments) > 0) str.frags <- paste0("fragment data for ", length(object@fragments), " samples")
+		if (object@diskDump.fragments) str.frags <- paste0(str.frags, " [disk-backed]")
 		str.disk <- "[in memory object]"
 		if (object@diskDump) str.disk <- "[contains disk-backed data]"
 
@@ -551,7 +556,7 @@ setMethod("mergeSamples",
 					return(x)
 				})
 				catRes <- do.call("c", rr)
-				if (.object@diskDump) {
+				if (.object@diskDump.fragments) {
 					fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext=".rds")
 					saveRDS(catRes, fn)
 					catRes <- fn
@@ -838,7 +843,7 @@ setMethod("addInsertionDataFromBam",
 		.object,
 		fns,
 		pairedEnd=TRUE,
-		.diskDump=.object@diskDump
+		.diskDump=.object@diskDump.fragments
 	) {
 		require(GenomicAlignments)
 		sids <- names(fns)
