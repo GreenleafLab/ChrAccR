@@ -80,32 +80,35 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 	}))
 	rownames(cellAnnot) <- cellAnnot[,"cellId"]
 
-	# TODO: optionally merge peak sets and add to region sets (peaks.bed)
+	# optionally merge peak sets and add to region sets (peaks.bed)
 	if (addPeakRegions){
 		unifWidth=500L
+		logger.start("Retrieving (consensus) non-ovelapping, fixed-width peak set")
+			peakSet <- NULL
+			for (i in seq_along(sampleDirs)){
+				sid <- names(sampleDirs)[i]
+				pGr <- import(file.path(sampleDirs[i], "peaks.bed"), format="BED")
+				pGr <- setGenomeProps(pGr, obj@genome, onlyMainChrs=TRUE)
+				pGr <- trim(resize(pGr, width=unifWidth, fix="center", ignore.strand=TRUE))
+				pGr <- pGr[width(pGr)==median(width(pGr))] #remove too short regions which might have been trimmed
+				elementMetadata(pGr)[,"dummyScore"] <- 1L # dummy score coloumn. All identical to 1. Results in the first peak of an overlap being selected
 
-		peakSet <- NULL
-		for (i in seq_along(sampleDirs)){
-			sid <- names(sampleDirs)[i]
-			pGr <- import(file.path(sampleDirs[i], "peaks.bed"), format="BED")
-			pGr <- setGenomeProps(pGr, obj@genome, onlyMainChrs=TRUE)
-			pGr <- trim(resize(pGr, width=unifWidth, fix="center", ignore.strand=TRUE))
-			pGr <- pGr[width(pGr)==median(width(pGr))] #remove too short regions which might have been trimmed
-			elementMetadata(pGr)[,"dummyScore"] <- 1L # dummy score coloumn. All identical to 1. Results in the first peak of an overlap being selected
-
-			if (is.null(peakSet)){
-				#initialize peak set with all peaks from the first sample
-				#remove overlapping peaks in initial sample based on the dummy score
-				peakSet.cur <- getNonOverlappingByScore(peakSet.cur, scoreCol="dummyScore")
-				# elementMetadata(peakSet.cur)[,paste0(".ov.", sid)] <- TRUE
-				peakSet <- peakSet.cur
-			} else {
-				# add new peaks and remove the overlapping ones by taking the peaks with the best score
-				peakSet <- getNonOverlappingByScore(c(peakSet, peakSet.cur), scoreCol="dummyScore")
-				# elementMetadata(peakSet)[,paste0(".ov.", sid)] <- overlapsAny(peakSet, peakSet.cur, ignore.strand=TRUE)
+				if (is.null(peakSet)){
+					#initialize peak set with all peaks from the first sample
+					#remove overlapping peaks in initial sample based on the dummy score
+					peakSet.cur <- getNonOverlappingByScore(peakSet.cur, scoreCol="dummyScore")
+					# elementMetadata(peakSet.cur)[,paste0(".ov.", sid)] <- TRUE
+					peakSet <- peakSet.cur
+				} else {
+					# add new peaks and remove the overlapping ones by taking the peaks with the best score
+					peakSet <- getNonOverlappingByScore(c(peakSet, peakSet.cur), scoreCol="dummyScore")
+					# elementMetadata(peakSet)[,paste0(".ov.", sid)] <- overlapsAny(peakSet, peakSet.cur, ignore.strand=TRUE)
+				}
 			}
-		}
-		regionSets <- c(regionSets, list(.peaks=peakSet))
+			peakSet <- sortSeqlevels(peakSet)
+			peakSet <- sort(peakSet)
+			regionSets <- c(regionSets, list(.peaks=peakSet))
+		logger.completed()
 	}
 
 	logger.start("Creating DsATAC object")
