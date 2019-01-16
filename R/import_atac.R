@@ -16,7 +16,7 @@
 #' @return \code{\linkS4class{DsATAC}} object
 #' @author Fabian Mueller
 #' @export
-DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, regionSets=NULL, sampleIdCol=filePrefixCol, type="insBam", diskDump=FALSE, keepInsertionInfo=TRUE, bySample=TRUE, pairedEnd=TRUE){
+DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, regionSets=NULL, sampleIdCol=filePrefixCol, type="insBam", diskDump=FALSE, keepInsertionInfo=TRUE, bySample=FALSE, pairedEnd=TRUE){
 	if (!is.element(type, c("bam", "insBam", "insBed"))){
 		logger.error(c("Unsupported import type:", type))
 	}

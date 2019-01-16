@@ -693,20 +693,60 @@ setMethod("addCountDataFromGRL",
 		if (!all(sids %in% getSamples(.object))){
 			logger.error(c("DsATAC dataset does not contain samples:", paste(setdiff(sids, getSamples(.object)), collapse=", ")))
 		}
+		if (class(grl)!="GRangesList") grl <- GRangesList(grl)
+		gr.c <- unlist(grl, use.names=FALSE)
+		sampleIds <- rep(names(grl), times=elementNROWS(grl))
+		sampleIds.cm <- getSamples(.object)
 		rts <- getRegionTypes(.object)
+
 		for (rt in rts){
 			logger.status(c("Counting reads in region set:", rt))
 			gr.ds <- getCoord(.object, rt)
-			for (sid in sids){
-				gr.c <- grl[[sid]]
-				.object@counts[[rt]][,sid] <- as.matrix(countOverlaps(gr.ds, gr.c, ignore.strand=TRUE))
-			}
+			oo <- findOverlaps(gr.ds, gr.c, ignore.strand=TRUE)
+			idxDt <- as.data.table(cbind(
+				queryHits(oo), #row indices (regions) in count matrix
+				match(sampleIds[subjectHits(oo)], sampleIds.cm) #column indices (samples) in count matrix
+			))
+			# count the number of occurrences between each index pair
+			idxDt <- idxDt[,.N, by=names(idxDt)]
+			idxM <- as.matrix(idxDt[,c(1,2)])
+			.object@counts[[rt]][idxM] <- idxDt$N
 			if (.object@sparseCounts) .object@counts[[rt]] <- drop0(.object@counts[[rt]])
 		}
-
 		return(.object)
 	}
 )
+# # Old, slower method f(for reference)
+# setMethod("addCountDataFromGRL",
+# 	signature(
+# 		.object="DsATAC"
+# 	),
+# 	function(
+# 		.object,
+# 		grl
+# 	) {
+# 		sids <- names(grl)
+# 		if (length(sids)!=length(grl)){
+# 			logger.error("The list of GRanges must be named")
+# 		}
+# 		if (!all(sids %in% getSamples(.object))){
+# 			logger.error(c("DsATAC dataset does not contain samples:", paste(setdiff(sids, getSamples(.object)), collapse=", ")))
+# 		}
+# 		rts <- getRegionTypes(.object)
+# 		for (rt in rts){
+# 			logger.status(c("Counting reads in region set:", rt))
+# 			gr.ds <- getCoord(.object, rt)
+# 			for (sid in sids){
+# 				# logger.status(c("sample:", sid))
+# 				gr.c <- grl[[sid]]
+# 				.object@counts[[rt]][,sid] <- as.matrix(countOverlaps(gr.ds, gr.c, ignore.strand=TRUE))
+# 			}
+# 			if (.object@sparseCounts) .object@counts[[rt]] <- drop0(.object@counts[[rt]])
+# 		}
+
+# 		return(.object)
+# 	}
+# )
 #-------------------------------------------------------------------------------
 if (!isGeneric("addSignalDataFromGRL")) {
 	setGeneric(
