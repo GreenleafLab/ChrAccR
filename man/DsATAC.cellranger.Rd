@@ -5,8 +5,9 @@
 \title{DsATAC.cellranger}
 \usage{
 DsATAC.cellranger(sampleAnnot, sampleDirPrefixCol, genome, dataDir = "",
-  regionSets = NULL, sampleIdCol = sampleDirPrefixCol,
-  diskDump = TRUE, keepInsertionInfo = TRUE)
+  regionSets = NULL, addPeakRegions = TRUE,
+  sampleIdCol = sampleDirPrefixCol, diskDump = FALSE,
+  keepInsertionInfo = FALSE)
 }
 \arguments{
 \item{sampleAnnot}{data.frame specifying the sample annotation table}
@@ -18,6 +19,8 @@ DsATAC.cellranger(sampleAnnot, sampleDirPrefixCol, genome, dataDir = "",
 \item{dataDir}{directory where the files are located}
 
 \item{regionSets}{a list of GRanges objects which contain region sets over which count data will be aggregated}
+
+\item{addPeakRegions}{should a merged set of peaks be created as one of the region sets (merged, non-overlapping peaks of width=500bp from the peaks of individual samples)}
 
 \item{sampleIdCol}{column name or index in the sample annotation table containing unique sample identifiers}
 

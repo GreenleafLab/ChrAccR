@@ -7,13 +7,14 @@
 #' @param genome       genome assembly
 #' @param dataDir      directory where the files are located
 #' @param regionSets   a list of GRanges objects which contain region sets over which count data will be aggregated
+#' @param addPeakRegions should a merged set of peaks be created as one of the region sets (merged, non-overlapping peaks of width=500bp from the peaks of individual samples)
 #' @param sampleIdCol  column name or index in the sample annotation table containing unique sample identifiers
 #' @param diskDump     should large data objects (count matrices, fragment data, ...) be disk-backed to save main memory
 #' @param keepInsertionInfo flag indicating whether to maintain the insertion information in the resulting object.
 #' @return \code{\linkS4class{DsATAC}} object
 #' @author Fabian Mueller
 #' @export
-DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="", regionSets=NULL, addPeakRegions=TRUE, sampleIdCol=sampleDirPrefixCol, diskDump=FALSE, keepInsertionInfo=TRUE){
+DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="", regionSets=NULL, addPeakRegions=TRUE, sampleIdCol=sampleDirPrefixCol, diskDump=FALSE, keepInsertionInfo=FALSE){
 
 	# dataDir <- "~/myscratch/scATAC"
 	# sampleAnnot <- data.frame(
@@ -81,12 +82,31 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 
 	# TODO: optionally merge peak sets and add to region sets (peaks.bed)
 	if (addPeakRegions){
+		unifWidth=500L
 
+		peakSet <- NULL
+		for (i in seq_along(sampleDirs)){
+			sid <- names(sampleDirs)[i]
+			pGr <- import(file.path(sampleDirs[i], "peaks.bed"), format="BED")
+			pGr <- setGenomeProps(pGr, obj@genome, onlyMainChrs=TRUE)
+			pGr <- trim(resize(pGr, width=unifWidth, fix="center", ignore.strand=TRUE))
+			pGr <- pGr[width(pGr)==median(width(pGr))] #remove too short regions which might have been trimmed
+			elementMetadata(pGr)[,"dummyScore"] <- 1L # dummy score coloumn. All identical to 1. Results in the first peak of an overlap being selected
+
+			if (is.null(peakSet)){
+				#initialize peak set with all peaks from the first sample
+				#remove overlapping peaks in initial sample based on the dummy score
+				peakSet.cur <- getNonOverlappingByScore(peakSet.cur, scoreCol="dummyScore")
+				# elementMetadata(peakSet.cur)[,paste0(".ov.", sid)] <- TRUE
+				peakSet <- peakSet.cur
+			} else {
+				# add new peaks and remove the overlapping ones by taking the peaks with the best score
+				peakSet <- getNonOverlappingByScore(c(peakSet, peakSet.cur), scoreCol="dummyScore")
+				# elementMetadata(peakSet)[,paste0(".ov.", sid)] <- overlapsAny(peakSet, peakSet.cur, ignore.strand=TRUE)
+			}
+		}
+		regionSets <- c(regionSets, list(.peaks=peakSet))
 	}
-
-	# TODO: check if this does not become too large for (tens to hundreds of) thousands of cells per sample
-	#       do TENxMatrix-class objects from the 'HDF5Array' package help?
-	#       do sparseMatrix objects from the 'Matrix' package help?
 
 	logger.start("Creating DsATAC object")
 		obj <- ChrAccR:::DsATAC(cellAnnot, genome, diskDump=diskDump, sparseCounts=TRUE)
@@ -96,7 +116,6 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 		}
 	logger.completed()
 
-	# TODO: adapt to read from fragment files for each sample
 	logger.start("Reading ATAC data")
 		nSamples <- length(sampleIds)
 		logger.start(c("Adding insertion and region count data from fragment info"))
@@ -116,25 +135,27 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 						names(fragGrl) <- barcode2cellId[names(fragGrl)]
 					logger.completed()
 
+					logger.start("Preparing insertion data")
+						insGrl <- lapply(fragGrl, ChrAccR:::getInsertionSitesFromFragmentGr)
+					logger.completed()
+					logger.start("Summarizing count data")
+						obj <- ChrAccR:::addCountDataFromGRL(obj, insGrl)
+					logger.completed()
 					
-
-
-					for (cid in names(fragGrl)){
-						fgr <- fragGrl[[cid]]
-						if (diskDump){
-							fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
-							saveRDS(fgr, fn)
-							fgr <- fn
-						}
-						obj@fragments[[cid]] <- fgr
-						obj <- ChrAccR:::addCountDataFromGRL(obj, getInsertionSites(obj, samples=cid))
-						# TODO: check if this is fast enough. If not, try removing coercing to GRangesList in getInsertionSites() which could be a bottleneck
-
-						# optionally remove insertion information to save space
-						if (!keepInsertionInfo){
-							obj@fragments <- list()
-						}
+					if (keepInsertionInfo) {
+						logger.start("Adding fragment data to data structure")
+							for (cid in names(fragGrl)){
+								fgr <- fragGrl[[cid]]
+								if (diskDump){
+									fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
+									saveRDS(fgr, fn)
+									fgr <- fn
+								}
+								obj@fragments[[cid]] <- fgr
+							}
+						logger.completed()
 					}
+					
 				logger.completed()
 			}
 		logger.completed()
