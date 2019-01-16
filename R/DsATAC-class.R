@@ -240,45 +240,7 @@ setMethod("getInsertionSites",
 		if (!all(samples %in% names(.object@fragments))) logger.error(c("Object does not contain insertion information for samples:", paste(setdiff(samples, names(.object@fragments)), collapse=", ")))
 		res <- list()
 		for (sid in samples){
-			fragGr <- getFragmentGr(.object, sid)
-			isW <- width(fragGr)>1 # the insertion site is already width=1 --> single end. For paired end-data all of these should be TRUE
-			grins <- GRanges()
-			if (any(!isW)){
-				# width==1 --> single-end data
-				grins <- fragGr[!isW]
-			}
-			if (any(isW)){
-				peStarts <- GRanges()
-				peEnds   <- GRanges()
-				if (all(isW)){
-					# paired-end data - default case
-					peStarts <- resize(fragGr, width=1, fix="start")
-					peEnds   <- resize(fragGr, width=1, fix="end")
-				} else {
-					# mixed paired-end and single-end data
-					logger.warning(c("mixed paired-end and single-end data detected for sample", sid))
-					peStarts <- resize(fragGr[isW], width=1, fix="start")
-					peEnds   <- resize(fragGr[isW], width=1, fix="end")
-				}
-
-				# # THIS IS NOT VALID: The Tn5 dimer is NOT always loaded with one read1 and one read2 adapter
-				# # avoid double counting on neighboring fragments:
-				# # only count those insertion sites once that originate from the fragment on the left and another time from the fragment on the right
-				# # These incidences should only be taken into account if the fragments have different orientation (+/- strand) since the Tn5 is loaded
-				# # with both read1 and read2 adapters (!WRONG ASSUMPTION!)
-				# peEnds.inv <- peEnds
-				# strand(peEnds.inv) <- ifelse(strand(peEnds)=="+", "-", ifelse(strand(peEnds)=="-", "+", "*"))
-				# peEnds <- peEnds[!overlapsAny(peEnds.inv, peStarts, ignore.strand=FALSE)] # remove insertion sites from fragment end points that can be found as start points of fragments on the opposite strand
-				# strand(peStarts)[overlapsAny(peStarts, peEnds.inv, ignore.strand=FALSE)] <- "*" #set the strand to both if it is supported by a forward and a reverse fragment
-
-				grins <- c(
-					grins,
-					peStarts,
-					peEnds
-				)
-			}
-			#sort the result
-			res[[sid]] <- grins[order(as.integer(seqnames(grins)), start(grins), end(grins), as.integer(strand(grins)))]
+			res[[sid]] <- getInsertionSitesFromFragmentGr(getFragmentGr(.object, sid))
 		}
 		return(GRangesList(res))
 	}

@@ -117,7 +117,8 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 					logger.completed()
 
 					
-					
+
+
 					for (cid in names(fragGrl)){
 						fgr <- fragGrl[[cid]]
 						if (diskDump){
