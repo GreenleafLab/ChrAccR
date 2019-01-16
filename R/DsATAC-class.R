@@ -428,7 +428,7 @@ setMethod("regionAggregation",
 		# 	.object@counts[[type]][[i]] <- emptyVec
 		# }
 		if (.object@sparseCounts){
-			.object@counts[[type]] <- sparseMatrix(i=c(), j=c(), dims=c(nRegs,nSamples))
+			.object@counts[[type]] <- sparseMatrix(i=c(), j=c(), x=1, dims=c(nRegs,nSamples))
 		} else {
 			.object@counts[[type]] <- matrix(as.integer(NA), nrow=nRegs, ncol=nSamples)
 		}
