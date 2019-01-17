@@ -134,8 +134,8 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 			sid <- names(sampleDirs)[i]
 			logger.start(c("Importing sample", ":", sid, paste0("(", i, " of ", nSamples, ")")))
 				sampleIdx <- cellAnnot[,sampleIdCol]==sid
-				barcode2cellId <- cellAnnot[sampleIdx,".CR.cellQC.cell_id"]
-				names(barcode2cellId) <- cellAnnot[sampleIdx,"barcode"]
+				barcode2cellId <- cellAnnot[sampleIdx,"cellId"]
+				names(barcode2cellId) <- cellAnnot[sampleIdx,".CR.cellQC.barcode"]
 
 				logger.start("Preparing fragment data")
 					fragGr <- readTab(file.path(sampleDirs[i], "fragments.tsv.gz"), header=FALSE)
