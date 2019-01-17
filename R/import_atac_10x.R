@@ -142,6 +142,7 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 					colnames(fragGr) <- c("chrom", "chromStart", "chromEnd", "barcode", "duplicateCount")
 					fragGr <- df2granges(fragGr, chrom.col=1L, start.col=2L, end.col=3L, strand.col=NULL, coord.format="B1RI", assembly=obj@genome, doSort=TRUE, adjNumChromNames=TRUE)
 					fragGr <- fragGr[elementMetadata(fragGr)[,"barcode"] %in% names(barcode2cellId)] # only take into account fragments that can be mapped to cells
+					if (length(fragGr) < 2) logger.error("Too few fragments corresponding to actual cells")
 					fragGrl <- split(fragGr, elementMetadata(fragGr)[,"barcode"])
 					names(fragGrl) <- barcode2cellId[names(fragGrl)]
 				logger.completed()
