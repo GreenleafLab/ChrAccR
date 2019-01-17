@@ -71,13 +71,14 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 		# trueCellIdx <- !(sa[, "cell_id"] %in% c("None")) & sa[, "is__cell_barcode"]==1
 		trueCellIdx <- sa[, "is__cell_barcode"]==1
 		sa <- sa[trueCellIdx, ]
+		colnames(sa) <- paste0(".CR.cellQC.", colnames(sa))
 		# sa.qc <- readTab(file.path(sampleDirs[sid], "summary.csv"), sep=",") #reading from csv, which contains only a subset of information
 		sa.qc <- json2df(file.path(sampleDirs[sid], "summary.json"))
 		colnames(sa.qc) <- paste0(".CR.sampleQC.", colnames(sa.qc))
 		sa.sample <- sampleAnnot[sid,]
 		rownames(sa.sample) <- NULL
 		sa <- data.frame(
-			cellId=paste(sid, sa[,"cell_id"], sep=""),
+			cellId=paste(sid, sa[,".CR.cellQC.cell_id"], sep=""),
 			sa.sample,
 			sa.qc,
 			sa,
