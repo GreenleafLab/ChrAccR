@@ -51,6 +51,19 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 		logger.warning("No region sets specified")
 	}
 
+	# for reading sample metadata from JSON
+	json2df <- function(fn){
+		ll <- jsonlite::fromJSON(fn)
+		nr <- length(ll[[1]])
+		ll <- lapply(ll, FUN=function(x){
+			if (is.null(x)) return(NA)
+			if (length(x)!=nr) logger.error("Could not read data.frame from JSON: not all elements have the same length")
+			return(x)
+		})
+		df <- data.frame(ll, stringsAsFactors = FALSE)
+		return(df)
+	}
+
 	# TODO: Read cells for each sample and construct joined sample annotation table
 	cellAnnot <- do.call("rbind", lapply(1:nrow(sampleAnnot), FUN=function(i){
 		sid <- sampleIds[i]
@@ -58,10 +71,9 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 		# trueCellIdx <- !(sa[, "cell_id"] %in% c("None")) & sa[, "is__cell_barcode"]==1
 		trueCellIdx <- sa[, "is__cell_barcode"]==1
 		sa <- sa[trueCellIdx, ]
-		sa.qc <- readTab(file.path(sampleDirs[sid], "summary.csv"), sep=",")
-		# alternatively, think about reading from the JSON, which contains a bit of additional info
-		# sa.qc <- jsonlite::fromJSON(file.path(sampleDirs[sid], "summary.json"))
-		colnames(sa.qc) <- paste0(".sampleQC.", colnames(sa.qc))
+		# sa.qc <- readTab(file.path(sampleDirs[sid], "summary.csv"), sep=",") #reading from csv, which contains only a subset of information
+		sa.qc <- json2df(file.path(sampleDirs[sid], "summary.json"))
+		colnames(sa.qc) <- paste0(".CR.sampleQC.", colnames(sa.qc))
 		sa.sample <- sampleAnnot[sid,]
 		rownames(sa.sample) <- NULL
 		sa <- data.frame(
