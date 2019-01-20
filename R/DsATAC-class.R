@@ -1235,7 +1235,7 @@ if (!isGeneric("regionSetCounts")) {
 #' @aliases regionSetCounts
 #' @aliases regionSetCounts,DsATAC-method
 #' @author Fabian Mueller
-#' @noRd
+#' @export
 setMethod("regionSetCounts",
 	signature(
 		.object="DsATAC"
@@ -1249,9 +1249,15 @@ setMethod("regionSetCounts",
 
 		res <- matrix(as.numeric(NA), nrow=length(rsl), ncol=length(getSamples(.object)))
 		if (bySample){
-			# TODO: can probably be more efficient when directly copying code from 'countPairwiseOverlaps', such that elements for rsl are not computed for each sample
+			rslGr <- unlist(rsl, use.names=FALSE)
+			idx.rsl <- rep(1:length(rsl), times=elementNROWS(rsl))
+
 			res <- do.call("cbind", lapply(getSamples(.object), FUN=function(sid){
-				countPairwiseOverlaps(rsl, getInsertionSites(.object, sid), ignore.strand=TRUE)
+				insGr <- getInsertionSites(.object, sid)
+				ov <- countOverlaps(rslGr, insGr, ignore.strand=TRUE)
+				rr <- tapply(ov, idx.rsl, sum)
+				rr <- rr[as.character(1:length(rsl))] # make sure the counts are returned in the same order as in rsl (not sure, if really necessary)
+				return(rr)
 			}))
 			rownames(res) <- names(rsl)
 			colnames(res) <- getSamples(.object)
