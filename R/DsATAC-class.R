@@ -1246,7 +1246,7 @@ setMethod("regionSetCounts",
 			# TODO: can probably be more efficient when directly copying code from 'countPairwiseOverlaps', such that elements for rsl are not computed for each sample
 			res <- do.call("cbind", lapply(getSamples(.object), FUN=function(sid){
 				countPairwiseOverlaps(rsl, getInsertionSites(.object, sid), ignore.strand=TRUE)
-			})))
+			}))
 			rownames(res) <- names(rsl)
 			colnames(res) <- getSamples(.object)
 		} else {
