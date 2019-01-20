@@ -700,6 +700,7 @@ setMethod("addCountDataFromGRL",
 		}
 		if (class(grl)!="GRangesList") grl <- GRangesList(grl)
 		gr.c <- unlist(grl, use.names=FALSE)
+		if (length(gr.c) < 1) logger.error("[addCountDataFromGRL] invalid GRL: Must be of length 1 or more")
 		sampleIds <- rep(names(grl), times=elementNROWS(grl))
 		sampleIds.cm <- getSamples(.object)
 		rts <- getRegionTypes(.object)
@@ -1120,6 +1121,24 @@ setMethod("transformCounts",
 					.object@countTransform[[rt]] <- c("deseq.vst", .object@countTransform[[rt]])
 				}
 			logger.completed()
+		} else if (method == "tf-idf"){
+			# TF-IDF transformation as applied in LSI (Shendure lab) (Cusanovich, et al. (2018). A Single-Cell Atlas of In Vivo Mammalian Chromatin Accessibility. Cell, 1–35)
+			# Recycled some code from: https://github.com/shendurelab/mouse-atac
+			logger.start(c("Applying TF-IDF transformation"))
+				if (.object@sparseCounts) logger.warning("Generating sparse matrix for matrix with possible true zero entries (VST)")
+				require(DESeq2)
+				for (rt in regionTypes){
+					logger.status(c("Region type:", rt))
+					cm <- !is.na(.object@counts[[rt]]) & .object@counts[[rt]] > 0 #indicator matrix: are there any counts in that region
+					cnames <- colnames(cm)
+					tf <- t(t(cm) / colSums(cm)) #term frequency
+					idf <- tf * log(1 + ncol(cm) / rowSums(cm)) # inverse document frequency
+					.object@counts[[rt]] <- idf
+					if (.object@diskDump) .object@counts[[rt]] <- as(.object@counts[[rt]], "HDF5Array")
+					colnames(.object@counts[[rt]]) <- cnames
+					.object@countTransform[[rt]] <- c("TF-IDF", .object@countTransform[[rt]])
+				}
+			logger.completed()
 		}
 		return(.object)
 	}
@@ -1173,7 +1192,8 @@ setMethod("filterLowCovg",
 		percAllowed <- round(numAllowed/N, 2)
 		logger.status(c("Removing regions with read counts lower than", thresh, "in more than", N-numAllowed, "samples", paste0("(", (1-percAllowed)*100,"%)")))
 		for (rt in regionTypes){
-			rem <- rowSums(getCounts(.object, rt) >= thresh) < numAllowed
+			cm <- getCounts(.object, rt)
+			rem <- rowSums(!is.na(cm) & (cm >= thresh)) < numAllowed
 			nRem <- sum(rem)
 			nRegs <- getNRegions(.object, rt)
 			if (nRem > 0){
@@ -1188,6 +1208,55 @@ setMethod("filterLowCovg",
 ################################################################################
 # Analysis Utils
 ################################################################################
+if (!isGeneric("regionSetCounts")) {
+	setGeneric(
+		"regionSetCounts",
+		function(.object, ...) standardGeneric("regionSetCounts"),
+		signature=c(".object")
+	)
+}
+#' regionSetCounts-methods
+#'
+#' Overlap the insertion data with a list of region sets
+#'
+#' @param .object \code{\linkS4class{DsATAC}} object
+#' @param rsl     \code{GRangesList} or NAMED list of \code{GRanges} objects. Each element corresponds to a region set for which the summary statistics are reported
+#' @param bySample for internal use: iterate over samples (instead of retrieving one giant insertion list for all samples) in order to save memory (at the tradeoff of compute time)
+#' @return a matrix of overlap counts for each region set and sample
+#'
+#' @rdname regionSetCounts-DsATAC-method
+#' @docType methods
+#' @aliases regionSetCounts
+#' @aliases regionSetCounts,DsATAC-method
+#' @author Fabian Mueller
+#' @noRd
+setMethod("regionSetCounts",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		rsl,
+		bySample=FALSE
+	) {
+		if (class(rsl)!="GRangesList") rsl <- GRangesList(rsl)
+
+		res <- matrix(as.numeric(NA), nrow=length(rsl), ncol=length(getSamples(.object)))
+		if (bySample){
+			# TODO: can probably be more efficient when directly copying code from 'countPairwiseOverlaps', such that elements for rsl are not computed for each sample
+			res <- do.call("cbind", lapply(getSamples(.object), FUN=function(sid){
+				countPairwiseOverlaps(rsl, getInsertionSites(.object, sid), ignore.strand=TRUE)
+			})))
+			rownames(res) <- names(rsl)
+			colnames(res) <- getSamples(.object)
+		} else {
+			# insGrl <- getInsertionSites(.object)
+			res <- countPairwiseOverlaps(rsl, getInsertionSites(.object), ignore.strand=TRUE)
+		}
+		return(res)
+	}
+)
+#-------------------------------------------------------------------------------
 if (!isGeneric("getMotifEnrichment")) {
 	setGeneric(
 		"getMotifEnrichment",
