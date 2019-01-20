@@ -6,7 +6,7 @@
 \usage{
 DsATAC.snakeATAC(sampleAnnot, filePrefixCol, genome, dataDir,
   regionSets = NULL, sampleIdCol = filePrefixCol, type = "insBam",
-  diskDump = FALSE, keepInsertionInfo = TRUE, bySample = TRUE,
+  diskDump = FALSE, keepInsertionInfo = TRUE, bySample = FALSE,
   pairedEnd = TRUE)
 }
 \arguments{

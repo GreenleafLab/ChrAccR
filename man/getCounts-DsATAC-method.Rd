@@ -7,7 +7,7 @@
 \title{getCounts-methods}
 \usage{
 \S4method{getCounts}{DsATAC}(.object, type, i = NULL, j = NULL,
-  asMatrix = TRUE)
+  asMatrix = TRUE, naIsZero = TRUE)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}
@@ -19,6 +19,8 @@
 \item{j}{(optional) column (sample) indices}
 
 \item{asMatrix}{return a matrix object instead of the internal representation}
+
+\item{naIsZero}{should \code{NA}s in the count matrix be considered 0 value (instead of unknown/missing)}
 }
 \value{
 \code{data.table} or \code{matrix} containing counts for

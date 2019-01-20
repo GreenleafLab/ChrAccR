@@ -94,6 +94,7 @@ if (!isGeneric("getCounts")) {
 #' @param i       (optional) row (region) indices
 #' @param j       (optional) column (sample) indices
 #' @param asMatrix return a matrix object instead of the internal representation
+#' @param naIsZero should \code{NA}s in the count matrix be considered 0 value (instead of unknown/missing)
 #' @return \code{data.table} or \code{matrix} containing counts for
 #'         each region and sample
 #'
@@ -112,7 +113,8 @@ setMethod("getCounts",
 		type,
 		i=NULL,
 		j=NULL,
-		asMatrix=TRUE
+		asMatrix=TRUE,
+		naIsZero=TRUE
 	) {
 		if (!is.element(type, getRegionTypes(.object))) logger.error(c("Unsupported region type:", type))
 		res <- .object@counts[[type]]
@@ -120,9 +122,12 @@ setMethod("getCounts",
 		if (!is.null(j)) res <- res[,j,drop=FALSE]
 		if (asMatrix && !is.matrix(res)){
 			res <- as.matrix(res)
-			if (.object@sparseCounts){
+			if (!naIsZero && .object@sparseCounts){
 				res[res==0] <- NA
 			}
+		}
+		if (naIsZero){
+			res[is.na(res)] <- 0
 		}
 		return(res)
 	}
@@ -142,6 +147,7 @@ if (!isGeneric("getCountsSE")) {
 #'
 #' @param .object \code{\linkS4class{DsATAC}} object
 #' @param type    character string specifying the region type
+#' @param naIsZero should \code{NA}s in the count matrix be considered 0 value (instead of unknown/missing)
 #' @return \code{SummarizedExperiment} containing counts for each region and sample
 #'
 #' @rdname getCountsSE-DsATAC-method
@@ -156,12 +162,13 @@ setMethod("getCountsSE",
 	),
 	function(
 		.object,
-		type
+		type,
+		naIsZero=TRUE
 	) {
 		require(SummarizedExperiment)
 		if (!is.element(type, getRegionTypes(.object))) logger.error(c("Unsupported region type:", type))
 		#count matrix
-		cm <- ChrAccR::getCounts(.object, type, asMatrix=TRUE)
+		cm <- ChrAccR::getCounts(.object, type, asMatrix=TRUE, naIsZero=naIsZero)
 		coords <- getCoord(.object, type)
 		se <- SummarizedExperiment(assays=list(counts=cm), rowRanges=coords, colData=DataFrame(getSampleAnnot(.object)))
 		return(se)
@@ -513,10 +520,10 @@ setMethod("mergeSamples",
 		#count data
 		regTypes <- getRegionTypes(.object)
 		for (rt in regTypes){
-			cm <- ChrAccR::getCounts(.object, rt, asMatrix=FALSE)
+			cm <- ChrAccR::getCounts(.object, rt, asMatrix=FALSE) #design question: should we set the parameter naIsZero==FALSE?
 			cmm <- do.call("cbind", lapply(mgL, FUN=function(iis){
 				if (.object@sparseCounts && is.element(countAggrFun, c("mean", "median"))){
-					aggMat <- ChrAccR::getCounts(.object, rt, j=iis, asMatrix=TRUE)
+					aggMat <- ChrAccR::getCounts(.object, rt, j=iis, asMatrix=TRUE) #design question: should we set the parameter naIsZero==FALSE?
 				} else {
 					aggMat <- cm[,iis,drop=FALSE]
 				}
@@ -1065,7 +1072,7 @@ setMethod("transformCounts",
 					logger.status(c("Region type:", rt))
 					cnames <- colnames(.object@counts[[rt]])
 					# .object@counts[[rt]] <- data.table(normalize.quantiles(as.matrix(.object@counts[[rt]])))
-					.object@counts[[rt]] <- normalize.quantiles(ChrAccR::getCounts(.object, rt, asMatrix=TRUE))
+					.object@counts[[rt]] <- normalize.quantiles(ChrAccR::getCounts(.object, rt, asMatrix=TRUE)) #design question: should we set the parameter naIsZero==FALSE?
 					if (!.object@diskDump && .object@sparseCounts){
 						.object@counts[[rt]] <- as(.object@counts[[rt]], "sparseMatrix")
 					}
@@ -1122,7 +1129,7 @@ setMethod("transformCounts",
 				}
 			logger.completed()
 		} else if (method == "tf-idf"){
-			# TF-IDF transformation as applied in LSI (Shendure lab) (Cusanovich, et al. (2018). A Single-Cell Atlas of In Vivo Mammalian Chromatin Accessibility. Cell, 1–35)
+			# TF-IDF transformation as applied in LSI (Shendure lab) (Cusanovich, et al. (2018). A Single-Cell Atlas of In Vivo Mammalian Chromatin Accessibility. Cell, 1-35)
 			# Recycled some code from: https://github.com/shendurelab/mouse-atac
 			logger.start(c("Applying TF-IDF transformation"))
 				if (.object@sparseCounts) logger.warning("Generating sparse matrix for matrix with possible true zero entries (VST)")
@@ -1192,8 +1199,7 @@ setMethod("filterLowCovg",
 		percAllowed <- round(numAllowed/N, 2)
 		logger.status(c("Removing regions with read counts lower than", thresh, "in more than", N-numAllowed, "samples", paste0("(", (1-percAllowed)*100,"%)")))
 		for (rt in regionTypes){
-			cm <- getCounts(.object, rt)
-			rem <- rowSums(!is.na(cm) & (cm >= thresh)) < numAllowed
+			rem <- rowSums(getCounts(.object, rt, naIsZero=TRUE)) < numAllowed
 			nRem <- sum(rem)
 			nRegs <- getNRegions(.object, rt)
 			if (nRem > 0){
@@ -1405,7 +1411,7 @@ setMethod("getChromVarDev",
 		require(motifmatchr)
 		res <- NULL
 
-		countSe <- getCountsSE(.object, type)
+		countSe <- getCountsSE(.object, type, naIsZero=TRUE)
 		genomeObj <- getGenomeObject(.object@genome)
 		genome(countSe) <- providerVersion(genomeObj) # hack to override inconsistent naming of genome versions (e.g. hg38 and GRCh38)
 
