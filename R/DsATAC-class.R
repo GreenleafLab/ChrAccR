@@ -1132,8 +1132,6 @@ setMethod("transformCounts",
 			# TF-IDF transformation as applied in LSI (Shendure lab) (Cusanovich, et al. (2018). A Single-Cell Atlas of In Vivo Mammalian Chromatin Accessibility. Cell, 1-35)
 			# Recycled some code from: https://github.com/shendurelab/mouse-atac
 			logger.start(c("Applying TF-IDF transformation"))
-				if (.object@sparseCounts) logger.warning("Generating sparse matrix for matrix with possible true zero entries (VST)")
-				require(DESeq2)
 				for (rt in regionTypes){
 					logger.status(c("Region type:", rt))
 					cm <- !is.na(.object@counts[[rt]]) & .object@counts[[rt]] > 0 #indicator matrix: are there any counts in that region
