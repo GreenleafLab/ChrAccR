@@ -1137,7 +1137,7 @@ setMethod("transformCounts",
 					cm <- !is.na(.object@counts[[rt]]) & .object@counts[[rt]] > 0 #indicator matrix: are there any counts in that region
 					cnames <- colnames(cm)
 					if (class(cm)=="lgCMatrix"){
-						tf <- t(t(cm) / Matrix::colSums(cm)) #term frequency
+						tf <- Matrix::t(Matrix::t(cm) / Matrix::colSums(cm)) #term frequency
 						idf <- tf * log(1 + ncol(cm) / Matrix::rowSums(cm)) # inverse document frequency
 					} else {
 						tf <- t(t(cm) / colSums(cm)) #term frequency
