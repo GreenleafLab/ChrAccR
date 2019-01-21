@@ -1136,8 +1136,13 @@ setMethod("transformCounts",
 					logger.status(c("Region type:", rt))
 					cm <- !is.na(.object@counts[[rt]]) & .object@counts[[rt]] > 0 #indicator matrix: are there any counts in that region
 					cnames <- colnames(cm)
-					tf <- t(t(cm) / colSums(cm)) #term frequency
-					idf <- tf * log(1 + ncol(cm) / rowSums(cm)) # inverse document frequency
+					if (class(cm)=="lgCMatrix"){
+						tf <- t(t(cm) / Matrix::colSums(cm)) #term frequency
+						idf <- tf * log(1 + ncol(cm) / Matrix::rowSums(cm)) # inverse document frequency
+					} else {
+						tf <- t(t(cm) / colSums(cm)) #term frequency
+						idf <- tf * log(1 + ncol(cm) / rowSums(cm)) # inverse document frequency
+					}
 					.object@counts[[rt]] <- idf
 					if (.object@diskDump) .object@counts[[rt]] <- as(.object@counts[[rt]], "HDF5Array")
 					colnames(.object@counts[[rt]]) <- cnames
