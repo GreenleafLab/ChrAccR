@@ -518,6 +518,17 @@ setMethod("mergeSamples",
 		.object@sampleAnnot <- phm
 
 		#count data
+		mergeFun <- NULL
+		if(countAggrFun=="sum"){
+			mergFun <- function(X){rowSums(X, na.rm=TRUE)}
+			if (.object@sparseCounts && !.object@diskDump) {
+				mergFun <- function(X){Matrix::rowSums(X, na.rm=TRUE)}
+			}
+		} else if(countAggrFun=="mean"){
+			mergFun <- function(X){rowMeans(X, na.rm=TRUE)}
+		} else if(countAggrFun=="median"){
+			mergFun <- function(X){matrixStats::rowMedians(X, na.rm=TRUE)}
+		}
 		regTypes <- getRegionTypes(.object)
 		for (rt in regTypes){
 			cm <- ChrAccR::getCounts(.object, rt, asMatrix=FALSE) #design question: should we set the parameter naIsZero==FALSE?
@@ -527,13 +538,7 @@ setMethod("mergeSamples",
 				} else {
 					aggMat <- cm[,iis,drop=FALSE]
 				}
-				if(countAggrFun=="sum"){
-					return(rowSums(aggMat, na.rm=TRUE))
-				} else if(countAggrFun=="mean"){
-					return(rowMeans(aggMat, na.rm=TRUE))
-				} else if(countAggrFun=="median"){
-					return(rowMedians(aggMat, na.rm=TRUE))
-				}
+				return(mergeFun(aggMat))
 			}))
 			# .object@counts[[rt]] <- data.table(cmm)
 			if (.object@sparseCounts) {
