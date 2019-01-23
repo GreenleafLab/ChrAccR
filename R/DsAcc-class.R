@@ -302,7 +302,7 @@ setMethod("addSampleAnnotCol",
 		vals
 	) {
 		ph <- .object@sampleAnnot
-		if (length(vals)!=ncol(ph)){
+		if (length(vals)!=nrow(ph)){
 			logger.error(c("vals must contain exactly one value for each sample"))
 		}
 		if (is.element(name, colnames(ph))){
