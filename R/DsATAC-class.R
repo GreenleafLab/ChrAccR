@@ -531,6 +531,7 @@ setMethod("mergeSamples",
 		}
 		regTypes <- getRegionTypes(.object)
 		for (rt in regTypes){
+			logger.status(paste0("Merging samples (region set: '", rt, "')..."))
 			cm <- ChrAccR::getCounts(.object, rt, asMatrix=FALSE) #design question: should we set the parameter naIsZero==FALSE?
 			cmm <- do.call("cbind", lapply(mgL, FUN=function(iis){
 				if (.object@sparseCounts && is.element(countAggrFun, c("mean", "median"))){
@@ -552,6 +553,7 @@ setMethod("mergeSamples",
 
 		#insertion data: concatenate GRanges objects
 		if (length(.object@fragments) == nSamples){
+			logger.status(paste0("Merging sample fragment data..."))
 			insL <- .object@fragments
 			.object@fragments <- lapply(mgL, FUN=function(iis){
 				rr <- insL[iis]
