@@ -1083,6 +1083,22 @@ setMethod("transformCounts",
 					.object@countTransform[[rt]] <- c("quantileNorm", .object@countTransform[[rt]])
 				}
 			logger.completed()
+		} else if (method == "rankPerc"){
+			logger.start(c("Applying rank percentile transformation"))
+				for (rt in regionTypes){
+					logger.status(c("Region type:", rt))
+					cnames <- colnames(.object@counts[[rt]])
+					.object@counts[[rt]] <- muRtools::normalizeRank(ChrAccR::getCounts(.object, rt, asMatrix=TRUE), out="percentile")
+					if (!.object@diskDump && .object@sparseCounts){
+						.object@counts[[rt]] <- as(.object@counts[[rt]], "sparseMatrix")
+					}
+					if (.object@diskDump){
+						.object@counts[[rt]] <- as(.object@counts[[rt]], "HDF5Array")
+					}
+					colnames(.object@counts[[rt]]) <- cnames
+					.object@countTransform[[rt]] <- c("rankPercNorm", .object@countTransform[[rt]])
+				}
+			logger.completed()
 		} else if (method == "RPKM"){
 			logger.start(c("Performing RPKM normalization"))
 				for (rt in regionTypes){
@@ -1153,6 +1169,7 @@ setMethod("transformCounts",
 		return(.object)
 	}
 )
+
 #-------------------------------------------------------------------------------
 if (!isGeneric("filterLowCovg")) {
 	setGeneric(
