@@ -522,7 +522,7 @@ setMethod("mergeSamples",
 		if(countAggrFun=="sum"){
 			mergeFun <- function(X){rowSums(X, na.rm=TRUE)}
 			if (.object@sparseCounts && !.object@diskDump) {
-				mergFun <- function(X){Matrix::rowSums(X, na.rm=TRUE)}
+				mergeFun <- function(X){Matrix::rowSums(X, na.rm=TRUE)}
 			}
 		} else if(countAggrFun=="mean"){
 			mergeFun <- function(X){rowMeans(X, na.rm=TRUE)}
