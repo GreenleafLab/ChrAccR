@@ -520,14 +520,14 @@ setMethod("mergeSamples",
 		#count data
 		mergeFun <- NULL
 		if(countAggrFun=="sum"){
-			mergFun <- function(X){rowSums(X, na.rm=TRUE)}
+			mergeFun <- function(X){rowSums(X, na.rm=TRUE)}
 			if (.object@sparseCounts && !.object@diskDump) {
 				mergFun <- function(X){Matrix::rowSums(X, na.rm=TRUE)}
 			}
 		} else if(countAggrFun=="mean"){
-			mergFun <- function(X){rowMeans(X, na.rm=TRUE)}
+			mergeFun <- function(X){rowMeans(X, na.rm=TRUE)}
 		} else if(countAggrFun=="median"){
-			mergFun <- function(X){matrixStats::rowMedians(X, na.rm=TRUE)}
+			mergeFun <- function(X){matrixStats::rowMedians(X, na.rm=TRUE)}
 		}
 		regTypes <- getRegionTypes(.object)
 		for (rt in regTypes){
