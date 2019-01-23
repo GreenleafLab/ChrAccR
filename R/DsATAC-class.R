@@ -1041,7 +1041,7 @@ if (!isGeneric("transformCounts")) {
 #' transform count data for an ATAC seq dataset
 #'
 #' @param .object \code{\linkS4class{DsATAC}} object
-#' @param method  transformation method to be applied. Currently only 'log2', 'quantile' (quantile normalization), 'vst' (DESeq2 Variance Stabilizing Transformation) and 'RPKM' (RPKM normalization) are supported
+#' @param method  transformation method to be applied. Currently only 'log2', 'quantile' (quantile normalization), 'rankPerc' (rank percentile), 'vst' (DESeq2 Variance Stabilizing Transformation), 'tf-idf' and 'RPKM' (RPKM normalization) are supported
 #' @param regionTypes character vector specifying a name for the region type in which count data should be normalized(default: all region types)
 #' @return a new \code{\linkS4class{DsATAC}} object with normalized count data
 #' 
@@ -1063,7 +1063,7 @@ setMethod("transformCounts",
 		if (!all(regionTypes %in% getRegionTypes(.object))){
 			logger.error(c("Unsupported region type:", paste(setdiff(regionTypes, getRegionTypes(.object)), collapse=", ")))
 		}
-		if (!is.element(method, c("quantile", "log2", "RPKM", "vst", "tf-idf"))) logger.error(c("Unsupported normalization method type:", method))
+		if (!is.element(method, c("quantile", "rankPerc", "log2", "RPKM", "vst", "tf-idf"))) logger.error(c("Unsupported normalization method type:", method))
 
 		if (method == "quantile"){
 			logger.start(c("Performing quantile normalization"))
