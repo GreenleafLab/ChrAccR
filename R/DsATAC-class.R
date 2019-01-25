@@ -1313,7 +1313,19 @@ setMethod("filterChroms",
 			logger.info(c("Removed", sum(isExclChrom), "of", length(isExclChrom), "regions for region type", rt))
 		}
 		if (length(.object@fragments) > 0){
-			a <- 4
+			logger.status("Filtering fragment data")
+			for (sid in names(.object@fragments)){
+				fragGr <- getFragmentGr(.object, sid)
+				idx <- !(as.character(seqnames(fragGr)) %in% exclChrom)
+				fragGr <- fragGr[idx]
+				if (.object@diskDump.fragments){
+					fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
+					saveRDS(fragGr, fn)
+					fragGr <- fn
+				}
+				.object@fragments[[sid]] <- fragGr
+			}
+			
 		}
 		return(.object)
 	}
