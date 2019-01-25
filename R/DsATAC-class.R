@@ -1424,19 +1424,16 @@ setMethod("getInsertionKmerFreq",
 		require(Biostrings)
 		if (!all(samples %in% getSamples(.object))) logger.error(c("Invalid samples:", paste(setdiff(samples, getSamples(.object)), collapse=", ")))
 		go <- getGenomeObject(.object@genome)
-		#genome-wide kmer frequency
-		if (normGenome){
-			logger.status(c("Preparing genome-wide kmer-frequencies"))
-			kmerFreq.g <- oligonucleotideFrequency(Views(go, getGenomeGr(.object@genome, onlyMainChrs=TRUE)), width=k, simplify.as="collapsed")
-		}
 		res <- do.call("cbind", lapply(samples, FUN=function(sid){
-			logger.status(c("Preparing inerstion kmer-frequencies for sample", sid))
+			logger.status(c("Preparing insertion kmer-frequencies for sample", sid))
 			insGr <-  trim(resize(shift(getInsertionSites(.object, sid)[[1]], -ceiling(k/2)), width=k, fix="start", ignore.strand=TRUE))
 			kmerFreq <- oligonucleotideFrequency(Views(go, insGr), width=k, simplify.as="collapsed")
 			return(kmerFreq)
 		}))
 		colnames(res) <- samples
 		if (normGenome) {
+			logger.status(c("Normalizing using genome-wide kmer-frequencies"))
+			kmerFreq.g <- oligonucleotideFrequency(Views(go, getGenomeGr(.object@genome, onlyMainChrs=TRUE)), width=k, simplify.as="collapsed")
 			res <- res/kmerFreq.g
 		}
 		return(res)
