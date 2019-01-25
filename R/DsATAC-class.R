@@ -1404,6 +1404,7 @@ if (!isGeneric("aggregateRegionCounts")) {
 #'
 #' @param .object    \code{\linkS4class{DsATAC}} object
 #' @param regionGr   \code{GRanges} object specifying the regions to aggregate over
+#' @param samples    sample identifiers
 #' @param norm       method used for normalizing the resulting position-wise counts.
 #'                   Currently only \code{'tailMean'} is supported, which computes normalization factors as the mean signal in the tails of the window
 #' @param normTailW  fraction of the region window to be used on each side of the window to be used for normalization if \code{norm} is one of \code{'tailMean'}
@@ -1427,6 +1428,7 @@ setMethod("aggregateRegionCounts",
 	function(
 		.object,
 		regionGr,
+		samples=getSamples(.object),
 		norm="tailMean",
 		normTailW=0.1,
 		kmerBiasAdj=TRUE,
@@ -1434,7 +1436,7 @@ setMethod("aggregateRegionCounts",
 		sampleCovg=NULL,
 		sampleKmerFreqM=NULL
 	) {
-		sampleIds <- getSamples(.object)
+		if (!all(samples %in% getSamples(.object))) logger.error(c("Invalid samples:", paste(setdiff(samples, getSamples(.object)), collapse=", ")))
 		w <- width(regionGr)
 		wm <- as.integer(median(w))
 		idx <- w==wm
@@ -1450,8 +1452,10 @@ setMethod("aggregateRegionCounts",
 		}
 		if (is.null(sampleCovg)){
 			logger.start("Computing sample coverage")
-				sampleCovg <- getCoverage(.object)
+				sampleCovg <- getCoverage(.object, samples=samples)
 			logger.completed()
+		} else {
+			if (!all(samples %in% names(sampleCovg))) logger.error("'sampleCovg' does not cover all samples")
 		}
 		kmerFreqM <- NULL
 		go <- NULL
@@ -1460,8 +1464,10 @@ setMethod("aggregateRegionCounts",
 			go <- getGenomeObject(.object@genome)
 			if (is.null(sampleKmerFreqM)) {
 				logger.start("Computing sample kmer frequencies")
-					sampleKmerFreqM <- getInsertionKmerFreq(.object, k=k, normGenome=TRUE)
+					sampleKmerFreqM <- getInsertionKmerFreq(.object, samples=samples, k=k, normGenome=TRUE)
 				logger.completed()
+			} else {
+				if (!all(samples %in% colnames(sampleKmerFreqM))) logger.error("'sampleKmerFreqM' does not cover all samples")
 			}
 			logger.start("Computing region kmer frequencies")
 				kmerFreqM <- do.call("cbind", lapply(0:(wm-1), FUN=function(i){
@@ -1496,9 +1502,9 @@ setMethod("aggregateRegionCounts",
 			return(f)
 		}
 		logger.start("Aggregating counts")
-			countL <- lapply(sampleIds, FUN=function(sid){fastFootprint(sampleCovg[[sid]], regionGr)})
+			countL <- lapply(samples, FUN=function(sid){fastFootprint(sampleCovg[[sid]], regionGr)})
 		logger.completed()
-		res <- do.call("rbind", lapply(sampleIds, FUN=function(sid){
+		res <- do.call("rbind", lapply(samples, FUN=function(sid){
 			cs <- countL[[sid]]
 			if (kmerBiasAdj) {
 				tn5Bias <- as.vector(kmerFreqM %*% matrix(sampleKmerFreqM[,sid]))
