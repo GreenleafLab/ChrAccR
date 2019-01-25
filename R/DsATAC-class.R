@@ -289,7 +289,7 @@ setMethod("getCoverage",
 		if (!all(samples %in% getSamples(.object))) logger.error(c("Invalid samples:", paste(setdiff(samples, getSamples(.object)), collapse=", ")))
 		sampleCovgRle <- lapply(samples, FUN=function(sid){
 			logger.status(c("Computing genome-wide coverage for sample", sid))
-			return(GenomicRanges::coverage(getInsertionSites(.object, sid)))
+			return(GenomicRanges::coverage(getInsertionSites(.object, sid)[[1]]))
 		})
 		names(sampleCovgRle) <- samples
 		return(sampleCovgRle)
@@ -1277,7 +1277,47 @@ setMethod("filterLowCovg",
 		return(.object)
 	}
 )
-
+#-------------------------------------------------------------------------------
+if (!isGeneric("filterChroms")) {
+	setGeneric(
+		"filterChroms",
+		function(.object, ...) standardGeneric("filterChroms"),
+		signature=c(".object")
+	)
+}
+#' filterChroms-methods
+#'
+#' Filter out regions based on chromosome list
+#'
+#' @param .object     \code{\linkS4class{DsATAC}} object
+#' @param exclChrom   vector of chromosome names to filter out
+#' @return a new \code{\linkS4class{DsATAC}} object filtered for chromosomes
+#' 
+#' @rdname filterChroms-DsATAC-method
+#' @docType methods
+#' @aliases filterChroms
+#' @aliases filterChroms,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("filterChroms",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		exclChrom=c("chrX", "chrY", "chrM")
+	) {
+		for (rt in getRegionTypes(dsf)){
+			isExclChrom <- as.character(seqnames(getCoord(dsf, rt))) %in% exclChrom
+			.object <- removeRegions(.object, isExclChrom, rt)
+			logger.info(c("Removed", sum(isExclChrom), "of", length(isExclChrom), "regions for region type", rt))
+		}
+		if (length(.object@fragments) > 0){
+			a <- 4
+		}
+		return(.object)
+	}
+)
 ################################################################################
 # Analysis Utils
 ################################################################################
@@ -1320,7 +1360,7 @@ setMethod("regionSetCounts",
 			idx.rsl <- rep(1:length(rsl), times=elementNROWS(rsl))
 
 			res <- do.call("cbind", lapply(getSamples(.object), FUN=function(sid){
-				insGr <- getInsertionSites(.object, sid)
+				insGr <- getInsertionSites(.object, sid)[[1]]
 				ov <- countOverlaps(rslGr, insGr, ignore.strand=TRUE)
 				rr <- tapply(ov, idx.rsl, sum)
 				rr <- rr[as.character(1:length(rsl))] # make sure the counts are returned in the same order as in rsl (not sure, if really necessary)
@@ -1379,7 +1419,7 @@ setMethod("getInsertionKmerFreq",
 		}
 		res <- do.call("cbind", lapply(samples, FUN=function(sid){
 			logger.status(c("Preparing inerstion kmer-frequencies for sample", sid))
-			insGr <-  trim(resize(shift(getInsertionSites(.object, sid), -ceiling(k/2)), width=k, fix="start", ignore.strand=TRUE))
+			insGr <-  trim(resize(shift(getInsertionSites(.object, sid)[[1]], -ceiling(k/2)), width=k, fix="start", ignore.strand=TRUE))
 			kmerFreq <- oligonucleotideFrequency(Views(go, insGr), width=k, simplify.as="collapsed")
 			return(kmerFreq)
 		}))
