@@ -288,7 +288,8 @@ setMethod("getCoverage",
 	) {
 		if (!all(samples %in% getSamples(.object))) logger.error(c("Invalid samples:", paste(setdiff(samples, getSamples(.object)), collapse=", ")))
 		sampleCovgRle <- lapply(samples, FUN=function(sid){
-			coverage(getInsertionSites(.object, sid))
+			logger.status(c("Computing genome-wide coverage for sample", sid))
+			return(GenomicRanges::coverage(getInsertionSites(.object, sid)))
 		})
 		names(sampleCovgRle) <- samples
 		return(sampleCovgRle)
