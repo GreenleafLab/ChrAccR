@@ -1448,20 +1448,28 @@ setMethod("aggregateRegionCounts",
 			logger.error("Invalid value for tail-normalization window")
 		}
 		if (is.null(sampleCovg)){
-			sampleCovg <- getCoverage(.object)
+			logger.start("Computing sample coverage")
+				sampleCovg <- getCoverage(.object)
+			logger.completed()
 		}
 		kmerFreqM <- NULL
 		go <- NULL
 		tn5bias <- rep(as.numeric(NA), wm)
 		if (kmerBiasAdj){
 			go <- getGenomeObject(.object@genome)
-			if (is.null(sampleKmerFreqM)) sampleKmerFreqM <- getInsertionKmerFreq(.object, k=k, normGenome=TRUE)
-			kmerFreqM <- do.call("cbind", lapply(0:(wm-1), FUN=function(i){
-				logger.status(paste0("i=",i))
-				wGr <- trim(resize(GenomicRanges::shift(regionGr, i-ceiling(k/2)), width=k, fix="start", ignore.strand=TRUE))
-				rr <- oligonucleotideFrequency(Views(go, wGr), width=k, simplify.as="collapsed")
-				return(rr)
-			}))
+			if (is.null(sampleKmerFreqM)) {
+				logger.start("Computing sample kmer frequencies")
+					sampleKmerFreqM <- getInsertionKmerFreq(.object, k=k, normGenome=TRUE)
+				logger.completed()
+			}
+			logger.start("Computing region kmer frequencies")
+				kmerFreqM <- do.call("cbind", lapply(0:(wm-1), FUN=function(i){
+					logger.status(paste0("i=",i))
+					wGr <- trim(resize(GenomicRanges::shift(regionGr, i-ceiling(k/2)), width=k, fix="start", ignore.strand=TRUE))
+					rr <- oligonucleotideFrequency(Views(go, wGr), width=k, simplify.as="collapsed")
+					return(rr)
+				}))
+			logger.completed()
 			if (!all(rownames(kmerFreqM)==rownames(sampleKmerFreqM))) logger.error("kmers in frequency matrices do not match")
 		}
 		# Code from Jeff Granja
@@ -1486,7 +1494,9 @@ setMethod("aggregateRegionCounts",
 			}) %>% Reduce("rbind",.) %>% colSums
 			return(f)
 		}
-		countL <- lapply(sampleIds, FUN=function(sid){fastFootprint(sampleCovg[[sid]], regionGr)})
+		logger.start("Aggregating counts")
+			countL <- lapply(sampleIds, FUN=function(sid){fastFootprint(sampleCovg[[sid]], regionGr)})
+		logger.completed()
 		res <- do.call("rbind", lapply(sampleIds, FUN=function(sid){
 			cs <- countL[[sid]]
 			if (kmerBiasAdj) {
