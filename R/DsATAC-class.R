@@ -256,6 +256,45 @@ setMethod("getInsertionSites",
 		return(GRangesList(res))
 	}
 )
+#-------------------------------------------------------------------------------
+if (!isGeneric("getCoverage")) {
+	setGeneric(
+		"getCoverage",
+		function(.object, ...) standardGeneric("getCoverage"),
+		signature=c(".object")
+	)
+}
+#' getCoverage-methods
+#'
+#' Return a list of genome-wide coverage from insertion sites
+#'
+#' @param .object \code{\linkS4class{DsATAC}} object
+#' @param samples sample identifiers
+#' @return \code{list} of \code{Rle} objects of sample coverage tracks
+#'
+#' @rdname getCoverage-DsATAC-method
+#' @docType methods
+#' @aliases getCoverage
+#' @aliases getCoverage,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("getCoverage",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		samples=getSamples(.object)
+	) {
+		if (!all(samples %in% getSamples(.object))) logger.error(c("Invalid samples:", paste(setdiff(samples, getSamples(.object)), collapse=", ")))
+		sampleCovgRle <- lapply(samples, FUN=function(sid){
+			coverage(getInsertionSites(.object, sid))
+		})
+		names(sampleCovgRle) <- samples
+		return(sampleCovgRle)
+	}
+)
+
 ################################################################################
 # Display
 ################################################################################
@@ -1292,6 +1331,193 @@ setMethod("regionSetCounts",
 			# insGrl <- getInsertionSites(.object)
 			res <- countPairwiseOverlaps(rsl, getInsertionSites(.object), ignore.strand=TRUE)
 		}
+		return(res)
+	}
+)
+#-------------------------------------------------------------------------------
+if (!isGeneric("getInsertionKmerFreq")) {
+	setGeneric(
+		"getInsertionKmerFreq",
+		function(.object, ...) standardGeneric("getInsertionKmerFreq"),
+		signature=c(".object")
+	)
+}
+#' getInsertionKmerFreq-methods
+#'
+#' compute kmer frequencies at insertion sites for each sample
+#'
+#' @param .object    \code{\linkS4class{DsATAC}} object
+#' @param samples   sample identifiers
+#' @param k          length of the kmer
+#' @param normGenome should the result be normalized by genome-wide kmer frequencies
+#' @return a \code{matrix} containing kmer frequencies (one row for each kmer and one column for each sample in the dataset)
+#' 
+#' @rdname getInsertionKmerFreq-DsATAC-method
+#' @docType methods
+#' @aliases getInsertionKmerFreq
+#' @aliases getInsertionKmerFreq,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("getInsertionKmerFreq",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		samples=getSamples(.object),
+		k=6,
+		normGenome=FALSE
+	) {
+		require(Biostrings)
+		if (!all(samples %in% getSamples(.object))) logger.error(c("Invalid samples:", paste(setdiff(samples, getSamples(.object)), collapse=", ")))
+		go <- getGenomeObject(.object@genome)
+		#genome-wide kmer frequency
+		if (normGenome){
+			logger.status(c("Preparing genome-wide kmer-frequencies"))
+			kmerFreq.g <- oligonucleotideFrequency(Views(go, getGenomeGr(.object@genome, onlyMainChrs=TRUE)), width=k, simplify.as="collapsed")
+		}
+		res <- do.call("cbind", lapply(samples, FUN=function(sid){
+			logger.status(c("Preparing inerstion kmer-frequencies for sample", sid))
+			insGr <-  trim(resize(shift(getInsertionSites(.object, sid), -ceiling(k/2)), width=k, fix="start", ignore.strand=TRUE))
+			kmerFreq <- oligonucleotideFrequency(Views(go, insGr), width=k, simplify.as="collapsed")
+			return(kmerFreq)
+		}))
+		colnames(res) <- samples
+		if (normGenome) {
+			res <- res/kmerFreq.g
+		}
+		return(res)
+	}
+)
+#-------------------------------------------------------------------------------
+if (!isGeneric("aggregateRegionCounts")) {
+	setGeneric(
+		"aggregateRegionCounts",
+		function(.object, ...) standardGeneric("aggregateRegionCounts"),
+		signature=c(".object")
+	)
+}
+#' aggregateRegionCounts-methods
+#'
+#' Agregate counts across a set of regions, e.g. for footprinting analysis
+#'
+#' @param .object    \code{\linkS4class{DsATAC}} object
+#' @param regionGr   \code{GRanges} object specifying the regions to aggregate over
+#' @param norm       method used for normalizing the resulting position-wise counts.
+#'                   Currently only \code{'tailMean'} is supported, which computes normalization factors as the mean signal in the tails of the window
+#' @param normTailW  fraction of the region window to be used on each side of the window to be used for normalization if \code{norm} is one of \code{'tailMean'}
+#' @param kmerBiasAdj compute Tn5 bias and use it to adjust the counts as in Corces, et al., Science, (2018)
+#' @param k          length of the kmer to be used for sequence bias correction. Only relevant if \code{kmerBiasAdj==TRUE}.
+#' @param sampleCovg to save compute time, a sample coverage track list (as computed by \code{getCoverage(.object)}) can be supplied. If not, it will be computed on the fly.
+#' @param sampleKmerFreqM to save compute time, a matrix of sample kmer frequency at insertion sites (as computed by \code{getInsertionKmerFreq(.object, ...)}) can be supplied.
+#'                   If not, it will be computed on the fly. Only relevant if \code{kmerBiasAdj==TRUE}.
+#' @return a \code{data.frame} containing position-wise counts (raw, normalized and optionally Tn5-bias-corrected) for each sample
+#' 
+#' @rdname aggregateRegionCounts-DsATAC-method
+#' @docType methods
+#' @aliases aggregateRegionCounts
+#' @aliases aggregateRegionCounts,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("aggregateRegionCounts",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		regionGr,
+		norm="tailMean",
+		normTailW=0.1,
+		kmerBiasAdj=TRUE,
+		k=6,
+		sampleCovg=NULL,
+		sampleKmerFreqM=NULL
+	) {
+		sampleIds <- getSamples(.object)
+		w <- width(regionGr)
+		wm <- as.integer(median(w))
+		idx <- w==wm
+		if (!all(idx)){
+			logger.warning(c("not all elements in GRanges have the same width. --> discarding", sum(!idx), "of", length(idx), "regions that do not."))
+			regionGr <- regionGr[idx]
+		}
+		if (!is.element(norm, c("tailMean"))) logger.error("Invalid value for 'norm' (normalization method)")
+		if (normTailW < 1 && normTailW>0){
+			normTailW <- ceiling(wm*normTailW)
+		} else{
+			logger.error("Invalid value for tail-normalization window")
+		}
+		if (is.null(sampleCovg)){
+			sampleCovg <- getCoverage(.object)
+		}
+		kmerFreqM <- NULL
+		go <- NULL
+		tn5bias <- rep(as.numeric(NA), wm)
+		if (kmerBiasAdj){
+			go <- getGenomeObject(.object@genome)
+			if (is.null(sampleKmerFreqM)) sampleKmerFreqM <- getInsertionKmerFreq(.object, k=k, normGenome=TRUE)
+			kmerFreqM <- do.call("cbind", lapply(0:(wm-1), FUN=function(i){
+				logger.status(paste0("i=",i))
+				wGr <- trim(resize(GenomicRanges::shift(regionGr, i-ceiling(k/2)), width=k, fix="start", ignore.strand=TRUE))
+				rr <- oligonucleotideFrequency(Views(go, wGr), width=k, simplify.as="collapsed")
+				return(rr)
+			}))
+			if (!all(rownames(kmerFreqM)==rownames(sampleKmerFreqM))) logger.error("kmers in frequency matrices do not match")
+		}
+		# Code from Jeff Granja
+		# given a RleList object (cov) with genomic coverage (as computed by GenomicRanges::coverage) and a GRanges
+		# object (gr) specifying the motif locations (uniform reggion sizes, extended the center of motif location in each direction)
+		# returns the summed/piled-up coverages for each position across all elements in gr
+		fastFootprint <- function(cov, gr){
+			require(dplyr)
+			int <- intersect(names(cov), unique(seqnames(gr)))
+			cov <- cov[int]
+			gr <- gr[which(as.character(seqnames(gr)) %in% int)]
+			suppressWarnings(seqlengths(gr)[int] <- unlist(lapply(cov,length)))
+			gr <- trim(gr)
+			gr <- gr[width(gr) == median(width(gr)),]
+			grL <- split(gr, seqnames(gr))
+			f <- lapply(seq_along(cov), function(x){
+			v <- Views(cov[[x]], ranges(grL[[names(cov)[x]]])) %>% as.matrix
+			v[is.na(v)] <- 0 #too handle errors should not be needed
+			minus <- which(as.character(strand(grL[[names(cov)[x]]]))=="-")
+			other <- which(as.character(strand(grL[[names(cov)[x]]]))!="-")
+			rev(colSums(v[minus,,drop=FALSE])) + colSums(v[other,,drop=FALSE])
+			}) %>% Reduce("rbind",.) %>% colSums
+			return(f)
+		}
+		countL <- lapply(sampleIds, FUN=function(sid){fastFootprint(sampleCovg[[sid]], regionGr)})
+		res <- do.call("rbind", lapply(sampleIds, FUN=function(sid){
+			cs <- countL[[sid]]
+			if (kmerBiasAdj) {
+				tn5Bias <- as.vector(kmerFreqM %*% matrix(sampleKmerFreqM[,sid]))
+			}
+			normFac <- as.numeric(NA)
+			normFac.tn5 <- as.numeric(NA)
+			if (norm=="tailMean"){
+				normFac <- 1/mean(cs[c(1:normTailW, (wm-normTailW+1):wm)], na.rm=TRUE)
+				if (kmerBiasAdj) {
+					normFac.tn5 <- 1/mean(tn5Bias[c(1:normTailW, (wm-normTailW+1):wm)], na.rm=TRUE)
+				}
+			}
+			sampleDf <- data.frame(
+				sampleId=sid,
+				pos=1:wm,
+				countSum=cs,
+				countNorm=cs*normFac,
+				stringsAsFactors=FALSE
+			)
+			if (kmerBiasAdj){
+				sampleDf <- cbind(sampleDf, data.frame(
+					countsBiasCor=cs/tn5Bias,
+					countNormBiasCor=(cs*normFac)/(tn5Bias*normFac.tn5),
+					Tn5bias=tn5Bias,
+					Tn5biasNorm=tn5Bias*normFac.tn5,
+					stringsAsFactors=FALSE
+				))
+			}
+			return(sampleDf)
+		}))
 		return(res)
 	}
 )
