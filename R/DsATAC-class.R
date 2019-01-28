@@ -1454,6 +1454,7 @@ if (!isGeneric("aggregateRegionCounts")) {
 #' @param .object    \code{\linkS4class{DsATAC}} object
 #' @param regionGr   \code{GRanges} object specifying the regions to aggregate over
 #' @param samples    sample identifiers
+#' @param countAggrFun aggration function to be used for summarizing the insertion counts at each position. Possible values include \code{"sum"}, \code{"mean"}, and \code{"median"}
 #' @param norm       method used for normalizing the resulting position-wise counts.
 #'                   Currently only \code{'tailMean'} is supported, which computes normalization factors as the mean signal in the tails of the window
 #' @param normTailW  fraction of the region window to be used on each side of the window to be used for normalization if \code{norm} is one of \code{'tailMean'}
@@ -1478,6 +1479,7 @@ setMethod("aggregateRegionCounts",
 		.object,
 		regionGr,
 		samples=getSamples(.object),
+		countAggrFun="sum",
 		norm="tailMean",
 		normTailW=0.1,
 		kmerBiasAdj=TRUE,
@@ -1486,9 +1488,10 @@ setMethod("aggregateRegionCounts",
 		sampleKmerFreqM=NULL
 	) {
 		if (!all(samples %in% getSamples(.object))) logger.error(c("Invalid samples:", paste(setdiff(samples, getSamples(.object)), collapse=", ")))
-		w <- width(regionGr)
-		wm <- as.integer(median(w))
-		idx <- w==wm
+		if (!is.element(countAggrFun, c("sum", "mean", "median"))) logger.error(c("Invalid value for countAggrFun:", countAggrFun))
+		ww <- width(regionGr)
+		wm <- as.integer(median(ww))
+		idx <- ww==wm
 		if (!all(idx)){
 			logger.warning(c("not all elements in GRanges have the same width. --> discarding", sum(!idx), "of", length(idx), "regions that do not."))
 			regionGr <- regionGr[idx]
@@ -1528,35 +1531,51 @@ setMethod("aggregateRegionCounts",
 			logger.completed()
 			if (!all(rownames(kmerFreqM)==rownames(sampleKmerFreqM))) logger.error("kmers in frequency matrices do not match")
 		}
-		# Code from Jeff Granja
 		# given a RleList object (cov) with genomic coverage (as computed by GenomicRanges::coverage) and a GRanges
-		# object (gr) specifying the motif locations (uniform reggion sizes, extended the center of motif location in each direction)
+		# object (gr) specifying the genomic locations of the features of interests (of uniform length)
 		# returns the summed/piled-up coverages for each position across all elements in gr
-		fastFootprint <- function(cov, gr){
-			require(dplyr)
+		# adapted and optimized code from Jeff Granja
+		fastFootprint <- function(cov, gr, aggrFun="sum"){
 			int <- intersect(names(cov), unique(seqnames(gr)))
 			cov <- cov[int]
 			gr <- gr[which(as.character(seqnames(gr)) %in% int)]
-			suppressWarnings(seqlengths(gr)[int] <- unlist(lapply(cov,length)))
+			suppressWarnings(seqlengths(gr)[int] <- sapply(cov,length))
 			gr <- trim(gr)
-			gr <- gr[width(gr) == median(width(gr)),]
+			w <- as.integer(median(width(gr)))
+			gr <- gr[width(gr)==w,] #only select elements that have the same length
 			grL <- split(gr, seqnames(gr))
-			f <- lapply(seq_along(cov), function(x){
-			v <- Views(cov[[x]], ranges(grL[[names(cov)[x]]])) %>% as.matrix
-			v[is.na(v)] <- 0 #too handle errors should not be needed
-			minus <- which(as.character(strand(grL[[names(cov)[x]]]))=="-")
-			other <- which(as.character(strand(grL[[names(cov)[x]]]))!="-")
-			rev(colSums(v[minus,,drop=FALSE])) + colSums(v[other,,drop=FALSE])
-			}) %>% Reduce("rbind",.) %>% colSums
-			return(f)
+			covM <- do.call("rbind", lapply(names(cov), function(chrom){
+				v <- as.matrix(Views(cov[[chrom]], ranges(grL[[chrom]])))
+				v[is.na(v)] <- 0 #too handle errors should not be needed
+				# revert negative strand regions
+				revIdx <- as.character(strand(grL[[chrom]]))=="-"
+				if (any(revIdx)) v[revIdx,] <- v[revIdx, w:1]
+				return(v)
+			}))
+			res <- NULL
+			if (aggrFun=="sum"){
+				res <- colSums(covM)
+			} else if (aggrFun=="mean"){
+				res <- colMeans(covM)
+			} else if (aggrFun=="median"){
+				res <- matrixStats::colMedians(covM)
+			} else {
+				logger.error(c("Unknown aggrFun in fastFootprint:", aggrFun))
+			}
+			return(res)
 		}
 		logger.start("Aggregating counts")
-			countL <- lapply(samples, FUN=function(sid){fastFootprint(sampleCovg[[sid]], regionGr)})
+			countL <- lapply(samples, FUN=function(sid){
+				logger.status(c("Sample:", sid))
+				return(fastFootprint(sampleCovg[[sid]], regionGr, aggrFun=countAggrFun))
+			})
+			names(countL) <- samples
 		logger.completed()
 		res <- do.call("rbind", lapply(samples, FUN=function(sid){
 			cs <- countL[[sid]]
+			tn5Bias <- c()
 			if (kmerBiasAdj) {
-				tn5Bias <- as.vector(kmerFreqM %*% matrix(sampleKmerFreqM[,sid]))
+				tn5Bias <- as.vector(t(kmerFreqM) %*% matrix(sampleKmerFreqM[,sid]))
 			}
 			normFac <- as.numeric(NA)
 			normFac.tn5 <- as.numeric(NA)
@@ -1569,7 +1588,7 @@ setMethod("aggregateRegionCounts",
 			sampleDf <- data.frame(
 				sampleId=sid,
 				pos=1:wm,
-				countSum=cs,
+				count=cs,
 				countNorm=cs*normFac,
 				stringsAsFactors=FALSE
 			)

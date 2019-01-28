@@ -7,9 +7,9 @@
 \title{aggregateRegionCounts-methods}
 \usage{
 \S4method{aggregateRegionCounts}{DsATAC}(.object, regionGr,
-  samples = getSamples(.object), norm = "tailMean", normTailW = 0.1,
-  kmerBiasAdj = TRUE, k = 6, sampleCovg = NULL,
-  sampleKmerFreqM = NULL)
+  samples = getSamples(.object), countAggrFun = "sum",
+  norm = "tailMean", normTailW = 0.1, kmerBiasAdj = TRUE, k = 6,
+  sampleCovg = NULL, sampleKmerFreqM = NULL)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}
@@ -17,6 +17,8 @@
 \item{regionGr}{\code{GRanges} object specifying the regions to aggregate over}
 
 \item{samples}{sample identifiers}
+
+\item{countAggrFun}{aggration function to be used for summarizing the insertion counts at each position. Possible values include \code{"sum"}, \code{"mean"}, and \code{"median"}}
 
 \item{norm}{method used for normalizing the resulting position-wise counts.
 Currently only \code{'tailMean'} is supported, which computes normalization factors as the mean signal in the tails of the window}
