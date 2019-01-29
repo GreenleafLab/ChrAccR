@@ -1845,6 +1845,134 @@ setMethod("exportCountTracks",
 	}
 )
 
+################################################################################
+# Data processing / inference
+################################################################################
+if (!isGeneric("callPeaks")) {
+	setGeneric(
+		"callPeaks",
+		function(.object, ...) standardGeneric("callPeaks"),
+		signature=c(".object")
+	)
+}
+#' callPeaks-methods
+#'
+#' Performs peak calling based on insertion sites
+#'
+#' @param .object \code{\linkS4class{DsATAC}} object
+#' @param samples sample identifiers for which peak calling is performed
+#' @param method  peak calling method. Currently only \code{'macs2summitUnifNO'} is supported. See details section.
+#' @param methodOpts list of other options depending on the \code{'method'} parameter (see details section).
+#' @return \code{GRangesList} of peak coordinates
+#' 
+#' @details
+#' The following methods are currently supported
+#' \describe{
+#'    \item{\code{'macs2summitUnifNO'}}{
+#'      1. Call peaks using system call to MACS2. You can specify the MACS2 executable in \code{methodOpts$macs2.exec}.
+#' 		2. Identify peak summits
+#' 		3. extend peak summits on each side by a number of basepairs (specified in \code{methodOpts$unifWidth}; default: 250bp) to obtain unified peak widths
+#' 		4. Find non-overlapping peaks by taking the peak with the best MACS2 score from each set of partially overlapping peaks
+#'    }
+#' }
+#'
+#' @rdname callPeaks-DsATAC-method
+#' @docType methods
+#' @aliases callPeaks
+#' @aliases callPeaks,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("callPeaks",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		samples=getSamples(.object),
+		method='macs2summitUnifNO',
+		methodOpts=list(
+			macs2.exec="macs2",
+			macs2.params=c(
+				"--shift", "-75",
+				"--extsize", "150",
+				"-p", "0.01"
+			),
+			unifWidth=250
+		)
+	) {
+		if (!is.element(method, c("macs2summitUnifNO"))) logger.error(c("Invalid 'method':", method))
+		if (!all(samples %in% getSamples(.object))) logger.error(c("Invalid samples:", paste(setdiff(samples, getSamples(.object)), collapse=", ")))
+		if (!all(samples %in% names(.object@fragments))) logger.error(c("Object does not contain insertion information for samples:", paste(setdiff(samples, names(.object@fragments)), collapse=", ")))
+		peakGrl <- NULL
+		if (method=="macs2summitUnifNO"){
+			if (!is.element("macs2.exec", names(methodOpts))) logger.error("Invalid 'methodOps' for method 'macs2summitUnifNO' (missing 'macs2.exec')")
+			if (!is.element("macs2.params", names(methodOpts))) logger.error("Invalid 'methodOps' for method 'macs2summitUnifNO' (missing 'macs2.params')")
+			if (!is.element("unifWidth", names(methodOpts))) logger.error("Invalid 'methodOps' for method 'macs2summitUnifNO' (missing 'unifWidth')")
+			argV <- c(
+				"--nomodel",
+				"--call-summits",
+				"--nolambda",
+				"--keep-dup", "all",
+				"-B",  "--SPMR",
+				methodOpts$macs2.params
+			)
+			genomeSizeArg <- ""
+			if (is.element(.object@genome, c("hg19", "hg38"))){
+				genomeSizeArg <- "hs"
+			} else if (is.element(.object@genome, c("mm9", "mm10"))){
+				genomeSizeArg <- "mm"
+			} else {
+				logger.error(c("Unsupported genome for peak calling:", .object@genome))
+			}
+			callDir <- tempdir()
+			peakGrl <- lapply(samples, FUN=function(sid){
+				logger.status(c("Calling peaks for sample:", sid))
+				fp <- getHashString(pattern=sid)
+				insFn <- file.path(callDir, paste0(fp, "_ins.bed"))
+				peakFn <- file.path(callDir, paste0(fp, "_summits.bed"))
+
+				logger.status(c("[DEBUG:] Retrieving insertion sites..."))
+				insGr <- getInsertionSites(.object, sid)[[1]]
+				logger.status(c("[DEBUG:] Writing to temp file..."))
+				granges2bed(insGr, insFn, score=NULL, addAnnotCols=FALSE, colNames=FALSE, doSort=TRUE)
+
+				logger.status(c("[DEBUG:] Calling MACS2..."))
+				aa <- c(
+					"callpeak",
+					"-g", genomeSizeArg,
+					"--name", fp,
+					"--treatment", insFn,
+					"--outdir", callDir,
+					"--format", "BED",
+					argV
+				)
+				system2(methodOpts$macs2.exec, aa, wait=TRUE, stdout="", stderr="")
+
+				logger.status(c("[DEBUG:] Reading MACS2 output..."))
+				peakGr <- import(peakFn, format="BED")
+				peakGr <- setGenomeProps(peakGr, .object@genome, onlyMainChrs=TRUE)
+				peakGr <- peakGr[isCanonicalChrom(as.character(seqnames(peakGr)))]
+				# scale scores to their percentiles
+				scs <- elementMetadata(peakGr)[,"score"]
+				elementMetadata(peakGr)[,"score_norm"] <- ecdf(scs)(scs)
+				elementMetadata(peakGr)[,"name"] <- gsub(paste0("^", fp), sid, elementMetadata(peakGr)[,"name"])#replace the hashstring in the name by just the sample id
+
+				logger.status(c("[DEBUG:] Extending summits..."))
+				peakGr <- trim(promoters(peakGr, upstream=methodOpts$unifWidth, downstream=methodOpts$unifWidth+1)) #extend each summit
+				peakGr <- peakGr[width(peakGr)==median(width(peakGr))] #remove too short regions which might have been trimmed
+				logger.status(c("[DEBUG:] Finding non-overlapping peaks..."))
+				peakGr <- getNonOverlappingByScore(peakGr, scoreCol="score_norm")
+				# peakGr <- ChrAccR:::getNonOverlappingByScore(peakGr, scoreCol="score_norm")
+				peakGr <- peakGr[order(as.integer(seqnames(peakGr)),start(peakGr), end(peakGr), as.integer(strand(peakGr)))] #sort
+				logger.status(c("[DEBUG:] ...done"))
+				return(peakGr)
+			})
+			peakGrl <- GRangesList(peakGrl)
+		}
+		return(peakGrl)
+	}
+)
+
 
 ################################################################################
 # Plotting
