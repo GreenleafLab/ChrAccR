@@ -1844,3 +1844,108 @@ setMethod("exportCountTracks",
 		invisible(NULL)
 	}
 )
+
+
+################################################################################
+# Plotting
+################################################################################
+if (!isGeneric("plotInsertSizeDistribution")) {
+	setGeneric(
+		"plotInsertSizeDistribution",
+		function(.object, ...) standardGeneric("plotInsertSizeDistribution"),
+		signature=c(".object")
+	)
+}
+#' plotInsertSizeDistribution-methods
+#'
+#' Plot insert size distribution
+#'
+#' @param .object    \code{\linkS4class{DsATAC}} object
+#' @param sampleId   sample to be plotted
+#' @return \code{ggplot} object containing insert size distribution plot
+#' 
+#' @rdname plotInsertSizeDistribution-DsATAC-method
+#' @docType methods
+#' @aliases plotInsertSizeDistribution
+#' @aliases plotInsertSizeDistribution,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("plotInsertSizeDistribution",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		sampleId
+	) {
+		insSizeDf <- data.frame(
+			insertionSize=width(getFragmentGr(.object, sampleId))
+		)
+
+		pp <- ggplot(insSizeDf) + aes(x=insertionSize, y=..count..) + geom_density(alpha=.2, fill="#8c1515") +
+		      xlim(c(0,700)) + ylab("#fragments")
+		return(pp)
+	}
+)
+#-------------------------------------------------------------------------------
+if (!isGeneric("plotTssEnrichment")) {
+	setGeneric(
+		"plotTssEnrichment",
+		function(.object, ...) standardGeneric("plotTssEnrichment"),
+		signature=c(".object")
+	)
+}
+#' plotTssEnrichment-methods
+#'
+#' Plot TSS enrichment
+#'
+#' @param .object    \code{\linkS4class{DsATAC}} object
+#' @param sampleId   sample to be plotted
+#' @param tssGr      \code{GRanges} object containing TSS coordinates
+#' @param flank      number of bases flanking each TSS that will be added on each side
+#' @param normTailW  number of bases on each side whose counts will be used to normalize the data
+#' @param smoothW    radius of the window (in bp) that will be used to smooth the data, i.e. the total width of the
+#'                   smoothing window will be twice that number
+#' @return \code{ggplot} object containing TSS enrichment plot
+#' 
+#' @rdname plotTssEnrichment-DsATAC-method
+#' @docType methods
+#' @aliases plotTssEnrichment
+#' @aliases plotTssEnrichment,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("plotTssEnrichment",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		sampleId,
+		tssGr,
+		flank=2000L,
+		normTailW=100L,
+		smoothW=25L
+	) {
+		if (!all(width(tssGr)==1)) logger.error("tssGr must be a GRanges object in which each element has width=1")
+
+		#extend the window by the flanking and smoothing lengths
+		tssGr <- unique(trim(resize(tssGr, width=2*(flank+smoothW)+1, fix="center", ignore.strand=TRUE)))
+		# get (normalized) count data
+		tssCountDf <- aggregateRegionCounts(.object, tssGr, samples=sampleId, countAggrFun="mean", kmerBiasAdj=FALSE, normTailW=normTailW)
+		# offset the position: aggregateRegionCounts returns positions in [0,regionWidth]
+		tssCountDf$pos <- tssCountDf$pos - (flank+smoothW+1)
+
+		countCol <- "countNorm"
+		if (smoothW > 1){
+			# smoothing: take the mean normalized count in the corresponding window
+			smoothedCounts <- convolve(tssCountDf[,"countNorm"], rep(1, 2*smoothW+1), type="filter")/(smoothW*2+1)
+			tssCountDf <- tssCountDf[abs(tssCountDf[,"pos"])<=flank,] # revert the extension by the smoothing window
+			tssCountDf[,"countNormSmoothed"] <- smoothedCounts
+			countCol <- "countNormSmoothed"
+		}
+
+		pp <- ggplot(tssCountDf) + aes_string(x="pos", y="countNorm") + geom_vline(xintercept=c(0), color="#4d4f53") + geom_point(color="#969696") +
+			  geom_line(aes_string(x="pos", y=countCol), color="#8c1515", size=2)
+		return(pp)
+	}
+)
