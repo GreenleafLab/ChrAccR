@@ -1863,7 +1863,7 @@ if (!isGeneric("callPeaks")) {
 #' @param samples sample identifiers for which peak calling is performed
 #' @param method  peak calling method. Currently only \code{'macs2summitUnifNO'} is supported. See details section.
 #' @param methodOpts list of other options depending on the \code{'method'} parameter (see details section).
-#' @return \code{GRangesList} of peak coordinates
+#' @return \code{GRangesList} of peak coordinates for each sample
 #' 
 #' @details
 #' The following methods are currently supported
@@ -1967,6 +1967,7 @@ setMethod("callPeaks",
 				logger.status(c("[DEBUG:] ...done"))
 				return(peakGr)
 			})
+			names(peakGrl) <- samples
 			peakGrl <- GRangesList(peakGrl)
 		}
 		return(peakGrl)

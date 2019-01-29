@@ -21,7 +21,7 @@
 \item{methodOpts}{list of other options depending on the \code{'method'} parameter (see details section).}
 }
 \value{
-\code{GRangesList} of peak coordinates
+\code{GRangesList} of peak coordinates for each sample
 }
 \description{
 Performs peak calling based on insertion sites
