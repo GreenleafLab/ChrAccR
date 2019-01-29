@@ -1499,7 +1499,10 @@ setMethod("aggregateRegionCounts",
 		if (!is.element(norm, c("tailMean"))) logger.error("Invalid value for 'norm' (normalization method)")
 		if (normTailW < 1 && normTailW>0){
 			normTailW <- ceiling(wm*normTailW)
-		} else{
+		} else if (is.integer(normTailW) && normTailW > 0 && normTailW <= wm/2){
+			# do nothing: treat integer values as basepairs
+			normTailW <- normTailW
+		} else {
 			logger.error("Invalid value for tail-normalization window")
 		}
 		if (is.null(sampleCovg)){
