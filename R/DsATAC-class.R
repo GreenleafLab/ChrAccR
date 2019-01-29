@@ -1913,7 +1913,7 @@ setMethod("callPeaks",
 				"--call-summits",
 				"--nolambda",
 				"--keep-dup", "all",
-				"-B",  "--SPMR",
+				# "-B",  "--SPMR",
 				methodOpts$macs2.params
 			)
 			genomeSizeArg <- ""
@@ -1931,12 +1931,12 @@ setMethod("callPeaks",
 				insFn <- file.path(callDir, paste0(fp, "_ins.bed"))
 				peakFn <- file.path(callDir, paste0(fp, "_summits.bed"))
 
-				logger.status(c("[DEBUG:] Retrieving insertion sites..."))
+				# logger.status(c("[DEBUG:] Retrieving insertion sites..."))
 				insGr <- getInsertionSites(.object, sid)[[1]]
-				logger.status(c("[DEBUG:] Writing to temp file..."))
+				# logger.status(c("[DEBUG:] Writing to temp file..."))
 				granges2bed(insGr, insFn, score=NULL, addAnnotCols=FALSE, colNames=FALSE, doSort=TRUE)
 
-				logger.status(c("[DEBUG:] Calling MACS2..."))
+				# logger.status(c("[DEBUG:] Calling MACS2..."))
 				aa <- c(
 					"callpeak",
 					"-g", genomeSizeArg,
@@ -1948,7 +1948,7 @@ setMethod("callPeaks",
 				)
 				system2(methodOpts$macs2.exec, aa, wait=TRUE, stdout="", stderr="")
 
-				logger.status(c("[DEBUG:] Reading MACS2 output..."))
+				# logger.status(c("[DEBUG:] Reading MACS2 output..."))
 				peakGr <- import(peakFn, format="BED")
 				peakGr <- setGenomeProps(peakGr, .object@genome, onlyMainChrs=TRUE)
 				peakGr <- peakGr[isCanonicalChrom(as.character(seqnames(peakGr)))]
@@ -1957,14 +1957,13 @@ setMethod("callPeaks",
 				elementMetadata(peakGr)[,"score_norm"] <- ecdf(scs)(scs)
 				elementMetadata(peakGr)[,"name"] <- gsub(paste0("^", fp), sid, elementMetadata(peakGr)[,"name"])#replace the hashstring in the name by just the sample id
 
-				logger.status(c("[DEBUG:] Extending summits..."))
+				# logger.status(c("[DEBUG:] Extending summits..."))
 				peakGr <- trim(promoters(peakGr, upstream=methodOpts$unifWidth, downstream=methodOpts$unifWidth+1)) #extend each summit
 				peakGr <- peakGr[width(peakGr)==median(width(peakGr))] #remove too short regions which might have been trimmed
-				logger.status(c("[DEBUG:] Finding non-overlapping peaks..."))
+				# logger.status(c("[DEBUG:] Finding non-overlapping peaks..."))
 				peakGr <- getNonOverlappingByScore(peakGr, scoreCol="score_norm")
 				# peakGr <- ChrAccR:::getNonOverlappingByScore(peakGr, scoreCol="score_norm")
 				peakGr <- peakGr[order(as.integer(seqnames(peakGr)),start(peakGr), end(peakGr), as.integer(strand(peakGr)))] #sort
-				logger.status(c("[DEBUG:] ...done"))
 				return(peakGr)
 			})
 			names(peakGrl) <- samples
