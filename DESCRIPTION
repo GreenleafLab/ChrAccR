@@ -4,16 +4,17 @@ Description: Tools for analyzing chromatin accessibility data in R. Currently
     supports NOMe-seq data analysis
 Author: Fabian Mueller
 Maintainer: Fabian Mueller <fmueller@mpi-inf.mpg.de>
-Date: 2019-01-02
+Date: 2019-01-25
 Suggests:
     muRtools
 Depends:
     GenomicRanges,
     ggplot2,
     muLogR,
+    Matrix,
     data.table
 License: GPL-2
-Version: 0.5
+Version: 0.7
 Collate: 
     'classDefs.R'
     'utils.R'
@@ -27,6 +28,7 @@ Collate:
     'DsATAC-class.R'
     'DsNOMe-class.R'
     'import_atac.R'
+    'import_atac_10x.R'
     'importTools_nome.R'
     'differential_nome.R'
     'differential.R'

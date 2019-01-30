@@ -302,7 +302,7 @@ setMethod("addSampleAnnotCol",
 		vals
 	) {
 		ph <- .object@sampleAnnot
-		if (length(vals)!=ncol(ph)){
+		if (length(vals)!=nrow(ph)){
 			logger.error(c("vals must contain exactly one value for each sample"))
 		}
 		if (is.element(name, colnames(ph))){
@@ -420,7 +420,7 @@ saveDsAcc <- function(.object, path, forceDiskDump=FALSE, updateDiskRef=TRUE){
 	}
 	# save fragment data as RDS
 	if (.hasSlot(.object, "fragments") && !is.null(.object@fragments) && length(.object@fragments) > 0){
-		if (forceDiskDump || (.hasSlot(.object, "diskDump") && .object@diskDump)){
+		if (forceDiskDump || (.hasSlot(.object, "diskDump.fragments") && .object@diskDump.fragments)){
 			logger.start("Saving fragment data to RDS")
 				fragDir <- file.path(path, "fragments")
 				dir.create(fragDir)
@@ -441,7 +441,7 @@ saveDsAcc <- function(.object, path, forceDiskDump=FALSE, updateDiskRef=TRUE){
 					}
 				}
 			logger.completed()
-			.object@diskDump <- TRUE
+			.object@diskDump.fragments <- TRUE
 		}
 	}
 
@@ -480,7 +480,7 @@ loadDsAcc <- function(path){
 		logger.completed()
 	}
 	# load fragment data from RDS
-	if (.hasSlot(.object, "diskDump") && .object@diskDump && .hasSlot(.object, "fragments") && !is.null(.object@fragments) && length(.object@fragments) > 0){
+	if (.hasSlot(.object, "diskDump.fragments") && .object@diskDump.fragments && .hasSlot(.object, "fragments") && !is.null(.object@fragments) && length(.object@fragments) > 0){
 		logger.start("Updating fragment RDS file references")
 			fragDir <- file.path(path, "fragments")
 			for (i in 1:length(.object@fragments)) {

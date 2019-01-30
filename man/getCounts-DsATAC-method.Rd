@@ -6,14 +6,21 @@
 \alias{getCounts}
 \title{getCounts-methods}
 \usage{
-\S4method{getCounts}{DsATAC}(.object, type, asMatrix = TRUE)
+\S4method{getCounts}{DsATAC}(.object, type, i = NULL, j = NULL,
+  asMatrix = TRUE, naIsZero = TRUE)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}
 
 \item{type}{character string specifying the region type}
 
-\item{asMatrix}{return a matrix instead of a \code{data.table}}
+\item{i}{(optional) row (region) indices}
+
+\item{j}{(optional) column (sample) indices}
+
+\item{asMatrix}{return a matrix object instead of the internal representation}
+
+\item{naIsZero}{should \code{NA}s in the count matrix be considered 0 value (instead of unknown/missing)}
 }
 \value{
 \code{data.table} or \code{matrix} containing counts for

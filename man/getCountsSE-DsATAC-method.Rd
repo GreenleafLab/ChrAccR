@@ -6,12 +6,14 @@
 \alias{getCountsSE}
 \title{getCountsSE-methods}
 \usage{
-\S4method{getCountsSE}{DsATAC}(.object, type)
+\S4method{getCountsSE}{DsATAC}(.object, type, naIsZero = TRUE)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}
 
 \item{type}{character string specifying the region type}
+
+\item{naIsZero}{should \code{NA}s in the count matrix be considered 0 value (instead of unknown/missing)}
 }
 \value{
 \code{SummarizedExperiment} containing counts for each region and sample
