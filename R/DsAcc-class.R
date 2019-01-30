@@ -31,6 +31,7 @@ setClass("DsAcc",
 		coord       = "list",
 		sampleAnnot = "data.frame",
 		genome      = "character",
+		diskDump    = "logical",
 		pkgVersion  = "ANY"
 	),
 	package = "ChrAccR"
@@ -40,11 +41,17 @@ setMethod("initialize","DsAcc",
 		.Object,
 		coord,
 		sampleAnnot,
-		genome
+		genome,
+		diskDump
 	) {
+		if (diskDump){
+			require(DelayedArray)
+			require(HDF5Array)
+		}
 		.Object@coord       <- coord
 		.Object@sampleAnnot <- sampleAnnot
 		.Object@genome      <- genome
+		.Object@diskDump    <- diskDump
 		.Object@pkgVersion  <- packageVersion("ChrAccR")
 		.Object
 	}
@@ -53,12 +60,14 @@ setMethod("initialize","DsAcc",
 #' @param siteCoord \code{GRanges} object containing coordinates of GC dinucleotides
 #' @param sampleAnnot \code{data.frame} object containing sample annotation
 #' @param genome    character string containing genome assembly
+#' @param diskDump  should large matrices be stored on disk rather than in main memory
 #' @noRd
-DsAcc <- function(siteCoord, sampleAnnot, genome){
+DsAcc <- function(siteCoord, sampleAnnot, genome, diskDump=FALSE){
 	obj <- new("DsAcc",
 		siteCoord,
 		sampleAnnot,
-		genome
+		genome,
+		diskDump
 	)
 	return(obj)
 }
@@ -293,7 +302,7 @@ setMethod("addSampleAnnotCol",
 		vals
 	) {
 		ph <- .object@sampleAnnot
-		if (length(vals)!=ncol(ph)){
+		if (length(vals)!=nrow(ph)){
 			logger.error(c("vals must contain exactly one value for each sample"))
 		}
 		if (is.element(name, colnames(ph))){
@@ -373,17 +382,73 @@ setMethod("removeRegions",
 #' Save a DsAcc dataset to disk for later loading
 #' @param .object \code{\linkS4class{DsAcc}} object
 #' @param path    destination to save the object to
-#' @return nothing of particular interest
+#' @param forceDiskDump force large matrices (counts) to be stored as HDF5 (even when the object was not created using \code{diskDump=TRUE})
+#' @param updateDiskRef update disk dumped (HDF5) references (e.g. for count data)
+#' @return (invisibly) The object (with potentially updated disk dumped references)
 #' @author Fabian Mueller
 #' @export
-saveDsAcc <- function(.object, path){
+saveDsAcc <- function(.object, path, forceDiskDump=FALSE, updateDiskRef=TRUE){
 	if (dir.exists(path)){
 		logger.error("could not save object. Path already exists")
 	}
 	dir.create(path, recursive=FALSE)
+
+	# save region count data as HDF5
+	if (.hasSlot(.object, "counts") && !is.null(.object@counts) && length(.object@counts) > 0){
+		if (forceDiskDump || (.hasSlot(.object, "diskDump") && .object@diskDump)){
+			require(DelayedArray)
+			require(HDF5Array)
+			logger.start("Saving region count data to HDF5")
+				countDir <- file.path(path, "countData")
+				dir.create(countDir)
+				for (i in 1:length(.object@counts)) {
+					rt <- names(.object@counts)[i]
+					logger.status(c("Region type:", rt))
+					sampleNames <- getSamples(.object)
+					# just an assertion to make sure the colnames correspond to the sample ids
+					if (!all(colnames(.object@counts[[rt]])==sampleNames)) logger.error("Assertion failed: column names do not correspond to sample names (counts)")
+					if (updateDiskRef){
+						.object@counts[[rt]] <- writeHDF5Array(.object@counts[[rt]], filepath=file.path(countDir, paste0("regionCounts_", i, ".h5")), name=paste0("count_hdf5_", rt))
+						colnames(.object@counts[[rt]]) <- sampleNames # reset the column names (workaround for the issue that writeHDF5Array does not write dimnames to HDF5)
+					} else {
+						dummy <- writeHDF5Array(.object@counts[[rt]], filepath=file.path(countDir, paste0("regionCounts_", i, ".h5")), name=paste0("count_hdf5_", rt))
+					}
+				}
+			logger.completed()
+			.object@diskDump <- TRUE
+		}
+	}
+	# save fragment data as RDS
+	if (.hasSlot(.object, "fragments") && !is.null(.object@fragments) && length(.object@fragments) > 0){
+		if (forceDiskDump || (.hasSlot(.object, "diskDump.fragments") && .object@diskDump.fragments)){
+			logger.start("Saving fragment data to RDS")
+				fragDir <- file.path(path, "fragments")
+				dir.create(fragDir)
+				for (i in 1:length(.object@fragments)) {
+					fn <- file.path(fragDir, paste0("fragmentGr_", i, ".rds"))
+					fragGr <- .object@fragments[[i]]
+					if (is.character(fragGr)){
+						if (file.exists(fragGr)) {
+							file.copy(fragGr, fn)
+						} else {
+							logger.error(c("Could not find fragment data in file:", x))
+						}
+					} else {
+						saveRDS(fragGr, fn)
+					}
+					if (updateDiskRef){
+						.object@fragments[[i]] <- fn
+					}
+				}
+			logger.completed()
+			.object@diskDump.fragments <- TRUE
+		}
+	}
+
 	dsFn <- file.path(path, "ds.rds")
 	saveRDS(.object, dsFn)
-	invisible(NULL)
+
+	invisible(.object)
 }
 
 #' loadDsAcc
@@ -399,5 +464,31 @@ loadDsAcc <- function(path){
 	}
 	dsFn <- file.path(path, "ds.rds")
 	.object <- readRDS(dsFn)
+
+	# load region count data from HDF5
+	if (.hasSlot(.object, "diskDump") && .object@diskDump && .hasSlot(.object, "counts") && !is.null(.object@counts) && length(.object@counts) > 0){
+		require(DelayedArray)
+		require(HDF5Array)
+		logger.start("Loading region count data from HDF5")
+			countDir <- file.path(path, "countData")
+			for (i in 1:length(.object@counts)) {
+				rt <- names(.object@counts)[i]
+				logger.status(c("Region type:", rt))
+				.object@counts[[rt]] <- HDF5Array(filepath=file.path(countDir, paste0("regionCounts_", i, ".h5")), name=paste0("count_hdf5_", rt))
+				colnames(.object@counts[[rt]]) <- getSamples(.object) # reset the column names (workaround for the issue that writeHDF5Array does not write dimnames to HDF5)
+			}
+		logger.completed()
+	}
+	# load fragment data from RDS
+	if (.hasSlot(.object, "diskDump.fragments") && .object@diskDump.fragments && .hasSlot(.object, "fragments") && !is.null(.object@fragments) && length(.object@fragments) > 0){
+		logger.start("Updating fragment RDS file references")
+			fragDir <- file.path(path, "fragments")
+			for (i in 1:length(.object@fragments)) {
+				fn <- file.path(fragDir, paste0("fragmentGr_", i, ".rds"))
+				if (!file.exists(fn)) logger.error(paste0("Invalid save: Could not find fragment file:", fn))
+				.object@fragments[[i]] <- fn
+			}
+		logger.completed()
+	}
 	return(.object)
 }

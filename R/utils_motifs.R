@@ -151,6 +151,24 @@ getJasparSymbols <- function(ss){
 	return(strsplit(ss, "::")) # jaspar multiple TFs (separated by ::)
 }
 
+#' getJasparAnnot
+#' 
+#' retrieve motif annotation data
+#' @param ss     character vector or JASPAR identifiers
+#' @param type annotation type. Currently only \code{"humantfs"} (pulls info from humantfs.ccbr.utoronto.ca) is supported
+#' @return list of data frames of TF annotation (a motif can have multiple annotated TFs) 
+#' @author Fabian Mueller
+#' @export
+getJasparAnnot <- function(ss, type="humantfs"){
+	tfa <- getTfAnnot(type)
+	res <- lapply(ss, FUN=function(x){
+		idx <- grepl(x, tfa[, "motifIds_jaspar"], fixed=TRUE)
+		return(tfa[idx,])
+	})
+	names(res) <- ss
+	return(res)
+}
+
 #' getMotifDistMat.jaspar
 #'
 #' Retrieve motif a comparison table from JASPAR annotation website and construct a dissimilarity matrix for given
