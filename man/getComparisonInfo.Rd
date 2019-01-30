@@ -4,12 +4,12 @@
 \alias{getComparisonInfo}
 \title{getComparisonInfo}
 \usage{
-getComparisonInfo(dsn, cmpNames = NULL, regionTypes = getRegionTypes(dsn),
-  allPairs = TRUE, adjPairCols = NULL, minGrpSize = 1L,
-  maxGrpCount = NULL)
+getComparisonInfo(dsa, cmpNames = NULL,
+  regionTypes = getRegionTypes(dsa), allPairs = TRUE,
+  adjPairCols = NULL, minGrpSize = 1L, maxGrpCount = NULL)
 }
 \arguments{
-\item{dsn}{\code{\linkS4class{DsNOMe}} object}
+\item{dsa}{\code{\linkS4class{DsAcc}} object}
 
 \item{cmpNames}{column names of the sample annotation of the dataset that will be used for comparison}
 
@@ -38,7 +38,7 @@ a list containing one element for each comparison to be conducted. Each element 
 }
 }
 \description{
-retrieve the comparison information for an DsNOMe object. Analogous to \code{RnBeads::get.comparison.info}
+retrieve the comparison information for an DsAcc object. Analogous to \code{RnBeads::get.comparison.info}
 }
 \author{
 Fabian Mueller

@@ -123,10 +123,10 @@ mergeBisSNPMethCalls <- function(fns, outPrefix, wd=tempdir(), cleanup=TRUE){
 #' 
 #' Create a DsNOMe dataset from multiple input files in bisSNP output format
 #' @param inputFns     a NAMED vector of input file names
-#' @param sampleAnnot  data.frame spcifying the sample annotation table
+#' @param sampleAnnot  data.frame specifying the sample annotation table
 #' @param genome       genome assembly
 #' @param sampleIds    character vector of sample names
-#' @return \code{\linkS4class{Job}} object
+#' @return \code{\linkS4class{DsNOMe}} object
 #' @author Fabian Mueller
 #' @export
 DsNOMe.bisSNP <- function(inputFns, sampleAnnot, genome, sampleIds=rownames(sampleAnnot)){
