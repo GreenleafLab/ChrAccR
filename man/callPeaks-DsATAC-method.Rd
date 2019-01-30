@@ -7,16 +7,16 @@
 \title{callPeaks-methods}
 \usage{
 \S4method{callPeaks}{DsATAC}(.object, samples = getSamples(.object),
-  method = "macs2summitUnifNO", methodOpts = list(macs2.exec = "macs2",
-  macs2.params = c("--shift", "-75", "--extsize", "150", "-p", "0.01"),
-  unifWidth = 250))
+  method = "macs2_summit_fw_no", methodOpts = list(macs2.exec =
+  "macs2", macs2.params = c("--shift", "-75", "--extsize", "150", "-p",
+  "0.01"), unifWidth = 250))
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}
 
 \item{samples}{sample identifiers for which peak calling is performed}
 
-\item{method}{peak calling method. Currently only \code{'macs2summitUnifNO'} is supported. See details section.}
+\item{method}{peak calling method. Currently only \code{'macs2_summit_fw_no'} is supported. See details section.}
 
 \item{methodOpts}{list of other options depending on the \code{'method'} parameter (see details section).}
 }
@@ -29,7 +29,7 @@ Performs peak calling based on insertion sites
 \details{
 The following methods are currently supported
 \describe{
-   \item{\code{'macs2summitUnifNO'}}{
+   \item{\code{'macs2_summit_fw_no'}}{
      1. Call peaks using system call to MACS2. You can specify the MACS2 executable in \code{methodOpts$macs2.exec}.
 		2. Identify peak summits
 		3. extend peak summits on each side by a number of basepairs (specified in \code{methodOpts$unifWidth}; default: 250bp) to obtain unified peak widths
