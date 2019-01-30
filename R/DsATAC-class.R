@@ -1869,6 +1869,7 @@ if (!isGeneric("callPeaks")) {
 #' The following methods are currently supported
 #' \describe{
 #'    \item{\code{'macs2_summit_fw_no'}}{
+#'		Fixed-width, non-overlapping peaks based on MACS2 summit calls: 
 #'      1. Call peaks using system call to MACS2. You can specify the MACS2 executable in \code{methodOpts$macs2.exec}.
 #' 		2. Identify peak summits
 #' 		3. extend peak summits on each side by a number of basepairs (specified in \code{methodOpts$fixedWidth}; default: 250bp) to obtain unified peak widths
