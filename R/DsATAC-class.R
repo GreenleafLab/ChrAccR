@@ -1861,14 +1861,14 @@ if (!isGeneric("callPeaks")) {
 #'
 #' @param .object \code{\linkS4class{DsATAC}} object
 #' @param samples sample identifiers for which peak calling is performed
-#' @param method  peak calling method. Currently only \code{'macs2summitFWNO'} is supported. See details section.
+#' @param method  peak calling method. Currently only \code{'macs2_summit_fw_no'} is supported. See details section.
 #' @param methodOpts list of other options depending on the \code{'method'} parameter (see details section).
 #' @return \code{GRangesList} of peak coordinates for each sample
 #' 
 #' @details
 #' The following methods are currently supported
 #' \describe{
-#'    \item{\code{'macs2summitFWNO'}}{
+#'    \item{\code{'macs2_summit_fw_no'}}{
 #'      1. Call peaks using system call to MACS2. You can specify the MACS2 executable in \code{methodOpts$macs2.exec}.
 #' 		2. Identify peak summits
 #' 		3. extend peak summits on each side by a number of basepairs (specified in \code{methodOpts$unifWidth}; default: 250bp) to obtain unified peak widths
@@ -1889,7 +1889,7 @@ setMethod("callPeaks",
 	function(
 		.object,
 		samples=getSamples(.object),
-		method='macs2summitFWNO',
+		method='macs2_summit_fw_no',
 		methodOpts=list(
 			macs2.exec="macs2",
 			macs2.params=c(
@@ -1900,14 +1900,14 @@ setMethod("callPeaks",
 			unifWidth=250
 		)
 	) {
-		if (!is.element(method, c("macs2summitFWNO"))) logger.error(c("Invalid 'method':", method))
+		if (!is.element(method, c("macs2_summit_fw_no"))) logger.error(c("Invalid 'method':", method))
 		if (!all(samples %in% getSamples(.object))) logger.error(c("Invalid samples:", paste(setdiff(samples, getSamples(.object)), collapse=", ")))
 		if (!all(samples %in% names(.object@fragments))) logger.error(c("Object does not contain insertion information for samples:", paste(setdiff(samples, names(.object@fragments)), collapse=", ")))
 		peakGrl <- NULL
-		if (method=="macs2summitFWNO"){
-			if (!is.element("macs2.exec", names(methodOpts))) logger.error("Invalid 'methodOps' for method 'macs2summitFWNO' (missing 'macs2.exec')")
-			if (!is.element("macs2.params", names(methodOpts))) logger.error("Invalid 'methodOps' for method 'macs2summitFWNO' (missing 'macs2.params')")
-			if (!is.element("unifWidth", names(methodOpts))) logger.error("Invalid 'methodOps' for method 'macs2summitFWNO' (missing 'unifWidth')")
+		if (method=="macs2_summit_fw_no"){
+			if (!is.element("macs2.exec", names(methodOpts))) logger.error("Invalid 'methodOps' for method 'macs2_summit_fw_no' (missing 'macs2.exec')")
+			if (!is.element("macs2.params", names(methodOpts))) logger.error("Invalid 'methodOps' for method 'macs2_summit_fw_no' (missing 'macs2.params')")
+			if (!is.element("unifWidth", names(methodOpts))) logger.error("Invalid 'methodOps' for method 'macs2_summit_fw_no' (missing 'unifWidth')")
 			argV <- c(
 				"--nomodel",
 				"--call-summits",
