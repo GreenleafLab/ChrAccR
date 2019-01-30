@@ -1871,7 +1871,7 @@ if (!isGeneric("callPeaks")) {
 #'    \item{\code{'macs2_summit_fw_no'}}{
 #'      1. Call peaks using system call to MACS2. You can specify the MACS2 executable in \code{methodOpts$macs2.exec}.
 #' 		2. Identify peak summits
-#' 		3. extend peak summits on each side by a number of basepairs (specified in \code{methodOpts$unifWidth}; default: 250bp) to obtain unified peak widths
+#' 		3. extend peak summits on each side by a number of basepairs (specified in \code{methodOpts$fixedWidth}; default: 250bp) to obtain unified peak widths
 #' 		4. Find non-overlapping peaks by taking the peak with the best MACS2 score from each set of partially overlapping peaks
 #'    }
 #' }
@@ -1897,7 +1897,7 @@ setMethod("callPeaks",
 				"--extsize", "150",
 				"-p", "0.01"
 			),
-			unifWidth=250
+			fixedWidth=250
 		)
 	) {
 		if (!is.element(method, c("macs2_summit_fw_no"))) logger.error(c("Invalid 'method':", method))
@@ -1907,7 +1907,7 @@ setMethod("callPeaks",
 		if (method=="macs2_summit_fw_no"){
 			if (!is.element("macs2.exec", names(methodOpts))) logger.error("Invalid 'methodOps' for method 'macs2_summit_fw_no' (missing 'macs2.exec')")
 			if (!is.element("macs2.params", names(methodOpts))) logger.error("Invalid 'methodOps' for method 'macs2_summit_fw_no' (missing 'macs2.params')")
-			if (!is.element("unifWidth", names(methodOpts))) logger.error("Invalid 'methodOps' for method 'macs2_summit_fw_no' (missing 'unifWidth')")
+			if (!is.element("fixedWidth", names(methodOpts))) logger.error("Invalid 'methodOps' for method 'macs2_summit_fw_no' (missing 'fixedWidth')")
 			argV <- c(
 				"--nomodel",
 				"--call-summits",
@@ -1958,7 +1958,7 @@ setMethod("callPeaks",
 				elementMetadata(peakGr)[,"name"] <- gsub(paste0("^", fp), sid, elementMetadata(peakGr)[,"name"])#replace the hashstring in the name by just the sample id
 
 				# logger.status(c("[DEBUG:] Extending summits..."))
-				peakGr <- trim(promoters(peakGr, upstream=methodOpts$unifWidth, downstream=methodOpts$unifWidth+1)) #extend each summit
+				peakGr <- trim(promoters(peakGr, upstream=methodOpts$fixedWidth, downstream=methodOpts$fixedWidth+1)) #extend each summit
 				peakGr <- peakGr[width(peakGr)==median(width(peakGr))] #remove too short regions which might have been trimmed
 				# logger.status(c("[DEBUG:] Finding non-overlapping peaks..."))
 				peakGr <- getNonOverlappingByScore(peakGr, scoreCol="score_norm")

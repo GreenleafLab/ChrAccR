@@ -9,7 +9,7 @@
 \S4method{callPeaks}{DsATAC}(.object, samples = getSamples(.object),
   method = "macs2_summit_fw_no", methodOpts = list(macs2.exec =
   "macs2", macs2.params = c("--shift", "-75", "--extsize", "150", "-p",
-  "0.01"), unifWidth = 250))
+  "0.01"), fixedWidth = 250))
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}
@@ -32,7 +32,7 @@ The following methods are currently supported
    \item{\code{'macs2_summit_fw_no'}}{
      1. Call peaks using system call to MACS2. You can specify the MACS2 executable in \code{methodOpts$macs2.exec}.
 		2. Identify peak summits
-		3. extend peak summits on each side by a number of basepairs (specified in \code{methodOpts$unifWidth}; default: 250bp) to obtain unified peak widths
+		3. extend peak summits on each side by a number of basepairs (specified in \code{methodOpts$fixedWidth}; default: 250bp) to obtain unified peak widths
 		4. Find non-overlapping peaks by taking the peak with the best MACS2 score from each set of partially overlapping peaks
    }
 }
