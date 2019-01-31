@@ -1774,6 +1774,175 @@ setMethod("getChromVarDev",
 	}
 )
 
+
+################################################################################
+# Differential analysis
+################################################################################
+if (!isGeneric("getDESeq2Dataset")) {
+	setGeneric(
+		"getDESeq2Dataset",
+		function(.object, ...) standardGeneric("getDESeq2Dataset"),
+		signature=c(".object")
+	)
+}
+#' getDESeq2Dataset-methods
+#'
+#' Retrieve a differential expression dataset computed with DESeq2
+#'
+#' @param .object    \code{\linkS4class{DsATAC}} object
+#' @param regionType character string specifying the region type
+#' @param designCols column names in the sample annotation potentially used to create the design matrix
+#' @param ...        parameters passed on to \code{DESeq2::DESeq}
+#' @return \code{DESeqDataSet} as returned by \code{DESeq2::DESeq}
+#' 
+#' @rdname getDESeq2Dataset-DsATAC-method
+#' @docType methods
+#' @aliases getDESeq2Dataset
+#' @aliases getDESeq2Dataset,DsATAC-method
+#' @author Fabian Mueller
+#' @noRd
+setMethod("getDESeq2Dataset",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		regionType,
+		designCols,
+		...
+	) {
+		require(DESeq2)
+		if (!is.element(regionType, getRegionTypes(.object))) logger.error(c("Unsupported region type:", regionType))
+		# annotation data
+		ph <- getSampleAnnot(.object)
+
+		if (!all(designCols %in% colnames(ph))){
+			logger.error(c("Invalid design columns. The following column names are not contained in the sample annotation:", paste(setdiff(designCols, colnames(ph)), collapse=",")))
+		}
+		#count matrix
+		cm <- ChrAccR::getCounts(.object, regionType, asMatrix=TRUE)
+		
+		#remove columns from the design that do not have multiple levels
+		idx <- sapply(designCols, FUN=function(cc){
+			length(unique(ph[,cc]))>1
+		})
+		if (sum(idx) < length(designCols)){
+			logger.warning(c("The following design columns will not be considered because they do not have multiple levels:", paste(designCols[!idx], collapse=",")))
+			designCols <- designCols[idx]
+		}
+		designF <- as.formula(paste0("~", paste(designCols,collapse="+")))
+		
+		dds <- DESeqDataSetFromMatrix(countData=cm, colData=ph, design=designF)
+		rowRanges(dds) <- getCoord(.object, regionType)
+		dds <- DESeq(dds, ...)
+
+		invisible(dds)
+	}
+)
+
+if (!isGeneric("getDiffAcc")) {
+	setGeneric(
+		"getDiffAcc",
+		function(.object, ...) standardGeneric("getDiffAcc"),
+		signature=c(".object")
+	)
+}
+#' getDiffAcc-methods
+#'
+#' Compute differential accessibility
+#'
+#' @param .object    \code{\linkS4class{DsATAC}} object
+#' @param regionType character string specifying the region type
+#' @param comparisonCol column name in the sample annotation table to base the comparison on
+#' @param grp1Name   name of the first group in the comparison. if not specified, it will be taken as the first factor level specified in the 
+#'                   sample annotation table in \code{'comparisonCol'}.
+#' @param grp2Name   name of the second group (reference) in the comparison. if not specified, it will be taken as the first factor level specified in the 
+#'                   sample annotation table in \code{'comparisonCol'}.
+#' @param adjustCols column names in the sample annotation potentially used to create the design matrix
+#' @param method     Method for determining differential accessibility. Currently only \code{'DESeq2'} is supported
+#' @param diffObj    optional differential object to avoid computing it for each comparison and thus reduce runtime
+#' @return a \code{data.frame} containing differential accessibility information
+#' 
+#' @rdname getDiffAcc-DsATAC-method
+#' @docType methods
+#' @aliases getDiffAcc
+#' @aliases getDiffAcc,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("getDiffAcc",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		regionType,
+		comparisonCol,
+		grp1Name=NULL,
+		grp2Name=NULL,
+		adjustCols=character(0),
+		method='DESeq2',
+		diffObj=NULL
+	) {
+		if (!is.element(method, c("DESeq2"))) logger.error(c("Invalid method for calling differential accessibility:", method))
+		if (!is.element(comparisonCol, colnames(getSampleAnnot(.object)))) logger.error(c("Comparison column not found in sample annotation:", comparisonCol))
+		contrastF <- factor(getSampleAnnot(.object)[,comparisonCol])
+		if (length(levels(contrastF)) < 2)  logger.error(c("Invalid comparison column. There should be at least 2 groups."))
+
+		if (is.null(grp1Name)) grp1Name <- levels(contrastF)[1]
+		if (is.null(grp2Name)) grp2Name <- levels(contrastF)[2]
+		if (!is.element(grp1Name, levels(contrastF))) logger.error(c("Invalid group name (1). Sample annotation has no samples associated with that group:", grp1Name))
+		if (!is.element(grp2Name, levels(contrastF))) logger.error(c("Invalid group name (2). Sample annotation has no samples associated with that group:", grp2Name))
+		sidx.grp1 <- which(contrastF==grp1Name)
+		sidx.grp2 <- which(contrastF==grp2Name)
+
+
+		if (method=="DESeq2"){
+			if (!is.null(diffObj)){
+				if (!is.element("DESeqDataSet", class(diffObj))) logger.error(c("Invalid 'diffObj' for method", method))
+				#check if the elements match
+				gr <- getCoord(.object, regionType)
+				if (length(gr)!=nrow(diffObj)) logger.error("dimensions of the 'diffObj' do not match.")
+				if (!all(colnames(diffObj)==getSamples(.object))) logger.error("Invalid 'diffObj'. Sample names must match the DsATAC object.")
+				dds <- diffObj
+			} else {
+				designCs <- c(adjustCols, comparisonCol)
+				dds <- getDESeq2Dataset(.object, regionType, designCs)
+				
+			}
+			diffRes <- results(dds, contrast=c(comparisonCol, grp1Name, grp2Name))
+			dm <- data.frame(diffRes)
+			rankMat <- cbind(
+				# rank(-dm[,"baseMean"]), na.last="keep", ties.method="min"),
+				rank(-abs(dm[,"log2FoldChange"]), na.last="keep", ties.method="min"),
+				rank(dm[,"pvalue"], na.last="keep", ties.method="min")
+			)
+			dm[,"cRank"] <- rowMaxs(rankMat, na.rm=TRUE)
+			dm[,"cRank_rerank"] <- rank(dm[,"cRank"], na.last="keep", ties.method="min")
+
+			l2fpkm <- log2(fpkm(dds, robust=TRUE)+1)
+			grp1.m.l2fpkm <- rowMeans(l2fpkm[, sidx.grp1, drop=FALSE], na.rm=TRUE)
+			grp2.m.l2fpkm <- rowMeans(l2fpkm[, sidx.grp2, drop=FALSE], na.rm=TRUE)
+			vstCounts <- assay(vst(dds, blind=FALSE))
+			grp1.m.vst <- rowMeans(vstCounts[, sidx.grp1, drop=FALSE], na.rm=TRUE)
+			grp2.m.vst <- rowMeans(vstCounts[, sidx.grp2, drop=FALSE], na.rm=TRUE)
+
+			res <- data.frame(
+				log2BaseMean=log2(dm[,"baseMean"]),
+				meanLog2FpkmGrp1=grp1.m.l2fpkm,
+				meanLog2FpkmGrp2=grp2.m.l2fpkm,
+				meanVstCountGrp1=grp1.m.vst,
+				meanVstCountGrp2=grp2.m.vst,
+				dm
+			)
+			# add group names to column names
+			for (cn in c("meanLog2FpkmGrp", "meanVstCountGrp")){
+				colnames(res)[colnames(res)==paste0(cn,"1")] <- paste0(cn, "1_", grp1Name)
+				colnames(res)[colnames(res)==paste0(cn,"2")] <- paste0(cn, "2_", grp2Name)
+			}
+		}
+		invisible(res)
+	}
+)
 ################################################################################
 # Export
 ################################################################################
