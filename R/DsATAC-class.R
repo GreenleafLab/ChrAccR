@@ -770,7 +770,19 @@ setMethod("addCountDataFromGRL",
 			# count the number of occurrences between each index pair
 			idxDt <- idxDt[,.N, by=names(idxDt)]
 			idxM <- as.matrix(idxDt[,c(1,2)])
-			.object@counts[[rt]][idxM] <- idxDt$N
+			if (.object@diskDump){
+				# DelayedArray does not support indexing via matrix
+				# --> workaround
+				perColumnIdxIdx <- tapply(1:nrow(idxM),idxM[,2],c) #index in the index matrix for each column
+				for (cis in names(perColumnIdxIdx)){
+					ci <- as.integer(cis)
+					ii <- perColumnIdxIdx[[cis]]
+					.object@counts[[rt]][idxM[ii,1],ci] <- as.matrix(idxDt$N[ii])
+				}
+			} else {
+				.object@counts[[rt]][idxM] <- idxDt$N
+			}
+			
 			if (.object@sparseCounts) .object@counts[[rt]] <- drop0(.object@counts[[rt]])
 		}
 		return(.object)
