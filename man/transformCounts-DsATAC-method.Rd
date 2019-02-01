@@ -6,7 +6,7 @@
 \alias{transformCounts}
 \title{transformCounts-methods}
 \usage{
-\S4method{transformCounts}{DsATAC}(.object, method = "quantileNorm",
+\S4method{transformCounts}{DsATAC}(.object, method = "quantile",
   regionTypes = getRegionTypes(.object))
 }
 \arguments{

@@ -1116,7 +1116,7 @@ setMethod("transformCounts",
 	),
 	function(
 		.object,
-		method="quantileNorm",
+		method="quantile",
 		regionTypes=getRegionTypes(.object)
 	) {
 		if (!all(regionTypes %in% getRegionTypes(.object))){
