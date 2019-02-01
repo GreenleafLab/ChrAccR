@@ -1100,7 +1100,7 @@ if (!isGeneric("transformCounts")) {
 #' transform count data for an ATAC seq dataset
 #'
 #' @param .object \code{\linkS4class{DsATAC}} object
-#' @param method  transformation method to be applied. Currently only 'log2', 'quantile' (quantile normalization), 'rankPerc' (rank percentile), 'vst' (DESeq2 Variance Stabilizing Transformation), 'tf-idf' and 'RPKM' (RPKM normalization) are supported
+#' @param method  transformation method to be applied. Currently only 'log2', 'quantile' (quantile normalization), 'percentile' (percentile normalization),'rankPerc' (rank percentile), 'vst' (DESeq2 Variance Stabilizing Transformation), 'tf-idf' and 'RPKM' (RPKM normalization) are supported
 #' @param regionTypes character vector specifying a name for the region type in which count data should be normalized(default: all region types)
 #' @return a new \code{\linkS4class{DsATAC}} object with normalized count data
 #' 
@@ -1122,7 +1122,7 @@ setMethod("transformCounts",
 		if (!all(regionTypes %in% getRegionTypes(.object))){
 			logger.error(c("Unsupported region type:", paste(setdiff(regionTypes, getRegionTypes(.object)), collapse=", ")))
 		}
-		if (!is.element(method, c("quantile", "rankPerc", "log2", "RPKM", "vst", "tf-idf"))) logger.error(c("Unsupported normalization method type:", method))
+		if (!is.element(method, c("quantile", "percentile", "rankPerc", "log2", "RPKM", "vst", "tf-idf"))) logger.error(c("Unsupported normalization method type:", method))
 
 		if (method == "quantile"){
 			logger.start(c("Performing quantile normalization"))
@@ -1156,6 +1156,22 @@ setMethod("transformCounts",
 					}
 					colnames(.object@counts[[rt]]) <- cnames
 					.object@countTransform[[rt]] <- c("rankPercNorm", .object@countTransform[[rt]])
+				}
+			logger.completed()
+		} else if (method == "percentile"){
+			logger.start(c("Applying rank percentile transformation"))
+				for (rt in regionTypes){
+					logger.status(c("Region type:", rt))
+					cnames <- colnames(.object@counts[[rt]])
+					.object@counts[[rt]] <- muRtools::normalizePercentile(ChrAccR::getCounts(.object, rt, asMatrix=TRUE))
+					if (!.object@diskDump && .object@sparseCounts){
+						.object@counts[[rt]] <- as(.object@counts[[rt]], "sparseMatrix")
+					}
+					if (.object@diskDump){
+						.object@counts[[rt]] <- as(.object@counts[[rt]], "HDF5Array")
+					}
+					colnames(.object@counts[[rt]]) <- cnames
+					.object@countTransform[[rt]] <- c("percentile", .object@countTransform[[rt]])
 				}
 			logger.completed()
 		} else if (method == "RPKM"){
