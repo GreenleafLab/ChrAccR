@@ -225,6 +225,45 @@ setMethod("getFragmentGr",
 		return(fragGr)
 	}
 )
+
+#-------------------------------------------------------------------------------
+if (!isGeneric("getFragmentNum")) {
+	setGeneric(
+		"getFragmentNum",
+		function(.object, ...) standardGeneric("getFragmentNum"),
+		signature=c(".object")
+	)
+}
+#' getFragmentNum-methods
+#'
+#' Return the number of fragments in the \code{\linkS4class{DsATAC}} object
+#'
+#' @param .object \code{\linkS4class{DsATAC}} object
+#' @param sampleIds sample identifiers
+#' @return a vector of fragment counts per sample
+#'
+#' @rdname getFragmentNum-DsATAC-method
+#' @docType methods
+#' @aliases getFragmentNum
+#' @aliases getFragmentNum,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("getFragmentNum",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		sampleIds=getSamples(.object)
+	) {
+		if (!all(sampleIds %in% getSamples(.object))) logger.error(c("Invalid sampleIds:", paste(setdiff(sampleIds, getSamples(.object)), collapse=", ")))
+		res <- sapply(sampleIds, FUN=function(sid){
+			length(getFragmentGr(.object, sid))
+		})
+		names(res) <- sampleIds
+		return(res)
+	}
+)
 #-------------------------------------------------------------------------------
 if (!isGeneric("getInsertionSites")) {
 	setGeneric(
