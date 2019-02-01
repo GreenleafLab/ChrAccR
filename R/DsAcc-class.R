@@ -13,14 +13,11 @@
 #'   \item{\code{genome}}{
 #'		Genome assembly
 #'   }
+#'   \item{\code{diskDump}}{
+#'		Flag indicating whether large matrices and objects will be kept on disk rather than in main memory.
+#'   }
 #' }
 #'
-#' @section Methods:
-#' \describe{
-#'    \item{\code{\link{samples,DsAcc-method}}}{
-#'      Retrieve a vector of sample IDs for the dataset
-#'    }
-#' }
 #'
 #' @name DsAcc-class
 #' @rdname DsAcc-class

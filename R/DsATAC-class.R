@@ -1,20 +1,28 @@
 #' DsATAC
 #'
-#' A class for storing NOMe accessibility data
-#'
+#' A class for storing ATAC-seq accessibility data
+#' inherits from \code{\linkS4class{DsAcc}}
+#' 
 #' @section Slots:
 #' \describe{
-#'   \item{\code{covg}}{
-#'		List of GC read coverage for sites and summarized regions.
+#'   \item{\code{fragments}}{
+#'		\code{GRanges} object storing sequencing fragments. Alternativily pointers to files in which this data is stored
+#'      as R data object
 #'   }
-#' }
-#'
-#' @section Methods:
-#' \describe{
-#'    \item{\code{\link{samples,DsATAC-method}}}{
-#'      Retrieve a vector of sample IDs for the dataset
-#'    }
-#' }
+#'   \item{\code{counts}}{
+#'		List of count matrices for each summarized region type (dimension: regions X samples).
+#'      Depending on the settings for the slots \code{diskDump} and \code{sparseCounts}, the matrices are
+#'      either (a) regular matrices, (b) \code{HDF5Array}/\code{DelayedArray} or (c) sparse matrices.
+#'   }
+#'   \item{\code{countTransform}}{
+#'		list of character vectors specifying which transformations have been applied to the count matrices
+#'   }
+#'   \item{\code{sparseCounts}}{
+#'		Flag indicating whether count data will be stored as sparse matrices rather than regular matrices
+#'   }
+#'   \item{\code{diskDump.fragments}}{
+#'		Flag indicating whether fragment data will be kept on disk rather than in main memory.
+#'   }
 #'
 #' @name DsATAC-class
 #' @rdname DsATAC-class

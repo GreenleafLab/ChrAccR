@@ -5,26 +5,9 @@
 \alias{DsATAC-class}
 \title{DsATAC}
 \description{
-A class for storing NOMe accessibility data
+A class for storing ATAC-seq accessibility data
+inherits from \code{\linkS4class{DsAcc}}
 }
-\section{Slots}{
-
-\describe{
-  \item{\code{covg}}{
-	List of GC read coverage for sites and summarized regions.
-  }
-}
-}
-
-\section{Methods}{
-
-\describe{
-   \item{\code{\link{samples,DsATAC-method}}}{
-     Retrieve a vector of sample IDs for the dataset
-   }
-}
-}
-
 \author{
 Fabian Mueller
 }
