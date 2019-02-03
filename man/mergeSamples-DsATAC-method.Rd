@@ -7,7 +7,7 @@
 \title{mergeSamples-methods}
 \usage{
 \S4method{mergeSamples}{DsATAC}(.object, mergeGroups,
-  countAggrFun = "median")
+  countAggrFun = "sum")
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}
@@ -15,7 +15,7 @@
 \item{mergeGroups}{factor or character vector or column name in sample annotation table}
 
 \item{countAggrFun}{aggregation function for signal counts.
-Currently \code{sum}, \code{mean} and \code{median} (default) are supported.}
+Currently \code{sum} (default), \code{mean} and \code{median} are supported.}
 }
 \value{
 a new \code{\linkS4class{DsATAC}} object with samples merged

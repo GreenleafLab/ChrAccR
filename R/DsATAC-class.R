@@ -562,7 +562,7 @@ if (!isGeneric("mergeSamples")) {
 #' @param .object \code{\linkS4class{DsATAC}} object
 #' @param mergeGroups  factor or character vector or column name in sample annotation table
 #' @param countAggrFun aggregation function for signal counts.
-#'                Currently \code{sum}, \code{mean} and \code{median} (default) are supported.
+#'                Currently \code{sum} (default), \code{mean} and \code{median} are supported.
 #' @return a new \code{\linkS4class{DsATAC}} object with samples merged
 #'
 #' 
@@ -579,7 +579,7 @@ setMethod("mergeSamples",
 	function(
 		.object,
 		mergeGroups,
-		countAggrFun="median"
+		countAggrFun="sum"
 	) {
 		if (!is.element(countAggrFun, c("sum", "mean", "median"))){
 			logger.error(c("Unknown signal count aggregation function:", countAggrFun))
@@ -608,7 +608,9 @@ setMethod("mergeSamples",
 		mergeFun <- NULL
 		if(countAggrFun=="sum"){
 			mergeFun <- function(X){rowSums(X, na.rm=TRUE)}
-			if (.object@sparseCounts && !.object@diskDump) {
+			if (.object@diskDump) {
+				mergeFun <- function(X){BiocGenerics::rowSums(X, na.rm=TRUE)}
+			} else if (.object@sparseCounts) {
 				mergeFun <- function(X){Matrix::rowSums(X, na.rm=TRUE)}
 			}
 		} else if(countAggrFun=="mean"){
