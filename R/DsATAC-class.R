@@ -1449,6 +1449,7 @@ setMethod("regionSetCounts",
 			idx.rsl <- rep(1:length(rsl), times=elementNROWS(rsl))
 
 			res <- do.call("cbind", lapply(getSamples(.object), FUN=function(sid){
+				logger.status(c("Summarizing fragment counts for sample", sid))
 				insGr <- getInsertionSites(.object, sid)[[1]]
 				ov <- countOverlaps(rslGr, insGr, ignore.strand=TRUE)
 				rr <- tapply(ov, idx.rsl, sum)
