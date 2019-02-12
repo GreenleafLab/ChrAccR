@@ -2264,16 +2264,16 @@ setMethod("plotInsertSizeDistribution",
 	}
 )
 #-------------------------------------------------------------------------------
-if (!isGeneric("plotTssEnrichment")) {
+if (!isGeneric("getTssEnrichment")) {
 	setGeneric(
-		"plotTssEnrichment",
-		function(.object, ...) standardGeneric("plotTssEnrichment"),
+		"getTssEnrichment",
+		function(.object, ...) standardGeneric("getTssEnrichment"),
 		signature=c(".object")
 	)
 }
-#' plotTssEnrichment-methods
+#' getTssEnrichment-methods
 #'
-#' Plot TSS enrichment
+#' Get TSS enrichment data and plot
 #'
 #' @param .object    \code{\linkS4class{DsATAC}} object
 #' @param sampleId   sample to be plotted
@@ -2282,15 +2282,15 @@ if (!isGeneric("plotTssEnrichment")) {
 #' @param normTailW  number of bases on each side whose counts will be used to normalize the data
 #' @param smoothW    radius of the window (in bp) that will be used to smooth the data, i.e. the total width of the
 #'                   smoothing window will be twice that number
-#' @return \code{ggplot} object containing TSS enrichment plot
+#' @return a list containing TSS enrichment data and a \code{ggplot} object containing TSS enrichment plot
 #' 
-#' @rdname plotTssEnrichment-DsATAC-method
+#' @rdname getTssEnrichment-DsATAC-method
 #' @docType methods
-#' @aliases plotTssEnrichment
-#' @aliases plotTssEnrichment,DsATAC-method
+#' @aliases getTssEnrichment
+#' @aliases getTssEnrichment,DsATAC-method
 #' @author Fabian Mueller
 #' @export
-setMethod("plotTssEnrichment",
+setMethod("getTssEnrichment",
 	signature(
 		.object="DsATAC"
 	),
@@ -2307,14 +2307,20 @@ setMethod("plotTssEnrichment",
 		#extend the window by the flanking and smoothing lengths
 		tssGr <- unique(trim(resize(tssGr, width=2*(flank+smoothW)+1, fix="center", ignore.strand=TRUE)))
 		# get (normalized) count data
-		tssCountDf <- aggregateRegionCounts(.object, tssGr, samples=sampleId, countAggrFun="mean", kmerBiasAdj=FALSE, normTailW=normTailW)
+		tssCountDf <- aggregateRegionCounts(.object, tssGr, samples=sampleId, countAggrFun="mean", kmerBiasAdj=FALSE, normTailW=normTailW+smoothW)
 		# offset the position: aggregateRegionCounts returns positions in [0,regionWidth]
 		tssCountDf$pos <- tssCountDf$pos - (flank+smoothW+1)
+
+		# TSS enrichment: max normalized count within window 
+		idx.main <- abs(tssCountDf[,"pos"])<=(flank-normTailW)
+		tsse <- max(tssCountDf[idx.main,], na.rm=TRUE)
+		tsse.s <- as.numeric(NA)
 
 		countCol <- "countNorm"
 		if (smoothW > 1){
 			# smoothing: take the mean normalized count in the corresponding window
 			smoothedCounts <- convolve(tssCountDf[,"countNorm"], rep(1, 2*smoothW+1), type="filter")/(smoothW*2+1)
+			tsse.s <- max(smoothedCounts[idx.main], na.rm=TRUE)
 			tssCountDf <- tssCountDf[abs(tssCountDf[,"pos"])<=flank,] # revert the extension by the smoothing window
 			tssCountDf[,"countNormSmoothed"] <- smoothedCounts
 			countCol <- "countNormSmoothed"
@@ -2322,6 +2328,13 @@ setMethod("plotTssEnrichment",
 
 		pp <- ggplot(tssCountDf) + aes_string(x="pos", y="countNorm") + geom_vline(xintercept=c(0), color="#4d4f53") + geom_point(color="#969696") +
 			  geom_line(aes_string(x="pos", y=countCol), color="#8c1515", size=2)
-		return(pp)
+
+		res <- list(
+			countDf=tssCountDf,
+			tssEnrichment=tsse,
+			tssEnrichment.smoothed=tsse.s,
+			plot=pp
+		)
+		return(res)
 	}
 )
