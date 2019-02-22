@@ -4,6 +4,12 @@
 .config <- new.env()
 .config$tmpDir <- tempdir()
 .config$cleanMem <- TRUE
+.config$geneModelVersions <- c(
+	"hg38"="gencode.v27",
+	"hg19"="gencode.v19",
+	"mm10"="gencode.vM16",
+	"mm9" ="gencode.vM1"
+)
 
 #' setConfigElement
 #'
@@ -24,6 +30,9 @@
 #' @author Fabian Mueller
 #' @export
 setConfigElement <- function(name, value){
+	if (!exists(name, .config)){
+		logger.error(c("No such configuration element:", name))
+	}
 	.config[[name]] <- value
 }
 
