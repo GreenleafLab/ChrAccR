@@ -4,12 +4,17 @@
 .config <- new.env()
 .config$tmpDir <- tempdir()
 .config$cleanMem <- TRUE
+.config$colorSchemes <- list(
+	".default" = c("#009FE3", "#DE7E00", "#8EC041", "#FFCC00", "#951B81", "#BE1716", "#7C83B3", "#671719", "#E0CDA6", "#775725", "#000000")
+)
 .config$geneModelVersions <- c(
 	"hg38"="gencode.v27",
 	"hg19"="gencode.v19",
 	"mm10"="gencode.vM16",
 	"mm9" ="gencode.vM1"
 )
+.config$regionTypes <- NULL
+.config$annotationColumns <- NULL
 
 #' setConfigElement
 #'
@@ -21,10 +26,13 @@
 #' @section Options used by the package:
 #' \describe{
 #'   \item{\bold{\code{tmpDir}}\code{ = temdir()}}{
-#'        \code{Directory for temporary files. Must be existing.}
+#'        Directory for temporary files. Must be existing.
 #'   }
 #'   \item{\bold{\code{cleanMem}}\code{ = TRUE}}{
-#'        \code{During runtime, regularly clean-out the memory in order to reduce memory overuse}
+#'        During runtime, regularly clean-out the memory in order to reduce memory overuse
+#'   }
+#'   \item{\bold{\code{geneModelVersions}}}{
+#'       Gene model versions to be used for various genomes
 #'   }
 #' }
 #' @author Fabian Mueller

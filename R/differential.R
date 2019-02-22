@@ -27,7 +27,7 @@
 #' @export
 getComparisonInfo <- function(dsa, cmpNames=NULL, regionTypes=getRegionTypes(dsa), allPairs=TRUE, adjPairCols=NULL, minGrpSize=1L, maxGrpCount=NULL){
 	sannot <- getSampleAnnot(dsa)
-	grpInfo <- rnb.sample.groups(sannot, cmpNames, columns.pairs=adjPairCols, min.group.size=minGrpSize, max.group.count=maxGrpCount)
+	grpInfo <- RnBeads::rnb.sample.groups(sannot, cmpNames, columns.pairs=adjPairCols, min.group.size=minGrpSize, max.group.count=maxGrpCount)
 
 	res <- list()
 	for (i in 1:length(grpInfo)){

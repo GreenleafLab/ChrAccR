@@ -96,7 +96,7 @@ setMethod("createReport_summary",
 			logger.start("Plotting TSS enrichment")
 				# retrieve corresponding TSS coordinates corresponding to the specified gene model
 				tssGr <- NULL
-				geneModelVer <- .config$geneModelVersions[.object@genome]
+				geneModelVer <- getConfigElement("geneModelVersions")[.object@genome]
 				if (grepl("^gencode", geneModelVer)){
 					tssGr <- muRtools::getAnnotGrl.gencode(geneModelVer)[["gene"]]
 					tssGr <- tssGr[elementMetadata(tssGr)[,"gene_type"]=="protein_coding"]

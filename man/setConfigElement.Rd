@@ -21,10 +21,13 @@ Set a configuration item to a given value
 
 \describe{
   \item{\bold{\code{tmpDir}}\code{ = temdir()}}{
-       \code{Directory for temporary files. Must be existing.}
+       Directory for temporary files. Must be existing.
   }
   \item{\bold{\code{cleanMem}}\code{ = TRUE}}{
-       \code{During runtime, regularly clean-out the memory in order to reduce memory overuse}
+       During runtime, regularly clean-out the memory in order to reduce memory overuse
+  }
+  \item{\bold{\code{geneModelVersions}}}{
+      Gene model versions to be used for various genomes
   }
 }
 }
