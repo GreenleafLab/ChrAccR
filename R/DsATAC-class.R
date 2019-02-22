@@ -2313,7 +2313,7 @@ setMethod("getTssEnrichment",
 
 		# TSS enrichment: max normalized count within window 
 		idx.main <- abs(tssCountDf[,"pos"])<=(flank-normTailW)
-		tsse <- max(tssCountDf[idx.main,], na.rm=TRUE)
+		tsse <- max(tssCountDf[idx.main,"countNorm"], na.rm=TRUE)
 		tsse.s <- as.numeric(NA)
 
 		countCol <- "countNorm"
