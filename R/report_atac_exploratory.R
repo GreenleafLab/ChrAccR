@@ -29,7 +29,7 @@ setMethod("createReport_exploratory",
 	) {
 		require(muReportR)
 		initConfigDir <- !dir.exists(file.path(reportDir, "_config"))
-		rr <- createReport(file.path(reportDir, "exploratory.html"), "Accessibility Summary", page.title = "Summary", init.configuration=initConfigDir)
+		rr <- createReport(file.path(reportDir, "exploratory.html"), "Exploratory Analysis", page.title="Exploratory", init.configuration=initConfigDir)
 		rDir.data <- getReportDir(rr, dir="data", absolute=FALSE)
 		rDir.data.abs <- getReportDir(rr, dir="data", absolute=TRUE)
 
@@ -39,9 +39,9 @@ setMethod("createReport_exploratory",
 		if (length(regionTypes) < 1) logger.error("Not enough region types specified")
 
 		sannot <- getSampleAnnot(.object)
-		sannot[,"[ALL]"] <- "all"
+		sannot[,".ALL"] <- "all"
 		sampleGrps <- getGroupsFromTable(sannot, cols=getConfigElement("annotationColumns"))
-		sampleGrps <- c(list("[ALL]"=c(1:nrow(sannot))), sampleGrps)
+		sampleGrps <- c(list(".ALL"=c(1:nrow(sannot))), sampleGrps)
 		grpNames <- names(sampleGrps)
 
 		colSchemes <- getConfigElement("colorSchemes")
@@ -78,9 +78,10 @@ setMethod("createReport_exploratory",
 					"umap" = muRtools::getDimRedCoords.umap(tcm)
 				)
 				for (gn in grpNames){
+					logger.status(c("Annotation:", gn))
 					for (mn in mnames){
-						pp <- getDimRedPlot(coords[[mn]], annot=sannot, colorCol=gn, shapeCol=FALSE, colScheme=grpColors, addLabels=FALSE, addDensity=FALSE, annot.text=NULL) + theme(aspect.ratio=1)
-						plotFn <- paste("dimRed", mn, normalize.str(rt), normalize.str(gn), sep="_")
+						pp <- getDimRedPlot(coords[[mn]], annot=sannot, colorCol=gn, shapeCol=FALSE, colScheme=grpColors[[gn]], addLabels=FALSE, addDensity=FALSE, annot.text=NULL) + theme(aspect.ratio=1)
+						plotFn <- paste("dimRed", mn, normalize.str(rt, return.camel=TRUE), normalize.str(gn, return.camel=TRUE), sep="_")
 						repPlot <- createReportGgPlot(pp, plotFn, rr, width=7, height=7, create.pdf=TRUE, high.png=0L)
 						repPlot <- off(repPlot, handle.errors=TRUE)
 						plotL <- c(plotL, list(repPlot))
@@ -91,14 +92,13 @@ setMethod("createReport_exploratory",
 		figSettings.method <- mnames
 		names(figSettings.method) <- mnames
 		figSettings.region <- regionTypes
-		names(figSettings.region) <- normalize.str(regionTypes)
+		names(figSettings.region) <- normalize.str(regionTypes, return.camel=TRUE)
 		figSettings.annot <- grpNames
-		names(figSettings.annot) <- normalize.str(grpNames)
+		names(figSettings.annot) <- normalize.str(grpNames, return.camel=TRUE)
 		figSettings <- list(
 			"Method" = figSettings.method,
 			"Region type" = figSettings.region,
 			"Annotation" = figSettings.annot
-
 		)
 		rr <- addReportFigure(rr, "Dimension reduction", plotL, figSettings)
 
@@ -106,4 +106,3 @@ setMethod("createReport_exploratory",
 		invisible(rr)
 	}
 )
-# report <- createReport_exploratory(dsr, file.path(config$.anaDir, "reports"))

@@ -25,8 +25,6 @@ isCanonicalChrom <- function(ss){
 	return(grepl(re, ss))
 }
 
-
-
 #' getGroupsFromTable
 #'
 #' Retrieve groupings given a table containing some categorical columns

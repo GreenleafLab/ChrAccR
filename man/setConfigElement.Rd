@@ -26,8 +26,17 @@ Set a configuration item to a given value
   \item{\bold{\code{cleanMem}}\code{ = TRUE}}{
        During runtime, regularly clean-out the memory in order to reduce memory overuse
   }
+  \item{\bold{\code{colorSchemes}}}{
+      named \code{list} of color schemes to be used for plotting. Each element should be a named vector specifying colors for groups/annotations.
+  }
   \item{\bold{\code{geneModelVersions}}}{
       Gene model versions to be used for various genomes
+  }
+  \item{\bold{\code{regionTypes}}}{
+      Region types to be used in the analysis
+  }
+  \item{\bold{\code{regionTypes}}}{
+      Sample annotation columns to be used for reporting
   }
 }
 }
