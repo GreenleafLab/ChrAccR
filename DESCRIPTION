@@ -15,7 +15,7 @@ Depends:
     Matrix,
     data.table
 License: GPL-2
-Version: 0.7
+Version: 0.8
 Collate: 
     'classDefs.R'
     'utils.R'
