@@ -121,11 +121,19 @@ setMethod("createReport_exploratory",
 			cromVarRefTxt <- c("Schep, Wu, Buenrostro, & Greenleaf (2017). chromVAR: inferring transcription-factor-associated accessibility from single-cell epigenomic data. <i>Nature Methods</i>, <b>14</b>(10), 975-978")
 			rr <- addReportReference(rr, cromVarRefTxt)
 			txt <- c(
-				"chromVAR ", getReportReference(report, cromVarRefTxt), " analysis."
+				"chromVAR ", getReportReference(rr, cromVarRefTxt), " analysis. ",
+				"The following motif set(s) were used for the analysis: ", paste(getConfigElement("chromVarMotifs"), collapse=", "), ". ",
+				"R data files of chromVAR deviation scores have been attached to this report:"
 			)
 			rr <- addReportSection(rr, "chromVAR", txt, level=1L, collapsed=FALSE)
 
+			ll <- lapply(regionTypes.cv, FUN=function(rt){
+				paste0("<b>", rt, ":</b> ", paste(c("<a href=\"", rDir.data, "/", paste0("chromVarDev_", normalize.str(rt, return.camel=TRUE), ".rds"), "\">","RDS file","</a>"),collapse=""))
+			})
+			rr <- addReportList(rr, ll, type="u")
+
 			logger.start("Plotting chromVAR results")
+				require(pheatmap)
 				colors.cv <- getConfigElement("colorSchemesCont")
 				if (is.element("chromVAR", names(colors.cv))) {
 					colors.cv <- colors.cv[["chromVAR"]]
@@ -135,7 +143,7 @@ setMethod("createReport_exploratory",
 				linkMethod <- "ward.D"
 				corMethod <- "pearson"
 				rankCut <- 100L
-				sannot.sub <- sannot[,setdiff(sampleGrps, ".ALL"), drop=FALSE]
+				sannot.sub <- sannot[,setdiff(names(sampleGrps), ".ALL"), drop=FALSE]
 				plotL.var <- list()
 				plotL.hm <- list()
 				for (rt in regionTypes.cv){
@@ -168,12 +176,12 @@ setMethod("createReport_exploratory",
 								annotation_colors=grpColors,
 								fontsize_row=8, fontsize_col=3
 							)
-						repPlot <- off(repPlot, handle.errors=TRUE)
+						repPlot <- off(repPlot)
 						plotL.hm <- c(plotL.hm, list(repPlot))
 					logger.completed()
 				}
 				figSettings.region <- regionTypes.cv
-				names(figSettings.region) <- normalize.str(regionTypes, return.camel=TRUE)
+				names(figSettings.region) <- normalize.str(regionTypes.cv, return.camel=TRUE)
 				figSettings <- list(
 					"Region type" = figSettings.region
 				)
