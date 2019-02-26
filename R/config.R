@@ -7,6 +7,9 @@
 .config$colorSchemes <- list(
 	".default" = c("#009FE3", "#DE7E00", "#8EC041", "#FFCC00", "#951B81", "#BE1716", "#7C83B3", "#671719", "#E0CDA6", "#775725", "#000000")
 )
+.config$colorSchemesCont <- list(
+	".default" = c("#01665E", "#35978F", "#80CDC1", "#C7EAE5", "#F5F5F5", "#F6E8C3", "#DFC27D", "#BF812D", "#8C510A")
+)
 .config$geneModelVersions <- c(
 	"hg38"="gencode.v27",
 	"hg19"="gencode.v19",
@@ -34,7 +37,10 @@
 #'        During runtime, regularly clean-out the memory in order to reduce memory overuse
 #'   }
 #'   \item{\bold{\code{colorSchemes}}}{
-#'       named \code{list} of color schemes to be used for plotting. Each element should be a named vector specifying colors for groups/annotations.
+#'       named \code{list} of DISCRETE color schemes to be used for plotting. Each element should be a named vector specifying colors for groups/annotations.
+#'   }
+#'   \item{\bold{\code{colorSchemesCont}}}{
+#'       named \code{list} of CONTINOUS color schemes to be used for plotting. Each element should be a vector specifying a range of colors.
 #'   }
 #'   \item{\bold{\code{geneModelVersions}}}{
 #'       Gene model versions to be used for various genomes

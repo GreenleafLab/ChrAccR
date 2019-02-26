@@ -102,6 +102,87 @@ setMethod("createReport_exploratory",
 		)
 		rr <- addReportFigure(rr, "Dimension reduction", plotL, figSettings)
 
+		doChromVar <- FALSE
+		regionTypes.cv <- getConfigElement("chromVarRegionTypes")
+		if (is.null(regionTypes.cv)) regionTypes.cv <- regionTypes[grepl("peak", regionTypes, ignore.case=TRUE)]
+		doChromVar <- length(regionTypes.cv) > 0 && all(regionTypes.cv %in% regionTypes)
+		if (doChromVar){
+			logger.start("Computing chromVAR scores")
+				cvResL <- lapply(regionTypes.cv, FUN=function(rt){
+					logger.status(c("Region type:", rt))
+					cvd <- getChromVarDev(.object, rt, motifs=getConfigElement("chromVarMotifs"))
+					fn <- file.path(rDir.data.abs, paste0("chromVarDev_", normalize.str(rt, return.camel=TRUE), ".rds"))
+					saveRDS(cvd, fn)
+					return(cvd)
+				})
+				names(cvResL) <- regionTypes.cv
+			logger.completed()
+
+			cromVarRefTxt <- c("Schep, Wu, Buenrostro, & Greenleaf (2017). chromVAR: inferring transcription-factor-associated accessibility from single-cell epigenomic data. <i>Nature Methods</i>, <b>14</b>(10), 975-978")
+			rr <- addReportReference(rr, cromVarRefTxt)
+			txt <- c(
+				"chromVAR ", getReportReference(report, cromVarRefTxt), " analysis."
+			)
+			rr <- addReportSection(rr, "chromVAR", txt, level=1L, collapsed=FALSE)
+
+			logger.start("Plotting chromVAR results")
+				colors.cv <- getConfigElement("colorSchemesCont")
+				if (is.element("chromVAR", names(colors.cv))) {
+					colors.cv <- colors.cv[["chromVAR"]]
+				} else {
+					colors.cv <- colors.cv[[".default"]]
+				}
+				linkMethod <- "ward.D"
+				corMethod <- "pearson"
+				rankCut <- 100L
+				sannot.sub <- sannot[,setdiff(sampleGrps, ".ALL"), drop=FALSE]
+				plotL.var <- list()
+				plotL.hm <- list()
+				for (rt in regionTypes.cv){
+					logger.start(c("Region type:", rt))
+						rts <- normalize.str(rt, return.camel=TRUE)
+						cvd <- cvResL[[rt]]
+						cvv <- computeVariability(cvd)
+
+						pp <- plotVariability(cvv, use_plotly=FALSE)
+						plotFn <- paste0("chromVarDevVar_", rts)
+						repPlot <- createReportGgPlot(pp, plotFn, rr, width=10, height=5, create.pdf=TRUE, high.png=0L)
+						repPlot <- off(repPlot, handle.errors=TRUE)
+						plotL.var <- c(plotL.var, list(repPlot))
+
+						devScores <- deviationScores(cvd)
+						cres.col <- as.hclust(getClusteringDendrogram(devScores, distMethod="euclidean", linkMethod=linkMethod, corMethod=corMethod))
+
+						mostVarIdx <- which(rank(-cvv$variability,na.last="keep",ties.method="min") <= rankCut)
+						cres.row <- as.hclust(getClusteringDendrogram(t(devScores[mostVarIdx,]), distMethod="euclidean", linkMethod=linkMethod, corMethod=corMethod))
+
+						plotFn <- paste0("chromVarDevHeatmap_", rts)
+						repPlot <- createReportPlot(plotFn, rr, width=10, height=10, create.pdf=TRUE, high.png=300L)
+							pheatmap(
+								devScores[mostVarIdx,],
+								color=colorRampPalette(colors.cv)(100),
+								breaks=seq(-max(abs(devScores)), max(abs(devScores)), length.out=101), 
+								border_color=NA,
+								cluster_rows=cres.row, cluster_cols=cres.col,
+								annotation_col=sannot.sub,
+								annotation_colors=grpColors,
+								fontsize_row=8, fontsize_col=3
+							)
+						repPlot <- off(repPlot, handle.errors=TRUE)
+						plotL.hm <- c(plotL.hm, list(repPlot))
+					logger.completed()
+				}
+				figSettings.region <- regionTypes.cv
+				names(figSettings.region) <- normalize.str(regionTypes, return.camel=TRUE)
+				figSettings <- list(
+					"Region type" = figSettings.region
+				)
+				rr <- addReportFigure(rr, "chromVAR variability. TF motifs are shown ordered according to their variability across the dataset.", plotL.var, figSettings)
+				rr <- addReportFigure(rr, "chromVAR deviation scores. The heatmap shows the scores for 100 most variable TF motifs across the dataset.", plotL.hm, figSettings)
+			logger.completed()
+
+		}
+
 		off(rr)
 		invisible(rr)
 	}

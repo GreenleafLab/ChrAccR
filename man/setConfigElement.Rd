@@ -27,7 +27,10 @@ Set a configuration item to a given value
        During runtime, regularly clean-out the memory in order to reduce memory overuse
   }
   \item{\bold{\code{colorSchemes}}}{
-      named \code{list} of color schemes to be used for plotting. Each element should be a named vector specifying colors for groups/annotations.
+      named \code{list} of DISCRETE color schemes to be used for plotting. Each element should be a named vector specifying colors for groups/annotations.
+  }
+  \item{\bold{\code{colorSchemesCont}}}{
+      named \code{list} of CONTINOUS color schemes to be used for plotting. Each element should be a vector specifying a range of colors.
   }
   \item{\bold{\code{geneModelVersions}}}{
       Gene model versions to be used for various genomes
