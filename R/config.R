@@ -21,6 +21,7 @@
 .config$chromVarRegionTypes <- NULL
 .config$annotationColumns <- NULL
 .config$differentialColumns <- NULL
+.config$differentialAdjColumns <- NULL
 .config$lolaDbPaths <- NULL
 
 #' setConfigElement
@@ -62,6 +63,9 @@
 #'   \item{\bold{\code{differentialColumns}}}{
 #'       Sample annotation columns to be used for differential testing and reporting
 #'   }
+#'   \item{\bold{\code{differentialAdjColumns}}}{
+#'       Sample annotation columns to be adjusted for in differential testing
+#'   }
 #'   \item{\bold{\code{lolaDbPaths}}}{
 #'       Precomputed LOLA databases to be used for enrichment analysis. If \code{NULL} (default), ChrAccR will download an apropriate core database.
 #'   }
@@ -72,6 +76,7 @@ setConfigElement <- function(name, value){
 	if (!exists(name, .config)){
 		logger.error(c("No such configuration element:", name))
 	}
+	# TODO: implement option checker (especially for report-relevant options)
 	.config[[name]] <- value
 }
 

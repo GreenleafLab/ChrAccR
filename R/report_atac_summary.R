@@ -29,7 +29,7 @@ setMethod("createReport_summary",
 	) {
 		require(muReportR)
 		initConfigDir <- !dir.exists(file.path(reportDir, "_config"))
-		rr <- createReport(file.path(reportDir, "summary.html"), "Accessibility Summary", page.title = "Summary", init.configuration=initConfigDir)
+		rr <- createReport(file.path(reportDir, "summary.html"), "Accessibility Summary", page.title = "Summary", init.configuration=initConfigDir, theme="stanford")
 		rDir.data <- getReportDir(rr, dir="data", absolute=FALSE)
 		rDir.data.abs <- getReportDir(rr, dir="data", absolute=TRUE)
 

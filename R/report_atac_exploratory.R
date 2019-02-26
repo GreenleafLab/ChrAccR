@@ -29,7 +29,7 @@ setMethod("createReport_exploratory",
 	) {
 		require(muReportR)
 		initConfigDir <- !dir.exists(file.path(reportDir, "_config"))
-		rr <- createReport(file.path(reportDir, "exploratory.html"), "Exploratory Analysis", page.title="Exploratory", init.configuration=initConfigDir)
+		rr <- createReport(file.path(reportDir, "exploratory.html"), "Exploratory Analysis", page.title="Exploratory", init.configuration=initConfigDir, theme="stanford")
 		rDir.data <- getReportDir(rr, dir="data", absolute=FALSE)
 		rDir.data.abs <- getReportDir(rr, dir="data", absolute=TRUE)
 
