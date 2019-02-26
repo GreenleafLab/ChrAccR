@@ -162,7 +162,7 @@ setMethod("createReport_differential",
 							dm <- diffTabL[[rt]][[i]]
 							df2p.ma <- dm[,c("log2BaseMean", "log2FoldChange")]
 							for (funName in names(isDiffFuns)){
-								logger.start(c("Comparing using", funName))
+								logger.start(c("Comparing using method", diffFunDesc[funName]))
 									isDiff <- isDiffFuns[[funName]](dm)
 									isDiff[is.na(isDiff)] <- FALSE
 									pp <- create.densityScatter(df2p.ma, is.special=isDiff, sparse.points=0.001)
@@ -189,6 +189,17 @@ setMethod("createReport_differential",
 				"Differential method" = figSettings.diffFun
 			)
 			rr <- addReportFigure(rr, "MA plot", plotL.ma, figSettings)
+
+			lolaDbPaths <- getConfigElement("lolaDbPaths")
+			doLola <- !is.null(lolaDbPaths) && all(dir.exists(lolaDbPaths))
+			if (doLola){
+				logger.start("LOLA analysis")
+					logger.start("Preparing LOLA database")
+						lolaDb <- loadLolaDbs(lolaDbPaths)
+					logger.completed()
+					
+				logger.completed()
+			}
 		logger.completed()
 
 
