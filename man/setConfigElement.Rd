@@ -38,6 +38,9 @@ Set a configuration item to a given value
   \item{\bold{\code{chromVarRegionTypes}}}{
       Region types to be used for chromVar analysis. If \code{NULL} (default), ChrAccR will automatically look for region types with the keyword \code{"peak"} in their name.
   }
+	 \item{\bold{\code{chromVarMotifs}}}{
+      Character vector of names of TF motif sets to be used in ChromVAR analyses
+  }
   \item{\bold{\code{annotationColumns}}}{
       Sample annotation columns to be used for reporting
   }

@@ -14,6 +14,7 @@
 	"mm9" ="gencode.vM1"
 )
 .config$regionTypes <- NULL
+.config$chromVarMotifs <- c("jaspar_vert")
 .config$chromVarRegionTypes <- NULL
 .config$annotationColumns <- NULL
 
@@ -43,6 +44,9 @@
 #'   }
 #'   \item{\bold{\code{chromVarRegionTypes}}}{
 #'       Region types to be used for chromVar analysis. If \code{NULL} (default), ChrAccR will automatically look for region types with the keyword \code{"peak"} in their name.
+#'   }
+#' 	 \item{\bold{\code{chromVarMotifs}}}{
+#'       Character vector of names of TF motif sets to be used in ChromVAR analyses
 #'   }
 #'   \item{\bold{\code{annotationColumns}}}{
 #'       Sample annotation columns to be used for reporting
