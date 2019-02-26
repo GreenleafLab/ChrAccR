@@ -14,6 +14,7 @@
 	"mm9" ="gencode.vM1"
 )
 .config$regionTypes <- NULL
+.config$chromVarRegionTypes <- NULL
 .config$annotationColumns <- NULL
 
 #' setConfigElement
@@ -40,7 +41,10 @@
 #'   \item{\bold{\code{regionTypes}}}{
 #'       Region types to be used in the analysis
 #'   }
-#'   \item{\bold{\code{regionTypes}}}{
+#'   \item{\bold{\code{chromVarRegionTypes}}}{
+#'       Region types to be used for chromVar analysis. If \code{NULL} (default), ChrAccR will automatically look for region types with the keyword \code{"peak"} in their name.
+#'   }
+#'   \item{\bold{\code{annotationColumns}}}{
 #'       Sample annotation columns to be used for reporting
 #'   }
 #' }
