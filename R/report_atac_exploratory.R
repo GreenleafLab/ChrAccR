@@ -62,45 +62,47 @@ setMethod("createReport_exploratory",
 		})
 		names(grpColors) <- names(sampleGrps)
 
-		txt <- c(
-			"Read counts are summarized for various region types and the corresponding ",
-			"aggregate count matrices are used for dimension reduction."
-		)
-		rr <- addReportSection(rr, "Dimension reduction", txt, level=1L, collapsed=FALSE)
+		logger.start("Dimension reduction")
+			txt <- c(
+				"Read counts are summarized for various region types and the corresponding ",
+				"aggregate count matrices are used for dimension reduction."
+			)
+			rr <- addReportSection(rr, "Dimension reduction", txt, level=1L, collapsed=FALSE)
 
-		mnames <- c("pca", "umap")
-		plotL <- list()
-		for (rt in regionTypes){
-			logger.start(c("Region type:", rt))
-				tcm <- t(getCounts(.object, rt, asMatrix=TRUE))
-				coords <- list(
-					"pca"  = muRtools::getDimRedCoords.pca(tcm),
-					"umap" = muRtools::getDimRedCoords.umap(tcm)
-				)
-				for (gn in grpNames){
-					logger.status(c("Annotation:", gn))
-					for (mn in mnames){
-						pp <- getDimRedPlot(coords[[mn]], annot=sannot, colorCol=gn, shapeCol=FALSE, colScheme=grpColors[[gn]], addLabels=FALSE, addDensity=FALSE, annot.text=NULL) + theme(aspect.ratio=1)
-						plotFn <- paste("dimRed", mn, normalize.str(rt, return.camel=TRUE), normalize.str(gn, return.camel=TRUE), sep="_")
-						repPlot <- createReportGgPlot(pp, plotFn, rr, width=7, height=7, create.pdf=TRUE, high.png=0L)
-						repPlot <- off(repPlot, handle.errors=TRUE)
-						plotL <- c(plotL, list(repPlot))
+			mnames <- c("pca", "umap")
+			plotL <- list()
+			for (rt in regionTypes){
+				logger.start(c("Region type:", rt))
+					tcm <- t(getCounts(.object, rt, asMatrix=TRUE))
+					coords <- list(
+						"pca"  = muRtools::getDimRedCoords.pca(tcm),
+						"umap" = muRtools::getDimRedCoords.umap(tcm)
+					)
+					for (gn in grpNames){
+						logger.status(c("Annotation:", gn))
+						for (mn in mnames){
+							pp <- getDimRedPlot(coords[[mn]], annot=sannot, colorCol=gn, shapeCol=FALSE, colScheme=grpColors[[gn]], addLabels=FALSE, addDensity=FALSE, annot.text=NULL) + theme(aspect.ratio=1)
+							plotFn <- paste("dimRed", mn, normalize.str(rt, return.camel=TRUE), normalize.str(gn, return.camel=TRUE), sep="_")
+							repPlot <- createReportGgPlot(pp, plotFn, rr, width=7, height=7, create.pdf=TRUE, high.png=0L)
+							repPlot <- off(repPlot, handle.errors=TRUE)
+							plotL <- c(plotL, list(repPlot))
+						}
 					}
-				}
-			logger.completed()
-		}
-		figSettings.method <- mnames
-		names(figSettings.method) <- mnames
-		figSettings.region <- regionTypes
-		names(figSettings.region) <- normalize.str(regionTypes, return.camel=TRUE)
-		figSettings.annot <- grpNames
-		names(figSettings.annot) <- normalize.str(grpNames, return.camel=TRUE)
-		figSettings <- list(
-			"Method" = figSettings.method,
-			"Region type" = figSettings.region,
-			"Annotation" = figSettings.annot
-		)
-		rr <- addReportFigure(rr, "Dimension reduction", plotL, figSettings)
+				logger.completed()
+			}
+			figSettings.method <- mnames
+			names(figSettings.method) <- mnames
+			figSettings.region <- regionTypes
+			names(figSettings.region) <- normalize.str(regionTypes, return.camel=TRUE)
+			figSettings.annot <- grpNames
+			names(figSettings.annot) <- normalize.str(grpNames, return.camel=TRUE)
+			figSettings <- list(
+				"Method" = figSettings.method,
+				"Region type" = figSettings.region,
+				"Annotation" = figSettings.annot
+			)
+			rr <- addReportFigure(rr, "Dimension reduction", plotL, figSettings)
+		logger.completed()
 
 		doChromVar <- FALSE
 		regionTypes.cv <- getConfigElement("chromVarRegionTypes")

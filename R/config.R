@@ -20,6 +20,8 @@
 .config$chromVarMotifs <- c("jaspar_vert")
 .config$chromVarRegionTypes <- NULL
 .config$annotationColumns <- NULL
+.config$differentialColumns <- NULL
+.config$lolaDbPaths <- NULL
 
 #' setConfigElement
 #'
@@ -56,6 +58,12 @@
 #'   }
 #'   \item{\bold{\code{annotationColumns}}}{
 #'       Sample annotation columns to be used for reporting
+#'   }
+#'   \item{\bold{\code{differentialColumns}}}{
+#'       Sample annotation columns to be used for differential testing and reporting
+#'   }
+#'   \item{\bold{\code{lolaDbPaths}}}{
+#'       Precomputed LOLA databases to be used for enrichment analysis. If \code{NULL} (default), ChrAccR will download an apropriate core database.
 #'   }
 #' }
 #' @author Fabian Mueller

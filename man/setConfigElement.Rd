@@ -47,6 +47,12 @@ Set a configuration item to a given value
   \item{\bold{\code{annotationColumns}}}{
       Sample annotation columns to be used for reporting
   }
+  \item{\bold{\code{differentialColumns}}}{
+      Sample annotation columns to be used for differential testing and reporting
+  }
+  \item{\bold{\code{lolaDbPaths}}}{
+      Precomputed LOLA databases to be used for enrichment analysis. If \code{NULL} (default), ChrAccR will download an apropriate core database.
+  }
 }
 }
 

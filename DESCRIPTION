@@ -35,4 +35,5 @@ Collate:
     'differential.R'
     'report_atac_summary.R'
     'report_atac_exploratory.R'
+    'report_atac_differential.R'
 RoxygenNote: 6.1.1
