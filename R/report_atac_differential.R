@@ -234,7 +234,7 @@ setMethod("createReport_differential",
 												saveRDS(lolaRes, lolaResFn)
 
 												pp <- lolaBarPlot(lolaDb, lolaRes, scoreCol="log2OR", orderCol="maxRnk", pvalCut=0.01, maxTerms=200)
-												plotFn <- paste0("lolaBar_", curSuffix))
+												plotFn <- paste0("lolaBar_", curSuffix)
 												repPlot <- createReportGgPlot(pp, plotFn, rr, width=20, height=5, create.pdf=TRUE, high.png=0L)
 												repPlot <- off(repPlot, handle.errors=TRUE)
 												plotL.lb <- c(plotL.lb, list(repPlot))
