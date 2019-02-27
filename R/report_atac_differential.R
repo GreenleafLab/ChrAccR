@@ -246,7 +246,7 @@ setMethod("createReport_differential",
 						}						
 					logger.completed()
 					figDesc <- c(
-						"LOLA bar plot for enrichment of region annotations. "
+						"LOLA bar plot for enrichment of region annotations. ",
 						"Bar height denotes log2(odds-ratio). Bars are ordered according to the combined ranking in the LOLA result. ",
 						"Up to 200 most enriched categories (q-value < 0.01; Fisher's Exact Test) are shown for each comparison."
 					)
