@@ -72,6 +72,7 @@ setMethod("createReport_differential",
 			logger.start("Differential accessibility objects")
 				diffObjL <- lapply(regionTypes, FUN=function(rt){
 					logger.status(c("Region type:", rt))
+					# do <- ChrAccR:::getDESeq2Dataset(.object, rt, designCols)
 					do <- getDESeq2Dataset(.object, rt, designCols)
 					fn <- file.path(rDir.data.abs, paste0("diffObj_", normalize.str(rt, return.camel=TRUE), ".rds"))
 					saveRDS(do, fn)
@@ -137,10 +138,17 @@ setMethod("createReport_differential",
 		)
 
 		txt <- c(
-			"Differential Accessibility was quantified for the following comparisons. ",
-			"Tables containing differential accessibility results can be found below."
+			"Differential Accessibility was quantified for the following comparisons:"
 		)
 		rr <- addReportSection(rr, "Comparisons", txt, level=1L, collapsed=FALSE)
+
+		cTab <- compTab
+		rownames(cTab) <- as.character(1:nrow(cTab))
+		colnames(cTab) <- c("Comparison name", "Annotation column", "Group 1", "Group 2")
+		rr <- addReportTable(rr, cTab)
+
+		txt <- c("Tables containing differential accessibility results can be found below.")
+		rr <- addReportParagraph(rr, txt)
 
 		tabFileTab <- do.call("rbind",lapply(1:nrow(compTab),FUN=function(i){
 			sapply(regionTypes,FUN=function(rt){
@@ -166,7 +174,7 @@ setMethod("createReport_differential",
 									isDiff <- isDiffFuns[[funName]](dm)
 									isDiff[is.na(isDiff)] <- FALSE
 									pp <- create.densityScatter(df2p.ma, is.special=isDiff, sparse.points=0.001)
-									plotFn <- paste0("maPlot_", normalize.str(rt, return.camel=TRUE), "_", i, "_", funName)
+									plotFn <- paste0("maPlot_", i, "_", normalize.str(rt, return.camel=TRUE), "_", funName)
 									repPlot <- createReportGgPlot(pp, plotFn, rr, width=7, height=7, create.pdf=TRUE, high.png=0L)
 									repPlot <- off(repPlot, handle.errors=TRUE)
 									plotL.ma <- c(plotL.ma, list(repPlot))
@@ -177,15 +185,15 @@ setMethod("createReport_differential",
 				logger.completed()
 			}
 
-			figSettings.region <- regionTypes
-			names(figSettings.region) <- normalize.str(regionTypes, return.camel=TRUE)
 			figSettings.comp <- compTab[,"compName"]
 			names(figSettings.comp) <- as.character(1:nrow(compTab))
+			figSettings.region <- regionTypes
+			names(figSettings.region) <- normalize.str(regionTypes, return.camel=TRUE)	
 			figSettings.diffFun <- diffFunDesc[names(isDiffFuns)]
 			names(figSettings.diffFun) <- names(isDiffFuns)
 			figSettings <- list(
-				"Region type" = figSettings.region,
 				"Comparison" = figSettings.comp,
+				"Region type" = figSettings.region,
 				"Differential method" = figSettings.diffFun
 			)
 			rr <- addReportFigure(rr, "MA plot", plotL.ma, figSettings)
@@ -197,7 +205,53 @@ setMethod("createReport_differential",
 					logger.start("Preparing LOLA database")
 						lolaDb <- loadLolaDbs(lolaDbPaths)
 					logger.completed()
-					
+
+
+					lolaRefTxt <- c("Sheffield, & Bock (2016). LOLA: enrichment analysis for genomic region sets and regulatory elements in R and Bioconductor. <i>Bioinformatics</i>, <b>32</b>(4), 587-589.")
+					rr <- addReportReference(rr, lolaRefTxt)
+					txt <- c(
+						"LOLA enrichment analysis ", getReportReference(rr, lolaRefTxt), " for differentially accessible regions. ",
+					)
+					rr <- addReportSection(rr, "LOLA enrichment analysis", txt, level=2L, collapsed=FALSE)
+
+					logger.start("Running LOLA and plotting")
+						plotL.lb <- list()
+						for (rt in regionTypes){
+							logger.start(c("Region type:", rt))
+								gr <- ChrAccR::getCoord(.object, rt)
+								for (i in 1:nrow(compTab)){
+									logger.start(c("comparison", i, ":", compTab[i,"compName"]))
+										dm <- diffTabL[[rt]][[i]]
+										for (funName in names(isDiffFuns)){
+											logger.start(c("Comparing using method", diffFunDesc[funName]))
+												isDiff <- isDiffFuns[[funName]](dm)
+												isDiff[is.na(isDiff)] <- FALSE
+
+												lolaRes <- runLOLA(gr[isDiff], gr, lolaDb, cores=8)
+
+												curSuffix <- paste0(i, "_", normalize.str(rt, return.camel=TRUE), "_", funName)
+												lolaResFn <- file.path(rDir.data.abs, paste0("lolaRes_", curSuffix, ".rds"))
+												saveRDS(lolaRes, lolaResFn)
+
+												pp <- lolaBarPlot(lolaDb, lolaRes, scoreCol="log2OR", orderCol="maxRnk", pvalCut=0.01, maxTerms=200)
+												plotFn <- paste0("lolaBar_", curSuffix))
+												repPlot <- createReportGgPlot(pp, plotFn, rr, width=20, height=5, create.pdf=TRUE, high.png=0L)
+												repPlot <- off(repPlot, handle.errors=TRUE)
+												plotL.lb <- c(plotL.lb, list(repPlot))
+											logger.completed()
+										}
+									logger.completed()
+								}
+							logger.completed()
+						}						
+					logger.completed()
+					figDesc <- c(
+						"LOLA bar plot for enrichment of region annotations. "
+						"Bar height denotes log2(odds-ratio). Bars are ordered according to the combined ranking in the LOLA result. ",
+						"Up to 200 most enriched categories (q-value < 0.01; Fisher's Exact Test) are shown for each comparison."
+					)
+					rr <- addReportFigure(rr, figDesc, plotL.lb, figSettings)
+
 				logger.completed()
 			}
 		logger.completed()
