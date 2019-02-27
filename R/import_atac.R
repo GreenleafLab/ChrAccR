@@ -82,19 +82,63 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, region
 			obj <- addCountDataFromBam(obj, inputFns)
 		} else if (type=="insBam"){
 			if (bySample){
-				logger.start(c("Adding insertion and region count data from bam"))
-					for (i in seq_along(inputFns)){
-						sid <- names(inputFns)[i]
-						logger.start(c("Importing sample", ":", sid, paste0("(", i, " of ", nSamples, ")")))
+				if (obj@diskDump && obj@diskDump.fragments){
+					# when disk-dumping, writeHDF5Array can be painfully slow for large DelayedArray objects with many indices/operations that need to be realized before saving.
+					# this is a workaround, iterating over each sample and directly writing to disk-based HDF5 matrix
+					logger.start(c("Adding insertion data from fragment files"))
+						for (i in seq_along(inputFns)){
+							sid <- names(inputFns)[i]
+							logger.status(c("Importing sample", ":", sid, paste0("(", i, " of ", nSamples, ")")))
 							obj <- addInsertionDataFromBam(obj, inputFns[i], pairedEnd=pairedEnd, .diskDump=obj@diskDump.fragments)
-							obj <- addCountDataFromGRL(obj, getInsertionSites(obj, samples=sid))
-							# optionally remove insertion information to save space
-							if (!keepInsertionInfo){
-								obj@fragments <- list()
-							}
-						logger.completed()
-					}
-				logger.completed()
+							cleanMem()
+						}
+					logger.completed()
+					logger.start("Agregating region count data")
+						rebe <- DelayedArray::getRealizationBackend() # store previous realization backend setting to be able to reset it later
+						DelayedArray::setRealizationBackend("HDF5Array")
+						rTypes <- getRegionTypes(obj)
+						rSinkL <- lapply(rTypes, FUN=function(rt){
+							rSink <- RealizationSink(as.integer(c(getNRegions(obj, rt), nSamples)))
+							return(list(
+								sink=rSink,
+								grid=colGrid(rSink, ncol=1L)
+							))
+						})
+						names(rSinkL) <- rTypes
+						
+						for (j in seq_along(sampleIds)){
+							sid <- sampleIds[j]
+							logger.start(c("Summarizing counts for sample", ":", sid, paste0("(", j, " of ", nSamples, ")")))
+								tmpDs <- addCountDataFromGRL(obj, getInsertionSites(obj, samples=sid))
+								for (rt in rTypes){
+									cm <- getCounts(tmpDs, rt, j=j, asMatrix=TRUE)
+									write_block(rSinkL[[rt]]$sink, rSinkL[[rt]]$grid[[j]], cm)
+								}
+								rm(tmpDs, insGrl)
+							logger.completed()
+						}
+						for (rt in rTypes){
+							DelayedArray::close(rSinkL[[rt]]$sink)
+							obj@counts[[rt]] <- as(rSinkL[[rt]]$sink, "DelayedArray")
+							colnames(obj@counts[[rt]]) <- sampleIds
+						}
+						DelayedArray::setRealizationBackend(rebe) # reset realization backend to previous setting
+					logger.completed()
+				} else {
+					logger.start(c("Adding insertion and region count data from bam"))
+						for (i in seq_along(inputFns)){
+							sid <- names(inputFns)[i]
+							logger.start(c("Importing sample", ":", sid, paste0("(", i, " of ", nSamples, ")")))
+								obj <- addInsertionDataFromBam(obj, inputFns[i], pairedEnd=pairedEnd, .diskDump=obj@diskDump.fragments)
+								obj <- addCountDataFromGRL(obj, getInsertionSites(obj, samples=sid))
+								# optionally remove insertion information to save space
+								if (!keepInsertionInfo){
+									obj@fragments <- list()
+								}
+							logger.completed()
+						}
+					logger.completed()
+				}
 			} else {
 				logger.start(c("Adding insertion data from bam"))
 					obj <- addInsertionDataFromBam(obj, inputFns, pairedEnd=pairedEnd, .diskDump=obj@diskDump.fragments)
