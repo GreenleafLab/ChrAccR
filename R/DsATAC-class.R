@@ -132,8 +132,10 @@ setMethod("getCounts",
 				# DelayedArray can have serious performance issues, when indexing is not done efficiently
 				# --> workaround-function: fastDelayedArrayToMatrix()
 				res <- ChrAccR:::fastDelayedArrayToMatrix(res, i=i, j=j)
+				cns <- colnames(res)
 				if (!asMatrix){
 					res <- as(res, "HDF5Array")
+					colnames(res) <- cns
 				}
 			}
 		} else {

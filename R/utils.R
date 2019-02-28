@@ -59,6 +59,12 @@ fastDelayedArrayToMatrix <- function(X, i=NULL, j=NULL){
 		nc <- ncol(X)
 		if (!is.null(j)) nc <- length(j)
 		M <- matrix(X[linIdx], ncol=nc)
+		rnames <- rownames(X)
+		if (!is.null(i) && !is.null(rnames)) rnames <- rnames[i]
+		rownames(M) <- rnames
+		cnames <- colnames(X)
+		if (!is.null(j) && !is.null(cnames)) cnames <- cnames[j]
+		colnames(M) <- cnames
 	} else {
 		M <- as.matrix(X)
 	}
