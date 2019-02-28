@@ -17,7 +17,9 @@
 \item{type}{character string specifying a name for the region type}
 
 \item{signal}{character string specifying a name for the region type for the signal to be aggregated
-if it is \code{NULL} (default), the new region type will be initialized with NA values}
+If it is \code{NULL} (default), the new region type will be initialized with NA values.
+If it is \code{"insertions"} count data will be initialized from insertion sites (if 
+fragment data is present in the object).}
 
 \item{aggrFun}{aggregation function for signal counts.
 Currently \code{sum}, \code{mean} and \code{median} (default) are supported.}

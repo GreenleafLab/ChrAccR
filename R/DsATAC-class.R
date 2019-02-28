@@ -435,7 +435,9 @@ if (!isGeneric("regionAggregation")) {
 #' @param regGr   \code{GRanges} object containing regions to summarize
 #' @param type    character string specifying a name for the region type
 #' @param signal  character string specifying a name for the region type for the signal to be aggregated
-#'                if it is \code{NULL} (default), the new region type will be initialized with NA values
+#'                If it is \code{NULL} (default), the new region type will be initialized with NA values.
+#'                If it is \code{"insertions"} count data will be initialized from insertion sites (if 
+#'                fragment data is present in the object).
 #' @param aggrFun aggregation function for signal counts.
 #'                Currently \code{sum}, \code{mean} and \code{median} (default) are supported.
 #' @param dropEmpty discard all regions with no observed signal counts
