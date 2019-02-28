@@ -128,11 +128,13 @@ setMethod("getCounts",
 		res <- .object@counts[[type]]
 
 		if (.object@diskDump){
-			# DelayedArray can have serious performance issues, when indexing is not done efficiently
-			# --> workaround-function: fastDelayedArraySubset()
-			res <- fastDelayedArraySubset(res, i=i, j=j)
-			if (!asMatrix){
-				res <- as(res, "HDF5Array")
+			if (!is.null(i) || !is.null(j) || asMatrix){
+				# DelayedArray can have serious performance issues, when indexing is not done efficiently
+				# --> workaround-function: fastDelayedArrayToMatrix()
+				res <- ChrAccR:::fastDelayedArrayToMatrix(res, i=i, j=j)
+				if (!asMatrix){
+					res <- as(res, "HDF5Array")
+				}
 			}
 		} else {
 			if (!is.null(i)) res <- res[i,,drop=FALSE]
