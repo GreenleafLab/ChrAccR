@@ -126,12 +126,22 @@ setMethod("getCounts",
 	) {
 		if (!is.element(type, getRegionTypes(.object))) logger.error(c("Unsupported region type:", type))
 		res <- .object@counts[[type]]
-		if (!is.null(i)) res <- res[i,,drop=FALSE]
-		if (!is.null(j)) res <- res[,j,drop=FALSE]
-		if (asMatrix && !is.matrix(res)){
-			res <- as.matrix(res)
-			if (!naIsZero && .object@sparseCounts){
-				res[res==0] <- NA
+
+		if (.object@diskDump){
+			# DelayedArray can have serious performance issues, when indexing is not done efficiently
+			# --> workaround-function: fastDelayedArraySubset()
+			res <- fastDelayedArraySubset(res, i=i, j=j)
+			if (!asMatrix){
+				res <- as(res, "HDF5Array")
+			}
+		} else {
+			if (!is.null(i)) res <- res[i,,drop=FALSE]
+			if (!is.null(j)) res <- res[,j,drop=FALSE]
+			if (asMatrix && !is.matrix(res)){
+				res <- as.matrix(res)
+				if (!naIsZero && .object@sparseCounts){
+					res[res==0] <- NA
+				}
 			}
 		}
 		if (naIsZero){
@@ -999,8 +1009,6 @@ setMethod("addInsertionDataFromBam",
 ################################################################################
 # Manipulating DsATAC objects
 ################################################################################
-
-#TODO: not tested yet
 if (!isGeneric("removeRegions")) {
 	setGeneric(
 		"removeRegions",
@@ -1055,22 +1063,9 @@ setMethod("removeRegions",
 		}
 
 		.object@coord[[type]] <- .object@coord[[type]][inds2keep]
-		.object@counts[[type]]  <- .object@counts[[type]][inds2keep,]
+		# .object@counts[[type]]  <- .object@counts[[type]][inds2keep,]
+		.object@counts[[type]] <- ChrAccR::getCounts(.object, type, i=inds2keep, j=NULL, asMatrix=FALSE, naIsZero=FALSE)
 
-		# rts <- setdiff(getRegionTypes(.object), type)
-		# if (reaggregate && type == "signal" && length(rts)>0) {
-		# 	logger.start("Recomputing region aggregation")
-		# 	rtGrl <- .object@coord
-
-		# 	.object@coord <- .object@coord["signal"]
-		# 	.object@counts  <- .object@counts["signal"]
-
-		# 	for (rt in rts){
-		# 		logger.status(c(rt, "..."))
-		# 		.object <- regionAggregation(.object, rtGrl[[rt]], rt, dropEmpty=TRUE)
-		# 	}
-		# 	logger.completed()	
-		# }
 		return(.object)
 	}
 )
