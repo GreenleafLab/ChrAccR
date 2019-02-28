@@ -4,7 +4,7 @@
 \alias{DsATAC.snakeATAC}
 \title{DsATAC.snakeATAC}
 \usage{
-DsATAC.snakeATAC(sampleAnnot, filePrefixCol, genome, dataDir,
+DsATAC.snakeATAC(sampleAnnot, filePrefixCol, genome, dataDir = "",
   regionSets = NULL, sampleIdCol = filePrefixCol, type = "insBam",
   diskDump = FALSE, keepInsertionInfo = TRUE, bySample = FALSE,
   pairedEnd = TRUE)
@@ -12,11 +12,12 @@ DsATAC.snakeATAC(sampleAnnot, filePrefixCol, genome, dataDir,
 \arguments{
 \item{sampleAnnot}{data.frame specifying the sample annotation table}
 
-\item{filePrefixCol}{column name specifying the file prefix for each sample in the sample annotation table}
+\item{filePrefixCol}{column name specifying the file prefix for each sample in the sample annotation table. If \code{dataDir} is not empty (i.e. not \code{""})
+filenames are assumed to be relative to that directory and  a corresponding filename suffix will be appended}
 
 \item{genome}{genome assembly}
 
-\item{dataDir}{directory where the files are located}
+\item{dataDir}{directory where the files are located. If it is the empty character (\code{""}; default) it is assumed that \code{filePrefixCol} specifies the full path to the input files}
 
 \item{regionSets}{a list of GRanges objects which contain region sets over which count data will be aggregated}
 
