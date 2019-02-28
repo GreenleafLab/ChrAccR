@@ -145,7 +145,7 @@ setMethod("createReport_summary",
 				qcTab <- data.frame(
 					sample = rownames(countTab),
 					nFragments = countTab[,"#fragments"],
-					tssEnrich = as.numeric(NA),
+					tssEnrichment = as.numeric(NA),
 					stringsAsFactors=FALSE
 				)
 				rownames(qcTab) <- qcTab[,"sample"]
@@ -159,7 +159,7 @@ setMethod("createReport_summary",
 					repPlot <- off(repPlot, handle.errors=TRUE)
 					plotL <- c(plotL, list(repPlot))
 
-					qcTab[sampleIds[i], "tssEnrich"] <- tsse$tssEnrichment
+					qcTab[sampleIds[i], "tssEnrichment"] <- tsse$tssEnrichment
 				}
 				figSettings.sampleId <- sampleIds
 				names(figSettings.sampleId) <- paste0("s", 1:length(sampleIds))
@@ -170,7 +170,7 @@ setMethod("createReport_summary",
 				rr <- addReportFigure(rr, desc, plotL, figSettings)
 
 
-				pp <- ggplot(qcTab) + aes(nFragments, tssEnrich) + geom_point() + geom_text(aes(label=sample), size=1)
+				pp <- ggplot(qcTab) + aes(nFragments, tssEnrichment) + geom_point() + geom_text(aes(label=sample), size=1)
 				figFn <- paste0("qcScatter")
 				repPlot <- createReportGgPlot(pp, figFn, rr, width=7, height=7, create.pdf=TRUE, high.png=0L)
 				repPlot <- off(repPlot, handle.errors=TRUE)
