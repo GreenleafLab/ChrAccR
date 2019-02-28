@@ -70,12 +70,14 @@ setMethod("createReport_summary",
 			)
 			rr <- addReportSection(rr, "Sample QC", txt, level=1L, collapsed=FALSE)
 
-			countTab <- data.frame(
-				"#fragments" = getFragmentNum(.object),
-				check.names=FALSE
-			)
-			rownames(countTab) <- sampleIds
-			rr <- addReportTable(rr, countTab, row.names=TRUE, first.col.header=FALSE)
+			logger.start("Summarizing fragment counts")
+				countTab <- data.frame(
+					"#fragments" = getFragmentNum(.object),
+					check.names=FALSE
+				)
+				rownames(countTab) <- sampleIds
+				rr <- addReportTable(rr, countTab, row.names=TRUE, first.col.header=FALSE)
+			logger.completed()
 
 			logger.start("Plotting fragment size distribution")
 				txt <- c(
