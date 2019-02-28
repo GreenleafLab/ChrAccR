@@ -160,7 +160,7 @@ setMethod("createReport_summary",
 					plotL <- c(plotL, list(repPlot))
 
 					qcTab[sampleIds[i], "tssEnrich"] <- tsse$tssEnrichment
-				})
+				}
 				figSettings.sampleId <- sampleIds
 				names(figSettings.sampleId) <- paste0("s", 1:length(sampleIds))
 				figSettings <- list(
