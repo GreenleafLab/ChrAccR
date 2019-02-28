@@ -88,7 +88,7 @@ setMethod("createReport_summary",
 
 			# plot fragment numbers
 			df2p <- data.frame(
-				sample = rownames(countTab),
+				sample = factor(rownames(countTab), levels=rownames(countTab)[order(countTab[,"#fragments"], decreasing=TRUE)]),
 				nFragments = countTab[,"#fragments"]
 			)
 			pp <- ggplot(df2p) + aes(sample, nFragments) + geom_col() + 
