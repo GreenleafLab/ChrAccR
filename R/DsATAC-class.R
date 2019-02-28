@@ -1209,7 +1209,7 @@ setMethod("transformCounts",
 				}
 			logger.completed()
 		} else if (method == "percentile"){
-			logger.start(c("Applying rank percentile transformation"))
+			logger.start(c("Applying percentile transformation"))
 				for (rt in regionTypes){
 					logger.status(c("Region type:", rt))
 					cnames <- colnames(.object@counts[[rt]])

@@ -45,18 +45,28 @@ setMethod("createReport_exploratory",
 		grpNames <- names(sampleGrps)
 
 		colSchemes <- getConfigElement("colorSchemes")
+		colSchemesNum <- getConfigElement("colorSchemesCont")
 		grpColors <- lapply(names(sampleGrps), FUN=function(cn){
 			cs <- c()
 			x <- sampleGrps[[cn]]
-			useDefault <- !is.element(cn, names(colSchemes))
-			if (!useDefault) {
+			isNum <- is.numeric(sannot[,cn])
+			useDefault <- (!isNum && !is.element(cn, names(colSchemes))) || (isNum && !is.element(cn, names(colSchemesNum)))
+			if (!useDefault && !isNum) {
 				useDefault <- !all(names(x) %in% names(colSchemes[[cn]]))
 			}
 			if (useDefault) {
-				cs <- rep(colSchemes[[".default"]], length.out=length(x))
-				names(cs) <- names(x)
+				if (isNum){
+					cs <- colSchemesNum[[".default"]]
+				} else {
+					cs <- rep(colSchemes[[".default"]], length.out=length(x))
+					names(cs) <- names(x)
+				}
 			} else {
-				cs <- colSchemes[[cn]][names(x)]
+				if (isNum){
+					cs <- colSchemesNum[[cn]]
+				} else {
+					cs <- colSchemes[[cn]][names(x)]
+				}
 			}
 			return(cs)
 		})
