@@ -54,10 +54,17 @@ setMethod("createReport_summary",
 		txt <- c("Signal has been summarized for the following region sets:")
 		rr <- addReportParagraph(rr, txt)
 
-		ll <- lapply(getRegionTypes(.object), FUN=function(rt){
-			paste0("<b>", rt, ":</b> ", getNRegions(.object, rt), " regions")
-		})
-		rr <- addReportList(rr, ll, type="u")
+		regCountTab <- data.frame(
+			"#regions" = sapply(getRegionTypes(.object), FUN=function(rt){getNRegions(.object, rt)}),
+			check.names=FALSE
+		)
+		rownames(regCountTab) <- getRegionTypes(.object)
+
+		rr <- addReportTable(rr, regCountTab, row.names=TRUE, first.col.header=FALSE)
+		# ll <- lapply(getRegionTypes(.object), FUN=function(rt){
+		# 	paste0("<b>", rt, ":</b> ", getNRegions(.object, rt), " regions")
+		# })
+		# rr <- addReportList(rr, ll, type="u")
 
 
 		txt <- c("Fragment data IS NOT available.")
