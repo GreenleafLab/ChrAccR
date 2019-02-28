@@ -66,9 +66,16 @@ setMethod("createReport_summary",
 
 		if (hasFragments){
 			txt <- c(
-				"This section contains per-sample quality control plots and data."
+				"This section contains per-sample quality control plots and data. The table below contains fragment counts for each sample."
 			)
 			rr <- addReportSection(rr, "Sample QC", txt, level=1L, collapsed=FALSE)
+
+			countTab <- data.frame(
+				"#fragments" = getFragmentNum(.object),
+				check.names=FALSE
+			)
+			rownames(countTab) <- sampleIds
+			rr <- addReportTable(rr, countTab, row.names=TRUE, first.col.header=FALSE)
 
 			logger.start("Plotting fragment size distribution")
 				txt <- c(
