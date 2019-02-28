@@ -118,7 +118,7 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", reg
 									cm <- getCounts(tmpDs, rt, j=j, asMatrix=TRUE)
 									write_block(rSinkL[[rt]]$sink, rSinkL[[rt]]$grid[[j]], cm)
 								}
-								rm(tmpDs, insGrl)
+								rm(tmpDs)
 							logger.completed()
 						}
 						for (rt in rTypes){
