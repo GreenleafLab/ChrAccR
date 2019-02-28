@@ -24,3 +24,22 @@ isCanonicalChrom <- function(ss){
 	re <- "^(chr)?([1-9][0-9]?|[XYM]|MT)$"
 	return(grepl(re, ss))
 }
+
+#' fastDelayedArraySubset
+#' 
+#' faster subsetting by index of DelayedArrays via linear indexing.
+#' Code taken from: https://github.com/Bioconductor/DelayedArray/issues/13
+#' @param X \code{DelayedArray}
+#' @param i row indices
+#' @param j column indices
+#' @return a regular matrix object representing the indexed submatrix
+#' @author Fabian Mueller
+#' @noRd
+fastDelayedArraySubset <- function(X, i=NULL, j=NULL){
+	M <- X
+	if (!is.null(i) || !is.null(j)){
+		linIdx <- DelayedArray:::to_linear_index(list(i, j), dim(X))
+		M <- matrix(X[linIdx], ncol=ncol(X))
+	}
+	return(M)
+}
