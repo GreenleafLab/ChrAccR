@@ -3,9 +3,10 @@
 #' 
 #' Create a DsATAC dataset from multiple input files output by snakeATAC
 #' @param sampleAnnot  data.frame specifying the sample annotation table
-#' @param filePrefixCol column name specifying the file prefix for each sample in the sample annotation table
+#' @param filePrefixCol column name specifying the file prefix for each sample in the sample annotation table. If \code{dataDir} is not empty (i.e. not \code{""})
+#'                     filenames are assumed to be relative to that directory and  a corresponding filename suffix will be appended
 #' @param genome       genome assembly
-#' @param dataDir      directory where the files are located
+#' @param dataDir      directory where the files are located. If it is the empty character (\code{""}; default) it is assumed that \code{filePrefixCol} specifies the full path to the input files
 #' @param regionSets   a list of GRanges objects which contain region sets over which count data will be aggregated
 #' @param sampleIdCol  column name or index in the sample annotation table containing unique sample identifiers
 #' @param type         input data type. Currently only "insBed" (insertion beds), "insBed" (insertion info inferred from bam files (aligned reads); default) and "bam" (aligned reads) are supported
@@ -16,7 +17,7 @@
 #' @return \code{\linkS4class{DsATAC}} object
 #' @author Fabian Mueller
 #' @export
-DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, regionSets=NULL, sampleIdCol=filePrefixCol, type="insBam", diskDump=FALSE, keepInsertionInfo=TRUE, bySample=FALSE, pairedEnd=TRUE){
+DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", regionSets=NULL, sampleIdCol=filePrefixCol, type="insBam", diskDump=FALSE, keepInsertionInfo=TRUE, bySample=FALSE, pairedEnd=TRUE){
 	if (!is.element(type, c("bam", "insBam", "insBed"))){
 		logger.error(c("Unsupported import type:", type))
 	}
