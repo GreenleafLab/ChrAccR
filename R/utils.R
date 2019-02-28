@@ -25,7 +25,7 @@ isCanonicalChrom <- function(ss){
 	return(grepl(re, ss))
 }
 
-#' fastDelayedArraySubset
+#' fastDelayedArrayToMatrix
 #' 
 #' faster subsetting by index of DelayedArrays via linear indexing.
 #' Code taken from: https://github.com/Bioconductor/DelayedArray/issues/13
@@ -35,11 +35,13 @@ isCanonicalChrom <- function(ss){
 #' @return a regular matrix object representing the indexed submatrix
 #' @author Fabian Mueller
 #' @noRd
-fastDelayedArraySubset <- function(X, i=NULL, j=NULL){
+fastDelayedArrayToMatrix <- function(X, i=NULL, j=NULL){
 	M <- X
 	if (!is.null(i) || !is.null(j)){
 		linIdx <- DelayedArray:::to_linear_index(list(i, j), dim(X))
 		M <- matrix(X[linIdx], ncol=ncol(X))
+	} else {
+		M <- as.matrix(X)
 	}
 	return(M)
 }
