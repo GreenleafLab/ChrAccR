@@ -150,7 +150,7 @@ setMethod("createReport_exploratory",
 				if (is.element("chromVAR", names(colors.cv))) {
 					colors.cv <- colors.cv[["chromVAR"]]
 				} else {
-					colors.cv <- colors.cv[[".default"]]
+					colors.cv <- colors.cv[[".default.div"]]
 				}
 				linkMethod <- "ward.D"
 				corMethod <- "pearson"
