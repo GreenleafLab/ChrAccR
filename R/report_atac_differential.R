@@ -210,7 +210,7 @@ setMethod("createReport_differential",
 					lolaRefTxt <- c("Sheffield, & Bock (2016). LOLA: enrichment analysis for genomic region sets and regulatory elements in R and Bioconductor. <i>Bioinformatics</i>, <b>32</b>(4), 587-589.")
 					rr <- addReportReference(rr, lolaRefTxt)
 					txt <- c(
-						"LOLA enrichment analysis ", getReportReference(rr, lolaRefTxt), " for differentially accessible regions. ",
+						"LOLA enrichment analysis ", getReportReference(rr, lolaRefTxt), " for differentially accessible regions."
 					)
 					rr <- addReportSection(rr, "LOLA enrichment analysis", txt, level=2L, collapsed=FALSE)
 
@@ -227,10 +227,10 @@ setMethod("createReport_differential",
 												isDiff <- isDiffFuns[[funName]](dm)
 												isDiff[is.na(isDiff)] <- FALSE
 
-												lolaRes <- runLOLA(gr[isDiff], gr, lolaDb, cores=8)
-
 												curSuffix <- paste0(i, "_", normalize.str(rt, return.camel=TRUE), "_", funName)
 												lolaResFn <- file.path(rDir.data.abs, paste0("lolaRes_", curSuffix, ".rds"))
+												
+												lolaRes <- runLOLA(gr[isDiff], gr, lolaDb, cores=8)
 												saveRDS(lolaRes, lolaResFn)
 
 												pp <- lolaBarPlot(lolaDb, lolaRes, scoreCol="log2OR", orderCol="maxRnk", pvalCut=0.01, maxTerms=200)
