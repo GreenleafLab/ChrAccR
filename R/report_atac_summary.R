@@ -142,13 +142,24 @@ setMethod("createReport_summary",
 				)
 				rr <- addReportSection(rr, "TSS profile", txt, level=2L, collapsed=FALSE)
 
-				plotL <- lapply(1:length(sampleIds), FUN=function(i){
+				qcTab <- data.frame(
+					sample = rownames(countTab),
+					nFragments = countTab[,"#fragments"],
+					tssEnrich = as.numeric(NA),
+					stringsAsFactors=FALSE
+				)
+				rownames(qcTab) <- qcTab[,"sample"]
+
+				plotL <- list()
+				for (i in 1:length(sampleIds)){
 					logger.status(c("Sample", i, "of", length(sampleIds), "..."))
 					tsse <- getTssEnrichment(.object, sampleIds[i], tssGr)
 					figFn <- paste0("tssProfile_s", i)
 					repPlot <- createReportGgPlot(tsse$plot, figFn, rr, width=10, height=5, create.pdf=TRUE, high.png=0L)
 					repPlot <- off(repPlot, handle.errors=TRUE)
-					return(repPlot)
+					plotL <- c(plotL, list(repPlot))
+
+					qcTab[sampleIds[i], "tssEnrich"] <- tsse$tssEnrichment
 				})
 				figSettings.sampleId <- sampleIds
 				names(figSettings.sampleId) <- paste0("s", 1:length(sampleIds))
@@ -157,6 +168,13 @@ setMethod("createReport_summary",
 				)
 				desc <- c("TSS profile. Genome-wide aggregate of TSS +/- 2kb. Signal was normalized to the mean signal in the 100-bp-wide windows in the tails of the plot. A smoothing window of width 25bp has been applied to draw the profile curve.")
 				rr <- addReportFigure(rr, desc, plotL, figSettings)
+
+
+				pp <- ggplot(qcTab) + aes(nFragments, tssEnrich) + geom_point() + geom_text(aes(label=sample), size=1)
+				figFn <- paste0("qcScatter")
+				repPlot <- createReportGgPlot(pp, figFn, rr, width=7, height=7, create.pdf=TRUE, high.png=0L)
+				repPlot <- off(repPlot, handle.errors=TRUE)
+				rr <- addReportFigure(rr, "Scatterplot of QC metrics", repPlot)
 			logger.completed()
 		}
 
