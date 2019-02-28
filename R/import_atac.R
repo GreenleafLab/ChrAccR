@@ -90,7 +90,6 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, region
 							sid <- names(inputFns)[i]
 							logger.status(c("Importing sample", ":", sid, paste0("(", i, " of ", nSamples, ")")))
 							obj <- addInsertionDataFromBam(obj, inputFns[i], pairedEnd=pairedEnd, .diskDump=obj@diskDump.fragments)
-							cleanMem()
 						}
 					logger.completed()
 					logger.start("Agregating region count data")
