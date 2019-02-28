@@ -86,6 +86,20 @@ setMethod("createReport_summary",
 				rr <- addReportTable(rr, countTab, row.names=TRUE, first.col.header=FALSE)
 			logger.completed()
 
+			# plot fragment numbers
+			df2p <- data.frame(
+				sample = rownames(countTab),
+				nFragments = countTab[,"#fragments"]
+			)
+			pp <- ggplot(df2p) + aes(sample, nFragments) + geom_col() + 
+				  scale_x_discrete(name="") + 
+				  theme(axis.text.x=element_text(angle=90, hjust=1, vjust=0.5))
+
+			figFn <- paste0("fragNumBar")
+			repPlot <- createReportGgPlot(pp, figFn, rr, width=10, height=5, create.pdf=TRUE, high.png=0L)
+			repPlot <- off(repPlot, handle.errors=TRUE)
+			rr <- addReportFigure(rr, "Number of fragments per sample", repPlot)
+
 			logger.start("Plotting fragment size distribution")
 				txt <- c(
 					"The following plot illustrates the fragment size distribution for each sample. ",
