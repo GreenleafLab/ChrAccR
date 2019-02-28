@@ -98,7 +98,7 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, region
 						DelayedArray::setRealizationBackend("HDF5Array")
 						rTypes <- getRegionTypes(obj)
 						rSinkL <- lapply(rTypes, FUN=function(rt){
-							rSink <- RealizationSink(as.integer(c(getNRegions(obj, rt), nSamples)))
+							rSink <- RealizationSink(as.integer(c(getNRegions(obj, rt), nSamples)), type="integer")
 							return(list(
 								sink=rSink,
 								grid=colGrid(rSink, ncol=1L)
