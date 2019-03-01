@@ -58,7 +58,17 @@ fastDelayedArrayToMatrix <- function(X, i=NULL, j=NULL){
 		linIdx <- DelayedArray:::to_linear_index(list(i, j), dim(X))
 		nc <- ncol(X)
 		if (!is.null(j)) nc <- length(j)
-		M <- matrix(X[linIdx], ncol=nc)
+		# linear indexing with more than .Machine$integer.max indices causes trouble
+		# so does any element in the linear index that exceeds .Machine$integer.max
+		# --> avoid the ploblem using MEMORY INEFFICIENT coercion to regular matrix
+		if (any(linIdx >= .Machine$integer.max) || length(linIdx >= .Machine$integer.max)){
+			logger.warning("Linear index exceeds INT_MAX --> coercing to regular matrix [fastDelayedArrayToMatrix]")
+			M <- as.matrix(M)
+			if (!is.null(i)) M <- M[i,,drop=FALSE]
+			if (!is.null(j)) M <- M[,j,drop=FALSE]
+		} else {
+			M <- matrix(X[linIdx], ncol=nc)
+		}
 		rnames <- rownames(X)
 		if (!is.null(i) && !is.null(rnames)) rnames <- rnames[i]
 		rownames(M) <- rnames
