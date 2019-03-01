@@ -61,7 +61,7 @@ fastDelayedArrayToMatrix <- function(X, i=NULL, j=NULL){
 		# linear indexing with more than .Machine$integer.max indices causes trouble
 		# so does any element in the linear index that exceeds .Machine$integer.max
 		# --> avoid the ploblem using MEMORY INEFFICIENT coercion to regular matrix
-		if (any(linIdx >= .Machine$integer.max) || length(linIdx >= .Machine$integer.max)){
+		if (any(linIdx >= .Machine$integer.max) || length(linIdx) >= .Machine$integer.max){
 			logger.warning("Linear index exceeds INT_MAX --> coercing to regular matrix [fastDelayedArrayToMatrix]")
 			M <- as.matrix(M)
 			if (!is.null(i)) M <- M[i,,drop=FALSE]
