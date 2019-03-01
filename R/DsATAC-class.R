@@ -131,7 +131,7 @@ setMethod("getCounts",
 			if (!is.null(i) || !is.null(j) || asMatrix){
 				# DelayedArray can have serious performance issues, when indexing is not done efficiently
 				# --> workaround-function: fastDelayedArrayToMatrix()
-				res <- ChrAccR:::fastDelayedArrayToMatrix(res, i=i, j=j)
+				res <- fastDelayedArrayToMatrix(res, i=i, j=j)
 				cns <- colnames(res)
 				if (!asMatrix){
 					res <- as(res, "HDF5Array")
@@ -1350,7 +1350,7 @@ setMethod("filterLowCovg",
 			if (nRem > 0){
 				.object <- removeRegions(.object, rem, rt)
 			}
-			logger.status(c("Removed", nRem, "regions", paste0("(", round(nRem/nRegs, 4)*100, "%)"), "of type", rt))
+			logger.info(c("Removed", nRem, "regions", paste0("(", round(nRem/nRegs, 4)*100, "%)"), "of type", rt))
 		}
 		return(.object)
 	}
@@ -1388,7 +1388,7 @@ setMethod("filterChroms",
 		for (rt in getRegionTypes(dsf)){
 			isExclChrom <- as.character(seqnames(getCoord(dsf, rt))) %in% exclChrom
 			.object <- removeRegions(.object, isExclChrom, rt)
-			logger.info(c("Removed", sum(isExclChrom), "of", length(isExclChrom), "regions for region type", rt))
+			logger.info(c("Removed", sum(isExclChrom), "regions", paste0("(", round(sum(isExclChrom)/length(isExclChrom), 4)*100, "%)"), "of type", rt))
 		}
 		if (length(.object@fragments) > 0){
 			logger.status("Filtering fragment data")
