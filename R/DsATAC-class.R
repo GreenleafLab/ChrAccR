@@ -1993,7 +1993,9 @@ setMethod("getDiffAcc",
 				rank(-abs(dm[,"log2FoldChange"]), na.last="keep", ties.method="min"),
 				rank(dm[,"pvalue"], na.last="keep", ties.method="min")
 			)
-			dm[,"cRank"] <- rowMaxs(rankMat, na.rm=TRUE)
+			dm[,"cRank"] <- rowMaxs(rankMat, na.rm=FALSE)
+			# dm[,"cRank"] <- rowMaxs(rankMat, na.rm=TRUE)
+			dm[!is.finite(dm[,"cRank"]),"cRank"] <- NA
 			dm[,"cRank_rerank"] <- rank(dm[,"cRank"], na.last="keep", ties.method="min")
 
 			l2fpkm <- log2(fpkm(dds, robust=TRUE)+1)
