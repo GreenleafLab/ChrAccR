@@ -97,6 +97,9 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", reg
 							obj <- addInsertionDataFromBam(obj, inputFns[i], pairedEnd=pairedEnd, .diskDump=obj@diskDump.fragments)
 						}
 					logger.completed()
+					logger.start("[DEBUG] tmp saving DsATAC object")
+						saveDsAcc(obj, file.path("/scratch/users/muellerf/temp", getHashString("DsATAC_tmp")))
+					logger.completed()
 					logger.start("Agregating region count data")
 						rebe <- DelayedArray::getRealizationBackend() # store previous realization backend setting to be able to reset it later
 						DelayedArray::setRealizationBackend("HDF5Array")
