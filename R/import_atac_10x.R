@@ -107,7 +107,7 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 			peakSet <- NULL
 			for (i in seq_along(sampleDirs)){
 				sid <- names(sampleDirs)[i]
-				pGr <- import(file.path(sampleDirs[i], "peaks.bed"), format="BED")
+				pGr <- rtracklayer::import(file.path(sampleDirs[i], "peaks.bed"), format="BED")
 				pGr <- setGenomeProps(pGr, genome, onlyMainChrs=TRUE)
 				pGr <- trim(resize(pGr, width=unifWidth, fix="center", ignore.strand=TRUE))
 				pGr <- pGr[width(pGr)==median(width(pGr))] #remove too short regions which might have been trimmed
