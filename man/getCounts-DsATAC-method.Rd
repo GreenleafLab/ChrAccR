@@ -7,7 +7,7 @@
 \title{getCounts-methods}
 \usage{
 \S4method{getCounts}{DsATAC}(.object, type, i = NULL, j = NULL,
-  asMatrix = TRUE, naIsZero = TRUE)
+  asMatrix = TRUE, naIsZero = TRUE, allowSparseMatrix = FALSE)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}
@@ -21,9 +21,11 @@
 \item{asMatrix}{return a matrix object instead of the internal representation}
 
 \item{naIsZero}{should \code{NA}s in the count matrix be considered 0 value (instead of unknown/missing)}
+
+\item{allowSparseMatrix}{if \code{asMatrix}: allow for sparse matrices as returned data format}
 }
 \value{
-\code{data.table} or \code{matrix} containing counts for
+Matrix containing counts for
         each region and sample
 }
 \description{

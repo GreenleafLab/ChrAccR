@@ -103,7 +103,8 @@ if (!isGeneric("getCounts")) {
 #' @param j       (optional) column (sample) indices
 #' @param asMatrix return a matrix object instead of the internal representation
 #' @param naIsZero should \code{NA}s in the count matrix be considered 0 value (instead of unknown/missing)
-#' @return \code{data.table} or \code{matrix} containing counts for
+#' @param allowSparseMatrix if \code{asMatrix}: allow for sparse matrices as returned data format
+#' @return Matrix containing counts for
 #'         each region and sample
 #'
 #' @rdname getCounts-DsATAC-method
@@ -122,7 +123,8 @@ setMethod("getCounts",
 		i=NULL,
 		j=NULL,
 		asMatrix=TRUE,
-		naIsZero=TRUE
+		naIsZero=TRUE,
+		allowSparseMatrix=FALSE
 	) {
 		if (!is.element(type, getRegionTypes(.object))) logger.error(c("Unsupported region type:", type))
 		res <- .object@counts[[type]]
@@ -141,7 +143,7 @@ setMethod("getCounts",
 		} else {
 			if (!is.null(i)) res <- res[i,,drop=FALSE]
 			if (!is.null(j)) res <- res[,j,drop=FALSE]
-			if (asMatrix && !is.matrix(res)){
+			if (asMatrix && !is.matrix(res) && !(.object@sparseCounts && allowSparseMatrix)){
 				res <- as.matrix(res)
 				if (!naIsZero && .object@sparseCounts){
 					res[res==0] <- NA
@@ -1275,12 +1277,13 @@ setMethod("transformCounts",
 			logger.start(c("Applying TF-IDF transformation"))
 				for (rt in regionTypes){
 					logger.status(c("Region type:", rt))
-					cm <- !is.na(.object@counts[[rt]]) & .object@counts[[rt]] > 0 #indicator matrix: are there any counts in that region
+					cm <- .object@counts[[rt]] > 0 #indicator matrix: are there any counts in that region
 					cnames <- colnames(cm)
 					if (class(cm)=="lgCMatrix"){
 						tf <- Matrix::t(Matrix::t(cm) / Matrix::colSums(cm)) #term frequency
 						idf <- tf * log(1 + ncol(cm) / Matrix::rowSums(cm)) # inverse document frequency
 					} else {
+						cm <- cm & !is.na(.object@counts[[rt]])
 						tf <- t(t(cm) / colSums(cm)) #term frequency
 						idf <- tf * log(1 + ncol(cm) / rowSums(cm)) # inverse document frequency
 					}
@@ -1837,7 +1840,7 @@ setMethod("getChromVarDev",
 		require(motifmatchr)
 		res <- NULL
 
-		countSe <- getCountsSE(.object, type, naIsZero=TRUE)
+		countSe <- getCountsSE(.object, type, naIsZero=TRUE, allowSparseMatrix=TRUE)
 		genomeObj <- getGenomeObject(.object@genome)
 		genome(countSe) <- providerVersion(genomeObj) # hack to override inconsistent naming of genome versions (e.g. hg38 and GRCh38)
 
