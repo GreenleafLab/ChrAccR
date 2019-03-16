@@ -192,7 +192,7 @@ setMethod("getCountsSE",
 		require(SummarizedExperiment)
 		if (!is.element(type, getRegionTypes(.object))) logger.error(c("Unsupported region type:", type))
 		#count matrix
-		cm <- ChrAccR::getCounts(.object, type, asMatrix=TRUE, naIsZero=naIsZero)
+		cm <- ChrAccR::getCounts(.object, type, asMatrix=TRUE, naIsZero=naIsZero, allowSparseMatrix=TRUE)
 		coords <- getCoord(.object, type)
 		se <- SummarizedExperiment(assays=list(counts=cm), rowRanges=coords, colData=DataFrame(getSampleAnnot(.object)))
 		return(se)
@@ -1840,7 +1840,7 @@ setMethod("getChromVarDev",
 		require(motifmatchr)
 		res <- NULL
 
-		countSe <- getCountsSE(.object, type, naIsZero=TRUE, allowSparseMatrix=TRUE)
+		countSe <- getCountsSE(.object, type, naIsZero=TRUE)
 		genomeObj <- getGenomeObject(.object@genome)
 		genome(countSe) <- providerVersion(genomeObj) # hack to override inconsistent naming of genome versions (e.g. hg38 and GRCh38)
 
