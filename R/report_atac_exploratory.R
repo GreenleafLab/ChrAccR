@@ -44,11 +44,19 @@ setMethod("createReport_exploratory",
 		sampleGrps <- c(list(".ALL"=c(1:nrow(sannot))), sampleGrps)
 		grpNames <- names(sampleGrps)
 
+		numericCols <- sapply(colnames(sannot), FUN=function(cn){is.numeric(sannot[,cn])})
+		numericCols <- names(numericCols)[numericCols]
+		numericCols <- setdiff(numericCols, grpNames)
+		if (length(getConfigElement("annotationColumns")) > 0) numericCols <- intersect(numericCols, getConfigElement("annotationColumns"))
+		plotAnnotCols <- c(grpNames, numericCols)
+
+
 		colSchemes <- getConfigElement("colorSchemes")
 		colSchemesNum <- getConfigElement("colorSchemesCont")
-		grpColors <- lapply(names(sampleGrps), FUN=function(cn){
+		grpColors <- lapply(plotAnnotCols, FUN=function(cn){
 			cs <- c()
-			x <- sampleGrps[[cn]]
+			x <- NULL
+			if (is.element(cn, names(sampleGrps))) x <- sampleGrps[[cn]]
 			isNum <- is.numeric(sannot[,cn])
 			useDefault <- (!isNum && !is.element(cn, names(colSchemes))) || (isNum && !is.element(cn, names(colSchemesNum)))
 			if (!useDefault && !isNum) {
@@ -70,7 +78,7 @@ setMethod("createReport_exploratory",
 			}
 			return(cs)
 		})
-		names(grpColors) <- names(sampleGrps)
+		names(grpColors) <- plotAnnotCols
 
 		logger.start("Dimension reduction")
 			txt <- c(
@@ -88,7 +96,7 @@ setMethod("createReport_exploratory",
 						"pca"  = muRtools::getDimRedCoords.pca(tcm),
 						"umap" = muRtools::getDimRedCoords.umap(tcm)
 					)
-					for (gn in grpNames){
+					for (gn in plotAnnotCols){
 						logger.status(c("Annotation:", gn))
 						for (mn in mnames){
 							pp <- getDimRedPlot(coords[[mn]], annot=sannot, colorCol=gn, shapeCol=FALSE, colScheme=grpColors[[gn]], addLabels=FALSE, addDensity=FALSE, annot.text=NULL) + theme(aspect.ratio=1)
@@ -104,8 +112,8 @@ setMethod("createReport_exploratory",
 			names(figSettings.method) <- mnames
 			figSettings.region <- regionTypes
 			names(figSettings.region) <- normalize.str(regionTypes, return.camel=TRUE)
-			figSettings.annot <- grpNames
-			names(figSettings.annot) <- normalize.str(grpNames, return.camel=TRUE)
+			figSettings.annot <- plotAnnotCols
+			names(figSettings.annot) <- normalize.str(plotAnnotCols, return.camel=TRUE)
 			figSettings <- list(
 				"Method" = figSettings.method,
 				"Region type" = figSettings.region,
@@ -155,7 +163,7 @@ setMethod("createReport_exploratory",
 				linkMethod <- "ward.D"
 				corMethod <- "pearson"
 				rankCut <- 100L
-				sannot.sub <- sannot[,setdiff(names(sampleGrps), ".ALL"), drop=FALSE]
+				sannot.sub <- sannot[,setdiff(plotAnnotCols, ".ALL"), drop=FALSE]
 				plotL.var <- list()
 				plotL.hm <- list()
 				for (rt in regionTypes.cv){
