@@ -1347,7 +1347,9 @@ setMethod("filterLowCovg",
 		percAllowed <- round(numAllowed/N, 2)
 		logger.status(c("Removing regions with read counts lower than", thresh, "in more than", N-numAllowed, "samples", paste0("(", (1-percAllowed)*100,"%)")))
 		for (rt in regionTypes){
-			rem <- rowSums(getCounts(.object, rt, naIsZero=TRUE, allowSparseMatrix=TRUE)) < numAllowed
+			rsFun <- rowSums
+			if (.object@sparseCounts) rsFun <- Matrix::rowSums
+			rem <- rsFun(getCounts(.object, rt, naIsZero=TRUE, allowSparseMatrix=TRUE)) < numAllowed
 			nRem <- sum(rem)
 			nRegs <- getNRegions(.object, rt)
 			if (nRem > 0){
