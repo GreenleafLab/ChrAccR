@@ -1283,9 +1283,15 @@ setMethod("transformCounts",
 						tf <- Matrix::t(Matrix::t(cm) / Matrix::colSums(cm)) #term frequency
 						idf <- tf * log(1 + ncol(cm) / Matrix::rowSums(cm)) # inverse document frequency
 					} else {
+						rsFun <- rowSums
+						csFun <- colSums
+						if (.object@diskDump){
+							rsFun <- BiocGenerics::rowSums
+							csFun <- BiocGenerics::colSums
+						}
 						cm <- cm & !is.na(.object@counts[[rt]])
-						tf <- t(t(cm) / colSums(cm)) #term frequency
-						idf <- tf * log(1 + ncol(cm) / rowSums(cm)) # inverse document frequency
+						tf <- t(t(cm) / csFun(cm)) #term frequency
+						idf <- tf * log(1 + ncol(cm) / rsFun(cm)) # inverse document frequency
 					}
 					.object@counts[[rt]] <- idf
 					if (.object@diskDump) .object@counts[[rt]] <- as(.object@counts[[rt]], "HDF5Array")
