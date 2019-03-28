@@ -21,10 +21,40 @@ Set a configuration item to a given value
 
 \describe{
   \item{\bold{\code{tmpDir}}\code{ = temdir()}}{
-       \code{Directory for temporary files. Must be existing.}
+       Directory for temporary files. Must be existing.
   }
   \item{\bold{\code{cleanMem}}\code{ = TRUE}}{
-       \code{During runtime, regularly clean-out the memory in order to reduce memory overuse}
+       During runtime, regularly clean-out the memory in order to reduce memory overuse
+  }
+  \item{\bold{\code{colorSchemes}}}{
+      named \code{list} of DISCRETE color schemes to be used for plotting. Each element should be a named vector specifying colors for groups/annotations.
+  }
+  \item{\bold{\code{colorSchemesCont}}}{
+      named \code{list} of CONTINOUS color schemes to be used for plotting. Each element should be a vector specifying a range of colors.
+  }
+  \item{\bold{\code{geneModelVersions}}}{
+      Gene model versions to be used for various genomes
+  }
+  \item{\bold{\code{regionTypes}}}{
+      Region types to be used in the analysis
+  }
+  \item{\bold{\code{chromVarRegionTypes}}}{
+      Region types to be used for chromVar analysis. If \code{NULL} (default), ChrAccR will automatically look for region types with the keyword \code{"peak"} in their name.
+  }
+	 \item{\bold{\code{chromVarMotifs}}}{
+      Character vector of names of TF motif sets to be used in ChromVAR analyses
+  }
+  \item{\bold{\code{annotationColumns}}}{
+      Sample annotation columns to be used for reporting
+  }
+  \item{\bold{\code{differentialColumns}}}{
+      Sample annotation columns to be used for differential testing and reporting
+  }
+  \item{\bold{\code{differentialAdjColumns}}}{
+      Sample annotation columns to be adjusted for in differential testing
+  }
+  \item{\bold{\code{lolaDbPaths}}}{
+      Precomputed LOLA databases to be used for enrichment analysis. If \code{NULL} (default), ChrAccR will download an apropriate core database.
   }
 }
 }

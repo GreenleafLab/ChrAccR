@@ -4,6 +4,26 @@
 .config <- new.env()
 .config$tmpDir <- tempdir()
 .config$cleanMem <- TRUE
+.config$colorSchemes <- list(
+	".default" = c("#009FE3", "#DE7E00", "#8EC041", "#FFCC00", "#951B81", "#BE1716", "#7C83B3", "#671719", "#E0CDA6", "#775725", "#000000")
+)
+.config$colorSchemesCont <- list(
+	".default" = c("#440154FF", "#472D7BFF", "#3B528BFF", "#2C728EFF", "#21908CFF", "#27AD81FF", "#5DC863FF", "#AADC32FF", "#FDE725FF"),
+	".default.div" = c("#01665E", "#35978F", "#80CDC1", "#C7EAE5", "#F5F5F5", "#F6E8C3", "#DFC27D", "#BF812D", "#8C510A")
+)
+.config$geneModelVersions <- c(
+	"hg38"="gencode.v27",
+	"hg19"="gencode.v19",
+	"mm10"="gencode.vM16",
+	"mm9" ="gencode.vM1"
+)
+.config$regionTypes <- NULL
+.config$chromVarMotifs <- c("jaspar_vert")
+.config$chromVarRegionTypes <- NULL
+.config$annotationColumns <- NULL
+.config$differentialColumns <- NULL
+.config$differentialAdjColumns <- NULL
+.config$lolaDbPaths <- NULL
 
 #' setConfigElement
 #'
@@ -15,15 +35,49 @@
 #' @section Options used by the package:
 #' \describe{
 #'   \item{\bold{\code{tmpDir}}\code{ = temdir()}}{
-#'        \code{Directory for temporary files. Must be existing.}
+#'        Directory for temporary files. Must be existing.
 #'   }
 #'   \item{\bold{\code{cleanMem}}\code{ = TRUE}}{
-#'        \code{During runtime, regularly clean-out the memory in order to reduce memory overuse}
+#'        During runtime, regularly clean-out the memory in order to reduce memory overuse
+#'   }
+#'   \item{\bold{\code{colorSchemes}}}{
+#'       named \code{list} of DISCRETE color schemes to be used for plotting. Each element should be a named vector specifying colors for groups/annotations.
+#'   }
+#'   \item{\bold{\code{colorSchemesCont}}}{
+#'       named \code{list} of CONTINOUS color schemes to be used for plotting. Each element should be a vector specifying a range of colors.
+#'   }
+#'   \item{\bold{\code{geneModelVersions}}}{
+#'       Gene model versions to be used for various genomes
+#'   }
+#'   \item{\bold{\code{regionTypes}}}{
+#'       Region types to be used in the analysis
+#'   }
+#'   \item{\bold{\code{chromVarRegionTypes}}}{
+#'       Region types to be used for chromVar analysis. If \code{NULL} (default), ChrAccR will automatically look for region types with the keyword \code{"peak"} in their name.
+#'   }
+#' 	 \item{\bold{\code{chromVarMotifs}}}{
+#'       Character vector of names of TF motif sets to be used in ChromVAR analyses
+#'   }
+#'   \item{\bold{\code{annotationColumns}}}{
+#'       Sample annotation columns to be used for reporting
+#'   }
+#'   \item{\bold{\code{differentialColumns}}}{
+#'       Sample annotation columns to be used for differential testing and reporting
+#'   }
+#'   \item{\bold{\code{differentialAdjColumns}}}{
+#'       Sample annotation columns to be adjusted for in differential testing
+#'   }
+#'   \item{\bold{\code{lolaDbPaths}}}{
+#'       Precomputed LOLA databases to be used for enrichment analysis. If \code{NULL} (default), ChrAccR will download an apropriate core database.
 #'   }
 #' }
 #' @author Fabian Mueller
 #' @export
 setConfigElement <- function(name, value){
+	if (!exists(name, .config)){
+		logger.error(c("No such configuration element:", name))
+	}
+	# TODO: implement option checker (especially for report-relevant options)
 	.config[[name]] <- value
 }
 

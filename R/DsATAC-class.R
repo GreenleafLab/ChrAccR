@@ -103,7 +103,8 @@ if (!isGeneric("getCounts")) {
 #' @param j       (optional) column (sample) indices
 #' @param asMatrix return a matrix object instead of the internal representation
 #' @param naIsZero should \code{NA}s in the count matrix be considered 0 value (instead of unknown/missing)
-#' @return \code{data.table} or \code{matrix} containing counts for
+#' @param allowSparseMatrix if \code{asMatrix}: allow for sparse matrices as returned data format
+#' @return Matrix containing counts for
 #'         each region and sample
 #'
 #' @rdname getCounts-DsATAC-method
@@ -122,7 +123,8 @@ setMethod("getCounts",
 		i=NULL,
 		j=NULL,
 		asMatrix=TRUE,
-		naIsZero=TRUE
+		naIsZero=TRUE,
+		allowSparseMatrix=FALSE
 	) {
 		if (!is.element(type, getRegionTypes(.object))) logger.error(c("Unsupported region type:", type))
 		res <- .object@counts[[type]]
@@ -131,7 +133,7 @@ setMethod("getCounts",
 			if (!is.null(i) || !is.null(j) || asMatrix){
 				# DelayedArray can have serious performance issues, when indexing is not done efficiently
 				# --> workaround-function: fastDelayedArrayToMatrix()
-				res <- ChrAccR:::fastDelayedArrayToMatrix(res, i=i, j=j)
+				res <- fastDelayedArrayToMatrix(res, i=i, j=j)
 				cns <- colnames(res)
 				if (!asMatrix){
 					res <- as(res, "HDF5Array")
@@ -141,7 +143,7 @@ setMethod("getCounts",
 		} else {
 			if (!is.null(i)) res <- res[i,,drop=FALSE]
 			if (!is.null(j)) res <- res[,j,drop=FALSE]
-			if (asMatrix && !is.matrix(res)){
+			if (asMatrix && !is.matrix(res) && !(.object@sparseCounts && allowSparseMatrix)){
 				res <- as.matrix(res)
 				if (!naIsZero && .object@sparseCounts){
 					res[res==0] <- NA
@@ -190,7 +192,7 @@ setMethod("getCountsSE",
 		require(SummarizedExperiment)
 		if (!is.element(type, getRegionTypes(.object))) logger.error(c("Unsupported region type:", type))
 		#count matrix
-		cm <- ChrAccR::getCounts(.object, type, asMatrix=TRUE, naIsZero=naIsZero)
+		cm <- ChrAccR::getCounts(.object, type, asMatrix=TRUE, naIsZero=naIsZero, allowSparseMatrix=TRUE)
 		coords <- getCoord(.object, type)
 		se <- SummarizedExperiment(assays=list(counts=cm), rowRanges=coords, colData=DataFrame(getSampleAnnot(.object)))
 		return(se)
@@ -449,7 +451,9 @@ if (!isGeneric("regionAggregation")) {
 #' @param regGr   \code{GRanges} object containing regions to summarize
 #' @param type    character string specifying a name for the region type
 #' @param signal  character string specifying a name for the region type for the signal to be aggregated
-#'                if it is \code{NULL} (default), the new region type will be initialized with NA values
+#'                If it is \code{NULL} (default), the new region type will be initialized with NA values.
+#'                If it is \code{"insertions"} count data will be initialized from insertion sites (if 
+#'                fragment data is present in the object).
 #' @param aggrFun aggregation function for signal counts.
 #'                Currently \code{sum}, \code{mean} and \code{median} (default) are supported.
 #' @param dropEmpty discard all regions with no observed signal counts
@@ -1207,7 +1211,7 @@ setMethod("transformCounts",
 				}
 			logger.completed()
 		} else if (method == "percentile"){
-			logger.start(c("Applying rank percentile transformation"))
+			logger.start(c("Applying percentile transformation"))
 				for (rt in regionTypes){
 					logger.status(c("Region type:", rt))
 					cnames <- colnames(.object@counts[[rt]])
@@ -1273,14 +1277,21 @@ setMethod("transformCounts",
 			logger.start(c("Applying TF-IDF transformation"))
 				for (rt in regionTypes){
 					logger.status(c("Region type:", rt))
-					cm <- !is.na(.object@counts[[rt]]) & .object@counts[[rt]] > 0 #indicator matrix: are there any counts in that region
+					cm <- .object@counts[[rt]] > 0 #indicator matrix: are there any counts in that region
 					cnames <- colnames(cm)
 					if (class(cm)=="lgCMatrix"){
 						tf <- Matrix::t(Matrix::t(cm) / Matrix::colSums(cm)) #term frequency
 						idf <- tf * log(1 + ncol(cm) / Matrix::rowSums(cm)) # inverse document frequency
 					} else {
-						tf <- t(t(cm) / colSums(cm)) #term frequency
-						idf <- tf * log(1 + ncol(cm) / rowSums(cm)) # inverse document frequency
+						rsFun <- rowSums
+						csFun <- colSums
+						if (.object@diskDump){
+							rsFun <- BiocGenerics::rowSums
+							csFun <- BiocGenerics::colSums
+						}
+						cm <- cm & !is.na(.object@counts[[rt]])
+						tf <- t(t(cm) / csFun(cm)) #term frequency
+						idf <- tf * log(1 + ncol(cm) / rsFun(cm)) # inverse document frequency
 					}
 					.object@counts[[rt]] <- idf
 					if (.object@diskDump) .object@counts[[rt]] <- as(.object@counts[[rt]], "HDF5Array")
@@ -1342,13 +1353,15 @@ setMethod("filterLowCovg",
 		percAllowed <- round(numAllowed/N, 2)
 		logger.status(c("Removing regions with read counts lower than", thresh, "in more than", N-numAllowed, "samples", paste0("(", (1-percAllowed)*100,"%)")))
 		for (rt in regionTypes){
-			rem <- rowSums(getCounts(.object, rt, naIsZero=TRUE)) < numAllowed
+			rsFun <- rowSums
+			if (.object@sparseCounts) rsFun <- Matrix::rowSums
+			rem <- rsFun(getCounts(.object, rt, naIsZero=TRUE, allowSparseMatrix=TRUE)) < numAllowed
 			nRem <- sum(rem)
 			nRegs <- getNRegions(.object, rt)
 			if (nRem > 0){
 				.object <- removeRegions(.object, rem, rt)
 			}
-			logger.status(c("Removed", nRem, "regions", paste0("(", round(nRem/nRegs, 4)*100, "%)"), "of type", rt))
+			logger.info(c("Removed", nRem, "regions", paste0("(", round(nRem/nRegs, 4)*100, "%)"), "of type", rt))
 		}
 		return(.object)
 	}
@@ -1386,7 +1399,7 @@ setMethod("filterChroms",
 		for (rt in getRegionTypes(dsf)){
 			isExclChrom <- as.character(seqnames(getCoord(dsf, rt))) %in% exclChrom
 			.object <- removeRegions(.object, isExclChrom, rt)
-			logger.info(c("Removed", sum(isExclChrom), "of", length(isExclChrom), "regions for region type", rt))
+			logger.info(c("Removed", sum(isExclChrom), "regions", paste0("(", round(sum(isExclChrom)/length(isExclChrom), 4)*100, "%)"), "of type", rt))
 		}
 		if (length(.object@fragments) > 0){
 			logger.status("Filtering fragment data")

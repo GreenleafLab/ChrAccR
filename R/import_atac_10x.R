@@ -65,7 +65,7 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 	}
 
 	# TODO: Read cells for each sample and construct joined sample annotation table
-	cellAnnot <- do.call("rbind", lapply(1:nrow(sampleAnnot), FUN=function(i){
+	cellAnnotL <- lapply(1:nrow(sampleAnnot), FUN=function(i){
 		sid <- sampleIds[i]
 		sa <- readTab(file.path(sampleDirs[sid], "singlecell.csv"), sep=",")
 		# trueCellIdx <- !(sa[, "cell_id"] %in% c("None")) & sa[, "is__cell_barcode"]==1
@@ -86,7 +86,18 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 		)
 		
 		return(sa)
-	}))
+	})
+	colnames.union <- c()
+	colnames.intersect <- colnames(cellAnnotL[[1]])
+	for (i in seq_along(cellAnnotL)){
+		colnames.union <- union(colnames.union, colnames(cellAnnotL[[i]]))
+		colnames.intersect <- intersect(colnames.intersect, colnames(cellAnnotL[[i]]))
+	}
+	if (!all(colnames.union %in% colnames.intersect)){
+		logger.warning(c("The following columns could not be found in all CellRanger summary files and will be discarded from the annotation:", paste(setdiff(colnames.union, colnames.intersect),collapse=", ")))
+	}
+
+	cellAnnot <- do.call("rbind", lapply(cellAnnotL, FUN=function(x){x[,colnames.intersect]}))
 	rownames(cellAnnot) <- cellAnnot[,"cellId"]
 
 	# optionally merge peak sets and add to region sets (peaks.bed)
@@ -96,7 +107,7 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 			peakSet <- NULL
 			for (i in seq_along(sampleDirs)){
 				sid <- names(sampleDirs)[i]
-				pGr <- import(file.path(sampleDirs[i], "peaks.bed"), format="BED")
+				pGr <- rtracklayer::import(file.path(sampleDirs[i], "peaks.bed"), format="BED")
 				pGr <- setGenomeProps(pGr, genome, onlyMainChrs=TRUE)
 				pGr <- trim(resize(pGr, width=unifWidth, fix="center", ignore.strand=TRUE))
 				pGr <- pGr[width(pGr)==median(width(pGr))] #remove too short regions which might have been trimmed

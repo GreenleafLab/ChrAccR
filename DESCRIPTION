@@ -6,7 +6,8 @@ Author: Fabian Mueller
 Maintainer: Fabian Mueller <fmueller@mpi-inf.mpg.de>
 Date: 2019-01-25
 Suggests:
-    muRtools
+    muRtools,
+    muReportR
 Depends:
     GenomicRanges,
     ggplot2,
@@ -14,7 +15,7 @@ Depends:
     Matrix,
     data.table
 License: GPL-2
-Version: 0.7
+Version: 0.8
 Collate: 
     'classDefs.R'
     'utils.R'
@@ -32,4 +33,7 @@ Collate:
     'importTools_nome.R'
     'differential_nome.R'
     'differential.R'
+    'report_atac_summary.R'
+    'report_atac_exploratory.R'
+    'report_atac_differential.R'
 RoxygenNote: 6.1.1
