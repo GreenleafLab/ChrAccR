@@ -133,7 +133,7 @@ setMethod("getCounts",
 			if (!is.null(i) || !is.null(j) || asMatrix){
 				# DelayedArray can have serious performance issues, when indexing is not done efficiently
 				# --> workaround-function: fastDelayedArrayToMatrix()
-				res <- fastDelayedArrayToMatrix(res, i=i, j=j)
+				res <- fastDelayedArrayToMatrix(res, i=i, j=j) # not needed any more (?): issue should be fixed starting with HDF5Array version 1.11.11 (https://github.com/Bioconductor/DelayedArray/issues/13)
 				cns <- colnames(res)
 				if (!asMatrix){
 					res <- as(res, "HDF5Array")
