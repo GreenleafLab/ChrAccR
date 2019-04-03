@@ -1176,6 +1176,21 @@ setMethod("transformCounts",
 		}
 		if (!is.element(method, c("quantile", "percentile", "rankPerc", "log2", "RPKM", "vst", "tf-idf"))) logger.error(c("Unsupported normalization method type:", method))
 
+		# choose appropriate functions for row and column functions
+		# depending on the matrix type
+		rsFun <- rowSums
+		csFun <- colSums
+		# sparse matrices
+		if (.object@sparseCounts){
+			rsFun <- Matrix::rowSums
+			csFun <- Matrix::colSums
+		}
+		# DelayedArray
+		if (.object@diskDump){
+			rsFun <- BiocGenerics::rowSums
+			csFun <- BiocGenerics::colSums
+		}
+
 		if (method == "quantile"){
 			logger.start(c("Performing quantile normalization"))
 				require(preprocessCore)
@@ -1234,7 +1249,7 @@ setMethod("transformCounts",
 					# cm <- as.matrix(.object@counts[[rt]])
 					cm <- .object@counts[[rt]]
 					regLen <- width(getCoord(.object, rt))
-					sizeFac <- matrix(colSums(cm, na.rm=TRUE), ncol=ncol(cm), nrow=nrow(cm), byrow=TRUE)
+					sizeFac <- matrix(csFun(cm, na.rm=TRUE), ncol=ncol(cm), nrow=nrow(cm), byrow=TRUE)
 					# .object@counts[[rt]] <- data.table(cm/(regLen * sizeFac) * 1e3 * 1e6)
 					.object@counts[[rt]] <- cm/(regLen * sizeFac) * 1e3 * 1e6
 					if (.object@diskDump) .object@counts[[rt]] <- as(.object@counts[[rt]], "HDF5Array")
@@ -1283,12 +1298,6 @@ setMethod("transformCounts",
 						tf <- Matrix::t(Matrix::t(cm) / Matrix::colSums(cm)) #term frequency
 						idf <- tf * log(1 + ncol(cm) / Matrix::rowSums(cm)) # inverse document frequency
 					} else {
-						rsFun <- rowSums
-						csFun <- colSums
-						if (.object@diskDump){
-							rsFun <- BiocGenerics::rowSums
-							csFun <- BiocGenerics::colSums
-						}
 						cm <- cm & !is.na(.object@counts[[rt]])
 						tf <- t(t(cm) / csFun(cm)) #term frequency
 						idf <- tf * log(1 + ncol(cm) / rsFun(cm)) # inverse document frequency
