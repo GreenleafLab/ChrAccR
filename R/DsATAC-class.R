@@ -543,7 +543,11 @@ setMethod("regionAggregation",
 		}
 		if (!is.null(signal) && signal=="insertions"){
 			doAggr <- TRUE
+			nSamples <- length(getSamples(.object))
+			i <- 0
 			for (sid in getSamples(.object)){
+				i <- i + 1
+				logger.status(c("Aggregating counts for sample", sid, paste0("(", i, " of ", nSamples, ")"), "..."))
 				.object@counts[[type]][,sid] <- as.matrix(countOverlaps(regGr, getInsertionSites(.object, samples=sid)[[1]], ignore.strand=TRUE))
 			}
 		}
