@@ -21,7 +21,7 @@ If it is \code{NULL} (default), the new region type will be initialized with NA 
 If it is \code{"insertions"} count data will be initialized from insertion sites (if 
 fragment data is present in the object).}
 
-\item{aggrFun}{aggregation function for signal counts.
+\item{aggrFun}{aggregation function for signal counts. Will only be used if \code{signal!="insertions"}
 Currently \code{sum}, \code{mean} and \code{median} (default) are supported.}
 
 \item{dropEmpty}{discard all regions with no observed signal counts}

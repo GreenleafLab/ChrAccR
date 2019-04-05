@@ -454,7 +454,7 @@ if (!isGeneric("regionAggregation")) {
 #'                If it is \code{NULL} (default), the new region type will be initialized with NA values.
 #'                If it is \code{"insertions"} count data will be initialized from insertion sites (if 
 #'                fragment data is present in the object).
-#' @param aggrFun aggregation function for signal counts.
+#' @param aggrFun aggregation function for signal counts. Will only be used if \code{signal!="insertions"}
 #'                Currently \code{sum}, \code{mean} and \code{median} (default) are supported.
 #' @param dropEmpty discard all regions with no observed signal counts
 #' @return a new \code{\linkS4class{DsATAC}} object with aggregated signal counts per regions
@@ -482,7 +482,7 @@ setMethod("regionAggregation",
 			logger.error(c("Unknown signal count aggregation function:", aggrFun))
 		}
 		if (!is.null(signal)){
-			if (!is.element(signal, c(getRegionTypes(.object)), "insertions")){
+			if (!is.element(signal, c(getRegionTypes(.object), "insertions"))){
 				logger.error(c("invalid signal region type", signal))
 			}
 			if (type==signal){
