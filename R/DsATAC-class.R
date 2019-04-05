@@ -2205,7 +2205,8 @@ setMethod("callPeaks",
 				# logger.status(c("[DEBUG:] Retrieving insertion sites..."))
 				insGr <- getInsertionSites(.object, sid)[[1]]
 				# logger.status(c("[DEBUG:] Writing to temp file..."))
-				granges2bed(insGr, insFn, score=NULL, addAnnotCols=FALSE, colNames=FALSE, doSort=TRUE)
+				coordOnly <- all(strand(insGr) %in% c("*", "."))
+				granges2bed(insGr, insFn, score=NULL, addAnnotCols=FALSE, colNames=FALSE, doSort=TRUE, coordOnly=coordOnly)
 
 				# logger.status(c("[DEBUG:] Calling MACS2..."))
 				aa <- c(
@@ -2220,7 +2221,7 @@ setMethod("callPeaks",
 				system2(methodOpts$macs2.exec, aa, wait=TRUE, stdout="", stderr="")
 
 				# logger.status(c("[DEBUG:] Reading MACS2 output..."))
-				peakGr <- import(peakFn, format="BED")
+				peakGr <- rtracklayer::import(peakFn, format="BED")
 				peakGr <- setGenomeProps(peakGr, .object@genome, onlyMainChrs=TRUE)
 				peakGr <- peakGr[isCanonicalChrom(as.character(seqnames(peakGr)))]
 				# scale scores to their percentiles
