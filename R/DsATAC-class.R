@@ -554,9 +554,9 @@ setMethod("regionAggregation",
 		if (doAggr){
 			logger.info(c("Aggregated signal counts across", nrow(.object@counts[[type]]), "regions"))
 			# rows2keep <- rowAnys(!is.na(.object@counts[[type]]))
-			naMat <- !is.na(.object@counts[[type]])
-			if (.object@sparseCounts) naMat <- naMat && .object@counts[[type]] != 0
-			rows2keep <- rowSums(naMat) > 0
+			hasValM <- !is.na(.object@counts[[type]])
+			if (.object@sparseCounts) hasValM <- hasValM & .object@counts[[type]] != 0
+			rows2keep <- rowSums(hasValM) > 0
 			logger.info(c("  of which", sum(rows2keep), "regions contained signal counts"))
 			#discard regions where all signal counts are unobserved
 			if (dropEmpty){
