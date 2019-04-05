@@ -2205,7 +2205,7 @@ setMethod("callPeaks",
 				# logger.status(c("[DEBUG:] Retrieving insertion sites..."))
 				insGr <- getInsertionSites(.object, sid)[[1]]
 				# logger.status(c("[DEBUG:] Writing to temp file..."))
-				coordOnly <- all(strand(insGr) %in% c("*", "."))
+				coordOnly <- all(as.character(strand(insGr)) %in% c("*", "."))
 				granges2bed(insGr, insFn, score=NULL, addAnnotCols=FALSE, colNames=FALSE, doSort=TRUE, coordOnly=coordOnly)
 
 				# logger.status(c("[DEBUG:] Calling MACS2..."))
