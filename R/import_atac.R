@@ -196,7 +196,7 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", reg
 #' @param scoreCol     name of the column to be used as scor in the \code{elementMetadata} of the \code{gr} object
 #' @return \code{GRanges} object containing non-overlapping regions
 #' @author Fabian Mueller
-#' @noRd
+#' @export
 getNonOverlappingByScore <- function(gr, scoreCol="score"){
 	gr.rem <- gr
 
