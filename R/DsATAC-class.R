@@ -552,9 +552,14 @@ setMethod("regionAggregation",
 			}
 		}
 		if (doAggr){
+			isNaFun <- is.na
+			# sparse matrices
+			if (.object@sparseCounts){
+				isNaFun <- Matrix::is.na
+			}
 			logger.info(c("Aggregated signal counts across", nrow(.object@counts[[type]]), "regions"))
 			# rows2keep <- rowAnys(!is.na(.object@counts[[type]]))
-			hasValM <- !is.na(.object@counts[[type]])
+			hasValM <- !isNaFun(.object@counts[[type]])
 			if (.object@sparseCounts) hasValM <- hasValM & .object@counts[[type]] != 0
 			rows2keep <- rowSums(hasValM) > 0
 			logger.info(c("  of which", sum(rows2keep), "regions contained signal counts"))
