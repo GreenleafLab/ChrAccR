@@ -551,6 +551,9 @@ setMethod("regionAggregation",
 				.object@counts[[type]][,sid] <- as.matrix(countOverlaps(regGr, getInsertionSites(.object, samples=sid)[[1]], ignore.strand=TRUE))
 			}
 		}
+		logger.start("[DEBUG] tmp saving DsATAC object")
+			saveDsAcc(.object, file.path("/scratch/users/muellerf/temp", getHashString("DsATAC_tmp")))
+		logger.completed()
 		if (doAggr){
 			isNaFun <- is.na
 			# sparse matrices
