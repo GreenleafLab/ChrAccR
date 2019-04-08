@@ -492,6 +492,17 @@ setMethod("regionAggregation",
 		if (is.element(type, getRegionTypes(.object))){
 			logger.warning(c("Overwriting aggregated region type:", type))
 		}
+
+		rsFun <- rowSums
+		# sparse matrices
+		if (.object@sparseCounts){
+			rsFun <- Matrix::rowSums
+		}
+		# DelayedArray
+		if (.object@diskDump){
+			rsFun <- BiocGenerics::rowSums
+		}
+
 		#sort the regions
 		coordOrder <- order(as.integer(seqnames(regGr)), start(regGr), end(regGr), as.integer(strand(regGr)))
 		regGr <- regGr[coordOrder]
@@ -551,20 +562,17 @@ setMethod("regionAggregation",
 				.object@counts[[type]][,sid] <- as.matrix(countOverlaps(regGr, getInsertionSites(.object, samples=sid)[[1]], ignore.strand=TRUE))
 			}
 		}
+
 		logger.start("[DEBUG] tmp saving DsATAC object")
 			saveDsAcc(.object, file.path("/scratch/users/muellerf/temp", getHashString("DsATAC_tmp")))
 		logger.completed()
+
 		if (doAggr){
-			isNaFun <- is.na
-			# sparse matrices
-			if (.object@sparseCounts){
-				isNaFun <- Matrix::is.na
-			}
 			logger.info(c("Aggregated signal counts across", nrow(.object@counts[[type]]), "regions"))
 			# rows2keep <- rowAnys(!is.na(.object@counts[[type]]))
-			hasValM <- !isNaFun(.object@counts[[type]])
+			hasValM <- !is.na(.object@counts[[type]])
 			if (.object@sparseCounts) hasValM <- hasValM & .object@counts[[type]] != 0
-			rows2keep <- rowSums(hasValM) > 0
+			rows2keep <- rsFun(hasValM) > 0
 			logger.info(c("  of which", sum(rows2keep), "regions contained signal counts"))
 			#discard regions where all signal counts are unobserved
 			if (dropEmpty){
