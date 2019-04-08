@@ -1262,8 +1262,8 @@ setMethod("transformCounts",
 				for (rt in regionTypes){
 					logger.status(c("Region type:", rt))
 					cnames <- colnames(.object@counts[[rt]])
-					# cm <- as.matrix(.object@counts[[rt]])
-					cm <- .object@counts[[rt]]
+					cm <- as.matrix(.object@counts[[rt]])
+					# cm <- .object@counts[[rt]]
 					regLen <- width(getCoord(.object, rt))
 					sizeFac <- matrix(csFun(cm, na.rm=TRUE), ncol=ncol(cm), nrow=nrow(cm), byrow=TRUE)
 					# .object@counts[[rt]] <- data.table(cm/(regLen * sizeFac) * 1e3 * 1e6)
