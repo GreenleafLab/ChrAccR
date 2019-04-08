@@ -56,6 +56,7 @@ setMethod("createReport_summary",
 
 		regCountTab <- data.frame(
 			"#regions" = sapply(getRegionTypes(.object), FUN=function(rt){getNRegions(.object, rt)}),
+			"transformations" =  sapply(getRegionTypes(.object), FUN=function(rt){paste(rev(.object@countTransform[[rt]]), collapse=" -> ")}),
 			check.names=FALSE
 		)
 		rownames(regCountTab) <- getRegionTypes(.object)
