@@ -562,7 +562,7 @@ setMethod("regionAggregation",
 				.object@counts[[type]][,sid] <- as.matrix(countOverlaps(regGr, getInsertionSites(.object, samples=sid)[[1]], ignore.strand=TRUE))
 			}
 		}
-		
+
 		if (doAggr){
 			logger.info(c("Aggregated signal counts across", nrow(.object@counts[[type]]), "regions"))
 			# rows2keep <- rowAnys(!is.na(.object@counts[[type]]))
@@ -1279,8 +1279,12 @@ setMethod("transformCounts",
 				if (.object@sparseCounts) logger.error("Generating sparse matrix for matrix with possible true zero entries (log2)")
 				for (rt in regionTypes){
 					logger.status(c("Region type:", rt))
-					idx <- .object@counts[[rt]]!=0
-					.object@counts[[rt]][idx] <- log2(.object@counts[[rt]][idx] + c0)
+					cm <- as.matrix(.object@counts[[rt]])
+					idx <- cm!=0
+					cm[idx] <- log2(cm[idx] + c0)
+					.object@counts[[rt]] <- cm
+					if (.object@diskDump) .object@counts[[rt]] <- as(.object@counts[[rt]], "HDF5Array")
+					colnames(.object@counts[[rt]]) <- cnames
 					.object@countTransform[[rt]] <- c("log2", .object@countTransform[[rt]])
 				}
 			logger.completed()
