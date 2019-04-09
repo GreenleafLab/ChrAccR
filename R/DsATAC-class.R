@@ -1955,7 +1955,7 @@ setMethod("getDESeq2Dataset",
 		rowRanges(dds) <- getCoord(.object, regionType)
 		dds <- DESeq(dds, ...)
 
-		invisible(dds)
+		return(dds)
 	}
 )
 
@@ -2061,7 +2061,7 @@ setMethod("getDiffAcc",
 				colnames(res)[colnames(res)==paste0(cn,"2")] <- paste0(cn, "2_", grp2Name)
 			}
 		}
-		invisible(res)
+		return(res)
 	}
 )
 ################################################################################
