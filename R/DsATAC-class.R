@@ -1313,14 +1313,14 @@ setMethod("transformCounts",
 				require(limma)
 				for (rt in regionTypes){
 					logger.status(c("Region type:", rt))
-					dsn@counts[[rt]] <- limma::removeBatchEffect(dsn@counts[[rt]], ...)
-					if (!dsn@diskDump && dsn@sparseCounts){
-						dsn@counts[[rt]] <- as(dsn@counts[[rt]], "sparseMatrix")
+					.object@counts[[rt]] <- limma::removeBatchEffect(.object@counts[[rt]], ...)
+					if (!.object@diskDump && .object@sparseCounts){
+						.object@counts[[rt]] <- as(.object@counts[[rt]], "sparseMatrix")
 					}
-					if (dsn@diskDump){
-						dsn@counts[[rt]] <- as(dsn@counts[[rt]], "HDF5Array")
+					if (.object@diskDump){
+						.object@counts[[rt]] <- as(.object@counts[[rt]], "HDF5Array")
 					}
-					dsn@countTransform[[rt]] <- c("batchCorrect", dsn@countTransform[[rt]])
+					.object@countTransform[[rt]] <- c("batchCorrect", .object@countTransform[[rt]])
 				}
 			logger.completed()
 		} else if (method == "tf-idf"){
