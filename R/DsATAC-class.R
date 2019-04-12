@@ -1168,8 +1168,9 @@ if (!isGeneric("transformCounts")) {
 #' transform count data for an ATAC seq dataset
 #'
 #' @param .object \code{\linkS4class{DsATAC}} object
-#' @param method  transformation method to be applied. Currently only 'log2', 'quantile' (quantile normalization), 'percentile' (percentile normalization),'rankPerc' (rank percentile), 'vst' (DESeq2 Variance Stabilizing Transformation), 'tf-idf' and 'RPKM' (RPKM normalization) are supported
+#' @param method  transformation method to be applied. Currently only 'log2', 'quantile' (quantile normalization), 'percentile' (percentile normalization),'rankPerc' (rank percentile), 'vst' (DESeq2 Variance Stabilizing Transformation), 'batchCorrect' (limma batch effect removal), tf-idf' and 'RPKM' (RPKM normalization) are supported
 #' @param regionTypes character vector specifying a name for the region type in which count data should be normalized(default: all region types)
+#' @param ...    other arguments depending on the \code{method} used. For \code{'batchCorrect'} it should be arguments passed on to \code{limma::removeBatchEffect} (most importantly, the \code{batch} argument).
 #' @return a new \code{\linkS4class{DsATAC}} object with normalized count data
 #' 
 #' @rdname transformCounts-DsATAC-method
@@ -1185,12 +1186,13 @@ setMethod("transformCounts",
 	function(
 		.object,
 		method="quantile",
-		regionTypes=getRegionTypes(.object)
+		regionTypes=getRegionTypes(.object),
+		...
 	) {
 		if (!all(regionTypes %in% getRegionTypes(.object))){
 			logger.error(c("Unsupported region type:", paste(setdiff(regionTypes, getRegionTypes(.object)), collapse=", ")))
 		}
-		if (!is.element(method, c("quantile", "percentile", "rankPerc", "log2", "RPKM", "vst", "tf-idf"))) logger.error(c("Unsupported normalization method type:", method))
+		if (!is.element(method, c("quantile", "percentile", "rankPerc", "log2", "RPKM", "vst", "batchCorrect", "tf-idf"))) logger.error(c("Unsupported normalization method type:", method))
 
 		# choose appropriate functions for row and column functions
 		# depending on the matrix type
@@ -1304,6 +1306,21 @@ setMethod("transformCounts",
 						.object@counts[[rt]] <- as(.object@counts[[rt]], "HDF5Array")
 					}
 					.object@countTransform[[rt]] <- c("deseq.vst", .object@countTransform[[rt]])
+				}
+			logger.completed()
+		} else if (method == "batchCorrect"){
+			logger.start(c("Applying batch effect correction"))
+				require(limma)
+				for (rt in regionTypes){
+					logger.status(c("Region type:", rt))
+					dsn@counts[[rt]] <- limma::removeBatchEffect(dsn@counts[[rt]], ...)
+					if (!dsn@diskDump && dsn@sparseCounts){
+						dsn@counts[[rt]] <- as(dsn@counts[[rt]], "sparseMatrix")
+					}
+					if (dsn@diskDump){
+						dsn@counts[[rt]] <- as(dsn@counts[[rt]], "HDF5Array")
+					}
+					dsn@countTransform[[rt]] <- c("batchCorrect", dsn@countTransform[[rt]])
 				}
 			logger.completed()
 		} else if (method == "tf-idf"){

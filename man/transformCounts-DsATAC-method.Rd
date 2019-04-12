@@ -7,14 +7,16 @@
 \title{transformCounts-methods}
 \usage{
 \S4method{transformCounts}{DsATAC}(.object, method = "quantile",
-  regionTypes = getRegionTypes(.object))
+  regionTypes = getRegionTypes(.object), ...)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}
 
-\item{method}{transformation method to be applied. Currently only 'log2', 'quantile' (quantile normalization), 'percentile' (percentile normalization),'rankPerc' (rank percentile), 'vst' (DESeq2 Variance Stabilizing Transformation), 'tf-idf' and 'RPKM' (RPKM normalization) are supported}
+\item{method}{transformation method to be applied. Currently only 'log2', 'quantile' (quantile normalization), 'percentile' (percentile normalization),'rankPerc' (rank percentile), 'vst' (DESeq2 Variance Stabilizing Transformation), 'batchCorrect' (limma batch effect removal), tf-idf' and 'RPKM' (RPKM normalization) are supported}
 
 \item{regionTypes}{character vector specifying a name for the region type in which count data should be normalized(default: all region types)}
+
+\item{...}{other arguments depending on the \code{method} used. For \code{'batchCorrect'} it should be arguments passed on to \code{limma::removeBatchEffect} (most importantly, the \code{batch} argument).}
 }
 \value{
 a new \code{\linkS4class{DsATAC}} object with normalized count data
