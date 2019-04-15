@@ -1092,7 +1092,47 @@ setMethod("removeRegions",
 	}
 )
 #-------------------------------------------------------------------------------
-#TODO: not tested yet
+if (!isGeneric("removeRegionType")) {
+	setGeneric(
+		"removeRegionType",
+		function(.object, ...) standardGeneric("removeRegionType"),
+		signature=c(".object")
+	)
+}
+#' removeRegionType-methods
+#'
+#' Remove the specified region type from an object
+#'
+#' @param .object \code{\linkS4class{DsATAC}} object
+#' @param type    character string specifying a name for the region type (sefault: sites)
+#' @return a new \code{\linkS4class{DsATAC}} object with the region type removed
+#' 
+#' @rdname removeRegionType-DsATAC-method
+#' @docType methods
+#' @aliases removeRegionType
+#' @aliases removeRegionType,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("removeRegionType",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		type
+	) {
+		rts <- getRegionTypes(.object)
+		if (!is.element(type, rts)) logger.error(c("Unsupported region type:", type))
+		rts <- setdiff(rts, type)
+
+		.object@coord <- .object@coord[rts]
+		.object@counts <- .object@counts[rts]
+		.object@countTransform <- .object@countTransform[rts]
+
+		return(.object)
+	}
+)
+#-------------------------------------------------------------------------------
 if (!isGeneric("removeSamples")) {
 	setGeneric(
 		"removeSamples",
