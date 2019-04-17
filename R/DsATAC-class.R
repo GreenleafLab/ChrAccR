@@ -565,9 +565,18 @@ setMethod("regionAggregation",
 
 		if (doAggr){
 			logger.info(c("Aggregated signal counts across", nrow(.object@counts[[type]]), "regions"))
-			# rows2keep <- rowAnys(!is.na(.object@counts[[type]]))
-			hasValM <- !is.na(.object@counts[[type]])
-			if (.object@sparseCounts) hasValM <- hasValM & .object@counts[[type]] != 0
+			if (.object@sparseCounts) {
+				if (prod(dim(.object@counts[[type]])) < .Machine$integer.max) {
+					hasValM <- !is.na(.object@counts[[type]])
+					hasValM <- hasValM & .object@counts[[type]] != 0
+				} else {
+					logger.warning("Sparse matrix too large to check for NAs --> assuming no NAs")
+					# avoid this error: "Cholmod error 'problem too large'"
+					hasValM <- .object@counts[[type]] != 0
+				}
+			} else {
+				hasValM <- !is.na(.object@counts[[type]])
+			}
 			rows2keep <- rsFun(hasValM) > 0
 			logger.info(c("  of which", sum(rows2keep), "regions contained signal counts"))
 			#discard regions where all signal counts are unobserved
