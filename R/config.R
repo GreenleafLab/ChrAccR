@@ -22,6 +22,7 @@
 .config$chromVarRegionTypes <- NULL
 .config$annotationColumns <- NULL
 .config$differentialColumns <- NULL
+.config$differentialCompNames <- NULL
 .config$differentialAdjColumns <- NULL
 .config$lolaDbPaths <- NULL
 
@@ -63,6 +64,9 @@
 #'   }
 #'   \item{\bold{\code{differentialColumns}}}{
 #'       Sample annotation columns to be used for differential testing and reporting
+#'   }
+#'   \item{\bold{\code{differentialCompNames}}}{
+#'       Comparison names from which comparison information is derived. Must be in the format of "$GRP1_NAME vs $GRP1_NAME [$ANNOTATION_COLUMN]".
 #'   }
 #'   \item{\bold{\code{differentialAdjColumns}}}{
 #'       Sample annotation columns to be adjusted for in differential testing

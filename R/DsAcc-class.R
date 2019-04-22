@@ -489,3 +489,115 @@ loadDsAcc <- function(path){
 	}
 	return(.object)
 }
+
+################################################################################
+# Retrieving differential comparison info
+################################################################################
+if (!isGeneric("getComparisonTable")) {
+	setGeneric(
+		"getComparisonTable",
+		function(.object, ...) standardGeneric("getComparisonTable"),
+		signature=c(".object")
+	)
+}
+#' getComparisonTable-methods
+#'
+#' Retrieve a table describing pairwise comparisons on a \code{\linkS4class{DsAcc}} object
+#'
+#' @param .object \code{\linkS4class{DsAcc}} object
+#' @param cols    column names in the sample annotation table to consider for pairwise comparisons
+#' @param compNames  vector of character strings specifying a fixed comparison names to be parsed (format "$GRP1_NAME vs $GRP1_NAME [$ANNOTATION_COLUMN]")
+#' @param reaggregate redo region aggregation (only has an effect if type is sites and there are aggregated regions in the dataset)
+#' @return a \code{data.frame} with comparison inforamtion containing columns for the comparison name (\code{compName}), 
+#'         column in the annotation table (\code{compCol})
+#'         and group names for the two groups in the comparison (\code{grp1Name, grp2Name}),
+#' 
+#' @rdname getComparisonTable-DsAcc-method
+#' @docType methods
+#' @aliases getComparisonTable
+#' @aliases getComparisonTable,DsAcc-method
+#' @author Fabian Mueller
+#' @export
+setMethod("getComparisonTable",
+	signature(
+		.object="DsAcc"
+	),
+	function(
+		.object,
+		cols=NULL,
+		compNames=NULL
+	) {
+		colsAdd <- NULL
+		# parse fixed comparison names
+		if (!is.null(compNames)){
+			re <- "^(.+) vs (.+) \\[(.+)\\]$"
+			isMatch <- grepl(re, compNames)
+			if (any(!isMatch)){
+				logger.error(c("The following comparison names could not be parsed:", paste(compNames[!isMatch], collapse=", ")))
+			}
+			fixedCompInfo <- data.frame(
+				compName=compNames,
+				compCol=gsub(re, "\\3", compNames),
+				# grp1Name=gsub(re, "\\1", compNames),
+				# grp2Name=gsub(re, "\\2", compNames),
+				stringsAsFactors=FALSE
+			)
+			colsAdd <- unique(fixedCompInfo["compCol"])
+		}
+
+		# get comparison info
+		sannot <- getSampleAnnot(.object)
+		sampleGrps <- getGroupsFromTable(sannot, cols=unique(c(colsAdd, cols)))
+		if (length(sampleGrps) < 1) logger.error("No valid comparisons found (to begin with)")
+		compTab <- do.call("rbind", lapply(1:length(sampleGrps), FUN=function(i){
+			tt <- NULL
+			if (length(sampleGrps[[i]]) == 2) {
+				tt <- data.frame(
+					compName=paste0(names(sampleGrps[[i]])[1], " vs ", names(sampleGrps[[i]])[2],  " [", names(sampleGrps)[i], "]"),
+					compCol=names(sampleGrps)[i],
+					grp1Name=names(sampleGrps[[i]])[1],
+					grp2Name=names(sampleGrps[[i]])[2],
+					stringsAsFactors=FALSE
+				)
+			} else if (length(sampleGrps[[i]]) > 2) {
+				grpNames <- t(combn(names(sampleGrps[[i]]), 2))
+				tt <- data.frame(
+					compName=paste0(grpNames[,1], " vs ", grpNames[,2],  " [", names(sampleGrps)[i], "]"),
+					compCol=names(sampleGrps)[i],
+					grp1Name=grpNames[,1],
+					grp2Name=grpNames[,2],
+					stringsAsFactors=FALSE
+				)
+			}
+			return(tt)
+		}))
+		if (is.null(compTab)) logger.error("No valid comparisons found")
+
+		# add comparison info for fixed comparisons
+		if (!is.null(compNames)){
+			compTabMirror <- do.call("rbind", lapply(1:nrow(compTab), FUN=function(i){
+				tt <- data.frame(
+					compName=paste0(compTab[i,"grp2Name"], " vs ", compTab[i,"grp1Name"],  " [", compTab[i,"compCol"], "]"),
+					compCol=compTab[i,"compCol"],
+					grp1Name=compTab[i,"grp2Name"],
+					grp2Name=compTab[i,"grp1Name"],
+					stringsAsFactors=FALSE
+				)
+			}))
+			matchIdx <- match(fixedCompInfo[,"compName"], compTab[,"compName"])
+			matchIdxMirror <- match(fixedCompInfo[,"compName"], compTabMirror[,"compName"])
+			noMatch <- is.na(matchIdx) & is.na(matchIdxMirror)
+			if (any(noMatch)){
+				logger.error(c("The following comparison names could not be matched:", paste(fixedCompInfo[noMatch], collapse=", ")))
+			}
+			fixedCompTab <- rbind(compTab[na.omit(matchIdx),], compTabMirror[na.omit(matchIdxMirror),])
+
+			compTabIdx.dupRem <- !(compTab[,"compCol"] %in% colsAdd) # don't duplicate the columns for which fixed comparisons have been specified
+			compTab <- rbind(
+				fixedCompTab,
+				compTab[compTabIdx.dupRem,]
+			)
+		}
+		return(compTab)
+	}
+)

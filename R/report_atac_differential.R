@@ -32,35 +32,11 @@ setMethod("createReport_differential",
 		rr <- createReport(file.path(reportDir, "differential.html"), "Differential Accessibility", page.title = "Differential", init.configuration=initConfigDir, theme="stanford")
 		rDir.data <- getReportDir(rr, dir="data", absolute=FALSE)
 		rDir.data.abs <- getReportDir(rr, dir="data", absolute=TRUE)
+		
+		compTab <- getComparisonTable(.object, cols=getConfigElement("differentialColumns"), compNames=getConfigElement("differentialCompNames"))
 
-		sampleIds <- getSamples(.object)
-		sannot <- getSampleAnnot(.object)
-		sampleGrps <- getGroupsFromTable(sannot, cols=getConfigElement("differentialColumns"))
-		if (length(sampleGrps) < 1) logger.error("No valid comparisons found (to begin with)")
-		compTab <- do.call("rbind", lapply(1:length(sampleGrps), FUN=function(i){
-			tt <- NULL
-			if (length(sampleGrps[[i]]) == 2) {
-				tt <- data.frame(
-					compName=paste0(names(sampleGrps[[i]])[1], " vs ", names(sampleGrps[[i]])[2],  " [", names(sampleGrps)[i], "]"),
-					compCol=names(sampleGrps)[i],
-					grp1Name=names(sampleGrps[[i]])[1],
-					grp2Name=names(sampleGrps[[i]])[2],
-					stringsAsFactors=FALSE
-				)
-			} else if (length(sampleGrps[[i]]) > 2) {
-				grpNames <- t(combn(names(sampleGrps[[i]]), 2))
-				tt <- data.frame(
-					compName=paste0(grpNames[,1], " vs ", grpNames[,2],  " [", names(sampleGrps)[i], "]"),
-					compCol=names(sampleGrps)[i],
-					grp1Name=grpNames[,1],
-					grp2Name=grpNames[,2],
-					stringsAsFactors=FALSE
-				)
-			}
-			return(tt)
-		}))
 		if (is.null(compTab)) logger.error("No valid comparisons found")
-		if (nrow(compTab) > 10) logger.warning("An extensive amount of comparisons will be performed. Consider being more specific in the differentialColumns option.")
+		if (nrow(compTab) > 10) logger.warning("An extensive amount of comparisons will be performed. Consider being more specific in the differentialColumns and differentialCompNames options.")
 
 		regionTypes <- getRegionTypes(.object)
 		rts <- getConfigElement("regionTypes")
