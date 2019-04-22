@@ -542,7 +542,7 @@ setMethod("getComparisonTable",
 				# grp2Name=gsub(re, "\\2", compNames),
 				stringsAsFactors=FALSE
 			)
-			colsAdd <- unique(fixedCompInfo["compCol"])
+			colsAdd <- unique(fixedCompInfo[,"compCol"])
 		}
 
 		# get comparison info
