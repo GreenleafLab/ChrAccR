@@ -118,9 +118,9 @@ setMethod("createReport_differential",
 		)
 		rr <- addReportSection(rr, "Comparisons", txt, level=1L, collapsed=FALSE)
 
-		cTab <- compTab
+		cTab <- compTab[,c("compName", "compCol", "grp1Name", "nGrp1", "grp2Name", "nGrp2")]
 		rownames(cTab) <- as.character(1:nrow(cTab))
-		colnames(cTab) <- c("Comparison name", "Annotation column", "Group 1", "Group 2")
+		colnames(cTab) <- c("Comparison name", "Annotation column", "Group 1", "N1", "Group 2", "N2")
 		rr <- addReportTable(rr, cTab)
 
 		txt <- c("Tables containing differential accessibility results can be found below.")

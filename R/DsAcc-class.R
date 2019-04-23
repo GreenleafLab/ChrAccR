@@ -551,6 +551,8 @@ setMethod("getComparisonTable",
 		if (length(sampleGrps) < 1) logger.error("No valid comparisons found (to begin with)")
 		compTab <- do.call("rbind", lapply(1:length(sampleGrps), FUN=function(i){
 			tt <- NULL
+			grpNs <- sapply(sampleGrps[[i]], length)
+			names(grpNs) <- names(sampleGrps[[i]])
 			if (length(sampleGrps[[i]]) == 2) {
 				tt <- data.frame(
 					compName=paste0(names(sampleGrps[[i]])[1], " vs ", names(sampleGrps[[i]])[2],  " [", names(sampleGrps)[i], "]"),
@@ -569,6 +571,8 @@ setMethod("getComparisonTable",
 					stringsAsFactors=FALSE
 				)
 			}
+			tt[,"nGrp1"] <- grpNs[tt[,"grp1Name"]]
+			tt[,"nGrp2"] <- grpNs[tt[,"grp2Name"]]
 			return(tt)
 		}))
 		if (is.null(compTab)) logger.error("No valid comparisons found")
@@ -581,6 +585,8 @@ setMethod("getComparisonTable",
 					compCol=compTab[i,"compCol"],
 					grp1Name=compTab[i,"grp2Name"],
 					grp2Name=compTab[i,"grp1Name"],
+					nGrp1=compTab[i,"nGrp2"],
+					nGrp2=compTab[i,"nGrp1"],
 					stringsAsFactors=FALSE
 				)
 			}))
