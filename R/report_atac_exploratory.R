@@ -208,12 +208,13 @@ setMethod("createReport_exploratory",
 						mostVarIdx <- which(rank(-cvv$variability,na.last="keep",ties.method="min") <= rankCut)
 						cres.row <- as.hclust(getClusteringDendrogram(t(devScores[mostVarIdx,]), distMethod="euclidean", linkMethod=linkMethod, corMethod=corMethod))
 
+						maxDev <- max(abs(devScores[mostVarIdx,]), na.rm=TRUE)
 						plotFn <- paste0("chromVarDevHeatmap_", rts)
 						repPlot <- createReportPlot(plotFn, rr, width=10, height=10, create.pdf=TRUE, high.png=300L)
 							pheatmap(
 								devScores[mostVarIdx,],
 								color=colorRampPalette(colors.cv)(100),
-								breaks=seq(-max(abs(devScores)), max(abs(devScores)), length.out=101), 
+								breaks=seq(-maxDev, maxDev, length.out=101), 
 								border_color=NA,
 								cluster_rows=cres.row, cluster_cols=cres.col,
 								annotation_col=sannot.sub,
