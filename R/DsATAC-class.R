@@ -1943,12 +1943,6 @@ setMethod("getChromVarDev",
 		require(motifmatchr)
 		res <- NULL
 
-		rsFun <- rowSums
-		# sparse matrices
-		if (.object@sparseCounts){
-			rsFun <- Matrix::rowSums
-		}
-
 		countSe <- getCountsSE(.object, type, naIsZero=TRUE)
 		genomeObj <- getGenomeObject(.object@genome)
 		genome(countSe) <- providerVersion(genomeObj) # hack to override inconsistent naming of genome versions (e.g. hg38 and GRCh38)
@@ -1958,8 +1952,14 @@ setMethod("getChromVarDev",
 		# for motifmatchr
 		mmInput <- prepareMotifmatchr(genomeObj, motifs)
 		mmObj <- matchMotifs(mmInput[["motifs"]], countSe, genome=genomeObj)
-		ridx <- rsFun(assay(countSe)) > 0 & rsFun(assay(mmObj)) > 0 # only consider regions where there is an actual motif match and counts
+
+		rsFun <- rowSums
+		# sparse matrices
+		if (is.character(attr(class(assay(mmObj)), "package")) && attr(class(assay(mmObj)), "package")=="Matrix"){
+			rsFun <- Matrix::rowSums
+		}
 		
+		ridx <- rowSums(assay(countSe)) > 0 & rsFun(assay(mmObj)) > 0 # only consider regions where there is an actual motif match and counts
 		res <- computeDeviations(object=countSe[ridx,], annotations=mmObj[ridx,])
 
 		return(res)
