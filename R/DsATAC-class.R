@@ -1953,13 +1953,17 @@ setMethod("getChromVarDev",
 		mmInput <- prepareMotifmatchr(genomeObj, motifs)
 		mmObj <- matchMotifs(mmInput[["motifs"]], countSe, genome=genomeObj)
 
-		rsFun <- rowSums
 		# sparse matrices
+		rsFun.mm <- rowSums
 		if (is.character(attr(class(assay(mmObj)), "package")) && attr(class(assay(mmObj)), "package")=="Matrix"){
-			rsFun <- Matrix::rowSums
+			rsFun.mm <- Matrix::rowSums
+		}
+		rsFun.counts <- rowSums
+		if (is.character(attr(class(assay(countSe)), "package")) && attr(class(assay(countSe)), "package")=="Matrix"){
+			rsFun.counts <- Matrix::rowSums
 		}
 		
-		ridx <- rowSums(assay(countSe)) > 0 & rsFun(assay(mmObj)) > 0 # only consider regions where there is an actual motif match and counts
+		ridx <- rsFun.counts(assay(countSe)) > 0 & rsFun.mm(assay(mmObj)) > 0 # only consider regions where there is an actual motif match and counts
 		res <- computeDeviations(object=countSe[ridx,], annotations=mmObj[ridx,])
 
 		return(res)
