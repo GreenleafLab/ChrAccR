@@ -120,3 +120,30 @@ getGroupsFromTable <- function(tt, cols=NULL, minGrpSize=2, maxGrpCount=nrow(tt)
 	}
 	return(res)
 }
+
+#' safeMatrixStats
+#' 
+#' Compute matrix statistics selecting the appropriate function depending on the
+#' matrix class of the input (supports sparse matrices and DelayedArrays)
+#'
+#' @param X	input matrix
+#' @param statFun statistic. E.g. \code{"rowSums"}, \code{"colSums"}, \code{"rowMeans"}, \code{"colMeans"}, ...
+#' @param ... arguments passed on to the matrix stats function. E.g. \code{na.rm}.
+#' @return result of the corresponding matrix statistic
+#' @author Fabian Mueller
+#' @export
+#}
+safeMatrixStats <- function(X, statFun="rowSums", ...){
+  cl <- class(X)
+  pkg <- attr(cl, "package")
+  if (is.character(pkg)) {
+  	if (pkg=="Matrix") {
+  		statFun <- paste0("Matrix::", statFun)
+  	} else if (is.element(pkg, c("DelayedArray", "HDF5Array"))){
+  		statFun <- paste0("BiocGenerics::", statFun)
+  	}
+  }
+  # print(statFun)
+  statFun <- eval(parse(text=statFun))
+  return(statFun(X, ...))
+}
