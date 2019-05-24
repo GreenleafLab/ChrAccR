@@ -12,7 +12,7 @@
 
 To install `ChrAccR` and its dependencies, use the `devtools` installation routine:
 
-```
+```r
 # install devtools if not previously installed
 if (!is.element('devtools', installed.packages()[,"Package"])) install.packages('devtools')
 
