@@ -23,3 +23,7 @@ devtools::install_github("demuellae/muRtools")
 # install ChrAccR
 devtools::install_github("demuellae/ChrAccR")
 ```
+
+## Getting started
+
+The `ChrAccR` vignette provides a most excellent starting point to get familiar with the package.

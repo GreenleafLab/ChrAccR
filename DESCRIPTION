@@ -8,7 +8,9 @@ Date: 2019-05-24
 Suggests:
     muReportR,
     data.table,
-    DelayedArray
+    DelayedArray,
+    chromVAR,
+    motifmatchr
 Depends:
     GenomicRanges,
     ggplot2,

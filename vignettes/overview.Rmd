@@ -1,0 +1,36 @@
+---
+output: rmarkdown::html_vignette
+author: Fabian Mueller
+date: "`r Sys.Date()`"
+title: ChrAccR
+vignette: >
+  %\VignetteIndexEntry{overview}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+`ChrAccR` is an R package for the analysis of chromatin accessibility data.
+It supports popular protocols like the Assay for Transposase-Accessible Chromatin
+(ATAC-seq) and Nucleosome Occupancy and Methylome Sequencing (NOMe-seq; beta-stage)
+in bulk and single-cell scenarios.
+
+## Installation
+
+Use library or require to load the package and useful additional packages.
+
+```{r, message = FALSE, warning = FALSE, eval = FALSE}
+# install devtools if not previously installed
+if (!is.element('devtools', installed.packages()[,"Package"])) install.packages('devtools')
+
+# install dependencies
+devtools::install_github("demuellae/muLogR")
+devtools::install_github("demuellae/muRtools")
+
+# install ChrAccR
+devtools::install_github("demuellae/ChrAccR")
+```
+
+## Loading
+```{r, message = FALSE, warning = FALSE}
+library(ChrAccR)
+```
