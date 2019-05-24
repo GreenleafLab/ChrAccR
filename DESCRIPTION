@@ -1,19 +1,20 @@
 Package: ChrAccR
 Title: Analyzing chromatin accessibility data in R
 Description: Tools for analyzing chromatin accessibility data in R. Currently
-    supports NOMe-seq data analysis
+    supports ATAC-seq and NOMe-seq data analysis
 Author: Fabian Mueller
-Maintainer: Fabian Mueller <fmueller@mpi-inf.mpg.de>
+Maintainer: Fabian Mueller <muellerf@stanford.edu>
 Date: 2019-05-24
 Suggests:
-    muRtools,
-    muReportR
+    muReportR,
+    data.table,
+    DelayedArray
 Depends:
     GenomicRanges,
     ggplot2,
     muLogR,
-    Matrix,
-    data.table
+    muRtools,
+    Matrix
 License: GPL-2
 Version: 0.9
 Collate: 
