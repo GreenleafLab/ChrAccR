@@ -1,5 +1,13 @@
 ---
-output: rmarkdown::html_vignette
+output:
+  html_document:
+    theme: cosmo
+    toc: true
+    toc_float: true
+# output: rmarkdown::html_vignette
+# output:
+#   rmdformats::readthedown:
+#     highlight: kate
 author: Fabian Mueller
 date: "`r Sys.Date()`"
 title: ChrAccR
