@@ -1491,8 +1491,8 @@ setMethod("filterChroms",
 		.object,
 		exclChrom=c("chrX", "chrY", "chrM")
 	) {
-		for (rt in getRegionTypes(dsf)){
-			isExclChrom <- as.character(seqnames(getCoord(dsf, rt))) %in% exclChrom
+		for (rt in getRegionTypes(.object)){
+			isExclChrom <- as.character(seqnames(getCoord(.object, rt))) %in% exclChrom
 			.object <- removeRegions(.object, isExclChrom, rt)
 			logger.info(c("Removed", sum(isExclChrom), "regions", paste0("(", round(sum(isExclChrom)/length(isExclChrom), 4)*100, "%)"), "of type", rt))
 		}
@@ -1501,6 +1501,67 @@ setMethod("filterChroms",
 			for (sid in names(.object@fragments)){
 				fragGr <- getFragmentGr(.object, sid)
 				idx <- !(as.character(seqnames(fragGr)) %in% exclChrom)
+				fragGr <- fragGr[idx]
+				if (.object@diskDump.fragments){
+					fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
+					saveRDS(fragGr, fn)
+					fragGr <- fn
+				}
+				.object@fragments[[sid]] <- fragGr
+			}
+			
+		}
+		return(.object)
+	}
+)
+#-------------------------------------------------------------------------------
+if (!isGeneric("filterByGRanges")) {
+	setGeneric(
+		"filterByGRanges",
+		function(.object, ...) standardGeneric("filterByGRanges"),
+		signature=c(".object")
+	)
+}
+#' filterByGRanges-methods
+#'
+#' Filter out regions based on a GRanges object
+#'
+#' @param .object     \code{\linkS4class{DsATAC}} object
+#' @param gr   		  \code{GRanges} object used for filtering
+#' @param method      character string specifying the method. Can be \code{"white"} to treat \code{gr} as a whitelist
+#'                    (i.e. only regions and fragments overlapping with it are retained) or \code{"black"} (default) to treat it as a blacklist.
+#' @return a new, filtered \code{\linkS4class{DsATAC}} object
+#' 
+#' @rdname filterByGRanges-DsATAC-method
+#' @docType methods
+#' @aliases filterByGRanges
+#' @aliases filterByGRanges,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("filterByGRanges",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		gr,
+		method="black"
+	) {
+		if (class(gr)!="GRanges") logger.error("Invalid gr object. Expected GRanges.")
+		if (!is.element(method, c("white", "black"))) logger.error(c("invalid method for filtering:", method))
+
+		for (rt in getRegionTypes(.object)){
+			isExcl <- overlapsAny(getCoord(.object, rt), gr) # blacklist
+			if (method=="white") isExcl <- !isExcl
+			.object <- removeRegions(.object, isExcl, rt)
+			logger.info(c("Removed", sum(isExcl), "regions", paste0("(", round(sum(isExcl)/length(isExcl), 4)*100, "%)"), "of type", rt))
+		}
+		if (length(.object@fragments) > 0){
+			logger.status("Filtering fragment data")
+			for (sid in names(.object@fragments)){
+				fragGr <- getFragmentGr(.object, sid)
+				idx <- overlapsAny(fragGr, gr) # whitelist
+				if (method=="black") idx <- !idx
 				fragGr <- fragGr[idx]
 				if (.object@diskDump.fragments){
 					fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
