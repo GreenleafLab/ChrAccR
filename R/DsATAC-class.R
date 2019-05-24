@@ -2517,7 +2517,7 @@ setMethod("unsupervisedAnalysisSc",
 				}
 
 				cm <- ChrAccR::getCounts(dsn, regionType, asMatrix=TRUE)
-				pcaCoord <- muRtools::getDimRedCoords.pca(t(cm), components=1:max(pcs), method="irlba_svd")
+				pcaCoord <- muRtools::getDimRedCoords.pca(t(cm), components=1:max(usePcs), method="irlba_svd")
 			logger.completed()
 		}
 		cellIds <- colnames(cm)
