@@ -2584,6 +2584,8 @@ setMethod("unsupervisedAnalysisSc",
 		cellIds <- colnames(cm)
 		logger.start(c("Getting UMAP coordinates"))	
 			umapCoord <- muRtools::getDimRedCoords.umap(pcaCoord[,usePcs])
+			umapRes <- attr(umapCoord, "umapRes")
+			attr(umapCoord, "umapRes") <- NULL
 		logger.completed()
 
 		if (clusteringMethod=="seurat_louvain"){
@@ -2602,6 +2604,7 @@ setMethod("unsupervisedAnalysisSc",
 		res <- list(
 			pcaCoord=pcaCoord,
 			umapCoord=umapCoord,
+			umapRes=umapRes,
 			clustAss=clustAss,
 			regionType=regionType,
 			regionIdx=regionIdx
