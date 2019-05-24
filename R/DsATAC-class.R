@@ -2449,3 +2449,83 @@ setMethod("getTssEnrichment",
 		return(res)
 	}
 )
+
+################################################################################
+# Single-cell analyses
+################################################################################
+if (!isGeneric("unsupervisedAnalysisSc")) {
+	setGeneric(
+		"unsupervisedAnalysisSc",
+		function(.object, ...) standardGeneric("unsupervisedAnalysisSc"),
+		signature=c(".object")
+	)
+}
+#' unsupervisedAnalysisSc-methods
+#'
+#' Perform unsupervised analysis on single-cell data. Performs dimensionality reduction
+#' and clustering.
+#'
+#' @param .object    \code{\linkS4class{DsATAC}} object
+#' @param regionType character string specifying the region type
+#' @param dimRedMethod character string specifying the dimensionality reduction method. Currently on \code{"tf-idf_irlba"} is supported
+#' @param usePcs     integer vector specifying the principal components to use for UMAP and clustering
+#' @param clusteringMethod character string specifying the clustering method. Currently on \code{"seurat_louvain"} is supported
+#' @return an \code{S3} object containing dimensionality reduction results and clustering
+#' 
+#' @rdname unsupervisedAnalysisSc-DsATAC-method
+#' @docType methods
+#' @aliases unsupervisedAnalysisSc
+#' @aliases unsupervisedAnalysisSc,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("unsupervisedAnalysisSc",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		regionType,
+		dimRedMethod="tf-idf_irlba",
+		usePcs=1:50,
+		clusteringMethod="seurat_louvain"
+	) {
+		if (!is.element(regionType, getRegionTypes(.object))) logger.error(c("Unsupported region type:", regionType))
+		if (!is.element(dimRedMethod, c("tf-idf_irlba")) logger.error(c("Unsupported dimRedMethod:", dimRedMethod))
+		if (!is.integer(usePcs)) logger.error(c("usePcs must be an integer vector"))
+		if (!is.element(clusteringMethod, c("seurat_louvain")) logger.error(c("Unsupported clusteringMethod:", clusteringMethod))
+
+		if (dimRedMethod=="tf-idf_irlba"){
+			if (length(.object@countTransform[[regionType]]) > 0) logger.warning("Counts have been pre-normalized. dimRedMethod 'tf-idf_irlba' might not be applicable.")
+			dsn <- .object
+			if (!is.element("tf-idf", .object@countTransform[[regionType]])){
+				dsn <- transformCounts(.object, method="tf-idf", regionTypes=regionType)
+			}
+			cm <- ChrAccR::getCounts(dsn, regionType, asMatrix=TRUE)
+			pcaCoord <- muRtools::getDimRedCoords.pca(t(cm), components=1:max(pcs), method="irlba_svd")
+		}
+		cellIds <- colnames(cm)
+		umapCoord <- muRtools::getDimRedCoords.umap(pcaCoord[,usePcs])
+
+		if (clusteringMethod=="seurat_louvain"){
+			require(Seurat)
+			# Louvain clustering using Seurat
+			dummyMat <- matrix(11.0, ncol=length(cellIds), nrow=11)
+			colnames(dummyMat) <- cellIds
+			sObj <- CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.genes=0)
+			sObj <- SetDimReduction(object=sObj, reduction.type="pca", slot="cell.embeddings", new.data=pcaCoord)
+			sObj <- SetDimReduction(object=sObj, reduction.type="pca", slot="key", new.data="pca")
+			clustRes <- FindClusters(sObj, reduction.type="pca", dims.use=usePcs, k.param=30, algorithm=1, n.start=100, n.iter=10)
+			clustAss <- clustRes@ident
+		}
+
+		logger.start("Saving environment")
+		res <- list(
+			pcaCoord=pcaCoord,
+			umapCoord=umapCoord,
+			clustAss=clustAss,
+			regionType=regionType
+		)
+		class(res) <- "unsupervisedAnalysisResultSc"
+		return(res)
+	}
+)
