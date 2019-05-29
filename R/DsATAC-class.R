@@ -2012,7 +2012,7 @@ setMethod("getChromVarDev",
 
 		# for motifmatchr
 		mmInput <- prepareMotifmatchr(genomeObj, motifs)
-		mmObj <- matchMotifs(mmInput[["motifs"]], countSe, genome=genomeObj)
+		mmObj <- motifmatchr::matchMotifs(mmInput[["motifs"]], countSe, genome=genomeObj)
 		
 		ridx <- safeMatrixStats(assay(countSe), "rowSums") > 0 & safeMatrixStats(assay(mmObj), "rowSums") > 0 # only consider regions where there is an actual motif match and counts
 		res <- computeDeviations(object=countSe[ridx,], annotations=mmObj[ridx,])

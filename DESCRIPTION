@@ -6,6 +6,7 @@ Author: Fabian Mueller
 Maintainer: Fabian Mueller <muellerf@stanford.edu>
 Date: 2019-05-24
 Suggests:
+    ChrAccRex,
     muReportR,
     data.table,
     DelayedArray,
