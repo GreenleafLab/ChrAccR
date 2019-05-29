@@ -1331,6 +1331,7 @@ setMethod("transformCounts",
 				for (rt in regionTypes){
 					logger.status(c("Region type:", rt))
 					cm <- as.matrix(.object@counts[[rt]])
+					cnames <- colnames(cm)
 					idx <- cm!=0
 					cm[idx] <- log2(cm[idx] + c0)
 					.object@counts[[rt]] <- cm
