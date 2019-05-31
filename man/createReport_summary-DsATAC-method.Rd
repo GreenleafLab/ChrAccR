@@ -19,6 +19,13 @@
 \description{
 Create a report summarizing an accessibility dataset
 }
+\examples{
+\donttest{
+dsa <- ChrAccRex::loadExample("dsAtac_ia_example")
+reportDir <- file.path(".", "ChrAccR_reports")
+createReport_summary(dsa, reportDir)
+}
+}
 \author{
 Fabian Mueller
 }

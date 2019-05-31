@@ -19,6 +19,13 @@ if (!isGeneric("createReport_summary")) {
 #' @aliases createReport_summary,DsATAC-method
 #' @author Fabian Mueller
 #' @export
+#' 
+#' @examples
+#' \donttest{
+#' dsa <- ChrAccRex::loadExample("dsAtac_ia_example")
+#' reportDir <- file.path(".", "ChrAccR_reports")
+#' createReport_summary(dsa, reportDir)
+#' }
 setMethod("createReport_summary",
 	signature(
 		.object="DsATAC"

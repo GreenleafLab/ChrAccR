@@ -19,6 +19,16 @@ if (!isGeneric("createReport_exploratory")) {
 #' @aliases createReport_exploratory,DsATAC-method
 #' @author Fabian Mueller
 #' @export
+#' 
+#' @examples
+#' \donttest{
+#' dsa <- ChrAccRex::loadExample("dsAtac_ia_example")
+#' dsa_qnorm <- transformCounts(dsa, method="quantile")
+#' setConfigElement("annotationColumns", c("cellType", "donor", "stimulus"))
+#' setConfigElement("regionTypes", setdiff(getRegionTypes(dsa), c("promoters_gc_protein_coding", "t10k")))
+#' reportDir <- file.path(".", "ChrAccR_reports")
+#' createReport_exploratory(dsa_qnorm, reportDir)
+#' }
 setMethod("createReport_exploratory",
 	signature(
 		.object="DsATAC"

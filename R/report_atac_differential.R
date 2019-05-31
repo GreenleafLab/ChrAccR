@@ -19,6 +19,18 @@ if (!isGeneric("createReport_differential")) {
 #' @aliases createReport_differential,DsATAC-method
 #' @author Fabian Mueller
 #' @export
+#' 
+#' @examples
+#' \donttest{
+#' dsa <- ChrAccRex::loadExample("dsAtac_ia_example")
+#' reportDir <- file.path(".", "ChrAccR_reports")
+#' setConfigElement("regionTypes", setdiff(getRegionTypes(dsa), c("promoters_gc_protein_coding", "t10k")))
+#' setConfigElement("differentialColumns", c("stimulus", "cellType"))
+#' # adjust for the donor annotation in the differential test
+#' setConfigElement("differentialAdjColumns", c("donor"))
+#' # create the report
+#' createReport_differential(dsa, reportDir)
+#' }
 setMethod("createReport_differential",
 	signature(
 		.object="DsATAC"
@@ -99,10 +111,10 @@ setMethod("createReport_differential",
 				dm[,"log2FoldChange"] < -2 & dm[,"padj"] < 0.05
 			},
 			cRankTopPerc1 = function(dm){
-				dm[,"cRank_rerank"] < quantile(dm[,"cRank_rerank"], prob=0.01)
+				dm[,"cRank_rerank"] < quantile(dm[,"cRank_rerank"], prob=0.01, na.rm=TRUE)
 			},
 			cRankTopPerc5 = function(dm){
-				dm[,"cRank_rerank"] < quantile(dm[,"cRank_rerank"], prob=0.05)
+				dm[,"cRank_rerank"] < quantile(dm[,"cRank_rerank"], prob=0.05, na.rm=TRUE)
 			}
 		)
 		diffFunDesc <- c(

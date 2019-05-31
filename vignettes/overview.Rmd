@@ -23,6 +23,9 @@ It supports popular protocols like the Assay for Transposase-Accessible Chromati
 (ATAC-seq) and Nucleosome Occupancy and Methylome Sequencing (NOMe-seq; beta-stage)
 in bulk and single-cell scenarios.
 
+<!-- ![Overview of ChrAccR](figures/ChrAccR_overview.png) -->
+
+
 # Installation
 
 To install `ChrAccR` and its dependencies, use the `devtools` installation routine:
@@ -56,6 +59,13 @@ devtools::install_github("demuellae/ChrAccRex")
 The example data used in this vignette contains ATAC-seq data for different T cell samples from the immune atlas dataset (https://doi.org/10.1101/409722) and it focuses on only a subset of the human genome (approximately 1%). It can be loaded using:
 ```{r, message = FALSE, warning = FALSE}
 dsa <- ChrAccRex::loadExample("dsAtac_ia_example")
+```
+
+Note that many of the plots created in this vignette use the excellent `ggplot2` package. The following code loads the package and sets a different plotting theme:
+```{r, message = FALSE, warning = FALSE, eval = TRUE}
+library(ggplot2)
+# use a grid-less theme
+theme_set(muRtools::theme_nogrid())
 ```
 
 # Overview of `ChrAccR` data structures
@@ -115,6 +125,47 @@ getInsertionSites(dsa, getSamples(dsa)[1:3])
 
 `ChrAccR` provides a number of functions for filtering a dataset and for adding additional data.
 
+### Filtering for samples and genomic regions
+For instance, if you want to work with only a subset of the data, you can remove samples and genomic regions from the dataset. The example contains data for resting (unstimulated) and stimulated T cells. The following code removes the stimulated cells and retains only the resting state cells:
+```{r, message = FALSE, warning = FALSE}
+isStim <- getSampleAnnot(dsa)[,"stimulus"] == "S"
+dsa_resting <- removeSamples(dsa, isStim)
+dsa_resting
+```
+
+Sometimes you will want to focus on certain regions. For instance the following code filters the dataset, such that only the most variably accessible peaks are retained
+```{r, message = FALSE, warning = FALSE}
+peakCounts <- getCounts(dsa, "IA_prog_peaks")
+# identify the 1000 most variable peaks
+isVar <- rank(-matrixStats::rowVars(peakCounts)) <= 1000 
+# remove the remaining peaks from the dataset
+dsa_varPeaks <- removeRegions(dsa, !isVar, "IA_prog_peaks")
+getNRegions(dsa_varPeaks, "IA_prog_peaks")
+```
+
+There are also shortcuts for filtering certain regions from the dataset, for example:
+```{r, message = FALSE, warning = FALSE}
+# remove those regions that do not have at least 10 insertions in at least 75% of the samples
+dsa_filtered <- filterLowCovg(dsa, thresh=10L, reqSamples=0.75)
+# remove regions on chromosome 21
+dsa_filtered <- filterChroms(dsa, exclChrom=c("chr21"))
+```
+
+### Normalizing count data
+`ChrAccR` provides several methods for normalizing and adjusting the region count data. These methods can be accessed through the `transformCounts` function:
+```{r, message = FALSE, warning = FALSE}
+# quantile normalization for all region types
+dsa_qnorm <- transformCounts(dsa, method="quantile")
+# RPKM normalization of peak counts
+dsa_rpkm <- transformCounts(dsa, method="RPKM", regionTypes=c("IA_prog_peaks"))
+# log2(RPKM)
+dsa_l2rpkm <- transformCounts(dsa_rpkm, method="log2", regionTypes=c("IA_prog_peaks"))
+# DESeq2 variance stabilizing transformation (vst)
+dsa_vst <- transformCounts(dsa, method="vst", regionTypes=c("IA_prog_peaks"))
+# correct for potential batch effects based on the annotated donor
+dsa_vst <- transformCounts(dsa_vst, method="batchCorrect", batch=getSampleAnnot(dsa_qnorm)[,"donor"], regionTypes=c("IA_prog_peaks"))
+```
+
 ## Saving and loading datasets
 
 In many analysis workflow, you want to save an R dataset to disk in order to use it in downstream analysis using custom R scripts. Note that R's workflow of `saveRDS` `readRDS` is  generally not applicable for saving and loading `DsATAC` datasets, because `ChrAccR` optionally uses disk-backed data structures in order to be more memory efficient in the analysis. Instead, please use `ChrAccR`'s functions:
@@ -135,29 +186,85 @@ download.file(datasetUrl, downFn)
 unzip(downFn, exdir=".")
 ```
 
+## Importing data from `bam` files
+
 ```{r, message = FALSE, warning = FALSE, eval = FALSE}
-# download and unzip the dataset
+# prepare the sample annotation table
 sampleAnnotFn <- file.path("tcells", "samples.tsv")
 bamDir <- file.path("tcells", "bam")
 sampleAnnot <- read.table(sampleAnnotFn, sep="\t", header=TRUE, stringsAsFactors=FALSE)
+# add a column that ChrAccR can use to find the correct bam file for each sample
 sampleAnnot[,"bamFilenameFull"] <- file.path(bamDir, sampleAnnot[,"bamFilename"])
 ```
 
 ```{r, message = FALSE, warning = FALSE, eval = FALSE}
-dsa <- DsATAC.snakeATAC(sampleAnnot, "bamFilenameFull", "hg38", regionSets=NULL, sampleIdCol="sampleId", diskDump=FALSE, bySample=TRUE)
+dsa_fromBam <- DsATAC.snakeATAC(sampleAnnot, "bamFilenameFull", "hg38", regionSets=NULL, sampleIdCol="sampleId", diskDump=FALSE, bySample=TRUE)
 ```
-
-## Importing data from `bam` files
 
 # Analysis reports
 
+`ChrAccR` provides a way to bundle certain types of analyses into workflows that automatically create analysis reports. These HTML-based analysis reports can be viewed in any web browser and provide a convenient overview of the analysis results that can easily shared with collaborators. `ChrAccR` provides the following workflows:
+
+* __`summary`:__ dataset characterization and quality control
+* __`exploratory`:__ exploratory analyses such as dimension reduction, clustering, TF motif enrichment, etc.
+* __`differential`:__ differential accessibility analysis between groups of samples
+
+Provided with a `DsATAC` dataset, the workflows can be started using the `createReport_X()` functions (where `X` is the name of the workflow). Workflow options can be specified using the `setConfigElement()` function for setting `ChrAccR`'s options. Here are some option examples:
+```{r, message = FALSE, warning = FALSE}
+# exclude the promoter and 't10k' (10kb tiling windows) region types from the analysis
+setConfigElement("regionTypes", setdiff(getRegionTypes(dsa), c("promoters_gc_protein_coding", "t10k")))
+# see the current option setting
+getConfigElement("regionTypes")
+# use the following sample annotation columns for exploratory analyses
+setConfigElement("annotationColumns", c("cellType", "donor", "stimulus"))
+# add a custom color scheme for the 'stimulus' and 'cellType' annotation columns
+setConfigElement("colorSchemes", c(
+	getConfigElement("colorSchemes"), 
+	list(
+		"stimulus"=c("U"="#7fbc41", "S"="#de77ae"),
+		"cellType"=c("TCD8naive"="#9ecae1", "TCD8EM"="#08519c", "TeffNaive"="#016c59", "TeffMem"="#014636")
+	)
+))
+```
+
+To see which options are available use the help function for `setConfigElement`
+```{r, message = FALSE, warning = FALSE, eval = FALSE}
+?setConfigElement
+```
+
+The `createReport_X()` take a `DsATAC` dataset as input and write their results to a report directory. Not that this directory can only contain one report for each analysis workflow and the function will result in an error if the directory already contains a report of that type.
+
 ## Summary analysis
+To get an overview of an ATAC-seq dataset use `createReport_summary()`. The resulting report will contain a summary of the sample annotation, genomic coverage by sequencing reads and QC metrics such as a summary of the fragment size distribution and enrichment of Tn5 insertions at transcription start sites (TSS enrichment).
+```{r, message = FALSE, warning = FALSE, eval = FALSE}
+reportDir <- file.path(".", "ChrAccR_reports")
+# create the report (takes ~10 min on the example dataset)
+createReport_summary(dsa, reportDir)
+```
 
 ## Exploratory analysis
-
+```{r, message = FALSE, warning = FALSE, eval = FALSE}
+# create the report (takes ~1 min on the example dataset)
+createReport_exploratory(dsa_qnorm, reportDir)
+```
 ## Differential analysis
+```{r, message = FALSE, warning = FALSE, eval = FALSE}
+# differential analysis option settings
+setConfigElement("differentialColumns", c("stimulus", "cellType"))
+# adjust for the donor annotation in the differential test
+setConfigElement("differentialAdjColumns", c("donor"))
+# create the report (takes ~10 min on the example dataset)
+createReport_differential(dsa, reportDir)
+```
 
 # Utility functions
+
+## Principal component plot
+```{r, message = FALSE, warning = FALSE, eval = TRUE}
+cm <- getCounts(dsa_qnorm, "IA_prog_peaks")
+pcaCoord <- muRtools::getDimRedCoords.pca(t(cm))
+muRtools::getDimRedPlot(pcaCoord, annot=getSampleAnnot(dsa_qnorm), colorCol="cellType", shapeCol="stimulus")
+```
 
 ## Plot the fragment size distribution
 ```{r, message = FALSE, warning = FALSE, eval = TRUE}
@@ -183,10 +290,12 @@ tsse$plot
 
 ## Transcription factor motif enrichment using `ChromVAR`
 
-```{r, message = FALSE, warning = FALSE, eval = TRUE}
+```{r, message = FALSE, warning = FALSE, eval = FALSE}
 cvRes <- getChromVarDev(dsa, "IA_prog_peaks", motifs="jaspar")
 devZ <- deviations(cvRes)
-devZ
+str(devZ)
+# plot a clustered heatmap of the first 50 motifs
+pheatmap::pheatmap(devZ[1:20,])
 ```
 
 # Session Info

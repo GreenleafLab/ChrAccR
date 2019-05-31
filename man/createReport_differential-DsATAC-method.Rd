@@ -19,6 +19,18 @@
 \description{
 Create a report summarizing differential accessibility analysis
 }
+\examples{
+\donttest{
+dsa <- ChrAccRex::loadExample("dsAtac_ia_example")
+reportDir <- file.path(".", "ChrAccR_reports")
+setConfigElement("regionTypes", setdiff(getRegionTypes(dsa), c("promoters_gc_protein_coding", "t10k")))
+setConfigElement("differentialColumns", c("stimulus", "cellType"))
+# adjust for the donor annotation in the differential test
+setConfigElement("differentialAdjColumns", c("donor"))
+# create the report
+createReport_differential(dsa, reportDir)
+}
+}
 \author{
 Fabian Mueller
 }
