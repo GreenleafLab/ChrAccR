@@ -18,6 +18,8 @@ Depends:
     muLogR,
     muRtools,
     Matrix
+Imports:
+    data.table
 License: GPL-2
 Version: 0.9
 Collate: 

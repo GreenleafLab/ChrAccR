@@ -863,8 +863,7 @@ setMethod("addCountDataFromGRL",
 			print(str(idxDt))
 			saveRDS(idxDt, "tmp1.rds")
 			# count the number of occurrences between each index pair
-			# idxDt <- idxDt[,.N, by=names(idxDt)]
-			idxDt <- idxDt[,.N, by=c("V1","V2")]
+			idxDt <- idxDt[,.N, by=names(idxDt)]
 			print(str(idxDt))
 			saveRDS(idxDt, "tmp2.rds")
 			idxM <- as.matrix(idxDt[,c(1,2)])
