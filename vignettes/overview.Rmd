@@ -198,7 +198,7 @@ sampleAnnot[,"bamFilenameFull"] <- file.path(bamDir, sampleAnnot[,"bamFilename"]
 ```
 
 ```{r, message = FALSE, warning = FALSE, eval = FALSE}
-dsa_fromBam <- DsATAC.snakeATAC(sampleAnnot, "bamFilenameFull", "hg38", regionSets=NULL, sampleIdCol="sampleId", diskDump=FALSE, bySample=TRUE)
+dsa_fromBam <- DsATAC.bam(sampleAnnot, "bamFilenameFull", "hg38", regionSets=NULL, sampleIdCol="sampleId")
 ```
 
 # Analysis reports
@@ -253,7 +253,7 @@ createReport_exploratory(dsa_qnorm, reportDir)
 setConfigElement("differentialColumns", c("stimulus", "cellType"))
 # adjust for the donor annotation in the differential test
 setConfigElement("differentialAdjColumns", c("donor"))
-# create the report (takes ~10 min on the example dataset)
+# create the report (takes ~18 min on the example dataset)
 createReport_differential(dsa, reportDir)
 ```
 

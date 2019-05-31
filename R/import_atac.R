@@ -188,6 +188,58 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", reg
 }
 
 #-------------------------------------------------------------------------------
+#' DsATAC.bam
+#' 
+#' Create a DsATAC dataset from multiple input bam files
+#' @param sampleAnnot  data.frame specifying the sample annotation table
+#' @param bamFiles     either a character vector of the same length as sampleAnnot has rows, specifying the file paths of the bam files for each
+#'                     sample or a single character string specifying the column name in \code{sampleAnnot} where the file paths can be found
+#' @param genome       genome assembly
+#' @param regionSets   a list of GRanges objects which contain region sets over which count data will be aggregated
+#' @param sampleIdCol  column name in the sample annotation table containing unique sample identifiers. If \code{NULL} (default), the function will look for a column that contains the word "sample"
+#' @param diskDump     should large data objects (count matrices, fragment data, ...) be disk-backed to save main memory
+#' @param keepInsertionInfo flag indicating whether to maintain the insertion information in the resulting object. Only relevant when \code{type=="insBam"}.
+#' @param pairedEnd    is the input data paired-end? Only relevant when \code{type=="insBam"}.
+#' @return \code{\linkS4class{DsATAC}} object
+#' @author Fabian Mueller
+#' @export
+#' 
+#' @examples
+#' \donttest{
+#' # download and unzip the dataset
+#' datasetUrl <- "https://s3.amazonaws.com/muellerf/data/ChrAccR/data/tutorial/tcells.zip"
+#' downFn <- "tcells.zip"
+#' download.file(datasetUrl, downFn)
+#' unzip(downFn, exdir=".")
+#' # prepare the sample annotation table
+#' sampleAnnotFn <- file.path("tcells", "samples.tsv")
+#' bamDir <- file.path("tcells", "bam")
+#' sampleAnnot <- read.table(sampleAnnotFn, sep="\t", header=TRUE, stringsAsFactors=FALSE)
+#' # add a column that ChrAccR can use to find the correct bam file for each sample
+#' sampleAnnot[,"bamFilenameFull"] <- file.path(bamDir, sampleAnnot[,"bamFilename"])
+#' # prepare the dataset
+#' dsa_fromBam <- DsATAC.bam(sampleAnnot, "bamFilenameFull", "hg38", regionSets=NULL, sampleIdCol="sampleId")
+#' }
+DsATAC.bam <- function(sampleAnnot, bamFiles, genome, regionSets=NULL, sampleIdCol=NULL, diskDump=FALSE, keepInsertionInfo=TRUE, pairedEnd=TRUE){
+	if (!is.character(bamFiles)) logger.error("Invalid value for bamFiles. Expected character")
+	if (length(bamFiles)==1 && is.element(bamFiles, colnames(sampleAnnot))){
+		bamFnCol <- bamFiles
+	} else {
+		if (length(bamFiles)!=nrow(sampleAnnot)) logger.error("Invalid value for bamFiles. must match the number of rows in sampleAnnot")
+		bamFnCol <- ".bamPath"
+		sampleAnnot[,bamFnCol] <- bamFiles
+	}
+	if (!is.null(sampleIdCol) && !(is.character(sampleIdCol) && length(sampleIdCol)==1)) logger.error("Invalid value for sampleIdCol Expected character or NULL")
+	if (is.null(sampleIdCol)){
+		sampleIdCol <- grep("sample", colnames(sampleAnnot), value=TRUE)
+		if (length(sampleIdCol) != 1) logger.error("Could not uniquely determine sample id column from sample annotation column names")
+		logger.info(c("Automatically determined column '", sampleIdCol, "' as sample identifier column"))
+	}
+	DsATAC.snakeATAC(sampleAnnot, bamFnCol, genome, regionSets=regionSets, sampleIdCol=sampleIdCol, type="insBam", diskDump=diskDump, keepInsertionInfo=keepInsertionInfo, bySample=TRUE, pairedEnd=pairedEnd)
+}
+
+
+#-------------------------------------------------------------------------------
 #' getNonOverlappingByScore
 #' 
 #' Retrieve the set of non-verlapping regions by iteratively picking the region with maximum score for
