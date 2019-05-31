@@ -8,7 +8,6 @@ Date: 2019-05-24
 Suggests:
     ChrAccRex,
     muReportR,
-    data.table,
     DelayedArray,
     chromVAR,
     motifmatchr
@@ -17,8 +16,7 @@ Depends:
     ggplot2,
     muLogR,
     muRtools,
-    Matrix
-Imports:
+    Matrix,
     data.table
 License: GPL-2
 Version: 0.9
