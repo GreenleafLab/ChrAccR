@@ -837,6 +837,7 @@ setMethod("addCountDataFromGRL",
 		.object,
 		grl
 	) {
+		require(data.table)
 		sids <- names(grl)
 		if (length(sids)!=length(grl)){
 			logger.error("The list of GRanges must be named")
@@ -859,8 +860,8 @@ setMethod("addCountDataFromGRL",
 				queryHits(oo), #row indices (regions) in count matrix
 				match(sampleIds[subjectHits(oo)], sampleIds.cm) #column indices (samples) in count matrix
 			))
-			print(str(idxDt))
-			saveRDS(idxDt, "tmp2.rds")
+			# print(str(idxDt))
+			# saveRDS(idxDt, "tmp2.rds")
 			# count the number of occurrences between each index pair
 			idxDt <- idxDt[,.N, by=names(idxDt)]
 			idxM <- as.matrix(idxDt[,c(1,2)])
