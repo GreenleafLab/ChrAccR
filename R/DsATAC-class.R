@@ -860,12 +860,10 @@ setMethod("addCountDataFromGRL",
 				queryHits(oo), #row indices (regions) in count matrix
 				match(sampleIds[subjectHits(oo)], sampleIds.cm) #column indices (samples) in count matrix
 			))
-			print(str(idxDt))
-			saveRDS(idxDt, "tmp1.rds")
 			# count the number of occurrences between each index pair
 			idxDt <- idxDt[,.N, by=names(idxDt)]
-			print(str(idxDt))
-			saveRDS(idxDt, "tmp2.rds")
+			# if you in the future encounter some weird error here (e.g. 'Error in `[.data.frame`(x, i, j) : undefined columns selected')
+			# this is likely due to some weird namespace issue. --> keep data.table in the 'depends' section of DESCRIPTION
 			idxM <- as.matrix(idxDt[,c(1,2)])
 			if (.object@diskDump){
 				# DelayedArray does not support indexing via matrix
