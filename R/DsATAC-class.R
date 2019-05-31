@@ -861,6 +861,8 @@ setMethod("addCountDataFromGRL",
 			))
 			# count the number of occurrences between each index pair
 			idxDt <- idxDt[,.N, by=names(idxDt)]
+			print(str(idxDt))
+			saveRDS(idxDt, "tmp.rds")
 			idxM <- as.matrix(idxDt[,c(1,2)])
 			if (.object@diskDump){
 				# DelayedArray does not support indexing via matrix
