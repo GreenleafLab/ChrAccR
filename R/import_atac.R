@@ -205,7 +205,7 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", reg
 #' @export
 #' 
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' # download and unzip the dataset
 #' datasetUrl <- "https://s3.amazonaws.com/muellerf/data/ChrAccR/data/tutorial/tcells.zip"
 #' downFn <- "tcells.zip"

@@ -20,7 +20,7 @@
 Create a report summarizing exploratory analyses of an accessibility dataset
 }
 \examples{
-\donttest{
+\dontrun{
 dsa <- ChrAccRex::loadExample("dsAtac_ia_example")
 dsa_qnorm <- transformCounts(dsa, method="quantile")
 setConfigElement("annotationColumns", c("cellType", "donor", "stimulus"))

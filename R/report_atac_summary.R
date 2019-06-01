@@ -21,7 +21,7 @@ if (!isGeneric("createReport_summary")) {
 #' @export
 #' 
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' dsa <- ChrAccRex::loadExample("dsAtac_ia_example")
 #' reportDir <- file.path(".", "ChrAccR_reports")
 #' createReport_summary(dsa, reportDir)

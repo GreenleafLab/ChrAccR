@@ -21,7 +21,7 @@ if (!isGeneric("createReport_differential")) {
 #' @export
 #' 
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' dsa <- ChrAccRex::loadExample("dsAtac_ia_example")
 #' reportDir <- file.path(".", "ChrAccR_reports")
 #' setConfigElement("regionTypes", setdiff(getRegionTypes(dsa), c("promoters_gc_protein_coding", "t10k")))

@@ -33,7 +33,7 @@ sample or a single character string specifying the column name in \code{sampleAn
 Create a DsATAC dataset from multiple input bam files
 }
 \examples{
-\donttest{
+\dontrun{
 # download and unzip the dataset
 datasetUrl <- "https://s3.amazonaws.com/muellerf/data/ChrAccR/data/tutorial/tcells.zip"
 downFn <- "tcells.zip"
