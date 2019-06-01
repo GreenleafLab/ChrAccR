@@ -575,7 +575,7 @@ setMethod("regionAggregation",
 					hasValM <- .object@counts[[type]] != 0
 				}
 			} else {
-				hasValM <- !is.na(.object@counts[[type]])
+				hasValM <- !is.na(.object@counts[[type]]) & .object@counts[[type]] > 0
 			}
 			rows2keep <- rsFun(hasValM) > 0
 			logger.info(c("  of which", sum(rows2keep), "regions contained signal counts"))
