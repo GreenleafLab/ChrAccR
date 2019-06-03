@@ -10,7 +10,9 @@ Suggests:
     muReportR,
     DelayedArray,
     chromVAR,
-    motifmatchr
+    motifmatchr,
+    knitr,
+    rmarkdown
 Depends:
     GenomicRanges,
     ggplot2,
@@ -40,4 +42,5 @@ Collate:
     'report_atac_summary.R'
     'report_atac_exploratory.R'
     'report_atac_differential.R'
+VignetteBuilder: knitr
 RoxygenNote: 6.1.1
