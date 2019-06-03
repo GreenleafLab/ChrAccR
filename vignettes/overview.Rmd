@@ -23,7 +23,7 @@ It supports popular protocols like the Assay for Transposase-Accessible Chromati
 (ATAC-seq) and Nucleosome Occupancy and Methylome Sequencing (NOMe-seq; beta-stage)
 in bulk and single-cell scenarios.
 
-<!-- ![Overview of ChrAccR](figures/ChrAccR_overview.png) -->
+![Overview of ChrAccR](figures/ChrAccR_overview.png)
 
 
 # Installation
@@ -56,7 +56,7 @@ This vignette focuses on the analysis of ATAC-seq data. The `ChrAccRex` data pac
 devtools::install_github("demuellae/ChrAccRex")
 ```
 
-The example data used in this vignette contains ATAC-seq data for different T cell samples from the immune atlas dataset (https://doi.org/10.1101/409722) and it focuses on only a subset of the human genome (approximately 1%). It can be loaded using:
+The example data used in this vignette contains ATAC-seq data for different T cell samples from the immune atlas dataset [@Calderon:2018ha] and it focuses on only a subset of the human genome (approximately 1%). It can be loaded using:
 ```{r, message = FALSE, warning = FALSE}
 dsa <- ChrAccRex::loadExample("dsAtac_ia_example")
 ```
@@ -151,6 +151,12 @@ dsa_filtered <- filterLowCovg(dsa, thresh=10L, reqSamples=0.75)
 dsa_filtered <- filterChroms(dsa, exclChrom=c("chr21"))
 ```
 
+To remove a region type entirely, use `removeRegionType`:
+```{r, message = FALSE, warning = FALSE}
+dsa_not10k <- removeRegionType(dsa, "t10k")
+getRegionTypes(dsa_not10k)
+```
+
 ### Normalizing count data
 `ChrAccR` provides several methods for normalizing and adjusting the region count data. These methods can be accessed through the `transformCounts` function:
 ```{r, message = FALSE, warning = FALSE}
@@ -164,6 +170,30 @@ dsa_l2rpkm <- transformCounts(dsa_rpkm, method="log2", regionTypes=c("IA_prog_pe
 dsa_vst <- transformCounts(dsa, method="vst", regionTypes=c("IA_prog_peaks"))
 # correct for potential batch effects based on the annotated donor
 dsa_vst <- transformCounts(dsa_vst, method="batchCorrect", batch=getSampleAnnot(dsa_qnorm)[,"donor"], regionTypes=c("IA_prog_peaks"))
+```
+
+### Adding a region type for count data aggregation
+
+Sometimes you want to aggregate count data over a region set after the `DsATAC` object has been created. Maybe you came up with a better peak set or your collaborator provided you with a highly interesting list of putative enhancer elements. These types of region sets can be easily added to `DsATAC` objects using the `regionAggregation` function. It is most useful, if the dataset contains insertion/fragment data. The following example downloads a set of putative regulatory elements defined by the Ensembl Regulatory Build [@Zerbino:2015bx] of BLUEPRINT epigenome data (http://www.blueprint-epigenome.eu/) and aggregates the ATAC-seq insertions within these regions.
+```{r, message = FALSE, warning = FALSE, eval = FALSE}
+# download the file and prepare a GRanges object
+regionFileUrl <- "http://medical-epigenomics.org/software/rnbeads/materials//data/regiondb/annotation_hg38_ensembleRegBuildBPall.RData"
+downFn <- tempfile(pattern="regions", fileext="RData")
+download.file(regionFileUrl, downFn)
+regionEnv <- new.env()
+load(downFn, envir=regionEnv)
+regionGr <- unlist(regionEnv$regions)
+
+# aggregate insertions across the new region type
+dsa_erb <- regionAggregation(dsa, regionGr, "ERB", signal="insertions")
+dsa_erb
+```
+
+### Merging samples
+You can also merge samples, e.g. from different technical or biological replicates. In the following example, we merge all biological replicates (originating from different donors) for the same cell type and stimulation conditions. This grouping information is contained in the `sampleGroup` annotation column. By default, counts will be added up for each aggregated region, but you can specify other aggregation methods such as the mean or median in the `countAggrFun` argument.
+```{r, message = FALSE, warning = FALSE}
+dsa_merged <- mergeSamples(dsa, "sampleGroup", countAggrFun="sum")
+getSamples(dsa_merged)
 ```
 
 ## Saving and loading datasets
@@ -195,10 +225,15 @@ bamDir <- file.path("tcells", "bam")
 sampleAnnot <- read.table(sampleAnnotFn, sep="\t", header=TRUE, stringsAsFactors=FALSE)
 # add a column that ChrAccR can use to find the correct bam file for each sample
 sampleAnnot[,"bamFilenameFull"] <- file.path(bamDir, sampleAnnot[,"bamFilename"])
+# prepare a list of GRanges object. Each element corresponds to a region set
+rsl <- list(
+  "tiling500bp" = muRtools::getTilingRegions("hg38", width=500L, onlyMainChrs=TRUE),
+  "tiling5kb" = muRtools::getTilingRegions("hg38", width=5000L, onlyMainChrs=TRUE)
+)
 ```
 
 ```{r, message = FALSE, warning = FALSE, eval = FALSE}
-dsa_fromBam <- DsATAC.bam(sampleAnnot, "bamFilenameFull", "hg38", regionSets=NULL, sampleIdCol="sampleId")
+dsa_fromBam <- DsATAC.bam(sampleAnnot, "bamFilenameFull", "hg38", regionSets=rsl, sampleIdCol="sampleId")
 ```
 
 # Analysis reports
@@ -288,8 +323,15 @@ tsse$tssEnrichment
 tsse$plot
 ```
 
+## Differential accessibility
+
+```{r, message = FALSE, warning = FALSE, eval = TRUE}
+daTab <- getDiffAcc(dsa, "IA_prog_peaks", "stimulus", grp1Name="S", grp2Name="U", adjustCols=c("cellType", "donor"))
+```
+
 ## Transcription factor motif enrichment using `ChromVAR`
 
+Genome-wide aggregates across potential binding sites for transcription factors can be extremely useful in the interpretation of chromatin accessibility. The `chromVAR` package is designed to quantify the overall TF motif accessibility for each sample in a dataset [@Schep:2017je]. Using the `getChromVarDev` function, we can obtain these deviation scores from `DsATAC` datasets:
 ```{r, message = FALSE, warning = FALSE, eval = FALSE}
 cvRes <- getChromVarDev(dsa, "IA_prog_peaks", motifs="jaspar")
 devZ <- deviations(cvRes)
@@ -297,6 +339,21 @@ str(devZ)
 # plot a clustered heatmap of the first 50 motifs
 pheatmap::pheatmap(devZ[1:20,])
 ```
+
+## Exporting to high-level Bioconductor data structures
+
+`ChrAccR` offers utility functions to convert accessibility data to other commonly used data structures for Bioconductor-based workflows. For instance, to export count data aggregated over a certain region type as a `SummarizedExperiments` object you can use:
+```{r, message = FALSE, warning = FALSE, eval = TRUE}
+se <- getCountsSE(dsa, "IA_prog_peaks")
+se
+```
+
+To export data as a `DESeq2` dataset for differential accessibility analysis:
+```{r, message = FALSE, warning = FALSE, eval = TRUE}
+dds <- getDESeq2Dataset(dsa, "IA_prog_peaks", designCols=c("donor", "stimulus", "cellType"))
+dds
+```
+
 
 # Session Info
 
@@ -307,4 +364,95 @@ Sys.Date()
 ```{r}
 sessionInfo()
 ```
+
+# References
+
+---
+link-citations: yes
+references:
+  - id: Zerbino:2015bx
+    title: The Ensembl Regulatory Build
+    author: 
+    - family: Zerbino
+      given: Daniel R
+    - family: Wilder
+      given: Steven P
+    - family: Johnson
+      given: Nathan
+    - family: Juettemann
+      given: Thomas
+    - family: Flicek
+      given: Paul R
+    container-title: Genome Biology
+    DOI: 10.1186/s13059-015-0621-5
+    volume: 16
+    number: 1
+    page: 56
+    issued:
+      year: 2015
+    type: article-journal
+  - id: Schep:2017je
+    title: "chromVAR: inferring transcription-factor-associated accessibility from single-cell epigenomic data"
+    author: 
+    - family: Schep
+      given: Alicia N
+    - family: Wu
+      given: Beijing
+    - family: Buenrostro
+      given: Jason D
+    - family: Greenleaf
+      given: William J
+    container-title: Nature methods
+    DOI: 10.1038/nmeth.4401
+    volume: 14
+    number: 10
+    page: 975-978
+    issued:
+      year: 2017
+    type: article-journal
+  - id: Calderon:2018ha
+    title: Landscape of stimulation-responsive chromatin across diverse human immune cells
+    author: 
+    - family: Calderon
+      given: Diego
+    - family: Nguyen
+      given: Michelle LT
+    - family: Mezger
+      given: Anja
+    - family: Kathiria
+      given: Arwa
+    - family: Nguyen
+      given: Vinh
+    - family: Lescano
+      given: Ninnia
+    - family: Wu
+      given: Beijing
+    - family: Trombetta
+      given: John
+    - family: Ribado
+      given: Jessica V
+    - family: Knowles
+      given: David A
+    - family: Gao
+      given: Ziyue
+    - family: Parent
+      given: Audrey V
+    - family: Burt
+      given: Trevor D
+    - family: Anderson
+      given: Mark S
+    - family: Criswell
+      given: Lindsey A
+    - family: Greenleaf
+      given: William J
+    - family: Marson
+      given: Alexander
+    - family: Pritchard
+      given: Johnathan K
+    container-title: biorxiv.org
+    DOI: 10.1101/409722
+    issued:
+      year: 2018
+    type: article-journal
+---
 

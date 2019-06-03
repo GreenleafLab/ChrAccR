@@ -35,6 +35,12 @@ a \code{data.frame} containing differential accessibility information
 \description{
 Compute differential accessibility
 }
+\examples{
+\dontrun{
+dsa <- ChrAccRex::loadExample("dsAtac_ia_example")
+daTab <- getDiffAcc(dsa, "IA_prog_peaks", "stimulus", grp1Name="S", grp2Name="U", adjustCols=c("cellType", "donor"))
+}
+}
 \author{
 Fabian Mueller
 }

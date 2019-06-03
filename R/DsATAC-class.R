@@ -2134,6 +2134,12 @@ if (!isGeneric("getDiffAcc")) {
 #' @aliases getDiffAcc,DsATAC-method
 #' @author Fabian Mueller
 #' @export
+#' 
+#' @examples
+#' \dontrun{
+#' dsa <- ChrAccRex::loadExample("dsAtac_ia_example")
+#' daTab <- getDiffAcc(dsa, "IA_prog_peaks", "stimulus", grp1Name="S", grp2Name="U", adjustCols=c("cellType", "donor"))
+#' }
 setMethod("getDiffAcc",
 	signature(
 		.object="DsATAC"

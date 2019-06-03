@@ -4,7 +4,7 @@ Description: Tools for analyzing chromatin accessibility data in R. Currently
     supports ATAC-seq and NOMe-seq data analysis
 Author: Fabian Mueller
 Maintainer: Fabian Mueller <muellerf@stanford.edu>
-Date: 2019-05-24
+Date: 2019-06-04
 Suggests:
     ChrAccRex,
     muReportR,
@@ -19,7 +19,7 @@ Depends:
     Matrix,
     data.table
 License: GPL-2
-Version: 0.9
+Version: 0.9.1
 Collate: 
     'classDefs.R'
     'utils.R'
