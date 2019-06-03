@@ -180,6 +180,13 @@ if (!isGeneric("getCountsSE")) {
 #' @aliases getCountsSE,DsATAC-method
 #' @author Fabian Mueller
 #' @export
+#' 
+#' @examples
+#' \dontrun{
+#' dsa <- ChrAccRex::loadExample("dsAtac_ia_example")
+#' se <- getCountsSE(dsa, "IA_prog_peaks")
+#' se
+#' }
 setMethod("getCountsSE",
 	signature(
 		.object="DsATAC"
@@ -2051,7 +2058,14 @@ if (!isGeneric("getDESeq2Dataset")) {
 #' @aliases getDESeq2Dataset
 #' @aliases getDESeq2Dataset,DsATAC-method
 #' @author Fabian Mueller
-#' @noRd
+#' @export
+#' 
+#' @examples
+#' \dontrun{
+#' dsa <- ChrAccRex::loadExample("dsAtac_ia_example")
+#' dds <- getDESeq2Dataset(dsa, "IA_prog_peaks", designCols=c("donor", "stimulus", "cellType"))
+#' dds
+#' }
 setMethod("getDESeq2Dataset",
 	signature(
 		.object="DsATAC"

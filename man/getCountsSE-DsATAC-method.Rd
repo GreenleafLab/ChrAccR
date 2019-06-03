@@ -21,6 +21,13 @@
 \description{
 Return a \code{SummarizedExperiment} object of count values
 }
+\examples{
+\dontrun{
+dsa <- ChrAccRex::loadExample("dsAtac_ia_example")
+se <- getCountsSE(dsa, "IA_prog_peaks")
+se
+}
+}
 \author{
 Fabian Mueller
 }
