@@ -10,4 +10,10 @@ r_github_packages:
 - demuellae/muRtools
 - demuellae/ChrAccR
 - demuellae/ChrAccRex
+addons:
+  apt:
+    packages:
+    - libgsl0ldbl
+    - libgsl0-dev
 r_check_args: --no-vignettes --no-build-vignettes
+warnings_are_errors: false
