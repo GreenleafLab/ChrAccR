@@ -11,7 +11,9 @@ output:
 #     highlight: kate
 author: Fabian Mueller
 date: "`r Sys.Date()`"
-title: ChrAccR
+title: |
+  | Analysis of ATAC-seq data
+  | using ChrAccR
 vignette: >
   %\VignetteIndexEntry{overview}
   %\VignetteEngine{knitr::rmarkdown}
@@ -37,8 +39,9 @@ It supports popular protocols like the Assay for Transposase-Accessible Chromati
 (ATAC-seq) and Nucleosome Occupancy and Methylome Sequencing (NOMe-seq; beta-stage)
 in bulk and single-cell scenarios.
 
-![Overview of ChrAccR](figures/ChrAccR_overview.png)
+![Overview of ATAC-seq data analysis in `ChrAccR`](figures/ChrAccR_overview.png)
 
+This vignette focuses on the analysis of ATAC-seq data. This data can be directly imported from aligned sequencing reads into a `DsATAC` object, the main data structure for working with ATAC-seq data. Using a small example dataset of chromatin accessibility in human immune cells, this vignette covers filtering, normalizing and aggregating count data across genomic regions of interest and introduces convenient utility functions for quality control (QC), data exploration and differential analysis. Additionally, `ChrAccR` facilitates the automatic generation of analysis reports using several preconfigured workflows.
 
 # Installation
 
@@ -65,7 +68,7 @@ library(ChrAccR)
 
 ## Example data
 
-This vignette focuses on the analysis of ATAC-seq data. The `ChrAccRex` data package contains example datasets for `ChrAccR`. If you haven't already installed `ChrAccRex` use
+The `ChrAccRex` data package contains a small example ATAC-seq datasets for `ChrAccR`. If you haven't already installed `ChrAccRex` use
 ```{r, message = FALSE, warning = FALSE, eval = FALSE}
 devtools::install_github("demuellae/ChrAccRex")
 ```
@@ -77,7 +80,7 @@ library(ggplot2)
 theme_set(muRtools::theme_nogrid())
 ```
 
-The example data used in this vignette contains ATAC-seq data for different T cell samples from the immune atlas dataset [@Calderon:2018ha] and it focuses on only a subset of the human genome (approximately 1%). It can be loaded using:
+The example data used in this vignette was designed for illustrating the functionality of `ChrAccR` rather than a full analysis. It contains ATAC-seq data for a subset of different T cell samples from the immune atlas dataset [@Calderon:2018ha] and it focuses on only a subset of the human genome (approximately 1%). It can be loaded using:
 ```{r, message = FALSE, warning = FALSE}
 dsa <- ChrAccRex::loadExample("dsAtac_ia_example")
 ```
@@ -288,6 +291,7 @@ To see which options are available use the help function for `setConfigElement`
 The `createReport_X()` take a `DsATAC` dataset as input and write their results to a report directory. Not that this directory can only contain one report for each analysis workflow and the function will result in an error if the directory already contains a report of that type.
 
 ## Summary analysis
+
 To get an overview of an ATAC-seq dataset use `createReport_summary()`. The resulting report will contain a summary of the sample annotation, genomic coverage by sequencing reads and QC metrics such as a summary of the fragment size distribution and enrichment of Tn5 insertions at transcription start sites (TSS enrichment).
 ```{r, message = FALSE, warning = FALSE, eval = FALSE}
 reportDir <- file.path(".", "ChrAccR_reports")
@@ -296,11 +300,15 @@ createReport_summary(dsa, reportDir)
 ```
 
 ## Exploratory analysis
+
+The exploratory analysis reports comprises unsupervised analysis results, such as dimension reduction plots and sample clustering. Additionally, TF motif activity for peak region sets (those region sets that contain `'peak'` in their name) is assessed using the `chromVAR` package [@Schep:2017je].
 ```{r, message = FALSE, warning = FALSE, eval = FALSE}
 # create the report (takes ~1 min on the example dataset)
 createReport_exploratory(dsa_qnorm, reportDir)
 ```
 ## Differential analysis
+
+The differential analysis workflow focuses on the pairwise comparison between groups of samples. The resulting report contains summary tables and plot for each comparison (e.g. volcano plots). Differentially accessible regions are identified using `DESeq2` and multiple p-value and rank cutoffs.
 ```{r, message = FALSE, warning = FALSE, eval = FALSE}
 # differential analysis option settings
 setConfigElement("differentialColumns", c("stimulus", "cellType"))
@@ -313,6 +321,8 @@ createReport_differential(dsa, reportDir)
 # Utility functions
 
 ## Principal component plot
+
+To quickly obtain a dimension reduction plot based on a specific set of regions in a `DsATAC` dataset, you can use the `getDimRedCoords.X` functions from the `muRtools` package:
 ```{r, message = FALSE, warning = FALSE, eval = TRUE}
 cm <- getCounts(dsa_qnorm, "IA_prog_peaks")
 pcaCoord <- muRtools::getDimRedCoords.pca(t(cm))
@@ -320,11 +330,15 @@ muRtools::getDimRedPlot(pcaCoord, annot=getSampleAnnot(dsa_qnorm), colorCol="cel
 ```
 
 ## Plot the fragment size distribution
+
+The fragment size distribution of an ATAC-seq can provide valuable quality control information. Typically, we expect a large number of fragments with sub-nucleosomal length (length < 200bp) and further peaks corresponding to 1,2, ... nucleosomes (roughly multiples of 200bp in length). Here is how you can plot a corresponding density estimation of the fragment length distribution for a specific sample in the dataset.
 ```{r, message = FALSE, warning = FALSE, eval = TRUE}
 plotInsertSizeDistribution(dsa, "TCD8EM_U_1002")
 ```
 
 ## TSS enrichment plots
+
+The enrichment of the number of fragments at transcription start sites (TSS) over genomic background is a valuable indicator for the signal-to-noise ratio in ATAC-seq data. In `ChrAccR`, the TSS enrichment can be computed for each sample in a dataset using the `getTssEnrichment` function. You will need the coordinates of TSSs in the genome as input and the function will return an object comprising a `ggplot` object as well as a numeric score that quantifies the enrichment at the promoter (default definition: TSS +/- 2kb) vs a background (default: 100bp outside the promoter window). Absolute and smoothed counts will be used for the computation.
 ```{r, message = FALSE, warning = FALSE, eval = TRUE}
 # prepare a GRanges object of TSS coordinates
 tssGr <- muRtools::getAnnotGrl.gencode("gencode.v27")[["gene"]]
@@ -354,7 +368,7 @@ Genome-wide aggregates across potential binding sites for transcription factors 
 cvRes <- getChromVarDev(dsa, "IA_prog_peaks", motifs="jaspar")
 devZ <- deviations(cvRes)
 str(devZ)
-# plot a clustered heatmap of the first 50 motifs
+# plot a clustered heatmap of the first 20 motifs
 pheatmap::pheatmap(devZ[1:20,])
 ```
 
