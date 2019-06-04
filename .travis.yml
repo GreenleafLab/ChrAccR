@@ -4,6 +4,8 @@ r:
 - bioc-release
 r_packages:
 - devtools
+bioc_packages:
+- HDF5Array
 r_github_packages:
 - demuellae/muLogR
 - demuellae/muReportR
@@ -17,3 +19,14 @@ addons:
     - libgsl0-dev
 r_check_args: --no-vignettes --no-build-vignettes
 warnings_are_errors: false
+# automatically build pkgdown site using the gh-pages branch
+after_success:
+  - Rscript -e 'pkgdown::build_site()'
+deploy:
+  provider: pages
+  skip-cleanup: true
+  github-token: $GITHUB_PAT
+  keep-history: true
+  local-dir: docs
+  on:
+    branch: master

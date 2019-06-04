@@ -1,14 +1,10 @@
 a {
   color: #8c1515;
 }
-:link:hover {
+a:link {
+	color: #8c1515;
+}
+a:hover {
 	color: #8c1515;
 	background-color: #F9F6EF;
-}
-p a {
-	color: #8c1515;
-}
-p a:hover {
-	color: #8c1515;
-	background-color: #d2c295;
 }
