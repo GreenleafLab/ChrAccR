@@ -2,13 +2,12 @@ language: r
 cache: packages
 r:
 - bioc-release
-r_github_packages:
-- hadley/pkgdown
 r_packages:
 - devtools
 r_github_packages:
 - demuellae/muLogR
 - demuellae/muReportR
 - demuellae/muRtools
+- demuellae/ChrAccR
 - demuellae/ChrAccRex
 r_check_args: --no-vignettes --no-build-vignettes
