@@ -18,6 +18,20 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = FALSE,
+  comment = ">"
+)
+```
+```{r, echo=FALSE}
+htmltools::img(src = knitr::image_uri(system.file(file.path("extdata", "chraccr_logo.png"), package="ChrAccR")), 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px; height:96px;')
+```
+
+# Introduction
+
 `ChrAccR` is an R package for the analysis of chromatin accessibility data.
 It supports popular protocols like the Assay for Transposase-Accessible Chromatin
 (ATAC-seq) and Nucleosome Occupancy and Methylome Sequencing (NOMe-seq; beta-stage)
@@ -56,16 +70,16 @@ This vignette focuses on the analysis of ATAC-seq data. The `ChrAccRex` data pac
 devtools::install_github("demuellae/ChrAccRex")
 ```
 
-The example data used in this vignette contains ATAC-seq data for different T cell samples from the immune atlas dataset [@Calderon:2018ha] and it focuses on only a subset of the human genome (approximately 1%). It can be loaded using:
-```{r, message = FALSE, warning = FALSE}
-dsa <- ChrAccRex::loadExample("dsAtac_ia_example")
-```
-
 Note that many of the plots created in this vignette use the excellent `ggplot2` package. The following code loads the package and sets a different plotting theme:
 ```{r, message = FALSE, warning = FALSE, eval = TRUE}
 library(ggplot2)
 # use a grid-less theme
 theme_set(muRtools::theme_nogrid())
+```
+
+The example data used in this vignette contains ATAC-seq data for different T cell samples from the immune atlas dataset [@Calderon:2018ha] and it focuses on only a subset of the human genome (approximately 1%). It can be loaded using:
+```{r, message = FALSE, warning = FALSE}
+dsa <- ChrAccRex::loadExample("dsAtac_ia_example")
 ```
 
 # Overview of `ChrAccR` data structures
@@ -138,7 +152,7 @@ Sometimes you will want to focus on certain regions. For instance the following 
 peakCounts <- getCounts(dsa, "IA_prog_peaks")
 # identify the 1000 most variable peaks
 isVar <- rank(-matrixStats::rowVars(peakCounts)) <= 1000 
-# remove the remaining peaks from the dataset
+# remove the less-variable peaks from the dataset
 dsa_varPeaks <- removeRegions(dsa, !isVar, "IA_prog_peaks")
 getNRegions(dsa_varPeaks, "IA_prog_peaks")
 ```
@@ -208,6 +222,8 @@ dsa_reloaded
 ```
 
 # Importing ATAC-seq data
+
+We provide a reduced version of the example dataset that you have already seen as raw files. This dataset contains BAM files for one technical replicate of the example dataset as well as a sample annotation table. If you have not already done so, please download and unzip the dataset:
 ```{r, message = FALSE, warning = FALSE, eval = FALSE}
 # download and unzip the dataset
 datasetUrl <- "https://s3.amazonaws.com/muellerf/data/ChrAccR/data/tutorial/tcells.zip"
@@ -218,6 +234,7 @@ unzip(downFn, exdir=".")
 
 ## Importing data from `bam` files
 
+ATAC-seq data can be read from BAM files that contain aligned reads. These reads originate from fragments whose endpoints resemble Tn5 insertion sites. All `ChrAccR` needs to read the input files is a sample annotation table and pointers to the BAM files. The following code reads the sample annotation table from the supplied text file and adds a column that contains the BAM file locations on your disk for each sample. Additionally, we prepare a list of region sets (genome-wide tiling regions with window sizes of 500bp and 5kb) that we want to aggregate the insertion counts over.
 ```{r, message = FALSE, warning = FALSE, eval = FALSE}
 # prepare the sample annotation table
 sampleAnnotFn <- file.path("tcells", "samples.tsv")
@@ -232,6 +249,7 @@ rsl <- list(
 )
 ```
 
+After these preparatory steps, we can easily create a `DsATAC` dataset using the `DsATAC.bam` function. Supplied with the sample annotation table and a reference to the BAM files, it will automatically determine Tn5 insertion sites from the BAM files and aggregate counts over the optionally supplied list of region sets (if no such list is provided, 200bp-tiling windows will be used as the default).
 ```{r, message = FALSE, warning = FALSE, eval = FALSE}
 dsa_fromBam <- DsATAC.bam(sampleAnnot, "bamFilenameFull", "hg38", regionSets=rsl, sampleIdCol="sampleId")
 ```
@@ -307,7 +325,7 @@ plotInsertSizeDistribution(dsa, "TCD8EM_U_1002")
 ```
 
 ## TSS enrichment plots
-```{r, message = FALSE, warning = FALSE, eval = FALSE}
+```{r, message = FALSE, warning = FALSE, eval = TRUE}
 # prepare a GRanges object of TSS coordinates
 tssGr <- muRtools::getAnnotGrl.gencode("gencode.v27")[["gene"]]
 tssGr <- tssGr[elementMetadata(tssGr)[,"gene_type"]=="protein_coding"]
@@ -332,7 +350,7 @@ daTab <- getDiffAcc(dsa, "IA_prog_peaks", "stimulus", grp1Name="S", grp2Name="U"
 ## Transcription factor motif enrichment using `ChromVAR`
 
 Genome-wide aggregates across potential binding sites for transcription factors can be extremely useful in the interpretation of chromatin accessibility. The `chromVAR` package is designed to quantify the overall TF motif accessibility for each sample in a dataset [@Schep:2017je]. Using the `getChromVarDev` function, we can obtain these deviation scores from `DsATAC` datasets:
-```{r, message = FALSE, warning = FALSE, eval = FALSE}
+```{r, message = FALSE, warning = FALSE, eval = TRUE}
 cvRes <- getChromVarDev(dsa, "IA_prog_peaks", motifs="jaspar")
 devZ <- deviations(cvRes)
 str(devZ)
