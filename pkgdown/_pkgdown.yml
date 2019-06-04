@@ -1,0 +1,19 @@
+template:
+  params:
+    bootswatch: sandstone
+
+navbar:
+  left:
+  - text: Vignettes
+    menu:
+      - text: Overview
+        href: articles/overview.html
+  - text: Reference
+    href: reference/index.html
+  - text: GitHub
+    icon: fa-github
+    href: https://github.com/demuellae/ChrAccR
+
+authors:
+  Fabian Mueller:
+    href: http://web.stanford.edu/~muellerf/
