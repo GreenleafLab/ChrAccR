@@ -25,4 +25,4 @@ devtools::install_github("demuellae/ChrAccR")
 
 ## Getting started
 
-The `ChrAccR` [vignette](https://muellerf.s3.amazonaws.com/data/ChrAccR/vignette/overview.html) provides a most excellent starting point to get familiar with the package.
+The `ChrAccR` [vignette](https://demuellae.github.io/ChrAccR/articles/overview.html) provides a most excellent starting point to get familiar with the package.
