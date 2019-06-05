@@ -19,8 +19,7 @@
 #' @export
 DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", regionSets=NULL, sampleIdCol=filePrefixCol, type="insBam", diskDump=FALSE, keepInsertionInfo=TRUE, bySample=FALSE, pairedEnd=TRUE){
 	if (diskDump){
-		require(DelayedArray)
-		require(HDF5Array)
+		if (!requireNamespace(DelayedArray) || !requireNamespace(HDF5Array)) logger.error(c("Could not load dependency: DelayedArray, HDF5Array"))
 	}
 	if (!is.element(type, c("bam", "insBam", "insBed"))){
 		logger.error(c("Unsupported import type:", type))
@@ -31,7 +30,6 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", reg
 
 	inputFns <- c()
 	if (is.element(type, c("bam", "insBam"))){
-		require(GenomicAlignments)
 		if (nchar(dataDir) > 0){
 			inputFns <- file.path(dataDir, paste0(sampleAnnot[,filePrefixCol], ".noMT.filtered.deduped.bam"))
 		} else {
@@ -39,7 +37,6 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", reg
 		}
 		names(inputFns) <- sampleIds
 	} else if (type=="insBed"){
-		require(rtracklayer)
 		if (nchar(dataDir) > 0){
 			inputFns <- file.path(dataDir, paste0(sampleAnnot[,filePrefixCol], ".insertions.bed.gz"))
 		} else {
@@ -47,7 +44,6 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", reg
 		}
 		names(inputFns) <- sampleIds
 	} else if (type=="covBigWig"){
-		require(rtracklayer)
 		if (nchar(dataDir) > 0){
 			inputFns <- file.path(dataDir, paste0(sampleAnnot[,filePrefixCol], ".100bp_coverage.bw"))
 		} else {
@@ -163,7 +159,7 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", reg
 				sid <- sampleIds[i]
 				logger.status(c("Importing sample", ":", sid, paste0("(", i, " of ", nSamples, ")")))
 				fn <- inputFns[sid]
-				grl <- GRangesList(import(fn, format = "BED"))
+				grl <- GRangesList(rtracklayer::import(fn, format = "BED"))
 				grl[[1]] <- setGenomeProps(grl[[1]], genome, onlyMainChrs=TRUE)
 				names(grl) <- sid
 				obj <- addCountDataFromGRL(obj, grl)
@@ -175,7 +171,7 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", reg
 				sid <- sampleIds[i]
 				logger.status(c("Importing sample", ":", sid, paste0("(", i, " of ", nSamples, ")")))
 				fn <- inputFns[sid]
-				grl <- GRangesList(import(fn, format = "BigWig"))
+				grl <- GRangesList(rtracklayer::import(fn, format = "BigWig"))
 				grl[[1]] <- setGenomeProps(grl[[1]], genome, onlyMainChrs=TRUE)
 				names(grl) <- sid
 				obj <- addSignalDataFromGRL(obj, grl, aggrFun=function(x){mean(x, na.rm=TRUE)})
@@ -350,7 +346,6 @@ getNonOverlappingByScore <- function(gr, scoreCol="score"){
 #' @author Fabian Mueller
 #' @export
 getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sampleIdCol=filePrefixCol, type="summits_no_fw", unifWidth=500L, replicateCol=NA, replicatePercReq=1.0, keepOvInfo=FALSE){
-	require(matrixStats)
 	if (!is.element(type, c("summits_no_fw"))){
 		logger.error(c("Unsupported import type:", type))
 	}
@@ -363,7 +358,6 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 
 	inputFns <- c()
 	if (type=="summits_no_fw"){
-		require(rtracklayer)
 		if (nchar(dataDir) > 0){
 			inputFns <- file.path(dataDir, paste0(sampleAnnot[,filePrefixCol], "_summits.bed"))
 		} else {
@@ -380,7 +374,7 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 	res <- NULL
 	if (type=="summits_no_fw"){
 		peakFun <- function(fn, sid){
-			rr <- import(fn, format="BED")
+			rr <- rtracklayer::import(fn, format="BED")
 			rr <- setGenomeProps(rr, genome, onlyMainChrs=TRUE)
 			rr <- rr[isCanonicalChrom(as.character(seqnames(rr)))]
 			# scale scores to their percentiles
@@ -427,7 +421,7 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 				nReq <- as.integer(ceiling(replicatePercReq * length(sidsRepl)))
 				gRepMat[,gg] <- rowSums(ovMat) >= nReq
 			}
-			keep <- rowAnys(gRepMat)
+			keep <- matrixStats::rowAnys(gRepMat)
 			if (keepOvInfo){
 				colnames(gRepMat) <- paste0(".repr.", colnames(gRepMat))
 				elementMetadata(res) <- cbind(elementMetadata(res), gRepMat)
@@ -461,7 +455,6 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 #' @author Fabian Mueller
 #' @export
 getSampleMetrics.snakeATAC <- function(sampleAnnot, snakeDir, withPeaks=TRUE){
-	require(R.utils) #countLines
 	if (length(rownames(sampleAnnot)) != nrow(sampleAnnot)){
 		logger.error(c("sampleAnnot does not contain valid rownames"))
 	}
@@ -527,7 +520,7 @@ getSampleMetrics.snakeATAC <- function(sampleAnnot, snakeDir, withPeaks=TRUE){
 		#get the number of called peaks
 		peakDir <- file.path(snakeDir, "output", "peaks")
 		numPeaks <- sapply(sampleMetrics$sampleId, FUN=function(sid){
-			countLines(file.path(peakDir, paste0(sid, "_summits.bed")))
+			R.utils::countLines(file.path(peakDir, paste0(sid, "_summits.bed")))
 		})
 		sampleMetrics[,"numPeaks"] <- numPeaks
 	}

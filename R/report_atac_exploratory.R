@@ -37,7 +37,7 @@ setMethod("createReport_exploratory",
 		.object,
 		reportDir
 	) {
-		require(muReportR)
+		if (!requireNamespace(muReportR)) logger.error(c("Could not load dependency: muReportR"))
 		initConfigDir <- !dir.exists(file.path(reportDir, "_config"))
 		rr <- createReport(file.path(reportDir, "exploratory.html"), "Exploratory Analysis", page.title="Exploratory", init.configuration=initConfigDir, theme="stanford")
 		rDir.data <- getReportDir(rr, dir="data", absolute=FALSE)
@@ -187,7 +187,6 @@ setMethod("createReport_exploratory",
 			rr <- addReportList(rr, ll, type="u")
 
 			logger.start("Plotting chromVAR results")
-				require(pheatmap)
 				colors.cv <- getConfigElement("colorSchemesCont")
 				if (is.element("chromVAR", names(colors.cv))) {
 					colors.cv <- colors.cv[["chromVAR"]]
@@ -221,7 +220,7 @@ setMethod("createReport_exploratory",
 						maxDev <- max(abs(devScores[mostVarIdx,]), na.rm=TRUE)
 						plotFn <- paste0("chromVarDevHeatmap_", rts)
 						repPlot <- createReportPlot(plotFn, rr, width=10, height=10, create.pdf=TRUE, high.png=300L)
-							pheatmap(
+							pheatmap::pheatmap(
 								devScores[mostVarIdx,],
 								color=colorRampPalette(colors.cv)(100),
 								breaks=seq(-maxDev, maxDev, length.out=101), 

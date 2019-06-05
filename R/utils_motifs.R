@@ -15,7 +15,6 @@
 #' @author Fabian Mueller
 #' @export
 prepareMotifmatchr <- function(genome, motifs){
-	require(motifmatchr)
 	res <- list()
 
 	# get the species name and the genome sequence object based on the object
@@ -53,21 +52,20 @@ prepareMotifmatchr <- function(genome, motifs){
 			motifL <- c(motifL, TFBSTools::toPWM(mlCur))
 		}
 		if (is.element("jaspar2016", motifs)){
-			require(chromVAR)
-			motifL <- c(motifL, TFBSTools::toPWM(getJasparMotifs(species=spec)))
+			motifL <- c(motifL, TFBSTools::toPWM(chromVAR::getJasparMotifs(species=spec)))
 		}
 		if (is.element("homer", motifs)){
-			require(chromVARmotifs)
+			if (!requireNamespace(chromVARmotifs)) logger.error(c("Could not load dependency: chromVARmotifs"))
 			data("homer_pwms")
 			motifL <- c(motifL, homer_pwms)
 		}
 		if (is.element("encode", motifs)){
-			require(chromVARmotifs)
+			if (!requireNamespace(chromVARmotifs)) logger.error(c("Could not load dependency: chromVARmotifs"))
 			data("encode_pwms")
 			motifL <- c(motifL, encode_pwms)
 		}
 		if (is.element("cisbp", motifs)){
-			require(chromVARmotifs)
+			if (!requireNamespace(chromVARmotifs)) logger.error(c("Could not load dependency: chromVARmotifs"))
 			if (spec == "Mus musculus"){
 				data("mouse_pwms_v2")
 				motifL <- c(motifL, mouse_pwms_v2)
@@ -239,7 +237,6 @@ getMotifDistMat.jaspar <- function(motifIds=NULL, scoreCol="Ncor"){
 #' @author Fabian Mueller
 #' @export
 getMotifDistMat <- function(assembly="hg38", mmObj=NULL, method="jaspar"){
-	require(TFBSTools)
 	if (method=="jaspar"){
 		spec <- assembly
 		if (assembly=="vert") {
@@ -332,7 +329,6 @@ getMotifClustering <- function(k=0, distM=NULL, assembly="hg38", motifs="jaspar"
 #' @return PWM probability matrix with values in 
 #' @author Fabian Mueller
 PWMatrixToProbMatrix <- function(x){
-	require(TFBSTools)
 	if (class(x) != "PWMatrix") stop("x must be a TFBSTools::PWMatrix object")
 	(2^as(x, "matrix"))*bg(x)/sum(bg(x))
 }
@@ -352,7 +348,6 @@ PWMatrixToProbMatrix <- function(x){
 #' @author Fabian Mueller
 #' @export
 hmSeqLogo <- function(pwm, x, y, width, height, ic.scale=TRUE){
-	require(seqLogo)
 	# convert units to numbers
 	unitType <- attr(x, "unit")
 	x <- as.numeric(x)

@@ -34,7 +34,7 @@ setMethod("createReport_summary",
 		.object,
 		reportDir
 	) {
-		require(muReportR)
+		if (!requireNamespace(muReportR)) logger.error(c("Could not load dependency: muReportR"))
 		initConfigDir <- !dir.exists(file.path(reportDir, "_config"))
 		rr <- createReport(file.path(reportDir, "summary.html"), "Accessibility Summary", page.title = "Summary", init.configuration=initConfigDir, theme="stanford")
 		rDir.data <- getReportDir(rr, dir="data", absolute=FALSE)

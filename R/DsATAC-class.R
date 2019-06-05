@@ -196,12 +196,11 @@ setMethod("getCountsSE",
 		type,
 		naIsZero=TRUE
 	) {
-		require(SummarizedExperiment)
 		if (!is.element(type, getRegionTypes(.object))) logger.error(c("Unsupported region type:", type))
 		#count matrix
 		cm <- ChrAccR::getCounts(.object, type, asMatrix=TRUE, naIsZero=naIsZero, allowSparseMatrix=TRUE)
 		coords <- getCoord(.object, type)
-		se <- SummarizedExperiment(assays=list(counts=cm), rowRanges=coords, colData=DataFrame(getSampleAnnot(.object)))
+		se <- SummarizedExperiment::SummarizedExperiment(assays=list(counts=cm), rowRanges=coords, colData=DataFrame(getSampleAnnot(.object)))
 		return(se)
 	}
 )
@@ -783,7 +782,7 @@ setMethod("addCountDataFromBam",
 		.object,
 		fns
 	) {
-		require(GenomicAlignments)
+		if (!requireNamespace(GenomicAlignments)) logger.error(c("Could not load dependency: GenomicAlignments"))
 		# TODO: adjust for Tn5 insertion:
 		# + strand: i + 4
 		# - strand: i - 5
@@ -844,7 +843,6 @@ setMethod("addCountDataFromGRL",
 		.object,
 		grl
 	) {
-		require(data.table)
 		sids <- names(grl)
 		if (length(sids)!=length(grl)){
 			logger.error("The list of GRanges must be named")
@@ -863,7 +861,7 @@ setMethod("addCountDataFromGRL",
 			logger.status(c("Counting reads in region set:", rt))
 			gr.ds <- getCoord(.object, rt)
 			oo <- findOverlaps(gr.ds, gr.c, ignore.strand=TRUE)
-			idxDt <- as.data.table(cbind(
+			idxDt <- data.table::as.data.table(cbind(
 				queryHits(oo), #row indices (regions) in count matrix
 				match(sampleIds[subjectHits(oo)], sampleIds.cm) #column indices (samples) in count matrix
 			))
@@ -1014,7 +1012,6 @@ setMethod("addInsertionDataFromBam",
 		pairedEnd=TRUE,
 		.diskDump=.object@diskDump.fragments
 	) {
-		require(GenomicAlignments)
 		sids <- names(fns)
 		if (length(sids)!=length(fns)){
 			logger.error("The vector specifying filenames (fns) must be named")
@@ -1029,9 +1026,9 @@ setMethod("addInsertionDataFromBam",
 				}
 				ga <- NULL
 				if (pairedEnd){
-					ga <- readGAlignmentPairs(fns[sid], use.names=FALSE, param=ScanBamParam(flag=scanBamFlag(isProperPair=TRUE)))
+					ga <- GenomicAlignments::readGAlignmentPairs(fns[sid], use.names=FALSE, param=ScanBamParam(flag=scanBamFlag(isProperPair=TRUE)))
 				} else {
-					ga <- readGAlignments(fns[sid], use.names=FALSE)
+					ga <- GenomicAlignments::readGAlignments(fns[sid], use.names=FALSE)
 				}
 				ga <- setGenomeProps(ga, .object@genome, onlyMainChrs=TRUE)
 				fragGr <- getATACfragments(ga, offsetTn=TRUE)
@@ -1270,12 +1267,11 @@ setMethod("transformCounts",
 
 		if (method == "quantile"){
 			logger.start(c("Performing quantile normalization"))
-				require(preprocessCore)
 				for (rt in regionTypes){
 					logger.status(c("Region type:", rt))
 					cnames <- colnames(.object@counts[[rt]])
 					# .object@counts[[rt]] <- data.table(normalize.quantiles(as.matrix(.object@counts[[rt]])))
-					.object@counts[[rt]] <- normalize.quantiles(ChrAccR::getCounts(.object, rt, asMatrix=TRUE)) #design question: should we set the parameter naIsZero==FALSE?
+					.object@counts[[rt]] <- preprocessCore::normalize.quantiles(ChrAccR::getCounts(.object, rt, asMatrix=TRUE)) #design question: should we set the parameter naIsZero==FALSE?
 					if (!.object@diskDump && .object@sparseCounts){
 						.object@counts[[rt]] <- as(.object@counts[[rt]], "sparseMatrix")
 					}
@@ -1353,10 +1349,9 @@ setMethod("transformCounts",
 		} else if (method == "vst"){
 			logger.start(c("Applying DESeq2 VST"))
 				if (.object@sparseCounts) logger.warning("Generating sparse matrix for matrix with possible true zero entries (VST)")
-				require(DESeq2)
 				for (rt in regionTypes){
 					logger.status(c("Region type:", rt))
-					dds <- DESeqDataSet(getCountsSE(.object, rt), design=~1)
+					dds <- DESeq2::DESeqDataSet(getCountsSE(.object, rt), design=~1)
 					# .object@counts[[rt]] <- data.table(assay(vst(dds, blind=TRUE)))
 					.object@counts[[rt]] <- assay(vst(dds, blind=TRUE))
 					if (!.object@diskDump && .object@sparseCounts){
@@ -1370,7 +1365,6 @@ setMethod("transformCounts",
 			logger.completed()
 		} else if (method == "batchCorrect"){
 			logger.start(c("Applying batch effect correction"))
-				require(limma)
 				for (rt in regionTypes){
 					logger.status(c("Region type:", rt))
 					.object@counts[[rt]] <- limma::removeBatchEffect(.object@counts[[rt]], ...)
@@ -1678,7 +1672,7 @@ setMethod("getInsertionKmerFreq",
 		k=6,
 		normGenome=FALSE
 	) {
-		require(Biostrings)
+		if (!requireNamespace(Biostrings)) logger.error(c("Could not load dependency: Biostrings"))
 		if (!all(samples %in% getSamples(.object))) logger.error(c("Invalid samples:", paste(setdiff(samples, getSamples(.object)), collapse=", ")))
 		go <- getGenomeObject(.object@genome)
 		res <- do.call("cbind", lapply(samples, FUN=function(sid){
@@ -1904,7 +1898,6 @@ setMethod("getMotifEnrichment",
 		idx,
 		motifs="jaspar"
 	) {
-		require(qvalue)
 		res <- NULL
 		#count matrix
 		coords <- getCoord(.object, type)
@@ -1962,10 +1955,10 @@ setMethod("getMotifEnrichment",
 		res[,"qVal"] <- rep(as.numeric(NA), nrow(res))
 		if (!any(is.na(res[,"pVal"]))) {
 			res[,"qVal"]  <- tryCatch(
-				 qvalue(res[,"pVal"])$qvalue,
+				 qvalue::qvalue(res[,"pVal"])$qvalue,
 				 error = function(ee) {
 				 	if (ee$message == "missing or infinite values in inputs are not allowed"){
-				 		return(qvalue(res[,"pVal"], lambda=0)$qvalue)
+				 		return(qvalue::qvalue(res[,"pVal"], lambda=0)$qvalue)
 				 	} else {
 				 		logger.warning(c("Could not compute qvalues:", ee$message))
 				 		return(rep(as.numeric(NA), nrow(res)))
@@ -2011,22 +2004,20 @@ setMethod("getChromVarDev",
 		type,
 		motifs="jaspar"
 	) {
-		require(chromVAR)
-		require(motifmatchr)
 		res <- NULL
 
 		countSe <- getCountsSE(.object, type, naIsZero=TRUE)
 		genomeObj <- getGenomeObject(.object@genome)
 		genome(countSe) <- providerVersion(genomeObj) # hack to override inconsistent naming of genome versions (e.g. hg38 and GRCh38)
 
-		countSe <- addGCBias(countSe, genome=genomeObj)
+		countSe <- chromVAR::addGCBias(countSe, genome=genomeObj)
 
 		# for motifmatchr
 		mmInput <- prepareMotifmatchr(genomeObj, motifs)
 		mmObj <- motifmatchr::matchMotifs(mmInput[["motifs"]], countSe, genome=genomeObj)
 		
 		ridx <- safeMatrixStats(assay(countSe), "rowSums") > 0 & safeMatrixStats(assay(mmObj), "rowSums") > 0 # only consider regions where there is an actual motif match and counts
-		res <- computeDeviations(object=countSe[ridx,], annotations=mmObj[ridx,])
+		res <- chromVAR::computeDeviations(object=countSe[ridx,], annotations=mmObj[ridx,])
 
 		return(res)
 	}
@@ -2076,7 +2067,7 @@ setMethod("getDESeq2Dataset",
 		designCols,
 		...
 	) {
-		require(DESeq2)
+		if (!requireNamespace(DESeq2)) logger.error(c("Could not load dependency: DESeq2"))
 		if (!is.element(regionType, getRegionTypes(.object))) logger.error(c("Unsupported region type:", regionType))
 		# annotation data
 		ph <- getSampleAnnot(.object)
@@ -2097,9 +2088,9 @@ setMethod("getDESeq2Dataset",
 		}
 		designF <- as.formula(paste0("~", paste(designCols,collapse="+")))
 		
-		dds <- DESeqDataSetFromMatrix(countData=cm, colData=ph, design=designF)
+		dds <- DESeq2::DESeqDataSetFromMatrix(countData=cm, colData=ph, design=designF)
 		rowRanges(dds) <- getCoord(.object, regionType)
-		dds <- DESeq(dds, ...)
+		dds <- DESeq2::DESeq(dds, ...)
 
 		return(dds)
 	}
@@ -2614,14 +2605,14 @@ setMethod("unsupervisedAnalysisSc",
 
 		if (clusteringMethod=="seurat_louvain"){
 			logger.start(c("Performing clustering using", clusteringMethod))	
-				require(Seurat)
+				if (!requireNamespace(Seurat)) logger.error(c("Could not load dependency: Seurat"))
 				# Louvain clustering using Seurat
 				dummyMat <- matrix(11.0, ncol=length(cellIds), nrow=11)
 				colnames(dummyMat) <- cellIds
-				sObj <- CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.genes=0)
-				sObj <- SetDimReduction(object=sObj, reduction.type="pca", slot="cell.embeddings", new.data=pcaCoord)
-				sObj <- SetDimReduction(object=sObj, reduction.type="pca", slot="key", new.data="pca")
-				clustRes <- FindClusters(sObj, reduction.type="pca", dims.use=usePcs, k.param=30, algorithm=1, n.start=100, n.iter=10)
+				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.genes=0)
+				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="cell.embeddings", new.data=pcaCoord)
+				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="key", new.data="pca")
+				clustRes <- Seurat::FindClusters(sObj, reduction.type="pca", dims.use=usePcs, k.param=30, algorithm=1, n.start=100, n.iter=10)
 				clustAss <- clustRes@ident
 			logger.completed()
 		}

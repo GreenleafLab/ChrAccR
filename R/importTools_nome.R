@@ -14,9 +14,6 @@
 #' @author Fabian Mueller
 #' @noRd
 mergeBisSNPMethCalls <- function(fns, outPrefix, wd=tempdir(), cleanup=TRUE){
-	require(tools)
-	require(R.utils)
-
 	sysWrap <- function(cmd, args){
 		logger.info(c("sys:", cmd, args))
 		system2(cmd, args, wait=TRUE, stdout="", stderr="")
@@ -36,7 +33,7 @@ mergeBisSNPMethCalls <- function(fns, outPrefix, wd=tempdir(), cleanup=TRUE){
 		nns <- gsub(".bed$", "", gsub(".gz$", "", basename(fns[fns.isGz])))
 	}
 	# extract the input files
-	fns.isGz <- file_ext(fns)=="gz"
+	fns.isGz <- tools::file_ext(fns)=="gz"
 	if (any(fns.isGz)){
 		logger.status("Extracting input files...")
 		fns.repl <- gsub(".gz$", "", basename(fns[fns.isGz]))

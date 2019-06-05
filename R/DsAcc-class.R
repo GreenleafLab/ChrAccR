@@ -45,8 +45,7 @@ setMethod("initialize","DsAcc",
 		diskDump
 	) {
 		if (diskDump){
-			require(DelayedArray)
-			require(HDF5Array)
+			if (!requireNamespace(DelayedArray) || !requireNamespace(HDF5Array)) logger.error(c("Could not load dependency: DelayedArray, HDF5Array"))
 		}
 		.Object@coord       <- coord
 		.Object@sampleAnnot <- sampleAnnot
@@ -394,8 +393,6 @@ saveDsAcc <- function(.object, path, forceDiskDump=FALSE, updateDiskRef=TRUE){
 	# save region count data as HDF5
 	if (.hasSlot(.object, "counts") && !is.null(.object@counts) && length(.object@counts) > 0){
 		if (forceDiskDump || (.hasSlot(.object, "diskDump") && .object@diskDump)){
-			require(DelayedArray)
-			require(HDF5Array)
 			logger.start("Saving region count data to HDF5")
 				countDir <- file.path(path, "countData")
 				dir.create(countDir)
@@ -406,10 +403,10 @@ saveDsAcc <- function(.object, path, forceDiskDump=FALSE, updateDiskRef=TRUE){
 					# just an assertion to make sure the colnames correspond to the sample ids
 					if (!all(colnames(.object@counts[[rt]])==sampleNames)) logger.error("Assertion failed: column names do not correspond to sample names (counts)")
 					if (updateDiskRef){
-						.object@counts[[rt]] <- writeHDF5Array(.object@counts[[rt]], filepath=file.path(countDir, paste0("regionCounts_", i, ".h5")), name=paste0("count_hdf5_", rt))
+						.object@counts[[rt]] <- HDF5Array::writeHDF5Array(.object@counts[[rt]], filepath=file.path(countDir, paste0("regionCounts_", i, ".h5")), name=paste0("count_hdf5_", rt))
 						colnames(.object@counts[[rt]]) <- sampleNames # reset the column names (workaround for the issue that writeHDF5Array does not write dimnames to HDF5)
 					} else {
-						dummy <- writeHDF5Array(.object@counts[[rt]], filepath=file.path(countDir, paste0("regionCounts_", i, ".h5")), name=paste0("count_hdf5_", rt))
+						dummy <- HDF5Array::writeHDF5Array(.object@counts[[rt]], filepath=file.path(countDir, paste0("regionCounts_", i, ".h5")), name=paste0("count_hdf5_", rt))
 					}
 				}
 			logger.completed()
@@ -464,15 +461,13 @@ loadDsAcc <- function(path){
 	.object <- readRDS(dsFn)
 
 	# load region count data from HDF5
-	if (.hasSlot(.object, "diskDump") && .object@diskDump && .hasSlot(.object, "counts") && !is.null(.object@counts) && length(.object@counts) > 0){
-		require(DelayedArray)
-		require(HDF5Array)
+	if (.hasSlot(.object, "diskDump") && .object@diskDump && .hasSlot(.object, "counts") && !is.null(.object@counts) && length(.object@counts) > 0){		
 		logger.start("Loading region count data from HDF5")
 			countDir <- file.path(path, "countData")
 			for (i in 1:length(.object@counts)) {
 				rt <- names(.object@counts)[i]
 				logger.status(c("Region type:", rt))
-				.object@counts[[rt]] <- HDF5Array(filepath=file.path(countDir, paste0("regionCounts_", i, ".h5")), name=paste0("count_hdf5_", rt))
+				.object@counts[[rt]] <- HDF5Array::HDF5Array(filepath=file.path(countDir, paste0("regionCounts_", i, ".h5")), name=paste0("count_hdf5_", rt))
 				colnames(.object@counts[[rt]]) <- getSamples(.object) # reset the column names (workaround for the issue that writeHDF5Array does not write dimnames to HDF5)
 			}
 		logger.completed()
