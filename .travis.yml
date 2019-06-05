@@ -7,11 +7,6 @@ r_packages:
 - pkgdown
 # - devtools
 bioc_packages:
-- HDF5Array
-- preprocessCore
-- DESeq2
-- limma
-- GenomicFeatures
 - BSgenome.Hsapiens.UCSC.hg38
 - JASPAR2018
 r_github_packages:
