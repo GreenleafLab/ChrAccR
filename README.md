@@ -1,6 +1,7 @@
+# ChrAccR <img src="man/figures/chraccr_logo.png" align="right" height="96"/>
+
 [![Build Status](https://travis-ci.org/demuellae/ChrAccR.svg?branch=master)](https://travis-ci.org/demuellae/ChrAccR)
 
-# ChrAccR <img src="man/figures/chraccr_logo.png" align="right" style="position:absolute; top:0; right:0; padding:10px; height:96px;"/>
 * __Package name:__ ChrAccR
 * __Title:__ Analyzing chromatin accessibility data in R
 * __Description:__ Tools for analyzing chromatin accessibility data in R. Currently supports ATAC-seq and NOMe-seq data analysis.
