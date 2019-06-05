@@ -19,15 +19,6 @@ A class for storing NOMe accessibility data
 }
 }
 
-\section{Methods}{
-
-\describe{
-   \item{\code{\link{samples,DsNOMe-method}}}{
-     Retrieve a vector of sample IDs for the dataset
-   }
-}
-}
-
 \author{
 Fabian Mueller
 }

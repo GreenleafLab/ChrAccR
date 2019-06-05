@@ -36,7 +36,7 @@ must be a character specifying an NON-EXISTING valid directory.}
 \item{...}{arguments passed on to binary differential methylation calling. See \code{RnBeads::computeDiffTab.extended.site} for details.}
 }
 \value{
-an \code{\linkS4class{RnBDiffMeth}} object. See class description for details.
+an \code{RnBDiffMeth} object. See class description for details.
 }
 \description{
 computes differential accessibility for NOMe datasets using \code{RnBeads} functionality

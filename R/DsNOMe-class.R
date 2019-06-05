@@ -12,13 +12,6 @@
 #'   }
 #' }
 #'
-#' @section Methods:
-#' \describe{
-#'    \item{\code{\link{samples,DsNOMe-method}}}{
-#'      Retrieve a vector of sample IDs for the dataset
-#'    }
-#' }
-#'
 #' @name DsNOMe-class
 #' @rdname DsNOMe-class
 #' @author Fabian Mueller

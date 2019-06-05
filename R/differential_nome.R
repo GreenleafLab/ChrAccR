@@ -64,7 +64,7 @@ computeDiffAcc.rnb.nome.bin.region <- function(dsn, dmtp, inds.g1, inds.g2, regi
 #' @param disk.dump.dir disk location for file backing of the resulting differential methylation object. Only meaningful if \code{disk.dump=TRUE}.
 #' 						must be a character specifying an NON-EXISTING valid directory.
 #' @param ... arguments passed on to binary differential methylation calling. See \code{RnBeads::computeDiffTab.extended.site} for details.
-#' @return an \code{\linkS4class{RnBDiffMeth}} object. See class description for details.
+#' @return an \code{RnBDiffMeth} object. See class description for details.
 #' @author Fabian Mueller
 #' @export
 computeDiffAcc.rnb.nome <- function(dsn, cmpCols, regionTypes=getRegionTypes(dsn), covgThres=5L,
