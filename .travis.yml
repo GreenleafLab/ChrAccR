@@ -10,6 +10,7 @@ bioc_packages:
 - BSgenome.Hsapiens.UCSC.hg38
 - JASPAR2018
 r_github_packages:
+- GreenleafLab/chromVARmotifs
 - demuellae/muLogR
 - demuellae/muReportR
 - demuellae/muRtools
