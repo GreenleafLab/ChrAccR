@@ -8,6 +8,7 @@ bioc_packages:
 - HDF5Array
 - preprocessCore
 - DESeq2
+- limma
 r_github_packages:
 - demuellae/muLogR
 - demuellae/muReportR
