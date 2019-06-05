@@ -41,7 +41,8 @@ Imports:
     data.table
 License: GPL-2
 Version: 0.9.1
-Collate: 
+Collate:
+    'ChrAccR.R'
     'classDefs.R'
     'utils.R'
     'config.R'
