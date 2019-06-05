@@ -23,7 +23,7 @@
 #'   \item{\code{diskDump.fragments}}{
 #'		Flag indicating whether fragment data will be kept on disk rather than in main memory.
 #'   }
-#'
+#' }
 #' @name DsATAC-class
 #' @rdname DsATAC-class
 #' @author Fabian Mueller

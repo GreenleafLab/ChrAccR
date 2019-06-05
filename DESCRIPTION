@@ -42,4 +42,5 @@ Collate:
     'report_atac_exploratory.R'
     'report_atac_differential.R'
 VignetteBuilder: knitr
+Encoding: UTF-8
 RoxygenNote: 6.1.1
