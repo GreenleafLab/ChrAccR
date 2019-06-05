@@ -10,6 +10,7 @@ bioc_packages:
 - DESeq2
 - limma
 - GenomicFeatures
+- BSgenome.Hsapiens.UCSC.hg38
 r_github_packages:
 - demuellae/muLogR
 - demuellae/muReportR
