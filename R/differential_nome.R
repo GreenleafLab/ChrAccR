@@ -63,7 +63,7 @@ computeDiffAcc.rnb.nome.bin.region <- function(dsn, dmtp, inds.g1, inds.g2, regi
 #' @param disk.dump Flag indicating whether the resulting differential methylation object should be file backed, ie.e the matrices dumped to disk
 #' @param disk.dump.dir disk location for file backing of the resulting differential methylation object. Only meaningful if \code{disk.dump=TRUE}.
 #' 						must be a character specifying an NON-EXISTING valid directory.
-#' @param ... arguments passed on to binary differential methylation calling. See \code{\link{RnBeads::computeDiffTab.extended.site}} for details.
+#' @param ... arguments passed on to binary differential methylation calling. See \code{RnBeads::computeDiffTab.extended.site} for details.
 #' @return an \code{\linkS4class{RnBDiffMeth}} object. See class description for details.
 #' @author Fabian Mueller
 #' @export

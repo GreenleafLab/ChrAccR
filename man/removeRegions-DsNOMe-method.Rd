@@ -3,7 +3,6 @@
 \docType{methods}
 \name{removeRegions,DsNOMe-method}
 \alias{removeRegions,DsNOMe-method}
-\alias{removeRegions}
 \title{removeRegions-methods}
 \usage{
 \S4method{removeRegions}{DsNOMe}(.object, indices, type = "sites",

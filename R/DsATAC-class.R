@@ -469,7 +469,7 @@ if (!isGeneric("regionAggregation")) {
 #' 
 #' @rdname regionAggregation-DsATAC-method
 #' @docType methods
-#' @aliases regionAggregation
+## @aliases regionAggregation
 #' @aliases regionAggregation,DsATAC-method
 #' @author Fabian Mueller
 #' @export
@@ -1069,7 +1069,7 @@ if (!isGeneric("removeRegions")) {
 #' 
 #' @rdname removeRegions-DsATAC-method
 #' @docType methods
-#' @aliases removeRegions
+## @aliases removeRegions
 #' @aliases removeRegions,DsATAC-method
 #' @author Fabian Mueller
 #' @export

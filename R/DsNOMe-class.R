@@ -481,7 +481,7 @@ if (!isGeneric("removeRegions")) {
 #' 
 #' @rdname removeRegions-DsNOMe-method
 #' @docType methods
-#' @aliases removeRegions
+## @aliases removeRegions
 #' @aliases removeRegions,DsNOMe-method
 #' @author Fabian Mueller
 #' @export

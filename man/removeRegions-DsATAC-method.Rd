@@ -3,7 +3,6 @@
 \docType{methods}
 \name{removeRegions,DsATAC-method}
 \alias{removeRegions,DsATAC-method}
-\alias{removeRegions}
 \title{removeRegions-methods}
 \usage{
 \S4method{removeRegions}{DsATAC}(.object, indices, type)

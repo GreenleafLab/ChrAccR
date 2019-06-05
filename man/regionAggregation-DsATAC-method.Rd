@@ -3,7 +3,6 @@
 \docType{methods}
 \name{regionAggregation,DsATAC-method}
 \alias{regionAggregation,DsATAC-method}
-\alias{regionAggregation}
 \title{regionAggregation-methods}
 \usage{
 \S4method{regionAggregation}{DsATAC}(.object, regGr, type, signal = NULL,
