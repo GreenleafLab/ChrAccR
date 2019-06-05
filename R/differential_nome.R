@@ -55,7 +55,7 @@ computeDiffAcc.rnb.nome.bin.region <- function(dsn, dmtp, inds.g1, inds.g2, regi
 #' @param dsn         \code{\linkS4class{DsNOMe}} object
 #' @param cmpCols     column names of the sample annotation of the dataset that will be used for comparison
 #' @param regionTypes which region types should be processed for differential analysis.
-#' @param covgThres   coverage threshold for computing the summary statistics. See \code{\link{RnBeads::computeDiffTab.extended.site}} for details.
+#' @param covgThres   coverage threshold for computing the summary statistics. See \code{RnBeads::computeDiffTab.extended.site} for details.
 #' @param allPairs    Logical indicating whether all pairwise comparisons should be conducted, when more than 2 groups are present
 #' @param adjPairCols argument passed on to \code{rnb.sample.groups}. See its documentation for details.
 #' @param adjCols     not used yet

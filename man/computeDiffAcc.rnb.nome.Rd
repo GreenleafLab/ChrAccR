@@ -18,7 +18,7 @@ computeDiffAcc.rnb.nome(dsn, cmpCols, regionTypes = getRegionTypes(dsn),
 
 \item{regionTypes}{which region types should be processed for differential analysis.}
 
-\item{covgThres}{coverage threshold for computing the summary statistics. See \code{\link{RnBeads::computeDiffTab.extended.site}} for details.}
+\item{covgThres}{coverage threshold for computing the summary statistics. See \code{RnBeads::computeDiffTab.extended.site} for details.}
 
 \item{allPairs}{Logical indicating whether all pairwise comparisons should be conducted, when more than 2 groups are present}
 
