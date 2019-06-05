@@ -339,7 +339,7 @@ plotInsertSizeDistribution(dsa, "TCD8EM_U_1002")
 ## TSS enrichment plots
 
 The enrichment of the number of fragments at transcription start sites (TSS) over genomic background is a valuable indicator for the signal-to-noise ratio in ATAC-seq data. In `ChrAccR`, the TSS enrichment can be computed for each sample in a dataset using the `getTssEnrichment` function. You will need the coordinates of TSSs in the genome as input and the function will return an object comprising a `ggplot` object as well as a numeric score that quantifies the enrichment at the promoter (default definition: TSS +/- 2kb) vs a background (default: 100bp outside the promoter window). Absolute and smoothed counts will be used for the computation.
-```{r, message = FALSE, warning = FALSE, eval = TRUE}
+```{r, message = FALSE, warning = FALSE, eval = FALSE}
 # prepare a GRanges object of TSS coordinates
 tssGr <- muRtools::getAnnotGrl.gencode("gencode.v27")[["gene"]]
 tssGr <- tssGr[elementMetadata(tssGr)[,"gene_type"]=="protein_coding"]
