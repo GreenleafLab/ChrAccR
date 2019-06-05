@@ -3,8 +3,9 @@ cache: packages
 r:
 - bioc-release
 r_packages:
+- pheatmap
 - pkgdown
-- devtools
+# - devtools
 bioc_packages:
 - HDF5Array
 - preprocessCore
@@ -24,8 +25,8 @@ addons:
     packages:
     - libgsl0ldbl
     - libgsl0-dev
-before_script:
-  - Rscript -e 'devtools::document()'
+# before_script:
+#   - Rscript -e 'devtools::document()'
 r_build_args: --no-build-vignettes
 r_check_args: --no-build-vignettes
 warnings_are_errors: false
