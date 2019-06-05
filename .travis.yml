@@ -9,6 +9,7 @@ bioc_packages:
 - preprocessCore
 - DESeq2
 - limma
+- GenomicFeatures
 r_github_packages:
 - demuellae/muLogR
 - demuellae/muReportR
