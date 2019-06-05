@@ -4,6 +4,7 @@ r:
 - bioc-release
 r_packages:
 - pkgdown
+- devtools
 bioc_packages:
 - HDF5Array
 - preprocessCore
@@ -11,6 +12,7 @@ bioc_packages:
 - limma
 - GenomicFeatures
 - BSgenome.Hsapiens.UCSC.hg38
+- JASPAR2018
 r_github_packages:
 - demuellae/muLogR
 - demuellae/muReportR
@@ -22,6 +24,8 @@ addons:
     packages:
     - libgsl0ldbl
     - libgsl0-dev
+before_script:
+  - Rscript -e 'devtools::document()'
 r_build_args: --no-build-vignettes
 r_check_args: --no-build-vignettes
 warnings_are_errors: false
