@@ -20,8 +20,6 @@ of the assembly is really relevant. Can be \code{"vert"} for all vertebrate moti
 that can be used by \code{motifmatchr::matchMotifs} (\code{PWMatrixList} object)}
 
 \item{clusterMethod}{method to be used for motif clustering (currently only \code{'pam'} (PAM - partitioning around medoids) is supported)}
-
-\item{distMethod}{method of dissimilarity quantification. Currently only \code{'jaspar'} (retrieve motif similarities from the annotation of the JASPAR website) is supported.}
 }
 \value{
 a list structure containing the clustering result

@@ -12,8 +12,6 @@
 \item{.object}{\code{\linkS4class{DsAcc}} object}
 
 \item{type}{character string specifying the rgion type or \code{"sites"} (default)}
-
-\item{asMatrix}{return a matrix instead of a \code{data.table}}
 }
 \value{
 \code{GRanges} object containing coordinates for covered

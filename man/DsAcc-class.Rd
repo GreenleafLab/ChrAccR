@@ -22,6 +22,9 @@ A class for accessibility datasets
   \item{\code{diskDump}}{
 	Flag indicating whether large matrices and objects will be kept on disk rather than in main memory.
   }
+  \item{\code{pkgVersion}}{
+	Version number of the ChrAccR package that created the object
+  }
 }
 }
 

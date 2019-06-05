@@ -16,6 +16,9 @@
 #'   \item{\code{diskDump}}{
 #'		Flag indicating whether large matrices and objects will be kept on disk rather than in main memory.
 #'   }
+#'   \item{\code{pkgVersion}}{
+#'		Version number of the ChrAccR package that created the object
+#'   }
 #' }
 #'
 #'
@@ -182,7 +185,6 @@ if (!isGeneric("getCoord")) {
 #'
 #' @param .object \code{\linkS4class{DsAcc}} object
 #' @param type    character string specifying the rgion type or \code{"sites"} (default)
-#' @param asMatrix return a matrix instead of a \code{data.table}
 #' @return \code{GRanges} object containing coordinates for covered
 #'         sites/regions
 #'
@@ -328,7 +330,6 @@ if (!isGeneric("removeRegions")) {
 #' @param .object \code{\linkS4class{DsAcc}} object
 #' @param indices a vector of indices of sites/regions to be removed. Can be numeric, integer or logical.
 #' @param type    character string specifying a name for the region type (sefault: sites)
-#' @param reaggregate redo region aggregation (only has an effect if type is sites and there are aggregated regions in the dataset)
 #' @return a new \code{\linkS4class{DsAcc}} object with sites/regions removed
 #' 
 #' @rdname removeRegions-DsAcc-method
@@ -507,7 +508,6 @@ if (!isGeneric("getComparisonTable")) {
 #' @param .object \code{\linkS4class{DsAcc}} object
 #' @param cols    column names in the sample annotation table to consider for pairwise comparisons
 #' @param compNames  vector of character strings specifying a fixed comparison names to be parsed (format "$GRP1_NAME vs $GRP1_NAME [$ANNOTATION_COLUMN]")
-#' @param reaggregate redo region aggregation (only has an effect if type is sites and there are aggregated regions in the dataset)
 #' @return a \code{data.frame} with comparison inforamtion containing columns for the comparison name (\code{compName}), 
 #'         column in the annotation table (\code{compCol})
 #'         and group names for the two groups in the comparison (\code{grp1Name, grp2Name}),

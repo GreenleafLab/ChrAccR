@@ -15,8 +15,6 @@
 \item{cols}{column names in the sample annotation table to consider for pairwise comparisons}
 
 \item{compNames}{vector of character strings specifying a fixed comparison names to be parsed (format "$GRP1_NAME vs $GRP1_NAME [$ANNOTATION_COLUMN]")}
-
-\item{reaggregate}{redo region aggregation (only has an effect if type is sites and there are aggregated regions in the dataset)}
 }
 \value{
 a \code{data.frame} with comparison inforamtion containing columns for the comparison name (\code{compName}), 

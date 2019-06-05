@@ -11,13 +11,13 @@ hmSeqLogo(pwm, x, y, width, height, ic.scale = TRUE)
 
 \item{x}{x center coordinate where the motif should be drawn}
 
+\item{y}{y center coordinate where the motif should be drawn}
+
 \item{width}{drawing width}
 
 \item{height}{drawing height}
 
 \item{ic.scale}{\code{logical} If TRUE, the height of each column is proportional to its information content. Otherwise, all columns have the same height.}
-
-\item{x}{y center coordinate where the motif should be drawn}
 }
 \value{
 Draws the motif

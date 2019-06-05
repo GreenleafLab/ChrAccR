@@ -101,7 +101,7 @@ prepareMotifmatchr <- function(genome, motifs){
 #' @return a list of (length \code{nperm}) \code{PFMatrix} or \code{PWMatrix} objects representing the permuted versions
 #' @author Fabian Mueller
 #' @noRd
-##' @export
+## @export
 permutePWMatrix <- function(pwm, nperm=100){
 	res <- list()
 	if (class(pwm)=="PFMatrix"){
@@ -129,7 +129,7 @@ permutePWMatrix <- function(pwm, nperm=100){
 #'         each element in \code{pwmL}
 #' @author Fabian Mueller
 #' @noRd
-##' @export
+## @export
 permutePWMatrixList <- function(pwmL, nperm=100){
 	res <- lapply(pwmL, FUN=function(x){
 		permutePWMatrix(x, nperm=nperm)
@@ -284,7 +284,6 @@ getMotifDistMat <- function(assembly="hg38", mmObj=NULL, method="jaspar"){
 #'                     of the assembly is really relevant. Can be \code{"vert"} for all vertebrate motifs. Only required if for automatic mode (i.e. \code{k<1}).
 #' @param motifs either a character string (currently only "jaspar" is supported) or an object containing PWMs
 #'               that can be used by \code{motifmatchr::matchMotifs} (\code{PWMatrixList} object)
-#' @param distMethod     method of dissimilarity quantification. Currently only \code{'jaspar'} (retrieve motif similarities from the annotation of the JASPAR website) is supported.
 #' @param clusterMethod  method to be used for motif clustering (currently only \code{'pam'} (PAM - partitioning around medoids) is supported)
 
 #' @return a list structure containing the clustering result
@@ -345,7 +344,7 @@ PWMatrixToProbMatrix <- function(x){
 #'
 #' @param pwm   PWM (from TFBSTools package)
 #' @param x     x center coordinate where the motif should be drawn
-#' @param x     y center coordinate where the motif should be drawn
+#' @param y     y center coordinate where the motif should be drawn
 #' @param width drawing width
 #' @param height drawing height
 #' @param ic.scale \code{logical} If TRUE, the height of each column is proportional to its information content. Otherwise, all columns have the same height.
