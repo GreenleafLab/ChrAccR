@@ -21,8 +21,8 @@ addons:
     packages:
     - libgsl0ldbl
     - libgsl0-dev
-# r_build_args: --no-build-vignettes
-# r_check_args: --no-build-vignettes
+r_build_args: --no-build-vignettes
+r_check_args: --no-build-vignettes
 warnings_are_errors: false
 # automatically build pkgdown site using the gh-pages branch
 after_success:
