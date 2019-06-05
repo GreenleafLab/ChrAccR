@@ -9,6 +9,7 @@ Suggests:
     DelayedArray,
     HDF5Array,
     chromVAR,
+    chromVARmotifs,
     motifmatchr,
     GenomicFeatures,
     knitr,
