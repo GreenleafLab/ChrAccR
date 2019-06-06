@@ -55,17 +55,17 @@ prepareMotifmatchr <- function(genome, motifs){
 			motifL <- c(motifL, TFBSTools::toPWM(chromVAR::getJasparMotifs(species=spec)))
 		}
 		if (is.element("homer", motifs)){
-			if (!requireNamespace(chromVARmotifs)) logger.error(c("Could not load dependency: chromVARmotifs"))
+			if (!requireNamespace("chromVARmotifs")) logger.error(c("Could not load dependency: chromVARmotifs"))
 			data("homer_pwms")
 			motifL <- c(motifL, homer_pwms)
 		}
 		if (is.element("encode", motifs)){
-			if (!requireNamespace(chromVARmotifs)) logger.error(c("Could not load dependency: chromVARmotifs"))
+			if (!requireNamespace("chromVARmotifs")) logger.error(c("Could not load dependency: chromVARmotifs"))
 			data("encode_pwms")
 			motifL <- c(motifL, encode_pwms)
 		}
 		if (is.element("cisbp", motifs)){
-			if (!requireNamespace(chromVARmotifs)) logger.error(c("Could not load dependency: chromVARmotifs"))
+			if (!requireNamespace("chromVARmotifs")) logger.error(c("Could not load dependency: chromVARmotifs"))
 			if (spec == "Mus musculus"){
 				data("mouse_pwms_v2")
 				motifL <- c(motifL, mouse_pwms_v2)

@@ -782,7 +782,7 @@ setMethod("addCountDataFromBam",
 		.object,
 		fns
 	) {
-		if (!requireNamespace(GenomicAlignments)) logger.error(c("Could not load dependency: GenomicAlignments"))
+		if (!requireNamespace("GenomicAlignments")) logger.error(c("Could not load dependency: GenomicAlignments"))
 		# TODO: adjust for Tn5 insertion:
 		# + strand: i + 4
 		# - strand: i - 5
@@ -1672,7 +1672,7 @@ setMethod("getInsertionKmerFreq",
 		k=6,
 		normGenome=FALSE
 	) {
-		if (!requireNamespace(Biostrings)) logger.error(c("Could not load dependency: Biostrings"))
+		if (!requireNamespace("Biostrings")) logger.error(c("Could not load dependency: Biostrings"))
 		if (!all(samples %in% getSamples(.object))) logger.error(c("Invalid samples:", paste(setdiff(samples, getSamples(.object)), collapse=", ")))
 		go <- getGenomeObject(.object@genome)
 		res <- do.call("cbind", lapply(samples, FUN=function(sid){
@@ -2067,7 +2067,7 @@ setMethod("getDESeq2Dataset",
 		designCols,
 		...
 	) {
-		if (!requireNamespace(DESeq2)) logger.error(c("Could not load dependency: DESeq2"))
+		if (!requireNamespace("DESeq2")) logger.error(c("Could not load dependency: DESeq2"))
 		if (!is.element(regionType, getRegionTypes(.object))) logger.error(c("Unsupported region type:", regionType))
 		# annotation data
 		ph <- getSampleAnnot(.object)
@@ -2605,7 +2605,7 @@ setMethod("unsupervisedAnalysisSc",
 
 		if (clusteringMethod=="seurat_louvain"){
 			logger.start(c("Performing clustering using", clusteringMethod))	
-				if (!requireNamespace(Seurat)) logger.error(c("Could not load dependency: Seurat"))
+				if (!requireNamespace("Seurat")) logger.error(c("Could not load dependency: Seurat"))
 				# Louvain clustering using Seurat
 				dummyMat <- matrix(11.0, ncol=length(cellIds), nrow=11)
 				colnames(dummyMat) <- cellIds

@@ -19,7 +19,7 @@
 #' @export
 DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", regionSets=NULL, sampleIdCol=filePrefixCol, type="insBam", diskDump=FALSE, keepInsertionInfo=TRUE, bySample=FALSE, pairedEnd=TRUE){
 	if (diskDump){
-		if (!requireNamespace(DelayedArray) || !requireNamespace(HDF5Array)) logger.error(c("Could not load dependency: DelayedArray, HDF5Array"))
+		if (!requireNamespace("DelayedArray") || !requireNamespace("HDF5Array")) logger.error(c("Could not load dependency: DelayedArray, HDF5Array"))
 	}
 	if (!is.element(type, c("bam", "insBam", "insBed"))){
 		logger.error(c("Unsupported import type:", type))

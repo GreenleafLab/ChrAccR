@@ -45,7 +45,7 @@ setMethod("initialize","DsAcc",
 		diskDump
 	) {
 		if (diskDump){
-			if (!requireNamespace(DelayedArray) || !requireNamespace(HDF5Array)) logger.error(c("Could not load dependency: DelayedArray, HDF5Array"))
+			if (!requireNamespace("DelayedArray") || !requireNamespace("HDF5Array")) logger.error(c("Could not load dependency: DelayedArray, HDF5Array"))
 		}
 		.Object@coord       <- coord
 		.Object@sampleAnnot <- sampleAnnot

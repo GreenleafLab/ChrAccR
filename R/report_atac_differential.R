@@ -39,7 +39,7 @@ setMethod("createReport_differential",
 		.object,
 		reportDir
 	) {
-		if (!requireNamespace(muReportR)) logger.error(c("Could not load dependency: muReportR"))
+		if (!requireNamespace("muReportR")) logger.error(c("Could not load dependency: muReportR"))
 		initConfigDir <- !dir.exists(file.path(reportDir, "_config"))
 		rr <- muReportR::createReport(file.path(reportDir, "differential.html"), "Differential Accessibility", page.title = "Differential", init.configuration=initConfigDir, theme="stanford")
 		rDir.data <- getReportDir(rr, dir="data", absolute=FALSE)
