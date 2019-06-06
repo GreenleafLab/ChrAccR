@@ -11,7 +11,7 @@
 #' @importFrom IRanges IRanges overlapsAny
 #' @importFrom S4Vectors queryHits subjectHits queryLength DataFrame elementNROWS
 #' @import GenomicAlignments
-#' @import GenomeInfoDb
+#' @importFrom GenomeInfoDb seqlevels seqlevels<- seqlengths seqnames genome genome<-
 #' @import SummarizedExperiment
 #' @import ggplot2
 #' @import muLogR
