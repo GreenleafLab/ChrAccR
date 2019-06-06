@@ -186,7 +186,7 @@ setMethod("createReport_summary",
 			logger.completed()
 		}
 
-		off(rr)
+		muReportR::off(rr)
 		invisible(rr)
 	}
 )

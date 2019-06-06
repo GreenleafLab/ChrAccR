@@ -11,7 +11,7 @@
 #' @importFrom IRanges IRanges overlapsAny
 #' @importFrom S4Vectors queryHits subjectHits queryLength DataFrame elementNROWS
 #' @import GenomicAlignments
-#' @importFrom GenomeInfoDb seqlevels seqlevels<- seqlengths seqnames genome genome<- organism
+#' @importFrom GenomeInfoDb seqlevels seqlevels<- seqlengths seqlengths<- seqnames genome genome<- organism sortSeqlevels
 #' @import SummarizedExperiment
 #' @import ggplot2
 #' @import muLogR
@@ -20,8 +20,8 @@
 #' @name ChrAccR
 NULL
 
-# avoid NOTEs in R CMD CHECK
-utils::globalVariables(c(
-	":=", ".", "..count..",
-	"V1", "V2"
-))
+# # avoid NOTEs in R CMD CHECK
+# utils::globalVariables(c(
+# 	":=", ".", "..count..", ".N", ".SD", "chrom",
+# 	"V1", "V2"
+# ))

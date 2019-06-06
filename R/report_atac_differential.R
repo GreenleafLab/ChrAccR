@@ -198,7 +198,7 @@ setMethod("createReport_differential",
 					lolaRefTxt <- c("Sheffield, & Bock (2016). LOLA: enrichment analysis for genomic region sets and regulatory elements in R and Bioconductor. <i>Bioinformatics</i>, <b>32</b>(4), 587-589.")
 					rr <- muReportR::addReportReference(rr, lolaRefTxt)
 					txt <- c(
-						"LOLA enrichment analysis ", getReportReference(rr, lolaRefTxt), " for differentially accessible regions."
+						"LOLA enrichment analysis ", muReportR::getReportReference(rr, lolaRefTxt), " for differentially accessible regions."
 					)
 					rr <- muReportR::addReportSection(rr, "LOLA enrichment analysis", txt, level=2L, collapsed=FALSE)
 
@@ -245,7 +245,7 @@ setMethod("createReport_differential",
 		logger.completed()
 
 
-		off(rr)
+		muReportR::off(rr)
 		invisible(rr)
 	}
 )

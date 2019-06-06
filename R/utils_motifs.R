@@ -57,21 +57,21 @@ prepareMotifmatchr <- function(genome, motifs){
 		if (is.element("homer", motifs)){
 			if (!requireNamespace("chromVARmotifs")) logger.error(c("Could not load dependency: chromVARmotifs"))
 			data("homer_pwms")
-			motifL <- c(motifL, homer_pwms)
+			motifL <- c(motifL, chromVARmotifs::homer_pwms)
 		}
 		if (is.element("encode", motifs)){
 			if (!requireNamespace("chromVARmotifs")) logger.error(c("Could not load dependency: chromVARmotifs"))
 			data("encode_pwms")
-			motifL <- c(motifL, encode_pwms)
+			motifL <- c(motifL, chromVARmotifs::encode_pwms)
 		}
 		if (is.element("cisbp", motifs)){
 			if (!requireNamespace("chromVARmotifs")) logger.error(c("Could not load dependency: chromVARmotifs"))
 			if (spec == "Mus musculus"){
 				data("mouse_pwms_v2")
-				motifL <- c(motifL, mouse_pwms_v2)
+				motifL <- c(motifL, chromVARmotifs::mouse_pwms_v2)
 			} else if (spec == "Homo sapiens"){
 				data("human_pwms_v2")
-				motifL <- c(motifL, human_pwms_v2)
+				motifL <- c(motifL, chromVARmotifs::human_pwms_v2)
 			} else {
 				logger.warning(c("Could not find cisBP annotation for species", spec))
 			}
@@ -105,11 +105,11 @@ permutePWMatrix <- function(pwm, nperm=100){
 	if (class(pwm)=="PFMatrix"){
 		res <- lapply(seq_len(nperm), FUN=function(i){TFBSTools::permuteMatrix(pwm, type="intra")})
 	} else if (class(pwm)=="PWMatrix"){
-		mm <- Matrix(pwm)
+		mm <- TFBSTools::Matrix(pwm)
 		mLength <- ncol(mm)
 		res <- lapply(seq_len(nperm), FUN=function(i){
 			x <- pwm
-			Matrix(x) <- mm[,sample.int(mLength)]
+			TFBSTools::Matrix(x) <- mm[,sample.int(mLength)]
 			return(x)
 		})
 	} else {
@@ -394,5 +394,5 @@ hmSeqLogo <- function(pwm, x, y, width, height, ic.scale=TRUE){
 		}
 		x.pos <- x.pos + wt
 	}
-	grid.polygon(x=unit(letters$x, unitType), y=unit(letters$y, unitType), id=letters$id, gp=gpar(fill=letters$fill,col="transparent"))
+	grid::grid.polygon(x=unit(letters$x, unitType), y=unit(letters$y, unitType), id=letters$id, gp=grid::gpar(fill=letters$fill,col="transparent"))
 }

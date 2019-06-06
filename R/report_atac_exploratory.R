@@ -245,7 +245,7 @@ setMethod("createReport_exploratory",
 
 		}
 
-		off(rr)
+		muReportR::off(rr)
 		invisible(rr)
 	}
 )
