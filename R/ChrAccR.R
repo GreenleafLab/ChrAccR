@@ -5,7 +5,7 @@
 #' @import Matrix
 #' @import methods
 #' @importFrom stats median quantile cor cov var sd ecdf fisher.test dist as.dist hclust as.hclust convolve na.omit as.formula
-#' @importFrom utils packageVersion read.table write.table combn
+#' @importFrom utils packageVersion read.table write.table combn data
 #' @importFrom data.table data.table as.data.table fread
 #' @import GenomicRanges
 #' @importFrom IRanges IRanges overlapsAny

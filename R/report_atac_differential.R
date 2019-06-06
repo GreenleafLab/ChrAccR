@@ -218,7 +218,7 @@ setMethod("createReport_differential",
 												curSuffix <- paste0(i, "_", normalize.str(rt, return.camel=TRUE), "_", funName)
 												lolaResFn <- file.path(rDir.data.abs, paste0("lolaRes_", curSuffix, ".rds"))
 												
-												lolaRes <- runLOLA(gr[isDiff], gr, lolaDb, cores=8)
+												lolaRes <- LOLA::runLOLA(gr[isDiff], gr, lolaDb, cores=8)
 												saveRDS(lolaRes, lolaResFn)
 
 												pp <- lolaBarPlot(lolaDb, lolaRes, scoreCol="log2OR", orderCol="maxRnk", pvalCut=0.01, maxTerms=200)

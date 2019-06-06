@@ -104,7 +104,7 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", reg
 							rSink <- DelayedArray::RealizationSink(as.integer(c(getNRegions(obj, rt), nSamples)), type="integer")
 							return(list(
 								sink=rSink,
-								grid=colGrid(rSink, ncol=1L)
+								grid=DelayedArray::colGrid(rSink, ncol=1L)
 							))
 						})
 						names(rSinkL) <- rTypes
@@ -115,7 +115,7 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", reg
 								tmpDs <- addCountDataFromGRL(obj, getInsertionSites(obj, samples=sid))
 								for (rt in rTypes){
 									cm <- getCounts(tmpDs, rt, j=j, asMatrix=TRUE)
-									write_block(rSinkL[[rt]]$sink, rSinkL[[rt]]$grid[[j]], cm)
+									DelayedArray::write_block(rSinkL[[rt]]$sink, rSinkL[[rt]]$grid[[j]], cm)
 								}
 								rm(tmpDs)
 							logger.completed()
