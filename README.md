@@ -6,8 +6,8 @@
 * __Title:__ Analyzing chromatin accessibility data in R
 * __Description:__ Tools for analyzing chromatin accessibility data in R. Currently supports ATAC-seq and NOMe-seq data analysis.
 * __Author/Maintainer:__ Fabian Mueller (<muellerf@stanford.edu>)
-* __Version:__ 0.9.1
-* __Date:__ 2019-06-04
+* __Version:__ 0.9.2
+* __Date:__ 2019-06-06
 
 
 ## Installation
