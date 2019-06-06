@@ -2171,19 +2171,19 @@ setMethod("getDiffAcc",
 				dds <- getDESeq2Dataset(.object, regionType, designCs)
 				
 			}
-			diffRes <- results(dds, contrast=c(comparisonCol, grp1Name, grp2Name))
+			diffRes <- DESeq2::results(dds, contrast=c(comparisonCol, grp1Name, grp2Name))
 			dm <- data.frame(diffRes)
 			rankMat <- cbind(
 				# rank(-dm[,"baseMean"]), na.last="keep", ties.method="min"),
 				rank(-abs(dm[,"log2FoldChange"]), na.last="keep", ties.method="min"),
 				rank(dm[,"pvalue"], na.last="keep", ties.method="min")
 			)
-			dm[,"cRank"] <- rowMaxs(rankMat, na.rm=FALSE)
+			dm[,"cRank"] <- matrixStats::rowMaxs(rankMat, na.rm=FALSE)
 			# dm[,"cRank"] <- rowMaxs(rankMat, na.rm=TRUE)
 			dm[!is.finite(dm[,"cRank"]),"cRank"] <- NA
 			dm[,"cRank_rerank"] <- rank(dm[,"cRank"], na.last="keep", ties.method="min")
 
-			l2fpkm <- log2(fpkm(dds, robust=TRUE)+1)
+			l2fpkm <- log2(DESeq2::fpkm(dds, robust=TRUE)+1)
 			grp1.m.l2fpkm <- rowMeans(l2fpkm[, sidx.grp1, drop=FALSE], na.rm=TRUE)
 			grp2.m.l2fpkm <- rowMeans(l2fpkm[, sidx.grp2, drop=FALSE], na.rm=TRUE)
 			vstCounts <- assay(DESeq2::vst(dds, blind=FALSE))
