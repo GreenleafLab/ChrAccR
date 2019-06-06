@@ -329,7 +329,7 @@ getMotifClustering <- function(k=0, distM=NULL, assembly="hg38", motifs="jaspar"
 #' @author Fabian Mueller
 PWMatrixToProbMatrix <- function(x){
 	if (class(x) != "PWMatrix") stop("x must be a TFBSTools::PWMatrix object")
-	(2^as(x, "matrix"))*bg(x)/sum(bg(x))
+	(2^as(x, "matrix"))*TFBSTools::bg(x)/sum(TFBSTools::bg(x))
 }
 
 #' hmSeqLogo

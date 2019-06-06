@@ -21,4 +21,7 @@
 NULL
 
 # avoid NOTEs in R CMD CHECK
-utils::suppressForeignCheck(c(":=", ".", "..count.."))
+utils::globalVariables(c(
+	":=", ".", "..count..",
+	"V1", "V2"
+))
