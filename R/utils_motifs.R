@@ -301,8 +301,7 @@ getMotifClustering <- function(k=0, distM=NULL, assembly="hg38", motifs="jaspar"
 				if (!file.exists(fn)) logger.error(c("ChrAccR currently does not contain a precomputed JASPAR motif clustering for species", spec))
 				cr <- readRDS(fn)
 			} else {
-				require(cluster)
-				clustRes.pam <- pam(distM, k=k)
+				clustRes.pam <- cluster::pam(distM, k=k)
 				clustAssign <- clustRes.pam$medoids[clustRes.pam$clustering]
 				names(clustAssign) <- labels(distM)
 				clustAssignL <- lapply(clustRes.pam$medoids, FUN=function(mm){names(clustAssign)[clustAssign==mm]})
