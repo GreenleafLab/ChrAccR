@@ -22,6 +22,6 @@ NULL
 
 # # avoid NOTEs in R CMD CHECK
 # utils::globalVariables(c(
-# 	":=", ".", "..count..", ".N", ".SD", "chrom",
+# 	":=", ".", "..count..", ".N", ".SD",
 # 	"V1", "V2"
 # ))

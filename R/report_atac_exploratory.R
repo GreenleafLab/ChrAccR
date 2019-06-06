@@ -230,7 +230,7 @@ setMethod("createReport_exploratory",
 								annotation_colors=grpColors,
 								fontsize_row=8, fontsize_col=3
 							)
-						repPlot <- off(repPlot)
+						repPlot <- muReportR::off(repPlot)
 						plotL.hm <- c(plotL.hm, list(repPlot))
 					logger.completed()
 				}
