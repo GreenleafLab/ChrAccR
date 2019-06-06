@@ -34,6 +34,7 @@ Suggests:
     BSgenome.Mmusculus.UCSC.mm9,
     JASPAR2018
 Imports:
+    GenomeInfoDb,
     GenomicRanges,
     GenomicAlignments,
     SummarizedExperiment,

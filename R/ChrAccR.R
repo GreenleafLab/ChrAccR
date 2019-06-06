@@ -7,6 +7,7 @@
 #' @import GenomicRanges
 #' @import GenomicAlignments
 #' @import SummarizedExperiment
+#' @import GenomeInfoDb
 #' @import ggplot2
 #' @import muLogR
 #' @import muRtools
