@@ -7,7 +7,6 @@ Suggests:
     ChrAccRex,
     muReportR,
     S4Vectors,
-    SummarizedExperiment,
     DelayedArray,
     HDF5Array,
     chromVAR,
@@ -37,6 +36,7 @@ Suggests:
 Imports:
     GenomicRanges,
     GenomicAlignments,
+    SummarizedExperiment,
     ggplot2,
     muLogR,
     muRtools,

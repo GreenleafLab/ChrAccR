@@ -6,6 +6,7 @@
 #' @importFrom data.table data.table as.data.table
 #' @import GenomicRanges
 #' @import GenomicAlignments
+#' @import SummarizedExperiment
 #' @import ggplot2
 #' @import muLogR
 #' @import muRtools
