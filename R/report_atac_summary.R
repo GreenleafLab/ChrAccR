@@ -36,9 +36,9 @@ setMethod("createReport_summary",
 	) {
 		if (!requireNamespace("muReportR")) logger.error(c("Could not load dependency: muReportR"))
 		initConfigDir <- !dir.exists(file.path(reportDir, "_config"))
-		rr <- createReport(file.path(reportDir, "summary.html"), "Accessibility Summary", page.title = "Summary", init.configuration=initConfigDir, theme="stanford")
-		rDir.data <- getReportDir(rr, dir="data", absolute=FALSE)
-		rDir.data.abs <- getReportDir(rr, dir="data", absolute=TRUE)
+		rr <- muReportR::createReport(file.path(reportDir, "summary.html"), "Accessibility Summary", page.title = "Summary", init.configuration=initConfigDir, theme="stanford")
+		rDir.data <- muReportR::getReportDir(rr, dir="data", absolute=FALSE)
+		rDir.data.abs <- muReportR::getReportDir(rr, dir="data", absolute=TRUE)
 
 		hasFragments <- length(.object@fragments) > 0
 
@@ -51,15 +51,15 @@ setMethod("createReport_summary",
 			"This ATAC-seq dataset contains accessibility profiles for ", length(getSamples(.object)), " samples. ",
 			"The table below contains an overview of the provided sample annotation. "
 		)
-		rr <- addReportSection(rr, "Overview", txt, level=1L, collapsed=FALSE)
+		rr <- muReportR::addReportSection(rr, "Overview", txt, level=1L, collapsed=FALSE)
 
-		rr <- addReportTable(rr, sannot, row.names=TRUE, first.col.header=FALSE)
+		rr <- muReportR::addReportTable(rr, sannot, row.names=TRUE, first.col.header=FALSE)
 
 		txt <- c("Sample annotation table as ",  paste(c("<a href=\"", rDir.data, "/", "sampleAnnot.tsv", "\">","TSV file","</a>"),collapse=""))
-		rr <- addReportParagraph(rr, txt)
+		rr <- muReportR::addReportParagraph(rr, txt)
 
 		txt <- c("Signal has been summarized for the following region sets:")
-		rr <- addReportParagraph(rr, txt)
+		rr <- muReportR::addReportParagraph(rr, txt)
 
 		regCountTab <- data.frame(
 			"#regions" = sapply(getRegionTypes(.object), FUN=function(rt){getNRegions(.object, rt)}),
@@ -68,7 +68,7 @@ setMethod("createReport_summary",
 		)
 		rownames(regCountTab) <- getRegionTypes(.object)
 
-		rr <- addReportTable(rr, regCountTab, row.names=TRUE, first.col.header=FALSE)
+		rr <- muReportR::addReportTable(rr, regCountTab, row.names=TRUE, first.col.header=FALSE)
 		# ll <- lapply(getRegionTypes(.object), FUN=function(rt){
 		# 	paste0("<b>", rt, ":</b> ", getNRegions(.object, rt), " regions")
 		# })
@@ -77,13 +77,13 @@ setMethod("createReport_summary",
 
 		txt <- c("Fragment data IS NOT available.")
 		if (hasFragments) txt <- c("Fragment data IS available.")
-		rr <- addReportParagraph(rr, txt)
+		rr <- muReportR::addReportParagraph(rr, txt)
 
 		if (hasFragments){
 			txt <- c(
 				"This section contains per-sample quality control plots and data. The table below contains fragment counts for each sample."
 			)
-			rr <- addReportSection(rr, "Sample QC", txt, level=1L, collapsed=FALSE)
+			rr <- muReportR::addReportSection(rr, "Sample QC", txt, level=1L, collapsed=FALSE)
 
 			logger.start("Summarizing fragment counts")
 				countTab <- data.frame(
@@ -91,7 +91,7 @@ setMethod("createReport_summary",
 					check.names=FALSE
 				)
 				rownames(countTab) <- sampleIds
-				rr <- addReportTable(rr, countTab, row.names=TRUE, first.col.header=FALSE)
+				rr <- muReportR::addReportTable(rr, countTab, row.names=TRUE, first.col.header=FALSE)
 			logger.completed()
 
 			# plot fragment numbers
@@ -104,23 +104,23 @@ setMethod("createReport_summary",
 				  theme(axis.text.x=element_text(angle=90, hjust=1, vjust=0.5))
 
 			figFn <- paste0("fragNumBar")
-			repPlot <- createReportGgPlot(pp, figFn, rr, width=10, height=5, create.pdf=TRUE, high.png=0L)
-			repPlot <- off(repPlot, handle.errors=TRUE)
-			rr <- addReportFigure(rr, "Number of fragments per sample", repPlot)
+			repPlot <- muReportR::createReportGgPlot(pp, figFn, rr, width=10, height=5, create.pdf=TRUE, high.png=0L)
+			repPlot <- muReportR::off(repPlot, handle.errors=TRUE)
+			rr <- muReportR::addReportFigure(rr, "Number of fragments per sample", repPlot)
 
 			logger.start("Plotting fragment size distribution")
 				txt <- c(
 					"The following plot illustrates the fragment size distribution for each sample. ",
 					"Periodicity indicating nucleosome-bound DNA is generally an indicator of good data quality."
 				)
-				rr <- addReportSection(rr, "Fragment size distribution", txt, level=2L, collapsed=FALSE)
+				rr <- muReportR::addReportSection(rr, "Fragment size distribution", txt, level=2L, collapsed=FALSE)
 
 				plotL <- lapply(1:length(sampleIds), FUN=function(i){
 					logger.status(c("Sample", i, "of", length(sampleIds), "..."))
 					pp <- plotInsertSizeDistribution(.object, sampleIds[i])
 					figFn <- paste0("fragSizeDistr_s", i)
-					repPlot <- createReportGgPlot(pp, figFn, rr, width=10, height=5, create.pdf=TRUE, high.png=0L)
-					repPlot <- off(repPlot, handle.errors=TRUE)
+					repPlot <- muReportR::createReportGgPlot(pp, figFn, rr, width=10, height=5, create.pdf=TRUE, high.png=0L)
+					repPlot <- muReportR::off(repPlot, handle.errors=TRUE)
 					return(repPlot)
 				})
 				figSettings.sampleId <- sampleIds
@@ -128,7 +128,7 @@ setMethod("createReport_summary",
 				figSettings <- list(
 					"Sample" = figSettings.sampleId
 				)
-				rr <- addReportFigure(rr, "Fragment size distribution", plotL, figSettings)
+				rr <- muReportR::addReportFigure(rr, "Fragment size distribution", plotL, figSettings)
 			logger.completed()
 
 			logger.start("Plotting TSS enrichment")
@@ -148,7 +148,7 @@ setMethod("createReport_summary",
 					"It is indicative of the signal-to-noise ratio in the dataset. High enrichment of signal in at TSSs compared to ",
 					"background indicates good sample quality. Ideally, there is a dip in the TSS profile corresponding the +1 nucleosome."
 				)
-				rr <- addReportSection(rr, "TSS profile", txt, level=2L, collapsed=FALSE)
+				rr <- muReportR::addReportSection(rr, "TSS profile", txt, level=2L, collapsed=FALSE)
 
 				qcTab <- data.frame(
 					sample = rownames(countTab),
@@ -163,8 +163,8 @@ setMethod("createReport_summary",
 					logger.status(c("Sample", i, "of", length(sampleIds), "..."))
 					tsse <- getTssEnrichment(.object, sampleIds[i], tssGr)
 					figFn <- paste0("tssProfile_s", i)
-					repPlot <- createReportGgPlot(tsse$plot, figFn, rr, width=10, height=5, create.pdf=TRUE, high.png=0L)
-					repPlot <- off(repPlot, handle.errors=TRUE)
+					repPlot <- muReportR::createReportGgPlot(tsse$plot, figFn, rr, width=10, height=5, create.pdf=TRUE, high.png=0L)
+					repPlot <- muReportR::off(repPlot, handle.errors=TRUE)
 					plotL <- c(plotL, list(repPlot))
 
 					qcTab[sampleIds[i], "tssEnrichment"] <- tsse$tssEnrichment
@@ -175,14 +175,14 @@ setMethod("createReport_summary",
 					"Sample" = figSettings.sampleId
 				)
 				desc <- c("TSS profile. Genome-wide aggregate of TSS +/- 2kb. Signal was normalized to the mean signal in the 100-bp-wide windows in the tails of the plot. A smoothing window of width 25bp has been applied to draw the profile curve.")
-				rr <- addReportFigure(rr, desc, plotL, figSettings)
+				rr <- muReportR::addReportFigure(rr, desc, plotL, figSettings)
 
 
 				pp <- ggplot(qcTab) + aes(nFragments, tssEnrichment) + geom_point() + geom_text(aes(label=sample), size=1)
 				figFn <- paste0("qcScatter")
-				repPlot <- createReportGgPlot(pp, figFn, rr, width=7, height=7, create.pdf=TRUE, high.png=0L)
-				repPlot <- off(repPlot, handle.errors=TRUE)
-				rr <- addReportFigure(rr, "Scatterplot of QC metrics", repPlot)
+				repPlot <- muReportR::createReportGgPlot(pp, figFn, rr, width=7, height=7, create.pdf=TRUE, high.png=0L)
+				repPlot <- muReportR::off(repPlot, handle.errors=TRUE)
+				rr <- muReportR::addReportFigure(rr, "Scatterplot of QC metrics", repPlot)
 			logger.completed()
 		}
 

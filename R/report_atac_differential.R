@@ -42,8 +42,8 @@ setMethod("createReport_differential",
 		if (!requireNamespace("muReportR")) logger.error(c("Could not load dependency: muReportR"))
 		initConfigDir <- !dir.exists(file.path(reportDir, "_config"))
 		rr <- muReportR::createReport(file.path(reportDir, "differential.html"), "Differential Accessibility", page.title = "Differential", init.configuration=initConfigDir, theme="stanford")
-		rDir.data <- getReportDir(rr, dir="data", absolute=FALSE)
-		rDir.data.abs <- getReportDir(rr, dir="data", absolute=TRUE)
+		rDir.data <- muReportR::getReportDir(rr, dir="data", absolute=FALSE)
+		rDir.data.abs <- muReportR::getReportDir(rr, dir="data", absolute=TRUE)
 		
 		compTab <- getComparisonTable(.object, cols=getConfigElement("differentialColumns"), compNames=getConfigElement("differentialCompNames"))
 
@@ -128,15 +128,15 @@ setMethod("createReport_differential",
 		txt <- c(
 			"Differential Accessibility was quantified for the following comparisons:"
 		)
-		rr <- addReportSection(rr, "Comparisons", txt, level=1L, collapsed=FALSE)
+		rr <- muReportR::addReportSection(rr, "Comparisons", txt, level=1L, collapsed=FALSE)
 
 		cTab <- compTab[,c("compName", "compCol", "grp1Name", "nGrp1", "grp2Name", "nGrp2")]
 		rownames(cTab) <- as.character(1:nrow(cTab))
 		colnames(cTab) <- c("Comparison name", "Annotation column", "Group 1", "N1", "Group 2", "N2")
-		rr <- addReportTable(rr, cTab)
+		rr <- muReportR::addReportTable(rr, cTab)
 
 		txt <- c("Tables containing differential accessibility results can be found below.")
-		rr <- addReportParagraph(rr, txt)
+		rr <- muReportR::addReportParagraph(rr, txt)
 
 		tabFileTab <- do.call("rbind",lapply(1:nrow(compTab),FUN=function(i){
 			sapply(regionTypes,FUN=function(rt){
@@ -147,7 +147,7 @@ setMethod("createReport_differential",
 		}))
 		rownames(tabFileTab) <- compTab[,"compName"]
 		colnames(tabFileTab) <- regionTypes
-		rr <- addReportTable(rr, tabFileTab)
+		rr <- muReportR::addReportTable(rr, tabFileTab)
 
 		logger.start("Plotting")
 			plotL.ma <- list()
@@ -163,8 +163,8 @@ setMethod("createReport_differential",
 									isDiff[is.na(isDiff)] <- FALSE
 									pp <- create.densityScatter(df2p.ma, is.special=isDiff, sparse.points=0.001)
 									plotFn <- paste0("maPlot_", i, "_", normalize.str(rt, return.camel=TRUE), "_", funName)
-									repPlot <- createReportGgPlot(pp, plotFn, rr, width=7, height=7, create.pdf=TRUE, high.png=0L)
-									repPlot <- off(repPlot, handle.errors=TRUE)
+									repPlot <- muReportR::createReportGgPlot(pp, plotFn, rr, width=7, height=7, create.pdf=TRUE, high.png=0L)
+									repPlot <- muReportR::off(repPlot, handle.errors=TRUE)
 									plotL.ma <- c(plotL.ma, list(repPlot))
 								logger.completed()
 							}
@@ -184,7 +184,7 @@ setMethod("createReport_differential",
 				"Region type" = figSettings.region,
 				"Differential method" = figSettings.diffFun
 			)
-			rr <- addReportFigure(rr, "MA plot", plotL.ma, figSettings)
+			rr <- muReportR::addReportFigure(rr, "MA plot", plotL.ma, figSettings)
 
 			lolaDbPaths <- getConfigElement("lolaDbPaths")
 			doLola <- !is.null(lolaDbPaths) && all(dir.exists(lolaDbPaths))
@@ -196,11 +196,11 @@ setMethod("createReport_differential",
 
 
 					lolaRefTxt <- c("Sheffield, & Bock (2016). LOLA: enrichment analysis for genomic region sets and regulatory elements in R and Bioconductor. <i>Bioinformatics</i>, <b>32</b>(4), 587-589.")
-					rr <- addReportReference(rr, lolaRefTxt)
+					rr <- muReportR::addReportReference(rr, lolaRefTxt)
 					txt <- c(
 						"LOLA enrichment analysis ", getReportReference(rr, lolaRefTxt), " for differentially accessible regions."
 					)
-					rr <- addReportSection(rr, "LOLA enrichment analysis", txt, level=2L, collapsed=FALSE)
+					rr <- muReportR::addReportSection(rr, "LOLA enrichment analysis", txt, level=2L, collapsed=FALSE)
 
 					logger.start("Running LOLA and plotting")
 						plotL.lb <- list()
@@ -223,8 +223,8 @@ setMethod("createReport_differential",
 
 												pp <- lolaBarPlot(lolaDb, lolaRes, scoreCol="log2OR", orderCol="maxRnk", pvalCut=0.01, maxTerms=200)
 												plotFn <- paste0("lolaBar_", curSuffix)
-												repPlot <- createReportGgPlot(pp, plotFn, rr, width=20, height=5, create.pdf=TRUE, high.png=0L)
-												repPlot <- off(repPlot, handle.errors=TRUE)
+												repPlot <- muReportR::createReportGgPlot(pp, plotFn, rr, width=20, height=5, create.pdf=TRUE, high.png=0L)
+												repPlot <- muReportR::off(repPlot, handle.errors=TRUE)
 												plotL.lb <- c(plotL.lb, list(repPlot))
 											logger.completed()
 										}
@@ -238,7 +238,7 @@ setMethod("createReport_differential",
 						"Bar height denotes log2(odds-ratio). Bars are ordered according to the combined ranking in the LOLA result. ",
 						"Up to 200 most enriched categories (q-value < 0.01; Fisher's Exact Test) are shown for each comparison."
 					)
-					rr <- addReportFigure(rr, figDesc, plotL.lb, figSettings)
+					rr <- muReportR::addReportFigure(rr, figDesc, plotL.lb, figSettings)
 
 				logger.completed()
 			}
