@@ -1352,8 +1352,8 @@ setMethod("transformCounts",
 				for (rt in regionTypes){
 					logger.status(c("Region type:", rt))
 					dds <- DESeq2::DESeqDataSet(getCountsSE(.object, rt), design=~1)
-					# .object@counts[[rt]] <- data.table(assay(vst(dds, blind=TRUE)))
-					.object@counts[[rt]] <- assay(vst(dds, blind=TRUE))
+					# .object@counts[[rt]] <- data.table(assay(DESeq2::vst(dds, blind=TRUE)))
+					.object@counts[[rt]] <- assay(DESeq2::vst(dds, blind=TRUE))
 					if (!.object@diskDump && .object@sparseCounts){
 						.object@counts[[rt]] <- as(.object@counts[[rt]], "sparseMatrix")
 					}
@@ -2186,7 +2186,7 @@ setMethod("getDiffAcc",
 			l2fpkm <- log2(fpkm(dds, robust=TRUE)+1)
 			grp1.m.l2fpkm <- rowMeans(l2fpkm[, sidx.grp1, drop=FALSE], na.rm=TRUE)
 			grp2.m.l2fpkm <- rowMeans(l2fpkm[, sidx.grp2, drop=FALSE], na.rm=TRUE)
-			vstCounts <- assay(vst(dds, blind=FALSE))
+			vstCounts <- assay(DESeq2::vst(dds, blind=FALSE))
 			grp1.m.vst <- rowMeans(vstCounts[, sidx.grp1, drop=FALSE], na.rm=TRUE)
 			grp2.m.vst <- rowMeans(vstCounts[, sidx.grp2, drop=FALSE], na.rm=TRUE)
 
