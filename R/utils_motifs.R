@@ -347,6 +347,7 @@ PWMatrixToProbMatrix <- function(x){
 #' @author Fabian Mueller
 #' @export
 hmSeqLogo <- function(pwm, x, y, width, height, ic.scale=TRUE){
+	if (!requireNamespace("grid")) logger.error(c("Could not load dependency: grid"))
 	# convert units to numbers
 	unitType <- attr(x, "unit")
 	x <- as.numeric(x)

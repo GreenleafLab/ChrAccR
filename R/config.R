@@ -109,7 +109,7 @@ getConfigElement <- function(name){
 #' @author Fabian Mueller
 #' @export
 saveConfig <- function(dest){
-	cat(toJSON(as.list(.config), pretty=TRUE), file=dest)
+	cat(jsonlite::toJSON(as.list(.config), pretty=TRUE), file=dest)
 }
 
 #' loadConfig
@@ -122,7 +122,7 @@ saveConfig <- function(dest){
 #' @author Fabian Mueller
 #' @export
 loadConfig <- function(cfgFile){
-	cfgList <- fromJSON(cfgFile)
+	cfgList <- jsonlite::fromJSON(cfgFile)
 	for (nn in names(cfgList)){
 		if (is.element(nn,ls(.config))){
 			.config[[nn]] <- cfgList[[nn]]

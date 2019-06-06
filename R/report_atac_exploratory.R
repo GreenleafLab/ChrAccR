@@ -203,15 +203,15 @@ setMethod("createReport_exploratory",
 					logger.start(c("Region type:", rt))
 						rts <- normalize.str(rt, return.camel=TRUE)
 						cvd <- cvResL[[rt]]
-						cvv <- computeVariability(cvd)
+						cvv <- chromVAR::computeVariability(cvd)
 
-						pp <- plotVariability(cvv, use_plotly=FALSE)
+						pp <- chromVAR::plotVariability(cvv, use_plotly=FALSE)
 						plotFn <- paste0("chromVarDevVar_", rts)
 						repPlot <- createReportGgPlot(pp, plotFn, rr, width=10, height=5, create.pdf=TRUE, high.png=0L)
 						repPlot <- off(repPlot, handle.errors=TRUE)
 						plotL.var <- c(plotL.var, list(repPlot))
 
-						devScores <- deviationScores(cvd)
+						devScores <- chromVAR::deviationScores(cvd)
 						cres.col <- as.hclust(getClusteringDendrogram(devScores, distMethod="euclidean", linkMethod=linkMethod, corMethod=corMethod))
 
 						mostVarIdx <- which(rank(-cvv$variability,na.last="keep",ties.method="min") <= rankCut)
@@ -222,7 +222,7 @@ setMethod("createReport_exploratory",
 						repPlot <- createReportPlot(plotFn, rr, width=10, height=10, create.pdf=TRUE, high.png=300L)
 							pheatmap::pheatmap(
 								devScores[mostVarIdx,],
-								color=colorRampPalette(colors.cv)(100),
+								color=grDevices::colorRampPalette(colors.cv)(100),
 								breaks=seq(-maxDev, maxDev, length.out=101), 
 								border_color=NA,
 								cluster_rows=cres.row, cluster_cols=cres.col,

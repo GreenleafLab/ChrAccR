@@ -434,7 +434,7 @@ setMethod("show","DsATAC",
 # 		baseGr <- getCoord(.object, type="counts")
 # 		regGr  <- getCoord(.object, type=type)
 # 		oo <- findOverlaps(baseGr, regGr)
-# 		sl <- tapply(queryHits(oo), subjectHits(oo), c)
+# 		sl <- tapply(GenomicRanges::queryHits(oo), GenomicRanges::subjectHits(oo), c)
 
 # 		res <- rep(list(integer(0)), getNRegions(.object, type=type))
 # 		res[as.integer(names(sl))] <- sl
@@ -1026,7 +1026,7 @@ setMethod("addInsertionDataFromBam",
 				}
 				ga <- NULL
 				if (pairedEnd){
-					ga <- GenomicAlignments::readGAlignmentPairs(fns[sid], use.names=FALSE, param=ScanBamParam(flag=scanBamFlag(isProperPair=TRUE)))
+					ga <- GenomicAlignments::readGAlignmentPairs(fns[sid], use.names=FALSE, param=Rsamtools::ScanBamParam(flag=Rsamtools::scanBamFlag(isProperPair=TRUE)))
 				} else {
 					ga <- GenomicAlignments::readGAlignments(fns[sid], use.names=FALSE)
 				}
@@ -1678,13 +1678,13 @@ setMethod("getInsertionKmerFreq",
 		res <- do.call("cbind", lapply(samples, FUN=function(sid){
 			logger.status(c("Preparing insertion kmer-frequencies for sample", sid))
 			insGr <-  trim(resize(shift(getInsertionSites(.object, sid)[[1]], -ceiling(k/2)), width=k, fix="start", ignore.strand=TRUE))
-			kmerFreq <- oligonucleotideFrequency(Views(go, insGr), width=k, simplify.as="collapsed")
+			kmerFreq <- Biostrings::oligonucleotideFrequency(Biostrings::Views(go, insGr), width=k, simplify.as="collapsed")
 			return(kmerFreq)
 		}))
 		colnames(res) <- samples
 		if (normGenome) {
 			logger.status(c("Normalizing using genome-wide kmer-frequencies"))
-			kmerFreq.g <- oligonucleotideFrequency(Views(go, getGenomeGr(.object@genome, onlyMainChrs=TRUE)), width=k, simplify.as="collapsed")
+			kmerFreq.g <- Biostrings::oligonucleotideFrequency(Biostrings::Views(go, getGenomeGr(.object@genome, onlyMainChrs=TRUE)), width=k, simplify.as="collapsed")
 			res <- res/kmerFreq.g
 		}
 		return(res)
@@ -1779,7 +1779,7 @@ setMethod("aggregateRegionCounts",
 				kmerFreqM <- do.call("cbind", lapply(0:(wm-1), FUN=function(i){
 					logger.status(paste0("i=",i))
 					wGr <- trim(resize(GenomicRanges::shift(regionGr, i-ceiling(k/2)), width=k, fix="start", ignore.strand=TRUE))
-					rr <- oligonucleotideFrequency(Views(go, wGr), width=k, simplify.as="collapsed")
+					rr <- Biostrings::oligonucleotideFrequency(Biostrings::Views(go, wGr), width=k, simplify.as="collapsed")
 					return(rr)
 				}))
 			logger.completed()
@@ -1799,7 +1799,7 @@ setMethod("aggregateRegionCounts",
 			gr <- gr[width(gr)==w,] #only select elements that have the same length
 			grL <- split(gr, seqnames(gr))
 			covM <- do.call("rbind", lapply(names(cov), function(chrom){
-				v <- as.matrix(Views(cov[[chrom]], ranges(grL[[chrom]])))
+				v <- as.matrix(Biostrings::Views(cov[[chrom]], ranges(grL[[chrom]])))
 				v[is.na(v)] <- 0 #too handle errors should not be needed
 				# revert negative strand regions
 				revIdx <- as.character(strand(grL[[chrom]]))=="-"
@@ -1923,8 +1923,8 @@ setMethod("getMotifEnrichment",
 		mmObjs <- prepareMotifmatchr(.object@genome, motifs)
 		#MAIN
 		se <- getCountsSE(.object, type)
-		mm <- matchMotifs(mmObjs[["motifs"]], se, genome=mmObjs[["genome"]])
-		regionMotifMatch <- as.matrix(motifMatches(mm))
+		mm <- motifmatchr::matchMotifs(mmObjs[["motifs"]], se, genome=mmObjs[["genome"]])
+		regionMotifMatch <- as.matrix(motifmatchr::motifMatches(mm))
 
 		motifNames <- colData(mm)[["name"]]
 		names(motifNames) <- NULL

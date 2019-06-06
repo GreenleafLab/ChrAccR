@@ -6,13 +6,14 @@ Date: 2019-06-04
 Suggests:
     ChrAccRex,
     muReportR,
-    S4Vectors,
     DelayedArray,
     HDF5Array,
     chromVAR,
     motifmatchr,
     chromVARmotifs,
     GenomicFeatures,
+    Rsamtools,
+    Biostrings,
     knitr,
     rmarkdown,
     jsonlite,
@@ -21,11 +22,14 @@ Suggests:
     preprocessCore,
     R.utils,
     tools,
+    grid,
     rtracklayer,
     DESeq2,
     limma,
     TFBSTools,
     seqLogo,
+    pheatmap,
+    grDevices,
     BSgenome.Hsapiens.NCBI.GRCh38,
     BSgenome.Hsapiens.UCSC.hg38,
     BSgenome.Hsapiens.1000genomes.hs37d5,
@@ -34,6 +38,8 @@ Suggests:
     BSgenome.Mmusculus.UCSC.mm9,
     JASPAR2018
 Imports:
+    S4Vectors,
+    IRanges,
     GenomeInfoDb,
     GenomicRanges,
     GenomicAlignments,
@@ -42,6 +48,9 @@ Imports:
     muLogR,
     muRtools,
     Matrix,
+    methods,
+    stats,
+    utils,
     data.table
 License: GPL-2
 Version: 0.9.1

@@ -437,7 +437,7 @@ setMethod("regionAggregation",
 		}
 
 		logger.info(c("Aggregated measurements across", nrow(.object@meth[[type]]), "regions"))
-		rows2keep <- rowAnys(!is.na(.object@meth[[type]]))
+		rows2keep <- matrixStats::rowAnys(!is.na(.object@meth[[type]]))
 		logger.info(c("  of which", sum(rows2keep), "regions contained GCs with measurements"))
 		#discard regions where all methylation levels are unobserved
 		if (dropEmpty){
