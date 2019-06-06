@@ -6,6 +6,8 @@ Date: 2019-06-04
 Suggests:
     ChrAccRex,
     muReportR,
+    S4Vectors,
+    SummarizedExperiment,
     DelayedArray,
     HDF5Array,
     chromVAR,
