@@ -21,6 +21,7 @@ if (!is.element('devtools', installed.packages()[,"Package"])) install.packages(
 # install dependencies
 devtools::install_github("demuellae/muLogR")
 devtools::install_github("demuellae/muRtools")
+devtools::install_github("demuellae/muReportR")
 
 # install ChrAccR
 devtools::install_github("demuellae/ChrAccR")
