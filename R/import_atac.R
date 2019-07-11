@@ -365,6 +365,7 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 		}
 		names(inputFns) <- sampleIds
 	}
+	if (!is.character(inputFns)) inputFns <- as.character(inputFns)
 	if (!all(file.exists(inputFns))){
 		missingSamples <- sampleIds[!file.exists(inputFns)]
 		logger.error(c("Missing input files for samples:", paste(missingSamples, collapse=", ")))
