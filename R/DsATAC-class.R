@@ -2628,3 +2628,172 @@ setMethod("unsupervisedAnalysisSc",
 		return(res)
 	}
 )
+
+if (!isGeneric("iterativeLSI")) {
+	setGeneric(
+		"iterativeLSI",
+		function(.object, ...) standardGeneric("iterativeLSI"),
+		signature=c(".object")
+	)
+}
+#' iterativeLSI-methods
+#'
+#' Perform iterative LSI clustering as in doi:10.1101/696328
+#'
+#' @param .object    \code{\linkS4class{DsATAC}} object
+#' @param it0regionType character string specifying the region type to start with
+#' @return an \code{S3} object containing dimensionality reduction results and clustering
+#' 
+#' @rdname iterativeLSI-DsATAC-method
+#' @docType methods
+#' @aliases iterativeLSI
+#' @aliases iterativeLSI,DsATAC-method
+#' @author Fabian Mueller
+#' @noRd
+setMethod("iterativeLSI",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		it0regionType="t5k",
+		it0nMostAcc=20000L,
+		it0pcs=2:25,
+		it0clusterResolution=0.8,
+		it0nTopPeaksPerCluster=2e5,
+		it1pcs=1:50,
+		it1clusterResolution=0.8,
+		it1mostVarPeaks=50000L,
+		it2pcs=1:50,
+		it2clusterResolution=0.8
+	) {
+		cellIds <- getSamples(.object)
+		logger.start("Iteration 0")
+			dsr <- .object
+			for (rt in setdiff(getRegionTypes(dsr), it0regionType)){
+				dsr <- removeRegionType(dsr, rt)
+			}
+			if (!is.null(it0nMostAcc)){
+				regAcc <- safeMatrixStats(ChrAccR::getCounts(dsr, it0regionType, allowSparseMatrix=TRUE), statFun="rowMeans", na.rm=TRUE)
+				if (it0nMostAcc < length(regAcc)){
+					idx2rem <- rank(-regAcc, na.last="keep", ties.method="min") > it0nMostAcc
+					logger.info(c("Retaining the", sum(!idx2rem), "most accessible regions for dimensionality reduction"))
+					dsr <- removeRegions(dsr, idx2rem, it0regionType)
+				}
+			}
+			logger.start(c("Performing TF-IDF-based dimension reduction"))
+				if (length(dsr@countTransform[[it0regionType]]) > 0) logger.warning("Counts have been pre-normalized. 'tf-idf' might not be applicable.")
+				dsn <- transformCounts(dsr, method="tf-idf", regionTypes=it0regionType)
+
+				cm <- ChrAccR::getCounts(dsn, it0regionType, asMatrix=TRUE)
+				pcaCoord <- muRtools::getDimRedCoords.pca(t(cm), components=1:max(it0pcs), method="irlba_svd")[, it0pcs, drop=FALSE]
+			logger.completed()
+			logger.start(c("Clustering"))	
+				if (!requireNamespace("Seurat")) logger.error(c("Could not load dependency: Seurat"))
+				# Louvain clustering using Seurat
+				dummyMat <- matrix(11.0, ncol=length(cellIds), nrow=11)
+				colnames(dummyMat) <- cellIds
+				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.genes=0)
+				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="cell.embeddings", new.data=pcaCoord)
+				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="key", new.data="pca")
+				clustRes <- Seurat::FindClusters(sObj, reduction.type="pca", dims.use=1:ncol(pcaCoord), k.param=30, algorithm=1, n.start=100, n.iter=10, resolution=it0clusterResolution)
+				clustAss <- clustRes@ident
+			logger.completed()
+			logger.start(c("Peak calling"))
+				logger.start("Creating cluster pseudo-bulk samples")
+					dsr <- addSampleAnnotCol(dsr, "clustAss_it0", paste0("c",clustAss[cellIds]))
+					dsrClust <- mergeSamples(dsrClust, "clustAss_it0", countAggrFun="sum")
+				logger.completed()
+				logger.start("Calling peaks")
+					clustPeakGrl <- callPeaks(dsrClust)
+					if (!is.null(it0nTopPeaksPerCluster)){
+						logger.info(paste0("Selecting the", it0nTopPeaksPerCluster, " peaks with highest score for each cluster"))
+						clustPeakGrl <- GRangesList(lapply(clustPeakGrl, FUN=function(x){
+							idx <- rank(-elementMetadata(x)[,"score_norm"], na.last="keep", ties.method="min") <= it0nTopPeaksPerCluster
+							x[idx]
+						}))
+					}
+					
+					peakUnionGr <- getNonOverlappingByScore(unlist(clustPeakGrl), scoreCol="score_norm")
+					peakUnionGr <- sortGr(peakUnionGr)
+				logger.completed()
+				logger.start("Aggregating counts for union peak set")
+					# dsrClust <- regionAggregation(dsrClust, peakUnionGr, "clusterPeaks", signal="insertions", dropEmpty=FALSE)
+					dsr <- regionAggregation(dsr, peakUnionGr, "clusterPeaks", signal="insertions", dropEmpty=FALSE)
+				logger.completed()
+			logger.completed()
+		logger.completed()
+
+		logger.start("Iteration 1")
+			it1regionType <- "clusterPeaks"
+			logger.start(c("Performing TF-IDF-based dimension reduction"))
+				dsr <- removeRegionType(dsr, it0regionType)
+				dsn <- transformCounts(dsr, method="tf-idf", regionTypes=it1regionType) #TODO: renormalize based on sequencing depth rather than aggregated counts across peaks only?
+				cm <- ChrAccR::getCounts(dsn, it1regionType, asMatrix=TRUE)
+				pcaCoord <- muRtools::getDimRedCoords.pca(t(cm), components=1:max(it1pcs), method="irlba_svd")[, it1pcs, drop=FALSE]
+			logger.completed()
+
+			logger.start(c("Clustering"))	
+				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.genes=0)
+				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="cell.embeddings", new.data=pcaCoord)
+				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="key", new.data="pca")
+				clustRes <- Seurat::FindClusters(sObj, reduction.type="pca", dims.use=1:ncol(pcaCoord), k.param=30, algorithm=1, n.start=100, n.iter=10, resolution=it1clusterResolution)
+				clustAss <- clustRes@ident
+			logger.completed()
+
+			if (!is.null(it1mostVarPeaks) && it1mostVarPeaks < nrow(cm)){
+				logger.start(c("Identifying cluster-variable peaks"))
+					logger.start("Creating cluster pseudo-bulk samples")
+						dsr <- addSampleAnnotCol(dsr, "clustAss_it1", paste0("c",clustAss[cellIds]))
+						dsrClust <- mergeSamples(dsrClust, "clustAss_it1", countAggrFun="sum")
+					logger.completed()
+					logger.start("Identifying target peaks")
+						dsnClust <- transformCounts(dsrClust, method="RPKM", regionTypes=it1regionType)
+						l2cpm <- log2(ChrAccR::getCounts(dsnClust, it1regionType) / 1e3 + 1) # compute log2(CPM) from RPKM
+						peakVar <- rowVars(l2cpm, na.rm=TRUE)
+						if (it1mostVarPeaks < length(peakVar)){
+							idx2rem <- rank(-peakVar, na.last="keep", ties.method="min") > it1mostVarPeaks
+							logger.info(c("Retaining the", sum(!idx2rem), "most variable peaks"))
+							dsr <- removeRegions(dsr, idx2rem, it1regionType)
+						}
+						peakCoords <- ChrAccR::getCoord(dsr, it1regionType)
+					logger.completed()
+				logger.completed()
+			}
+		logger.completed()
+
+		logger.start("Iteration 2")
+			it2regionType <- it1regionType
+			logger.start(c("Performing TF-IDF-based dimension reduction"))
+				dsn <- transformCounts(dsr, method="tf-idf", regionTypes=it2regionType) #TODO: renormalize based on sequencing depth rather than aggregated counts across peaks only?
+				cm <- ChrAccR::getCounts(dsn, it2regionType, asMatrix=TRUE)
+				pcaCoord <- muRtools::getDimRedCoords.pca(t(cm), components=1:max(it2pcs), method="irlba_svd")[, it2pcs, drop=FALSE]
+			logger.completed()
+			logger.start(c("Clustering"))	
+				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.genes=0)
+				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="cell.embeddings", new.data=pcaCoord)
+				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="key", new.data="pca")
+				clustRes <- Seurat::FindClusters(sObj, reduction.type="pca", dims.use=1:ncol(pcaCoord), k.param=30, algorithm=1, n.start=100, n.iter=10, resolution=it2clusterResolution)
+				clustAss <- clustRes@ident
+
+				dsr <- addSampleAnnotCol(dsr, "clustAss_it2", paste0("c",clustAss[cellIds]))
+			logger.completed()
+			logger.start(c("UMAP coordinates"))	
+				umapCoord <- muRtools::getDimRedCoords.umap(pcaCoord)
+				umapRes <- attr(umapCoord, "umapRes")
+				attr(umapCoord, "umapRes") <- NULL
+			logger.completed()
+		logger.completed()
+
+
+		res <- list(
+			pcaCoord=pcaCoord,
+			umapCoord=umapCoord,
+			umapRes=umapRes,
+			clustAss=clustAss,
+			regionGr=peakCoords,
+		)
+		class(res) <- "iterativeLSIResultSc"
+		return(res)
+	}
+)
