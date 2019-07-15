@@ -2667,6 +2667,8 @@ setMethod("iterativeLSI",
 		it2pcs=1:50,
 		it2clusterResolution=0.8
 	) {
+		callParams <- as.list(match.call())
+		callParams <- callParams[setdiff(names(callParams), ".object")]
 		cellIds <- getSamples(.object)
 		logger.start("Iteration 0")
 			dsr <- .object
@@ -2791,6 +2793,7 @@ setMethod("iterativeLSI",
 			umapRes=umapRes,
 			clustAss=clustAss,
 			regionGr=peakCoords,
+			.params=callParams
 		)
 		class(res) <- "iterativeLSIResultSc"
 		return(res)
