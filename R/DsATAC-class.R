@@ -2793,6 +2793,7 @@ setMethod("iterativeLSI",
 			umapRes=umapRes,
 			clustAss=clustAss,
 			regionGr=peakCoords,
+			clusterPeaks_unfiltered=peakUnionGr,
 			.params=callParams
 		)
 		class(res) <- "iterativeLSIResultSc"
