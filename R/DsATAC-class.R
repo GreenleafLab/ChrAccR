@@ -2702,7 +2702,7 @@ setMethod("iterativeLSI",
 			logger.start(c("Peak calling"))
 				logger.start("Creating cluster pseudo-bulk samples")
 					dsr <- addSampleAnnotCol(dsr, "clustAss_it0", paste0("c",clustAss[cellIds]))
-					dsrClust <- mergeSamples(dsrClust, "clustAss_it0", countAggrFun="sum")
+					dsrClust <- mergeSamples(dsr, "clustAss_it0", countAggrFun="sum")
 				logger.completed()
 				logger.start("Calling peaks")
 					clustPeakGrl <- callPeaks(dsrClust)
@@ -2745,12 +2745,12 @@ setMethod("iterativeLSI",
 				logger.start(c("Identifying cluster-variable peaks"))
 					logger.start("Creating cluster pseudo-bulk samples")
 						dsr <- addSampleAnnotCol(dsr, "clustAss_it1", paste0("c",clustAss[cellIds]))
-						dsrClust <- mergeSamples(dsrClust, "clustAss_it1", countAggrFun="sum")
+						dsrClust <- mergeSamples(dsr, "clustAss_it1", countAggrFun="sum")
 					logger.completed()
 					logger.start("Identifying target peaks")
 						dsnClust <- transformCounts(dsrClust, method="RPKM", regionTypes=it1regionType)
 						l2cpm <- log2(ChrAccR::getCounts(dsnClust, it1regionType) / 1e3 + 1) # compute log2(CPM) from RPKM
-						peakVar <- rowVars(l2cpm, na.rm=TRUE)
+						peakVar <- matrixStats::rowVars(l2cpm, na.rm=TRUE)
 						if (it1mostVarPeaks < length(peakVar)){
 							idx2rem <- rank(-peakVar, na.last="keep", ties.method="min") > it1mostVarPeaks
 							logger.info(c("Retaining the", sum(!idx2rem), "most variable peaks"))
@@ -2784,7 +2784,6 @@ setMethod("iterativeLSI",
 				attr(umapCoord, "umapRes") <- NULL
 			logger.completed()
 		logger.completed()
-
 
 		res <- list(
 			pcaCoord=pcaCoord,
