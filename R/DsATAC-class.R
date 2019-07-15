@@ -2670,6 +2670,8 @@ setMethod("iterativeLSI",
 		callParams <- as.list(match.call())
 		callParams <- callParams[setdiff(names(callParams), ".object")]
 		cellIds <- getSamples(.object)
+		if (length(.object@fragments) != length(cellIds)) logger.error("Object does not contain fragment information for all samples")
+		
 		logger.start("Iteration 0")
 			dsr <- .object
 			for (rt in setdiff(getRegionTypes(dsr), it0regionType)){
