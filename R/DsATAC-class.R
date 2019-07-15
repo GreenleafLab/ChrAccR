@@ -753,6 +753,51 @@ setMethod("removeFragmentData",
 	}
 )
 #-------------------------------------------------------------------------------
+# EXPERIMENTAL
+if (!isGeneric("undiskFragmentData")) {
+	setGeneric(
+		"undiskFragmentData",
+		function(object) standardGeneric("undiskFragmentData"),
+		signature=c("object")
+	)
+}
+#' undiskFragmentData-methods
+#'
+#'  converts disk-backed fragment data to in-memory fragment data
+#'
+#' @param object	\code{\linkS4class{DsATAC}} object
+#' @return the modified object
+#'
+#' @rdname undiskFragmentData-DsATAC-method
+#' @docType methods
+#' @aliases undiskFragmentData
+#' @aliases undiskFragmentData,DsATAC-method
+#' @author Fabian Mueller
+#' @noRd
+setMethod("undiskFragmentData",
+	signature(
+		object="DsATAC"
+	),
+	function(
+		object
+	) {
+		if (length(object@fragments) > 0){
+			object@fragments <- lapply(object@fragments, FUN=function(fragGr){
+				if (is.character(fragGr)){
+					if (file.exists(fragGr)) {
+						fragGr <- readRDS(fragGr)
+					} else {
+						logger.error(c("Could not load fragment data from file:", fragGr))
+					}
+				}
+				return(fragGr)
+			})
+		}
+		object@diskDump.fragments <- FALSE
+		return(object)
+	}
+)
+#-------------------------------------------------------------------------------
 if (!isGeneric("addCountDataFromBam")) {
 	setGeneric(
 		"addCountDataFromBam",
@@ -2671,7 +2716,7 @@ setMethod("iterativeLSI",
 		callParams <- callParams[setdiff(names(callParams), ".object")]
 		cellIds <- getSamples(.object)
 		if (length(.object@fragments) != length(cellIds)) logger.error("Object does not contain fragment information for all samples")
-		
+
 		logger.start("Iteration 0")
 			dsr <- .object
 			for (rt in setdiff(getRegionTypes(dsr), it0regionType)){
