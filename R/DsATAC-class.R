@@ -2683,10 +2683,19 @@ if (!isGeneric("iterativeLSI")) {
 }
 #' iterativeLSI-methods
 #'
-#' Perform iterative LSI clustering as in doi:10.1101/696328
+#' EXPERIMENTAL: Perform iterative LSI clustering as described in doi:10.1101/696328
 #'
 #' @param .object    \code{\linkS4class{DsATAC}} object
 #' @param it0regionType character string specifying the region type to start with
+#' @param it0nMostAcc the number of the most accessible regions to consider in iteration 0
+#' @param it0pcs      the principal components to consider in iteration 0
+#' @param it0clusterResolution resolution paramter for Seurat's  clustering (\code{Seurat::FindClusters}) in iteration 0
+#' @param it0nTopPeaksPerCluster the number of best peaks to be considered for each cluster in the merged peak set (iteration 0)
+#' @param it1pcs      the principal components to consider in iteration 0
+#' @param it1clusterResolution resolution paramter for Seurat's  clustering (\code{Seurat::FindClusters}) in iteration 1
+#' @param it1mostVarPeaks the number of the most variable peaks to consider after iteration 1
+#' @param it2pcs      the principal components to consider in the final iteration (2)
+#' @param it2clusterResolution resolution paramter for Seurat's  clustering (\code{Seurat::FindClusters}) in the final iteration (2)
 #' @return an \code{S3} object containing dimensionality reduction results and clustering
 #' 
 #' @rdname iterativeLSI-DsATAC-method
@@ -2694,7 +2703,7 @@ if (!isGeneric("iterativeLSI")) {
 #' @aliases iterativeLSI
 #' @aliases iterativeLSI,DsATAC-method
 #' @author Fabian Mueller
-#' @noRd
+#' @export
 setMethod("iterativeLSI",
 	signature(
 		.object="DsATAC"
