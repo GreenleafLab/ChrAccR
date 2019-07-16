@@ -2735,7 +2735,7 @@ setMethod("iterativeLSI",
 				dsn <- transformCounts(dsr, method="tf-idf", regionTypes=it0regionType)
 
 				cm <- ChrAccR::getCounts(dsn, it0regionType, asMatrix=TRUE)
-				pcaCoord <- muRtools::getDimRedCoords.pca(t(cm), components=1:max(it0pcs), method="irlba_svd")[, it0pcs, drop=FALSE]
+				pcaCoord_it0 <- muRtools::getDimRedCoords.pca(t(cm), components=1:max(it0pcs), method="irlba_svd")[, it0pcs, drop=FALSE]
 			logger.completed()
 			logger.start(c("Clustering"))	
 				if (!requireNamespace("Seurat")) logger.error(c("Could not load dependency: Seurat"))
@@ -2743,14 +2743,14 @@ setMethod("iterativeLSI",
 				dummyMat <- matrix(11.0, ncol=length(cellIds), nrow=11)
 				colnames(dummyMat) <- cellIds
 				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.genes=0)
-				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="cell.embeddings", new.data=pcaCoord)
+				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="cell.embeddings", new.data=pcaCoord_it0)
 				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="key", new.data="pca")
-				clustRes <- Seurat::FindClusters(sObj, reduction.type="pca", dims.use=1:ncol(pcaCoord), k.param=30, algorithm=1, n.start=100, n.iter=10, resolution=it0clusterResolution)
-				clustAss <- clustRes@ident
+				clustRes <- Seurat::FindClusters(sObj, reduction.type="pca", dims.use=1:ncol(pcaCoord_it0), k.param=30, algorithm=1, n.start=100, n.iter=10, resolution=it0clusterResolution)
+				clustAss_it0 <- clustRes@ident
 			logger.completed()
 			logger.start(c("Peak calling"))
 				logger.start("Creating cluster pseudo-bulk samples")
-					dsr <- addSampleAnnotCol(dsr, "clustAss_it0", paste0("c",clustAss[cellIds]))
+					dsr <- addSampleAnnotCol(dsr, "clustAss_it0", paste0("c",clustAss_it0[cellIds]))
 					dsrClust <- mergeSamples(dsr, "clustAss_it0", countAggrFun="sum")
 				logger.completed()
 				logger.start("Calling peaks")
@@ -2779,21 +2779,21 @@ setMethod("iterativeLSI",
 				dsr <- removeRegionType(dsr, it0regionType)
 				dsn <- transformCounts(dsr, method="tf-idf", regionTypes=it1regionType) #TODO: renormalize based on sequencing depth rather than aggregated counts across peaks only?
 				cm <- ChrAccR::getCounts(dsn, it1regionType, asMatrix=TRUE)
-				pcaCoord <- muRtools::getDimRedCoords.pca(t(cm), components=1:max(it1pcs), method="irlba_svd")[, it1pcs, drop=FALSE]
+				pcaCoord_it1 <- muRtools::getDimRedCoords.pca(t(cm), components=1:max(it1pcs), method="irlba_svd")[, it1pcs, drop=FALSE]
 			logger.completed()
 
 			logger.start(c("Clustering"))	
 				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.genes=0)
-				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="cell.embeddings", new.data=pcaCoord)
+				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="cell.embeddings", new.data=pcaCoord_it1)
 				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="key", new.data="pca")
-				clustRes <- Seurat::FindClusters(sObj, reduction.type="pca", dims.use=1:ncol(pcaCoord), k.param=30, algorithm=1, n.start=100, n.iter=10, resolution=it1clusterResolution)
-				clustAss <- clustRes@ident
+				clustRes <- Seurat::FindClusters(sObj, reduction.type="pca", dims.use=1:ncol(pcaCoord_it1), k.param=30, algorithm=1, n.start=100, n.iter=10, resolution=it1clusterResolution)
+				clustAss_it1 <- clustRes@ident
 			logger.completed()
 
 			if (!is.null(it1mostVarPeaks) && it1mostVarPeaks < nrow(cm)){
 				logger.start(c("Identifying cluster-variable peaks"))
 					logger.start("Creating cluster pseudo-bulk samples")
-						dsr <- addSampleAnnotCol(dsr, "clustAss_it1", paste0("c",clustAss[cellIds]))
+						dsr <- addSampleAnnotCol(dsr, "clustAss_it1", paste0("c",clustAss_it1[cellIds]))
 						dsrClust <- mergeSamples(dsr, "clustAss_it1", countAggrFun="sum")
 					logger.completed()
 					logger.start("Identifying target peaks")
@@ -2841,6 +2841,16 @@ setMethod("iterativeLSI",
 			clustAss=clustAss,
 			regionGr=peakCoords,
 			clusterPeaks_unfiltered=peakUnionGr,
+			iterationData = list(
+				iteration0 = list(
+					pcaCoord=pcaCoord_it0,
+					clustAss=clustAss_it0
+				),
+				iteration1 = list(
+					pcaCoord=pcaCoord_it1,
+					clustAss=clustAss_it1
+				)
+			),
 			.params=callParams
 		)
 		class(res) <- "iterativeLSIResultSc"
