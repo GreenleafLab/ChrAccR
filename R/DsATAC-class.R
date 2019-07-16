@@ -564,7 +564,8 @@ setMethod("regionAggregation",
 			i <- 0
 			for (sid in getSamples(.object)){
 				i <- i + 1
-				logger.status(c("Aggregating counts for sample", sid, paste0("(", i, " of ", nSamples, ")"), "..."))
+				doMsg <- nSamples < 500 || (i %% 500 == 0)
+				if (doMsg) logger.status(c("Aggregating counts for sample", sid, paste0("(", i, " of ", nSamples, ")"), "..."))
 				.object@counts[[type]][,sid] <- as.matrix(countOverlaps(regGr, getInsertionSites(.object, samples=sid)[[1]], ignore.strand=TRUE))
 			}
 		}
@@ -2743,8 +2744,8 @@ setMethod("iterativeLSI",
 				if (length(dsr@countTransform[[it0regionType]]) > 0) logger.warning("Counts have been pre-normalized. 'tf-idf' might not be applicable.")
 				dsn <- transformCounts(dsr, method="tf-idf", regionTypes=it0regionType)
 
-				cm <- ChrAccR::getCounts(dsn, it0regionType, asMatrix=TRUE)
-				pcaCoord_it0 <- muRtools::getDimRedCoords.pca(t(cm), components=1:max(it0pcs), method="irlba_svd")[, it0pcs, drop=FALSE]
+				cm <- ChrAccR::getCounts(dsn, it0regionType, allowSparseMatrix=TRUE)
+				pcaCoord_it0 <- muRtools::getDimRedCoords.pca(safeMatrixStats(cm, "t"), components=1:max(it0pcs), method="irlba_svd")[, it0pcs, drop=FALSE]
 			logger.completed()
 			logger.start(c("Clustering"))	
 				if (!requireNamespace("Seurat")) logger.error(c("Could not load dependency: Seurat"))
@@ -2787,8 +2788,8 @@ setMethod("iterativeLSI",
 			logger.start(c("Performing TF-IDF-based dimension reduction"))
 				dsr <- removeRegionType(dsr, it0regionType)
 				dsn <- transformCounts(dsr, method="tf-idf", regionTypes=it1regionType) #TODO: renormalize based on sequencing depth rather than aggregated counts across peaks only?
-				cm <- ChrAccR::getCounts(dsn, it1regionType, asMatrix=TRUE)
-				pcaCoord_it1 <- muRtools::getDimRedCoords.pca(t(cm), components=1:max(it1pcs), method="irlba_svd")[, it1pcs, drop=FALSE]
+				cm <- ChrAccR::getCounts(dsn, it1regionType, allowSparseMatrix=TRUE)
+				pcaCoord_it1 <- muRtools::getDimRedCoords.pca(safeMatrixStats(cm, "t"), components=1:max(it1pcs), method="irlba_svd")[, it1pcs, drop=FALSE]
 			logger.completed()
 
 			logger.start(c("Clustering"))	
@@ -2824,8 +2825,8 @@ setMethod("iterativeLSI",
 			it2regionType <- it1regionType
 			logger.start(c("Performing TF-IDF-based dimension reduction"))
 				dsn <- transformCounts(dsr, method="tf-idf", regionTypes=it2regionType) #TODO: renormalize based on sequencing depth rather than aggregated counts across peaks only?
-				cm <- ChrAccR::getCounts(dsn, it2regionType, asMatrix=TRUE)
-				pcaCoord <- muRtools::getDimRedCoords.pca(t(cm), components=1:max(it2pcs), method="irlba_svd")[, it2pcs, drop=FALSE]
+				cm <- ChrAccR::getCounts(dsn, it2regionType, allowSparseMatrix=TRUE)
+				pcaCoord <- muRtools::getDimRedCoords.pca(safeMatrixStats(cm, "t"), components=1:max(it2pcs), method="irlba_svd")[, it2pcs, drop=FALSE]
 			logger.completed()
 			logger.start(c("Clustering"))	
 				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.genes=0)
