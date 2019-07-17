@@ -518,7 +518,8 @@ setMethod("regionAggregation",
 		.object@coord[[type]] <- regGr	
 
 		#initialize empty count matrix for new region type
-		nSamples <- length(getSamples(.object))
+		sampleIds <- getSamples(.object)
+		nSamples <- length(sampleIds)
 		nRegs    <- length(regGr)
 		# emptyVec <- rep(as.integer(NA), nRegs)
 		# .object@counts[[type]] <- data.table(emptyVec)
@@ -532,7 +533,7 @@ setMethod("regionAggregation",
 		}
 		
 		if (.object@diskDump) .object@counts[[type]] <- as(.object@counts[[type]], "HDF5Array")
-		colnames(.object@counts[[type]]) <- getSamples(.object)
+		colnames(.object@counts[[type]]) <- sampleIds
 		.object@countTransform[[type]] <- character(0)
 
 		#Aggregate signal
@@ -564,7 +565,7 @@ setMethod("regionAggregation",
 			doAggr <- TRUE
 			if (bySample){
 				i <- 0
-				for (sid in getSamples(.object)){
+				for (sid in sampleIds){
 					i <- i + 1
 					doMsg <- nSamples < 500 || (i %% 500 == 0)
 					if (doMsg) logger.status(c("Aggregating counts for sample", sid, paste0("(", i, " of ", nSamples, ")"), "..."))
@@ -572,27 +573,23 @@ setMethod("regionAggregation",
 				}
 			} else {
 				logger.status("Retrieving joined insertion sites ...")
-				igr <- getInsertionSitesFromFragmentGr(do.call("c", lapply(getSamples(.object), FUN=function(sid){
-					# logger.status(c("Sample:", sid))
-					rr <- getFragmentGr(.object, sid)
-					elementMetadata(rr)[,".sample"] <- sid
+				
+				igr <- getInsertionSitesFromFragmentGr(do.call("c", lapply(1:nSamples, FUN=function(i){
+					# logger.status(c("Sample:", i))
+					rr <- getFragmentGr(.object, sampleIds[i])
+					elementMetadata(rr)[,".sampleIdx"] <- i
 					return(rr)
 				})))
 				logger.status("computing overlaps with regions ...")
-				sampleMap <- 1:nSamples
-				names(sampleMap) <- getSamples(.object)
 				oo <- findOverlaps(regGr, igr, ignore.strand=TRUE)
-				ridx <- queryHits(oo)
-				sampleHitIdx <- sampleMap[elementMetadata(igr)[subjectHits(oo), ".sample"]]
-				names(sampleHitIdx) <- NULL
-				rm(oo, sampleMap) # save memory
+				# convenient: when constructing sparse matrices, if (i,j) indices are repeated, the x-values are summed up
 				scm <- Matrix::sparseMatrix(
-					i=ridx,
-					j=sampleHitIdx,
+					i=queryHits(oo),
+					j=elementMetadata(igr)[subjectHits(oo), ".sampleIdx"],
 					x=rep(1, length(ridx)),
-					dims=c(nRegs,nSamples)
+					dims=c(nRegs, nSamples)
 				)
-				colnames(scm) <- getSamples(.object)
+				colnames(scm) <- sampleIds
 				if (.object@sparseCounts){
 					.object@counts[[type]] <- scm
 				} else {
