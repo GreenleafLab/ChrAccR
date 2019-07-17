@@ -573,7 +573,6 @@ setMethod("regionAggregation",
 				}
 			} else {
 				logger.status("Retrieving joined insertion sites ...")
-				
 				igr <- getInsertionSitesFromFragmentGr(do.call("c", lapply(1:nSamples, FUN=function(i){
 					# logger.status(c("Sample:", i))
 					rr <- getFragmentGr(.object, sampleIds[i])
@@ -586,10 +585,12 @@ setMethod("regionAggregation",
 				scm <- Matrix::sparseMatrix(
 					i=queryHits(oo),
 					j=elementMetadata(igr)[subjectHits(oo), ".sampleIdx"],
-					x=rep(1, length(ridx)),
+					x=rep(1, length(queryHits(oo))),
 					dims=c(nRegs, nSamples)
 				)
 				colnames(scm) <- sampleIds
+				logger.status("Adding data to object ...")
+				rm(igr, oo); cleanMem()
 				if (.object@sparseCounts){
 					.object@counts[[type]] <- scm
 				} else {
