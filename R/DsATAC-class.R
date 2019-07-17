@@ -463,6 +463,7 @@ if (!isGeneric("regionAggregation")) {
 #' @param aggrFun aggregation function for signal counts. Will only be used if \code{signal!="insertions"}
 #'                Currently \code{sum}, \code{mean} and \code{median} (default) are supported.
 #' @param dropEmpty discard all regions with no observed signal counts
+#' @param bySample [only relevant if \code{signal=="insertions"}]. Process data sample-by-sample to save memory.
 #' @return a new \code{\linkS4class{DsATAC}} object with aggregated signal counts per regions
 #'
 #' 
@@ -482,7 +483,8 @@ setMethod("regionAggregation",
 		type,
 		signal=NULL,
 		aggrFun="median",
-		dropEmpty=TRUE
+		dropEmpty=TRUE,
+		bySample=TRUE
 	) {
 		if (!is.element(aggrFun, c("sum", "mean", "median"))){
 			logger.error(c("Unknown signal count aggregation function:", aggrFun))
@@ -524,7 +526,7 @@ setMethod("regionAggregation",
 		# 	.object@counts[[type]][[i]] <- emptyVec
 		# }
 		if (.object@sparseCounts){
-			.object@counts[[type]] <- sparseMatrix(i=c(), j=c(), x=1, dims=c(nRegs,nSamples))
+			.object@counts[[type]] <- Matrix::sparseMatrix(i=c(), j=c(), x=1, dims=c(nRegs,nSamples))
 		} else {
 			.object@counts[[type]] <- matrix(as.integer(NA), nrow=nRegs, ncol=nSamples)
 		}
@@ -560,13 +562,42 @@ setMethod("regionAggregation",
 		}
 		if (!is.null(signal) && signal=="insertions"){
 			doAggr <- TRUE
-			nSamples <- length(getSamples(.object))
-			i <- 0
-			for (sid in getSamples(.object)){
-				i <- i + 1
-				doMsg <- nSamples < 500 || (i %% 500 == 0)
-				if (doMsg) logger.status(c("Aggregating counts for sample", sid, paste0("(", i, " of ", nSamples, ")"), "..."))
-				.object@counts[[type]][,sid] <- as.matrix(countOverlaps(regGr, getInsertionSites(.object, samples=sid)[[1]], ignore.strand=TRUE))
+			if (bySample){
+				i <- 0
+				for (sid in getSamples(.object)){
+					i <- i + 1
+					doMsg <- nSamples < 500 || (i %% 500 == 0)
+					if (doMsg) logger.status(c("Aggregating counts for sample", sid, paste0("(", i, " of ", nSamples, ")"), "..."))
+					.object@counts[[type]][,sid] <- as.matrix(countOverlaps(regGr, getInsertionSites(.object, samples=sid)[[1]], ignore.strand=TRUE))
+				}
+			} else {
+				logger.status("Retrieving joined insertion sites ...")
+				igr <- getInsertionSitesFromFragmentGr(do.call("c", lapply(getSamples(.object), FUN=function(sid){
+					# logger.status(c("Sample:", sid))
+					rr <- getFragmentGr(.object, sid)
+					elementMetadata(rr)[,".sample"] <- sid
+					return(rr)
+				})))
+				logger.status("computing overlaps with regions ...")
+				sampleMap <- 1:nSamples
+				names(sampleMap) <- getSamples(.object)
+				oo <- findOverlaps(regGr, igr, ignore.strand=TRUE)
+				ridx <- queryHits(oo)
+				sampleHitIdx <- sampleMap[elementMetadata(igr)[subjectHits(oo), ".sample"]]
+				names(sampleHitIdx) <- NULL
+				rm(oo, sampleMap) # save memory
+				scm <- Matrix::sparseMatrix(
+					i=ridx,
+					j=sampleHitIdx,
+					x=rep(1, length(ridx)),
+					dims=c(nRegs,nSamples)
+				)
+				colnames(scm) <- getSamples(.object)
+				if (.object@sparseCounts){
+					.object@counts[[type]] <- scm
+				} else {
+					.object@counts[[type]][,] <- as.matrix(scm)
+				}
 			}
 		}
 
@@ -2778,7 +2809,7 @@ setMethod("iterativeLSI",
 				logger.completed()
 				logger.start("Aggregating counts for union peak set")
 					# dsrClust <- regionAggregation(dsrClust, peakUnionGr, "clusterPeaks", signal="insertions", dropEmpty=FALSE)
-					dsr <- regionAggregation(dsr, peakUnionGr, "clusterPeaks", signal="insertions", dropEmpty=FALSE)
+					dsr <- regionAggregation(dsr, peakUnionGr, "clusterPeaks", signal="insertions", dropEmpty=FALSE, bySample=FALSE)
 				logger.completed()
 			logger.completed()
 		logger.completed()

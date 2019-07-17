@@ -6,7 +6,7 @@
 \title{regionAggregation-methods}
 \usage{
 \S4method{regionAggregation}{DsATAC}(.object, regGr, type, signal = NULL,
-  aggrFun = "median", dropEmpty = TRUE)
+  aggrFun = "median", dropEmpty = TRUE, bySample = TRUE)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}
@@ -24,6 +24,8 @@ fragment data is present in the object).}
 Currently \code{sum}, \code{mean} and \code{median} (default) are supported.}
 
 \item{dropEmpty}{discard all regions with no observed signal counts}
+
+\item{bySample}{[only relevant if \code{signal=="insertions"}]. Process data sample-by-sample to save memory.}
 }
 \value{
 a new \code{\linkS4class{DsATAC}} object with aggregated signal counts per regions
