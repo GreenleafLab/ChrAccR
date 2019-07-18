@@ -2604,6 +2604,96 @@ setMethod("getTssEnrichment",
 ################################################################################
 # Single-cell analyses
 ################################################################################
+if (!isGeneric("getQuickTssEnrichment")) {
+	setGeneric(
+		"getQuickTssEnrichment",
+		function(.object, ...) standardGeneric("getQuickTssEnrichment"),
+		signature=c(".object")
+	)
+}
+#' getQuickTssEnrichment-methods
+#'
+#' [Experimental] Quick, heuristic version of TSS enrichment to just get scores for each
+#' sample in the dataset. Useful, e.g. for single cells.
+#'
+#' @param .object    \code{\linkS4class{DsATAC}} object
+#' @param tssGr      \code{GRanges} object containing TSS coordinates
+#' @param tssW		 width to consider arount the TSS
+#' @param distBg     number of bases flanking each TSS that will be added on each side
+#' @return a vector of TSS enrichment values for each sample/cell in the dataset
+#' 
+#' @details
+#' Computes TSS enrichment
+#' as the ratio of total insertion sites at a window (of width \code{tssW} bp) directly at the TSS and 2 background regions
+#' symmetrically located (\code{distBg} bp) upstream and downstream of the TSS
+#' 
+#' @rdname getQuickTssEnrichment-DsATAC-method
+#' @docType methods
+#' @aliases getQuickTssEnrichment
+#' @aliases getQuickTssEnrichment,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("getQuickTssEnrichment",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		tssGr,
+		tssW=100L,
+		distBg=2000L
+	) {
+		if (!all(width(tssGr)==1)) logger.error("tssGr must be a GRanges object in which each element has width=1")
+
+		# background windows
+		bgLeftGr <- suppressWarnings(trim(resize(GenomicRanges::shift(tssGr, -distBg), width=floor(tssW/2), fix="center", ignore.strand=TRUE)))
+		bgRightGr <- suppressWarnings(trim(resize(GenomicRanges::shift(tssGr, distBg), width=floor(tssW/2), fix="center", ignore.strand=TRUE)))
+		#extend the window by the flanking and smoothing lengths
+		tsswGr <- suppressWarnings(trim(resize(tssGr, width=tssW, fix="center", ignore.strand=TRUE)))
+
+		nRegs <- length(tssGr)
+		if (length(tsswGr) != nRegs)    logger.error("length error: tss window set")
+		if (length(bgLeftGr) != nRegs)  logger.error("length error: left background set")
+		if (length(bgRightGr) != nRegs) logger.error("length error: right background set")
+
+		sampleIds <- getSamples(.object)
+		nSamples <- length(sampleIds)
+		logger.status("Retrieving joined insertion sites ...")
+		igr <- ChrAccR:::getInsertionSitesFromFragmentGr(do.call("c", lapply(1:nSamples, FUN=function(i){
+			# logger.status(c("Sample:", i))
+			rr <- getFragmentGr(.object, sampleIds[i])
+			elementMetadata(rr)[,".sampleIdx"] <- i
+			return(rr)
+		})))
+		logger.status("computing overlaps with TSS regions ...")
+		oo <- findOverlaps(tsswGr, igr, ignore.strand=TRUE)
+		# convenient: when constructing sparse matrices, if (i,j) indices are repeated, the x-values are summed up
+		cm_tss <- Matrix::sparseMatrix(
+			i=queryHits(oo),
+			j=elementMetadata(igr)[subjectHits(oo), ".sampleIdx"],
+			x=rep(1, length(queryHits(oo))),
+			dims=c(nRegs, nSamples)
+		)
+		colnames(cm_tss) <- sampleIds
+
+		logger.status("computing overlaps with background flanking regions ...")
+		ool <- findOverlaps(bgLeftGr, igr, ignore.strand=TRUE)
+		oor <- findOverlaps(bgRightGr, igr, ignore.strand=TRUE)
+		cm_bg <- Matrix::sparseMatrix(
+			i=c(queryHits(ool), queryHits(oor)),
+			j=elementMetadata(igr)[c(subjectHits(ool), subjectHits(oor)), ".sampleIdx"],
+			x=rep(1, length(queryHits(ool))+length(queryHits(oor))),
+			dims=c(nRegs, nSamples)
+		)
+		colnames(cm_bg) <- sampleIds
+
+		tsse <- Matrix::colSums(cm_tss, na.rm=TRUE) / Matrix::colSums(cm_bg, na.rm=TRUE)
+
+		return(tsse)
+	}
+)
+#-------------------------------------------------------------------------------
+
 if (!isGeneric("unsupervisedAnalysisSc")) {
 	setGeneric(
 		"unsupervisedAnalysisSc",
