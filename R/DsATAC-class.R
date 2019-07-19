@@ -2686,9 +2686,8 @@ setMethod("getQuickTssEnrichment",
 			dims=c(nRegs, nSamples)
 		)
 		colnames(cm_bg) <- sampleIds
-
+		
 		tsse <- Matrix::colSums(cm_tss, na.rm=TRUE) / Matrix::colSums(cm_bg, na.rm=TRUE)
-
 		return(tsse)
 	}
 )
