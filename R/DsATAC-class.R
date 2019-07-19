@@ -2845,6 +2845,14 @@ setMethod("iterativeLSI",
 		cellIds <- getSamples(.object)
 		if (length(.object@fragments) != length(cellIds)) logger.error("Object does not contain fragment information for all samples")
 
+		ph <- getSampleAnnot(ph)
+		depthCol <- colnames(ph) %in% c("numIns", ".CR.cellQC.passed_filters", ".CR.cellQC.total")
+		if (any(depthCol)){
+			depthCol <- colnames(ph)[depthCol][1]
+		} else {
+			depthCol <- NULL
+		}
+
 		logger.start("Iteration 0")
 			dsr <- .object
 			for (rt in setdiff(getRegionTypes(dsr), it0regionType)){
@@ -2863,7 +2871,12 @@ setMethod("iterativeLSI",
 				dsn <- transformCounts(dsr, method="tf-idf", regionTypes=it0regionType)
 
 				cm <- ChrAccR::getCounts(dsn, it0regionType, allowSparseMatrix=TRUE)
-				pcaCoord_it0 <- muRtools::getDimRedCoords.pca(safeMatrixStats(cm, "t"), components=1:max(it0pcs), method="irlba_svd")[, it0pcs, drop=FALSE]
+				pcaCoord_it0 <- muRtools::getDimRedCoords.pca(safeMatrixStats(cm, "t"), components=1:max(it0pcs), method="irlba_svd")
+				if (!is.null(depthCol)){
+					cc <- cor(pcaCoord_it0[,1], ph[,depthCol], method="spearman")
+					logger.info(c("Correlation (Spearman) of PC1 with cell fragment counts:", round(cc, 4)))
+				}
+				pcaCoord_it0 <- pcaCoord_it0[, it0pcs, drop=FALSE]
 			logger.completed()
 			logger.start(c("Clustering"))	
 				if (!requireNamespace("Seurat")) logger.error(c("Could not load dependency: Seurat"))
