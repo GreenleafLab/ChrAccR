@@ -2847,10 +2847,9 @@ setMethod("iterativeLSI",
 
 		ph <- getSampleAnnot(ph)
 		depthCol <- colnames(ph) %in% c("numIns", ".CR.cellQC.passed_filters", ".CR.cellQC.total")
+		depthV <- NULL
 		if (any(depthCol)){
-			depthCol <- colnames(ph)[depthCol][1]
-		} else {
-			depthCol <- NULL
+			depthV <- ph[,colnames(ph)[depthCol][1]]
 		}
 
 		logger.start("Iteration 0")
@@ -2872,8 +2871,8 @@ setMethod("iterativeLSI",
 
 				cm <- ChrAccR::getCounts(dsn, it0regionType, allowSparseMatrix=TRUE)
 				pcaCoord_it0 <- muRtools::getDimRedCoords.pca(safeMatrixStats(cm, "t"), components=1:max(it0pcs), method="irlba_svd")
-				if (!is.null(depthCol)){
-					cc <- cor(pcaCoord_it0[,1], ph[,depthCol], method="spearman")
+				if (!is.null(depthV)){
+					cc <- cor(pcaCoord_it0[,1], depthV, method="spearman")
 					logger.info(c("Correlation (Spearman) of PC1 with cell fragment counts:", round(cc, 4)))
 				}
 				pcaCoord_it0 <- pcaCoord_it0[, it0pcs, drop=FALSE]
