@@ -2659,7 +2659,7 @@ setMethod("getQuickTssEnrichment",
 		sampleIds <- getSamples(.object)
 		nSamples <- length(sampleIds)
 		logger.status("Retrieving joined insertion sites ...")
-		igr <- ChrAccR:::getInsertionSitesFromFragmentGr(do.call("c", lapply(1:nSamples, FUN=function(i){
+		igr <- getInsertionSitesFromFragmentGr(do.call("c", lapply(1:nSamples, FUN=function(i){
 			# logger.status(c("Sample:", i))
 			rr <- getFragmentGr(.object, sampleIds[i])
 			elementMetadata(rr)[,".sampleIdx"] <- i
