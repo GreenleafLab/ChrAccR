@@ -2845,7 +2845,7 @@ setMethod("iterativeLSI",
 		cellIds <- getSamples(.object)
 		if (length(.object@fragments) != length(cellIds)) logger.error("Object does not contain fragment information for all samples")
 
-		ph <- getSampleAnnot(ph)
+		ph <- getSampleAnnot(.object)
 		depthCol <- colnames(ph) %in% c("numIns", ".CR.cellQC.passed_filters", ".CR.cellQC.total")
 		depthV <- NULL
 		if (any(depthCol)){
