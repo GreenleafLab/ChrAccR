@@ -2792,6 +2792,7 @@ setMethod("unsupervisedAnalysisSc",
 		return(res)
 	}
 )
+#-------------------------------------------------------------------------------
 
 if (!isGeneric("iterativeLSI")) {
 	setGeneric(
@@ -2995,5 +2996,135 @@ setMethod("iterativeLSI",
 		)
 		class(res) <- "iterativeLSIResultSc"
 		return(res)
+	}
+)
+#-------------------------------------------------------------------------------
+
+if (!isGeneric("geneActivityCicero")) {
+	setGeneric(
+		"geneActivityCicero",
+		function(.object, ...) standardGeneric("geneActivityCicero"),
+		signature=c(".object")
+	)
+}
+#' geneActivityCicero-methods
+#'
+#' EXPERIMENTAL: Perform iterative LSI clustering as described in doi:10.1101/696328
+#'
+#' @param .object    \code{\linkS4class{DsATAC}} object
+#' @param promoterGr
+#' @return an \code{S3} object containing dimensionality reduction results and clustering
+#' 
+#' @rdname geneActivityCicero-DsATAC-method
+#' @docType methods
+#' @aliases geneActivityCicero
+#' @aliases geneActivityCicero,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("geneActivityCicero",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		regionType,
+		promoterGr,
+		maxDist=250000L,
+		corCutOff=0.35,
+		dimRedCoord=NULL,
+		knn.k=50
+	) {
+		if (!is.element(regionType, getRegionTypes(.object))) logger.error(c("Unsupported region type:", regionType))
+		if (is.null(names(promoterGr))) logger.error("promoterGr must have names")
+
+		regGr <- getCoord(.object, regionType)
+		regDf <- data.frame(
+			row.names = paste(seqnames(regGr),start(regGr),end(regGr),sep="_"),
+			site_name = paste(seqnames(regGr),start(regGr),end(regGr),sep="_"),
+			chr = gsub("chr", "", as.character(seqnames(regGr))),
+			bp1 = start(regGr),
+			bp2 = end(regGr)
+		)
+		names(regGr) <- regDf$site_name
+		cm <- ChrAccR::getCounts(.object, regionType, allowSparseMatrix=TRUE)
+		# se <- getCountsSE(.object, regionType)
+
+		logger.start("Creating Cicero object")
+			# cdsObj <- cicero::makeCDS(, binarize=TRUE)
+			binarize <- TRUE
+			if (binarize){
+				if (.object@sparseCounts){
+					cm@x[cm@x > 0] <- 1
+				} else {
+					cm[cm > 0] <- 1
+				}
+			}
+			cdsObj <- suppressWarnings(monocle::newCellDataSet(
+				cm,
+				phenoData = methods::new("AnnotatedDataFrame", data=getSampleAnnot(.object)),
+				featureData = methods::new("AnnotatedDataFrame", data=regDf),
+				expressionFamily=VGAM::negbinomial.size(),
+				lowerDetectionLimit=0
+			))
+			if (binarize) {
+				cdsObj@expressionFamily <- VGAM::binomialff()
+				cdsObj@expressionFamily@vfamily <- "binomialff"
+			}
+			fData(cdsObj)$site_name <- as.character(fData(cdsObj)$site_name)
+			fData(cdsObj)$chr <- as.character(fData(cdsObj)$chr)
+
+			cdsObj <- monocle::detectGenes(cdsObj)
+			cdsObj <- estimateSizeFactors(cdsObj)
+			if (is.null(dimRedCoord)){
+				logger.error("Automatic dimension reduction not implemented yet. Must supply dimension reduction coordinates")
+			} else {
+				ciceroObj <- cicero::make_cicero_cds(cdsObj, k=knn.k, reduced_coordinates=dimRedCoord)
+			}
+		logger.completed()
+
+		logger.start("Computing grouped correlations")
+			gr <- regGr[featureData(ciceroObj)[[1]]]
+			
+			oo <- suppressWarnings(as.matrix(findOverlaps(resize(resize(gr, 1, "center"), 2*maxDist + 1, "center"), resize(gr, 1, "center"), ignore.strand=TRUE)))
+			oo <- data.frame(i=matrixStats::rowMins(oo), j=matrixStats::rowMaxs(oo))
+			oo <- oo[!duplicated(oo) & oo[,"i"]!=oo[,"j"],]
+			# fast correlations
+			X <- assayData(ciceroObj)$exprs
+			mu <- rowMeans(X, na.rm=TRUE)
+			Xc <- X - mu # centered
+
+			logger.start("Computing Pearson correlation coefficients")
+				cc <- apply(oo, 1, FUN=function(idx){
+					x1 <- Xc[idx[1],]
+					x2 <- Xc[idx[2],]
+					return(sum(x1*x2, na.rm=TRUE) / (sqrt(sum(x1^2, na.rm=TRUE)) * sqrt(sum(x2^2, na.rm=TRUE))))
+				})
+				names(cc) <- NULL
+			logger.completed()
+			rm(X, mu, Xc)
+		logger.completed()
+		logger.start("Computing gene activities")
+			conns <- data.frame(
+				Peak1 = names(gr[oo[,"i"]]),
+				Peak2 = names(gr[oo[,"j"]]),
+				coaccess = cc,
+				stringsAsFactors = FALSE
+			)
+			
+			promoterDf <- data.frame(chromosome=seqnames(promoterGr),start=start(promoterGr),end=end(promoterGr), gene=names(promoterGr))
+			cdsObj <- cicero::annotate_cds_by_site(cdsObj, promoterDf)
+
+			nSites <- Matrix::colSums(assayData(cdsObj)$exprs)
+			names(nSites) <- row.names(pData(cdsObj))
+			ciceroGA <- cicero::normalize_gene_activities(cicero::build_gene_activity_matrix(cdsObj, conns, coaccess_cutoff=corCutOff), nSites)
+		logger.completed()
+		
+		seCicero <- SummarizedExperiment(
+			assays = SimpleList(gA = ciceroGA),
+			rowRanges = promoterGr[rownames(ciceroGA)],
+			colData = getSampleAnnot(.object)
+		)
+
+		return(seCicero)
 	}
 )
