@@ -2954,6 +2954,8 @@ setMethod("iterativeLSI",
 		logger.start("Iteration 2")
 			it2regionType <- it1regionType
 			logger.start(c("Performing TF-IDF-based dimension reduction"))
+				bcm_unnorm <- ChrAccR::getCounts(dsr, it2regionType, allowSparseMatrix=TRUE) > 0 # unnormalized binary count matrix
+				idfBase <- log(1 + ncol(bcm_unnorm) / safeMatrixStats(bcm_unnorm, "rowSums", na.rm=TRUE))
 				dsn <- transformCounts(dsr, method="tf-idf", regionTypes=it2regionType) #TODO: renormalize based on sequencing depth rather than aggregated counts across peaks only?
 				cm <- ChrAccR::getCounts(dsn, it2regionType, allowSparseMatrix=TRUE)
 				pcaCoord <- muRtools::getDimRedCoords.pca(safeMatrixStats(cm, "t"), components=1:max(it2pcs), method="irlba_svd")[, it2pcs, drop=FALSE]
@@ -2976,6 +2978,7 @@ setMethod("iterativeLSI",
 
 		res <- list(
 			pcaCoord=pcaCoord,
+			idfBase=idfBase,
 			umapCoord=umapCoord,
 			umapRes=umapRes,
 			clustAss=clustAss,
