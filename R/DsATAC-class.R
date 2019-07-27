@@ -2959,19 +2959,20 @@ setMethod("iterativeLSI",
 				idfBase <- log(1 + ncol(bcm_unnorm) / safeMatrixStats(bcm_unnorm, "rowSums", na.rm=TRUE))
 				dsn <- transformCounts(dsr, method="tf-idf", regionTypes=it2regionType) #TODO: renormalize based on sequencing depth rather than aggregated counts across peaks only?
 				cm <- ChrAccR::getCounts(dsn, it2regionType, allowSparseMatrix=TRUE)
-				pcaCoord <- muRtools::getDimRedCoords.pca(safeMatrixStats(cm, "t"), components=1:max(it2pcs), method="irlba_svd")[, it2pcs, drop=FALSE]
+				pcaCoord <- muRtools::getDimRedCoords.pca(safeMatrixStats(cm, "t"), components=1:max(it2pcs), method="irlba_svd")
+				pcaCoord_sel <- pcaCoord[, it2pcs, drop=FALSE]
 			logger.completed()
 			logger.start(c("Clustering"))	
 				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.genes=0)
-				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="cell.embeddings", new.data=pcaCoord)
+				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="cell.embeddings", new.data=pcaCoord_sel)
 				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="key", new.data="pca")
-				clustRes <- Seurat::FindClusters(sObj, reduction.type="pca", dims.use=1:ncol(pcaCoord), k.param=30, algorithm=1, n.start=100, n.iter=10, resolution=it2clusterResolution)
+				clustRes <- Seurat::FindClusters(sObj, reduction.type="pca", dims.use=1:ncol(pcaCoord_sel), k.param=30, algorithm=1, n.start=100, n.iter=10, resolution=it2clusterResolution)
 				clustAss <- clustRes@ident
 
 				dsr <- addSampleAnnotCol(dsr, "clustAss_it2", paste0("c",clustAss[cellIds]))
 			logger.completed()
 			logger.start(c("UMAP coordinates"))	
-				umapCoord <- muRtools::getDimRedCoords.umap(pcaCoord)
+				umapCoord <- muRtools::getDimRedCoords.umap(pcaCoord_sel)
 				umapRes <- attr(umapCoord, "umapRes")
 				attr(umapCoord, "umapRes") <- NULL
 			logger.completed()
@@ -2979,6 +2980,7 @@ setMethod("iterativeLSI",
 
 		res <- list(
 			pcaCoord=pcaCoord,
+			pcs = it2pcs,
 			idfBase=idfBase,
 			umapCoord=umapCoord,
 			umapRes=umapRes,
