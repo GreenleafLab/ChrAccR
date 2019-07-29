@@ -19,7 +19,7 @@ r_github_packages:
 addons:
   apt:
     packages:
-    - libgsl0ldbl
+#   - libgsl0ldbl
     - libgsl0-dev
 # before_script:
 #   - Rscript -e 'devtools::document()'
