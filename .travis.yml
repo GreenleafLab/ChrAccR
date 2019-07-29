@@ -14,8 +14,8 @@ r_github_packages:
 - demuellae/muLogR
 - demuellae/muReportR
 - demuellae/muRtools
-- GreenleafLab/ChrAccR
-- GreenleafLab/ChrAccRex
+# - GreenleafLab/ChrAccR
+# - GreenleafLab/ChrAccRex
 addons:
   apt:
     packages:
@@ -24,11 +24,11 @@ addons:
 # before_script:
 #   - Rscript -e 'devtools::document()'
 # r_build_args: --no-build-vignettes
-r_check_args: --no-build-vignettes
+# r_check_args: --no-build-vignettes
 warnings_are_errors: false
 # automatically build pkgdown site using the gh-pages branch
-after_success:
-  - Rscript -e 'pkgdown::build_site()'
+# after_success:
+#   - Rscript -e 'pkgdown::build_site()'
 deploy:
   provider: pages
   skip-cleanup: true
