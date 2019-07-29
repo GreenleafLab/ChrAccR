@@ -489,7 +489,6 @@ setMethod("regionAggregation",
 		bySample=TRUE,
 		chunkSize=10000L
 	) {
-		# regionAggregation(dsr, peakUnionGr, "clusterPeaks", signal="insertions", dropEmpty=FALSE, bySample=FALSE)
 		if (!is.element(aggrFun, c("sum", "mean", "median"))){
 			logger.error(c("Unknown signal count aggregation function:", aggrFun))
 		}
