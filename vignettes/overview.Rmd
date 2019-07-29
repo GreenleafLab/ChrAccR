@@ -57,7 +57,7 @@ devtools::install_github("demuellae/muRtools")
 devtools::install_github("demuellae/muReportR")
 
 # install ChrAccR
-devtools::install_github("demuellae/ChrAccR")
+devtools::install_github("GreenleafLab/ChrAccR")
 ```
 
 # Loading the package and example data

@@ -14,8 +14,8 @@ r_github_packages:
 - demuellae/muLogR
 - demuellae/muReportR
 - demuellae/muRtools
-- demuellae/ChrAccR
-- demuellae/ChrAccRex
+- GreenleafLab/ChrAccR
+- GreenleafLab/ChrAccRex
 addons:
   apt:
     packages:

@@ -12,7 +12,7 @@ navbar:
     href: reference/index.html
   - text: GitHub
     icon: fa-github
-    href: https://github.com/demuellae/ChrAccR
+    href: https://github.com/GreenleafLab/ChrAccR
 
 authors:
   Fabian Mueller:

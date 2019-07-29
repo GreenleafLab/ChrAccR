@@ -1,6 +1,6 @@
 # ChrAccR <img src="man/figures/chraccr_logo.png" align="right" height="96"/>
 
-[![Build Status](https://travis-ci.org/demuellae/ChrAccR.svg?branch=master)](https://travis-ci.org/demuellae/ChrAccR)
+[![Build Status](https://travis-ci.org/GreenleafLab/ChrAccR.svg?branch=master)](https://travis-ci.org/GreenleafLab/ChrAccR)
 
 * __Package name:__ ChrAccR
 * __Title:__ Analyzing chromatin accessibility data in R
@@ -24,9 +24,9 @@ devtools::install_github("demuellae/muRtools")
 devtools::install_github("demuellae/muReportR")
 
 # install ChrAccR
-devtools::install_github("demuellae/ChrAccR")
+devtools::install_github("GreenleafLab/ChrAccR")
 ```
 
 ## Getting started
 
-The `ChrAccR` [vignette](https://demuellae.github.io/ChrAccR/articles/overview.html) provides a most excellent starting point to get familiar with the package.
+The `ChrAccR` [vignette](https://GreenleafLab.github.io/ChrAccR/articles/overview.html) provides a most excellent starting point to get familiar with the package.
