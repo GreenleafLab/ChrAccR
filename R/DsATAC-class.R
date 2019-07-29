@@ -453,17 +453,19 @@ if (!isGeneric("regionAggregation")) {
 #'
 #' Aggregate signal counts across a set of regions
 #'
-#' @param .object \code{\linkS4class{DsATAC}} object
-#' @param regGr   \code{GRanges} object containing regions to summarize
-#' @param type    character string specifying a name for the region type
-#' @param signal  character string specifying a name for the region type for the signal to be aggregated
-#'                If it is \code{NULL} (default), the new region type will be initialized with NA values.
-#'                If it is \code{"insertions"} count data will be initialized from insertion sites (if 
-#'                fragment data is present in the object).
-#' @param aggrFun aggregation function for signal counts. Will only be used if \code{signal!="insertions"}
-#'                Currently \code{sum}, \code{mean} and \code{median} (default) are supported.
+#' @param .object   \code{\linkS4class{DsATAC}} object
+#' @param regGr     \code{GRanges} object containing regions to summarize
+#' @param type      character string specifying a name for the region type
+#' @param signal    character string specifying a name for the region type for the signal to be aggregated
+#'                  If it is \code{NULL} (default), the new region type will be initialized with NA values.
+#'                  If it is \code{"insertions"} count data will be initialized from insertion sites (if 
+#'                  fragment data is present in the object).
+#' @param aggrFun   aggregation function for signal counts. Will only be used if \code{signal!="insertions"}
+#'                  Currently \code{sum}, \code{mean} and \code{median} (default) are supported.
 #' @param dropEmpty discard all regions with no observed signal counts
-#' @param bySample [only relevant if \code{signal=="insertions"}]. Process data sample-by-sample to save memory.
+#' @param bySample  [only relevant if \code{signal=="insertions"}]. Process data sample-by-sample to save memory.
+#' @param chunkSize [only relevant if \code{signal=="insertions" & !bySample}] number of samples to process per chunk (saves memory).
+#' 				    If \code{NULL} or larger than the number of samples, only one chunk will be processed.
 #' @return a new \code{\linkS4class{DsATAC}} object with aggregated signal counts per regions
 #'
 #' 
@@ -484,8 +486,10 @@ setMethod("regionAggregation",
 		signal=NULL,
 		aggrFun="median",
 		dropEmpty=TRUE,
-		bySample=TRUE
+		bySample=TRUE,
+		chunkSize=10000L
 	) {
+		# regionAggregation(dsr, peakUnionGr, "clusterPeaks", signal="insertions", dropEmpty=FALSE, bySample=FALSE)
 		if (!is.element(aggrFun, c("sum", "mean", "median"))){
 			logger.error(c("Unknown signal count aggregation function:", aggrFun))
 		}
@@ -572,25 +576,38 @@ setMethod("regionAggregation",
 					.object@counts[[type]][,sid] <- as.matrix(countOverlaps(regGr, getInsertionSites(.object, samples=sid)[[1]], ignore.strand=TRUE))
 				}
 			} else {
-				logger.status("Retrieving joined insertion sites ...")
-				igr <- getInsertionSitesFromFragmentGr(do.call("c", lapply(1:nSamples, FUN=function(i){
-					# logger.status(c("Sample:", i))
-					rr <- getFragmentGr(.object, sampleIds[i])
-					elementMetadata(rr)[,".sampleIdx"] <- i
-					return(rr)
-				})))
-				logger.status("computing overlaps with regions ...")
-				oo <- findOverlaps(regGr, igr, ignore.strand=TRUE)
-				# convenient: when constructing sparse matrices, if (i,j) indices are repeated, the x-values are summed up
-				scm <- Matrix::sparseMatrix(
-					i=queryHits(oo),
-					j=elementMetadata(igr)[subjectHits(oo), ".sampleIdx"],
-					x=rep(1, length(queryHits(oo))),
-					dims=c(nRegs, nSamples)
-				)
-				colnames(scm) <- sampleIds
+				chunkIdxL <- list(1:nSamples)
+				if (!is.null(chunkSize) & chunkSize < nSamples){
+					chunkIdxL <- split(1:nSamples, as.integer((1:nSamples - 1) / chunkSize))
+				}
+				scm <- NULL
+				for (k in seq_along(chunkIdxL)){
+					logger.start(c("Processing chunk", k, "of", length(chunkIdxL)))
+						nSamples_cur <- length(chunkIdxL[[k]])
+						sampleIds_cur <- sampleIds[chunkIdxL[[k]]]
+						logger.status("Retrieving joined insertion sites ...")
+						igr <- getInsertionSitesFromFragmentGr(do.call("c", lapply(1:nSamples_cur, FUN=function(i){
+							# logger.status(c("Sample:", i))
+							rr <- getFragmentGr(.object, sampleIds_cur[i])
+							elementMetadata(rr)[,".sampleIdx"] <- i
+							return(rr)
+						})))
+						logger.status("computing overlaps with regions ...")
+						oo <- findOverlaps(regGr, igr, ignore.strand=TRUE)
+						# convenient: when constructing sparse matrices, if (i,j) indices are repeated, the x-values are summed up
+						scm_cur <- Matrix::sparseMatrix(
+							i=queryHits(oo),
+							j=elementMetadata(igr)[subjectHits(oo), ".sampleIdx"],
+							x=rep(1, length(queryHits(oo))),
+							dims=c(nRegs, nSamples_cur)
+						)
+						colnames(scm_cur) <- sampleIds_cur
+
+						scm <- cbind(scm, scm_cur)
+						rm(igr, oo, scm_cur); cleanMem()
+					logger.completed()
+				}
 				logger.status("Adding data to object ...")
-				rm(igr, oo); cleanMem()
 				if (.object@sparseCounts){
 					.object@counts[[type]] <- scm
 				} else {
