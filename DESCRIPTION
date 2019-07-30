@@ -4,7 +4,8 @@ Description: Tools for analyzing chromatin accessibility data in R. Currently su
 Authors@R: person("Fabian", "Mueller", email = "muellerf@stanford.edu", role = c("aut", "cre"), comment = c(ORCID = "0000-0001-5809-2321"))
 Date: 2019-07-29
 Suggests:
-    muReportR
+    muReportR,
+    knitr
 Imports:
     S4Vectors,
     IRanges,
