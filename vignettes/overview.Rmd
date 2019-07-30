@@ -71,7 +71,7 @@ library(ChrAccR)
 
 The `ChrAccRex` data package contains a small example ATAC-seq datasets for `ChrAccR`. If you haven't already installed `ChrAccRex` use
 ```{r, message = FALSE, warning = FALSE, eval = FALSE}
-devtools::install_github("demuellae/ChrAccRex")
+devtools::install_github("GreenleafLab/ChrAccRex")
 ```
 
 Note that many of the plots created in this vignette use the excellent `ggplot2` package. The following code loads the package and sets a different plotting theme:
