@@ -3103,7 +3103,8 @@ setMethod("getCiceroGeneActivities",
 				logger.error("Automatic dimension reduction not implemented yet. Must supply dimension reduction coordinates")
 			} else {
 				if (!all(colnames(cdsObj) %in% rownames(dimRedCoord))) logger.error("all samples/cells must be contained in dimRedCoord object (which must have valid rownames)")
-				ciceroObj <- cicero::make_cicero_cds(cdsObj, k=knn.k, reduced_coordinates=dimRedCoord[colnames(cdsObj),])
+				# ciceroObj <- cicero::make_cicero_cds(cdsObj, k=knn.k, reduced_coordinates=dimRedCoord[colnames(cdsObj),])
+				ciceroObj <- custom_cicero_cds(cdsObj, k=knn.k, reduced_coordinates=dimRedCoord[colnames(cdsObj),])
 			}
 		logger.completed()
 

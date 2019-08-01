@@ -147,3 +147,169 @@ safeMatrixStats <- function(X, statFun="rowSums", ...){
   statFun <- eval(parse(text=statFun))
   return(statFun(X, ...))
 }
+
+#' custom_cicero_cds
+#' 
+#' More performant version of \code{cicero::make_cicero_cds}.
+#' Allows for more parameter customization and doesn't run into memory trouble as easily.
+#' @author hpliner, Jeffrey Granja
+#' @noRd
+custom_cicero_cds <- function(
+		cds,
+		reduced_coordinates,
+		k=50,
+		max_knn_iterations = 5000,
+		summary_stats = NULL,
+		size_factor_normalize = TRUE,
+		silent = FALSE
+) {
+	assertthat::assert_that(is(cds, "CellDataSet"))
+	assertthat::assert_that(is.data.frame(reduced_coordinates) | is.matrix(reduced_coordinates))
+	assertthat::assert_that(assertthat::are_equal(nrow(reduced_coordinates), nrow(pData(cds))))
+	assertthat::assert_that(setequal(row.names(reduced_coordinates), colnames(cds)))
+	assertthat::assert_that(assertthat::is.count(k) & k > 1)
+	assertthat::assert_that(is.character(summary_stats) | is.null(summary_stats))
+	if(!is.null(summary_stats)) {
+		assertthat::assert_that(all(summary_stats %in% names(pData(cds))),
+		                        msg = paste("One of your summary_stats is missing",
+		                                    "from your pData table. Either add a",
+		                                    "column with the name in",
+		                                    "summary_stats, or remove the name",
+		                                    "from the summary_stats parameter.",
+		                                    collapse = " "))
+		assertthat::assert_that(sum(vapply(summary_stats, function(x) {
+		  !(is(pData(cds)[,x], "numeric") | is(pData(cds)[,x], "integer"))}, 1)) == 0,
+		                        msg = paste("All columns in summary_stats must be",
+		                                    "of class numeric or integer.",
+		                                    collapse = " "))
+	}
+	assertthat::assert_that(is.logical(size_factor_normalize))
+	assertthat::assert_that(is.logical(silent))
+	reduced_coordinates <- as.data.frame(reduced_coordinates)
+	reduced_coordinates <- reduced_coordinates[colnames(cds),]
+
+	start <- Sys.time()
+	# Create a k-nearest neighbors map
+	message("\nFNN k-nearest search...")
+	nn_map <- FNN::knn.index(reduced_coordinates, k=(k-1)) # no data.frame wrapper
+	row.names(nn_map) <- row.names(reduced_coordinates)
+	nn_map <- cbind(nn_map, seq_len(nrow(nn_map)))
+
+	good_choices <- seq_len(nrow(nn_map))
+	choice <- sample(seq_len(length(good_choices)), size = 1, replace = FALSE)
+	chosen <- good_choices[choice]
+	good_choices <- good_choices[good_choices != good_choices[choice]]
+	it <- 0
+	k2 <- k * 2 # Compute once
+
+	# function for sapply
+	get_shared <- function(other, this_choice) {
+		k2 - length(union(cell_sample[other,], this_choice))
+	}
+
+	while (length(good_choices) > 0 & it < max_knn_iterations) { # slow
+		if(it %% 100 == 0) message(sprintf("%s of %s iterations", it, max_knn_iterations))
+		it <- it + 1
+		choice <- sample(seq_len(length(good_choices)), size = 1, replace = FALSE)
+		new_chosen <- c(chosen, good_choices[choice])
+		good_choices <- good_choices[good_choices != good_choices[choice]]
+		cell_sample <- nn_map[new_chosen,]
+		others <- seq_len(nrow(cell_sample) - 1)
+		this_choice <- cell_sample[nrow(cell_sample),]
+		shared <- sapply(others, get_shared, this_choice = this_choice)
+
+		if (max(shared) < .9 * k) {
+		  chosen <- new_chosen
+		}
+	}
+	message(sprintf("%s minutes since start", round(difftime(Sys.time(),start,units="mins"),1)))
+	cell_sample <- nn_map[chosen,]
+	cell_sample_map <- lapply(seq_len(nrow(cell_sample)), function(x) rownames(reduced_coordinates)[cell_sample[x,]]) %>% Reduce("rbind",.) %>% data.frame
+	rownames(cell_sample_map) <- rownames(cell_sample)
+	if(!silent) {
+		# Only need this slow step if !silent
+		combs <- combn(nrow(cell_sample), 2)
+		combs <- combs[,sample(seq_len(ncol(combs)),min(ncol(combs),10^6))] #sample 1 M because this really doesnt matter
+		shared <- apply(combs, 2, function(x) {  #slow
+		  k2 - length(unique(as.vector(cell_sample[x,])))
+		})
+
+		message(paste0("\nOverlap QC metrics:\nCells per bin: ", k,
+		               "\nMaximum shared cells bin-bin: ", max(shared),
+		               "\nMean shared cells bin-bin: ", mean(shared),
+		               "\nMedian shared cells bin-bin: ", median(shared)))
+
+		if (mean(shared)/k > .1) warning("On average, more than 10% of cells are shared between paired bins.")
+	}
+	message(sprintf("%s minutes since start", round(difftime(Sys.time(),start,units="mins"),1)))
+	message("\nMaking aggregated scATAC Matrix...")
+	exprs_old <- exprs(cds)
+
+	new_exprs <- matrix(0, nrow = nrow(cell_sample), ncol = nrow(exprs_old))
+	for(x in seq_len(nrow(cell_sample))){
+		if(x %% 50 == 0){
+		    message(sprintf("%s of %s iterations : %s minutes since start", x, nrow(cell_sample), round(difftime(Sys.time(),start,units="mins"),1)))
+		}
+		new_exprs[x,] <- Matrix::rowSums(exprs_old[,cell_sample[x,]])
+	}
+	remove(exprs_old)
+	message(sprintf("%s minutes since start", round(difftime(Sys.time(),start,units="mins"),1)))
+	message("\nMaking aggregated CDS...")
+	pdata <- pData(cds)
+	new_pcols <- "agg_cell"
+	if(!is.null(summary_stats)) { 
+		new_pcols <- c(new_pcols, paste0("mean_",summary_stats)) 
+	}
+
+	new_pdata <- plyr::adply(cell_sample,1, function(x) {
+		sub <- pdata[x,]
+		df_l <- list()
+		df_l["temp"] <- 1
+		for (att in summary_stats) {
+		  df_l[paste0("mean_", att)] <- mean(sub[,att])
+		}
+		data.frame(df_l)
+	})
+
+	new_pdata$agg_cell <- paste("agg", chosen, sep="")
+	new_pdata <- new_pdata[,new_pcols, drop = FALSE] # fixes order, drops X1 and temp
+
+	row.names(new_pdata) <- new_pdata$agg_cell
+	row.names(new_exprs) <- new_pdata$agg_cell
+	new_exprs <- as.matrix(t(new_exprs))
+
+	fdf <- fData(cds)
+	new_pdata$temp <- NULL
+
+	fd <- new("AnnotatedDataFrame", data = fdf)
+	pd <- new("AnnotatedDataFrame", data = new_pdata)
+
+	cicero_cds <- suppressWarnings(newCellDataSet(new_exprs,
+		phenoData = pd,
+		featureData = fd,
+		expressionFamily=negbinomial.size(),
+		lowerDetectionLimit=0)
+	)
+
+	cicero_cds <- monocle::detectGenes(cicero_cds, min_expr = .1)
+	cicero_cds <- BiocGenerics::estimateSizeFactors(cicero_cds)
+	#cicero_cds <- suppressWarnings(BiocGenerics::estimateDispersions(cicero_cds))
+	if (any(!c("chr", "bp1", "bp2") %in% names(fData(cicero_cds)))) {
+		fData(cicero_cds)$chr <- NULL
+		fData(cicero_cds)$bp1 <- NULL
+		fData(cicero_cds)$bp2 <- NULL
+		fData(cicero_cds) <- cbind(
+			fData(cicero_cds),
+			df_for_coords(row.names(fData(cicero_cds)))
+		)
+	}
+	message(sprintf("%s minutes since start", round(difftime(Sys.time(),start,units="mins"),1)))
+	if (size_factor_normalize) {
+		message("\nSize factor normalization...")
+		Biobase::exprs(cicero_cds) <- t(t(Biobase::exprs(cicero_cds))/Biobase::pData(cicero_cds)$Size_Factor)
+	}
+	message(sprintf("%s minutes since start", round(difftime(Sys.time(),start,units="mins"),1)))
+
+	# return(list(ciceroCDS = cicero_cds, knnMap = cell_sample_map))
+	return(cicero_cds)
+}
