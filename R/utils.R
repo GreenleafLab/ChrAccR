@@ -208,7 +208,7 @@ custom_cicero_cds <- function(
 	}
 
 	while (length(good_choices) > 0 & it < max_knn_iterations) { # slow
-		if(it %% 100 == 0) message(sprintf("%s of %s iterations", it, max_knn_iterations))
+		if(!silent && (it %% 500 == 0)) message(sprintf("%s of %s iterations", it, max_knn_iterations))
 		it <- it + 1
 		choice <- sample(seq_len(length(good_choices)), size = 1, replace = FALSE)
 		new_chosen <- c(chosen, good_choices[choice])
@@ -222,7 +222,7 @@ custom_cicero_cds <- function(
 		  chosen <- new_chosen
 		}
 	}
-	message(sprintf("%s minutes since start", round(difftime(Sys.time(),start,units="mins"),1)))
+	if (!silent) message(sprintf("%s minutes since start", round(difftime(Sys.time(),start,units="mins"),1)))
 	cell_sample <- nn_map[chosen,]
 	cell_sample_map <- lapply(seq_len(nrow(cell_sample)), function(x) rownames(reduced_coordinates)[cell_sample[x,]]) %>% Reduce("rbind",.) %>% data.frame
 	rownames(cell_sample_map) <- rownames(cell_sample)
@@ -241,19 +241,19 @@ custom_cicero_cds <- function(
 
 		if (mean(shared)/k > .1) warning("On average, more than 10% of cells are shared between paired bins.")
 	}
-	message(sprintf("%s minutes since start", round(difftime(Sys.time(),start,units="mins"),1)))
+	if (!silent) message(sprintf("%s minutes since start", round(difftime(Sys.time(),start,units="mins"),1)))
 	message("\nMaking aggregated scATAC Matrix...")
 	exprs_old <- exprs(cds)
 
 	new_exprs <- matrix(0, nrow = nrow(cell_sample), ncol = nrow(exprs_old))
 	for(x in seq_len(nrow(cell_sample))){
-		if(x %% 50 == 0){
+		if(!silent && (x %% 500 == 0)){
 		    message(sprintf("%s of %s iterations : %s minutes since start", x, nrow(cell_sample), round(difftime(Sys.time(),start,units="mins"),1)))
 		}
 		new_exprs[x,] <- Matrix::rowSums(exprs_old[,cell_sample[x,]])
 	}
 	remove(exprs_old)
-	message(sprintf("%s minutes since start", round(difftime(Sys.time(),start,units="mins"),1)))
+	if (!silent) message(sprintf("%s minutes since start", round(difftime(Sys.time(),start,units="mins"),1)))
 	message("\nMaking aggregated CDS...")
 	pdata <- pData(cds)
 	new_pcols <- "agg_cell"
@@ -303,12 +303,12 @@ custom_cicero_cds <- function(
 			df_for_coords(row.names(fData(cicero_cds)))
 		)
 	}
-	message(sprintf("%s minutes since start", round(difftime(Sys.time(),start,units="mins"),1)))
+	if (!silent) message(sprintf("%s minutes since start", round(difftime(Sys.time(),start,units="mins"),1)))
 	if (size_factor_normalize) {
 		message("\nSize factor normalization...")
 		Biobase::exprs(cicero_cds) <- t(t(Biobase::exprs(cicero_cds))/Biobase::pData(cicero_cds)$Size_Factor)
 	}
-	message(sprintf("%s minutes since start", round(difftime(Sys.time(),start,units="mins"),1)))
+	if (!silent) message(sprintf("%s minutes since start", round(difftime(Sys.time(),start,units="mins"),1)))
 
 	# return(list(ciceroCDS = cicero_cds, knnMap = cell_sample_map))
 	return(cicero_cds)
