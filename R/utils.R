@@ -278,29 +278,29 @@ custom_cicero_cds <- function(
 	row.names(new_exprs) <- new_pdata$agg_cell
 	new_exprs <- as.matrix(t(new_exprs))
 
-	fdf <- fData(cds)
+	fdf <- Biobase::fData(cds)
 	new_pdata$temp <- NULL
 
 	fd <- new("AnnotatedDataFrame", data = fdf)
 	pd <- new("AnnotatedDataFrame", data = new_pdata)
 
-	cicero_cds <- suppressWarnings(newCellDataSet(new_exprs,
+	cicero_cds <- suppressWarnings(monocle::newCellDataSet(new_exprs,
 		phenoData = pd,
 		featureData = fd,
-		expressionFamily=negbinomial.size(),
+		expressionFamily=VGAM::negbinomial.size(),
 		lowerDetectionLimit=0)
 	)
 
 	cicero_cds <- monocle::detectGenes(cicero_cds, min_expr = .1)
 	cicero_cds <- BiocGenerics::estimateSizeFactors(cicero_cds)
 	#cicero_cds <- suppressWarnings(BiocGenerics::estimateDispersions(cicero_cds))
-	if (any(!c("chr", "bp1", "bp2") %in% names(fData(cicero_cds)))) {
-		fData(cicero_cds)$chr <- NULL
-		fData(cicero_cds)$bp1 <- NULL
-		fData(cicero_cds)$bp2 <- NULL
-		fData(cicero_cds) <- cbind(
-			fData(cicero_cds),
-			df_for_coords(row.names(fData(cicero_cds)))
+	if (any(!c("chr", "bp1", "bp2") %in% names(Biobase::fData(cicero_cds)))) {
+		Biobase::fData(cicero_cds)$chr <- NULL
+		Biobase::fData(cicero_cds)$bp1 <- NULL
+		Biobase::fData(cicero_cds)$bp2 <- NULL
+		Biobase::fData(cicero_cds) <- cbind(
+			Biobase::fData(cicero_cds),
+			df_for_coords(row.names(Biobase::fData(cicero_cds)))
 		)
 	}
 	if (!silent) message(sprintf("%s minutes since start", round(difftime(Sys.time(),start,units="mins"),1)))
