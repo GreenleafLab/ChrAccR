@@ -163,7 +163,7 @@ custom_cicero_cds <- function(
 		size_factor_normalize = TRUE,
 		silent = FALSE
 ) {
-	assertthat::assert_that(is(cds, "CellDataSet"))
+	assertthat::assert_that(is(cds, "cell_data_set"))
 	assertthat::assert_that(is.data.frame(reduced_coordinates) | is.matrix(reduced_coordinates))
 	assertthat::assert_that(assertthat::are_equal(nrow(reduced_coordinates), nrow(pData(cds))))
 	assertthat::assert_that(setequal(row.names(reduced_coordinates), colnames(cds)))
@@ -278,35 +278,34 @@ custom_cicero_cds <- function(
 	row.names(new_exprs) <- new_pdata$agg_cell
 	new_exprs <- as.matrix(t(new_exprs))
 
-	fdf <- Biobase::fData(cds)
+	fdf <- monocle3::fData(cds)
 	new_pdata$temp <- NULL
 
-	fd <- new("AnnotatedDataFrame", data = fdf)
-	pd <- new("AnnotatedDataFrame", data = new_pdata)
+	cicero_cds <- suppressWarnings(monocle3::new_cell_data_set(new_exprs,
+		cell_metadata = new_pdata,
+		gene_metadata = fdf
+	))
 
-	cicero_cds <- suppressWarnings(monocle::newCellDataSet(new_exprs,
-		phenoData = pd,
-		featureData = fd,
-		expressionFamily=VGAM::negbinomial.size(),
-		lowerDetectionLimit=0)
-	)
+	cicero_cds <- monocle3::detect_genes(cicero_cds, min_expr = .1)
+	cicero_cds <- monocle3::estimate_size_factors(cicero_cds)
 
-	cicero_cds <- monocle::detectGenes(cicero_cds, min_expr = .1)
-	cicero_cds <- BiocGenerics::estimateSizeFactors(cicero_cds)
 	#cicero_cds <- suppressWarnings(BiocGenerics::estimateDispersions(cicero_cds))
-	if (any(!c("chr", "bp1", "bp2") %in% names(Biobase::fData(cicero_cds)))) {
-		Biobase::fData(cicero_cds)$chr <- NULL
-		Biobase::fData(cicero_cds)$bp1 <- NULL
-		Biobase::fData(cicero_cds)$bp2 <- NULL
-		Biobase::fData(cicero_cds) <- cbind(
-			Biobase::fData(cicero_cds),
-			df_for_coords(row.names(Biobase::fData(cicero_cds)))
+	if (any(!c("chr", "bp1", "bp2") %in% names(monocle3::fData(cicero_cds)))) {
+		monocle3::fData(cicero_cds)$chr <- NULL
+		monocle3::fData(cicero_cds)$bp1 <- NULL
+		monocle3::fData(cicero_cds)$bp2 <- NULL
+		monocle3::fData(cicero_cds) <- cbind(
+			monocle3::fData(cicero_cds),
+			df_for_coords(row.names(monocle3::fData(cicero_cds)))
 		)
 	}
 	if (!silent) message(sprintf("%s minutes since start", round(difftime(Sys.time(),start,units="mins"),1)))
 	if (size_factor_normalize) {
 		message("\nSize factor normalization...")
-		Biobase::exprs(cicero_cds) <- t(t(Biobase::exprs(cicero_cds))/Biobase::pData(cicero_cds)$Size_Factor)
+		cicero_cds <- suppressWarnings(monocle3::new_cell_data_set(Matrix::t(Matrix::t(monocle3::exprs(cicero_cds))/monocle3::pData(cicero_cds)$Size_Factor), 
+			cell_metadata = monocle3::pData(cicero_cds), 
+			gene_metadata = monocle3::fData(cicero_cds)
+		))
 	}
 	if (!silent) message(sprintf("%s minutes since start", round(difftime(Sys.time(),start,units="mins"),1)))
 

@@ -3083,22 +3083,18 @@ setMethod("getCiceroGeneActivities",
 					cm[cm > 0] <- 1
 				}
 			}
-			cdsObj <- suppressWarnings(monocle::newCellDataSet(
+			cdsObj <- suppressWarnings(monocle3::new_cell_data_set(
 				cm,
-				phenoData = methods::new("AnnotatedDataFrame", data=getSampleAnnot(.object)),
-				featureData = methods::new("AnnotatedDataFrame", data=regDf),
-				expressionFamily=VGAM::negbinomial.size(),
-				lowerDetectionLimit=0
+				cell_metadata = getSampleAnnot(.object),
+				gene_metadata = regDf
 			))
-			if (binarize) {
-				cdsObj@expressionFamily <- VGAM::binomialff()
-				cdsObj@expressionFamily@vfamily <- "binomialff"
-			}
-			Biobase::fData(cdsObj)$site_name <- as.character(Biobase::fData(cdsObj)$site_name)
-			Biobase::fData(cdsObj)$chr <- as.character(Biobase::fData(cdsObj)$chr)
+			monocle3::fData(cdsObj)$site_name <- as.character(monocle3::fData(cdsObj)$site_name)
+			monocle3::fData(cdsObj)$chr <- as.character(monocle3::fData(cdsObj)$chr)
+			monocle3::fData(cdsObj)$bp1 <- as.numeric(monocle3::fData(cdsObj)$bp1)
+			monocle3::fData(cdsObj)$bp2 <- as.numeric(monocle3::fData(cdsObj)$bp2)
 
-			cdsObj <- monocle::detectGenes(cdsObj)
-			cdsObj <- estimateSizeFactors(cdsObj)
+			cdsObj <- monocle3::detect_genes(cdsObj)
+			cdsObj <- monocle3::estimate_size_factors(cdsObj)
 			if (is.null(dimRedCoord)){
 				logger.error("Automatic dimension reduction not implemented yet. Must supply dimension reduction coordinates")
 			} else {
