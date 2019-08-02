@@ -163,6 +163,7 @@ custom_cicero_cds <- function(
 		size_factor_normalize = TRUE,
 		silent = FALSE
 ) {
+	require(dplyr)
 	assertthat::assert_that(is(cds, "cell_data_set"))
 	assertthat::assert_that(is.data.frame(reduced_coordinates) | is.matrix(reduced_coordinates))
 	assertthat::assert_that(assertthat::are_equal(nrow(reduced_coordinates), nrow(pData(cds))))
