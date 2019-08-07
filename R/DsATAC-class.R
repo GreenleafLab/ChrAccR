@@ -2909,7 +2909,7 @@ setMethod("iterativeLSI",
 			logger.completed()
 			logger.start(c("Peak calling"))
 				logger.start("Creating cluster pseudo-bulk samples")
-					dsr <- addSampleAnnotCol(dsr, "clustAss_it0", paste0("c",clustAss_it0[cellIds]))
+					dsr <- addSampleAnnotCol(dsr, "clustAss_it0", as.character(clustAss_it0[cellIds]))
 					dsrClust <- mergeSamples(dsr, "clustAss_it0", countAggrFun="sum")
 				logger.completed()
 				logger.start("Calling peaks")
@@ -2952,7 +2952,7 @@ setMethod("iterativeLSI",
 			if (!is.null(it1mostVarPeaks) && it1mostVarPeaks < nrow(cm)){
 				logger.start(c("Identifying cluster-variable peaks"))
 					logger.start("Creating cluster pseudo-bulk samples")
-						dsr <- addSampleAnnotCol(dsr, "clustAss_it1", paste0("c",clustAss_it1[cellIds]))
+						dsr <- addSampleAnnotCol(dsr, "clustAss_it1", as.character(clustAss_it1[cellIds]))
 						dsrClust <- mergeSamples(dsr, "clustAss_it1", countAggrFun="sum")
 					logger.completed()
 					logger.start("Identifying target peaks")
@@ -2987,7 +2987,7 @@ setMethod("iterativeLSI",
 				clustRes <- Seurat::FindClusters(sObj, k.param=30, algorithm=1, n.start=100, n.iter=10, resolution=it2clusterResolution)
 				clustAss <- factor(paste0("c", clustRes@active.ident), levels=paste0("c", levels(clustRes@active.ident)))
 
-				dsr <- addSampleAnnotCol(dsr, "clustAss_it2", paste0("c",clustAss[cellIds]))
+				dsr <- addSampleAnnotCol(dsr, "clustAss_it2", as.character(clustAss[cellIds]))
 			logger.completed()
 			logger.start(c("UMAP coordinates"))	
 				umapCoord <- muRtools::getDimRedCoords.umap(pcaCoord_sel)
