@@ -2790,11 +2790,11 @@ setMethod("unsupervisedAnalysisSc",
 				dummyMat <- matrix(11.0, ncol=length(cellIds), nrow=11)
 				colnames(dummyMat) <- cellIds
 				rownames(dummyMat) <- paste0("df", 1:nrow(dummyMat))
-				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.features=0)
-				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="cell.embeddings", new.data=pcaCoord)
-				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="key", new.data="pca")
-				clustRes <- Seurat::FindClusters(sObj, reduction.type="pca", dims.use=usePcs, k.param=30, algorithm=1, n.start=100, n.iter=10)
-				clustAss <- clustRes@ident
+				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.features=0, assay="ATAC")
+				sObj[["pca"]] <- Seurat::CreateDimReducObject(embeddings=pcaCoord, key="PC", assay="ATAC")
+				sObj <- Seurat::FindNeighbors(sObj, reduction="pca", assay="ATAC", dims=usePcs, k.param=30)
+				clustRes <- Seurat::FindClusters(sObj, k.param=30, algorithm=1, n.start=100, n.iter=10)
+				clustAss <- factor(paste0("c", clustRes@active.ident), levels=paste0("c", levels(clustRes@active.ident)))
 			logger.completed()
 		}
 		res <- list(
@@ -2901,11 +2901,11 @@ setMethod("iterativeLSI",
 				dummyMat <- matrix(11.0, ncol=length(cellIds), nrow=11)
 				colnames(dummyMat) <- cellIds
 				rownames(dummyMat) <- paste0("df", 1:nrow(dummyMat))
-				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.features=0)
-				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="cell.embeddings", new.data=pcaCoord_it0)
-				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="key", new.data="pca")
-				clustRes <- Seurat::FindClusters(sObj, reduction.type="pca", dims.use=1:ncol(pcaCoord_it0), k.param=30, algorithm=1, n.start=100, n.iter=10, resolution=it0clusterResolution)
-				clustAss_it0 <- clustRes@ident
+				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.features=0, assay="ATAC")
+				sObj[["pca"]] <- Seurat::CreateDimReducObject(embeddings=pcaCoord_it0, key="PC", assay="ATAC")
+				sObj <- Seurat::FindNeighbors(sObj, reduction="pca", assay="ATAC", dims=1:ncol(pcaCoord_it0), k.param=30)
+				clustRes <- Seurat::FindClusters(sObj, k.param=30, algorithm=1, n.start=100, n.iter=10, resolution=it0clusterResolution)
+				clustAss_it0 <- factor(paste0("c", clustRes@active.ident), levels=paste0("c", levels(clustRes@active.ident)))
 			logger.completed()
 			logger.start(c("Peak calling"))
 				logger.start("Creating cluster pseudo-bulk samples")
@@ -2942,11 +2942,11 @@ setMethod("iterativeLSI",
 			logger.completed()
 
 			logger.start(c("Clustering"))	
-				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.features=0)
-				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="cell.embeddings", new.data=pcaCoord_it1)
-				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="key", new.data="pca")
-				clustRes <- Seurat::FindClusters(sObj, reduction.type="pca", dims.use=1:ncol(pcaCoord_it1), k.param=30, algorithm=1, n.start=100, n.iter=10, resolution=it1clusterResolution)
-				clustAss_it1 <- clustRes@ident
+				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.features=0, assay="ATAC")
+				sObj[["pca"]] <- Seurat::CreateDimReducObject(embeddings=pcaCoord_it1, key="PC", assay="ATAC")
+				sObj <- Seurat::FindNeighbors(sObj, reduction="pca", assay="ATAC", dims=1:ncol(pcaCoord_it1), k.param=30)
+				clustRes <- Seurat::FindClusters(sObj, k.param=30, algorithm=1, n.start=100, n.iter=10, resolution=it1clusterResolution)
+				clustAss_it1 <- factor(paste0("c", clustRes@active.ident), levels=paste0("c", levels(clustRes@active.ident)))
 			logger.completed()
 
 			if (!is.null(it1mostVarPeaks) && it1mostVarPeaks < nrow(cm)){
@@ -2980,12 +2980,12 @@ setMethod("iterativeLSI",
 				pcaCoord <- muRtools::getDimRedCoords.pca(safeMatrixStats(cm, "t"), components=1:max(it2pcs), method="irlba_svd")
 				pcaCoord_sel <- pcaCoord[, it2pcs, drop=FALSE]
 			logger.completed()
-			logger.start(c("Clustering"))	
-				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.features=0)
-				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="cell.embeddings", new.data=pcaCoord_sel)
-				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="key", new.data="pca")
-				clustRes <- Seurat::FindClusters(sObj, reduction.type="pca", dims.use=1:ncol(pcaCoord_sel), k.param=30, algorithm=1, n.start=100, n.iter=10, resolution=it2clusterResolution)
-				clustAss <- clustRes@ident
+			logger.start(c("Clustering"))
+				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.features=0, assay="ATAC")
+				sObj[["pca"]] <- Seurat::CreateDimReducObject(embeddings=pcaCoord_sel, key="PC", assay="ATAC")
+				sObj <- Seurat::FindNeighbors(sObj, reduction="pca", assay="ATAC", dims=1:ncol(pcaCoord_sel), k.param=30)
+				clustRes <- Seurat::FindClusters(sObj, k.param=30, algorithm=1, n.start=100, n.iter=10, resolution=it2clusterResolution)
+				clustAss <- factor(paste0("c", clustRes@active.ident), levels=paste0("c", levels(clustRes@active.ident)))
 
 				dsr <- addSampleAnnotCol(dsr, "clustAss_it2", paste0("c",clustAss[cellIds]))
 			logger.completed()
