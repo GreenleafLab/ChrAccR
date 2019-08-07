@@ -2789,6 +2789,7 @@ setMethod("unsupervisedAnalysisSc",
 				# Louvain clustering using Seurat
 				dummyMat <- matrix(11.0, ncol=length(cellIds), nrow=11)
 				colnames(dummyMat) <- cellIds
+				colnames(dummyMat) <- paste0("df", 1:nrow(dummyMat))
 				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.features=0)
 				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="cell.embeddings", new.data=pcaCoord)
 				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="key", new.data="pca")
@@ -2899,6 +2900,7 @@ setMethod("iterativeLSI",
 				# Louvain clustering using Seurat
 				dummyMat <- matrix(11.0, ncol=length(cellIds), nrow=11)
 				colnames(dummyMat) <- cellIds
+				colnames(dummyMat) <- paste0("df", 1:nrow(dummyMat))
 				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.features=0)
 				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="cell.embeddings", new.data=pcaCoord_it0)
 				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="key", new.data="pca")
