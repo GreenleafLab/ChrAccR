@@ -2789,7 +2789,7 @@ setMethod("unsupervisedAnalysisSc",
 				# Louvain clustering using Seurat
 				dummyMat <- matrix(11.0, ncol=length(cellIds), nrow=11)
 				colnames(dummyMat) <- cellIds
-				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.genes=0)
+				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.features=0)
 				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="cell.embeddings", new.data=pcaCoord)
 				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="key", new.data="pca")
 				clustRes <- Seurat::FindClusters(sObj, reduction.type="pca", dims.use=usePcs, k.param=30, algorithm=1, n.start=100, n.iter=10)
@@ -2899,7 +2899,7 @@ setMethod("iterativeLSI",
 				# Louvain clustering using Seurat
 				dummyMat <- matrix(11.0, ncol=length(cellIds), nrow=11)
 				colnames(dummyMat) <- cellIds
-				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.genes=0)
+				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.features=0)
 				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="cell.embeddings", new.data=pcaCoord_it0)
 				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="key", new.data="pca")
 				clustRes <- Seurat::FindClusters(sObj, reduction.type="pca", dims.use=1:ncol(pcaCoord_it0), k.param=30, algorithm=1, n.start=100, n.iter=10, resolution=it0clusterResolution)
@@ -2940,7 +2940,7 @@ setMethod("iterativeLSI",
 			logger.completed()
 
 			logger.start(c("Clustering"))	
-				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.genes=0)
+				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.features=0)
 				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="cell.embeddings", new.data=pcaCoord_it1)
 				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="key", new.data="pca")
 				clustRes <- Seurat::FindClusters(sObj, reduction.type="pca", dims.use=1:ncol(pcaCoord_it1), k.param=30, algorithm=1, n.start=100, n.iter=10, resolution=it1clusterResolution)
@@ -2979,7 +2979,7 @@ setMethod("iterativeLSI",
 				pcaCoord_sel <- pcaCoord[, it2pcs, drop=FALSE]
 			logger.completed()
 			logger.start(c("Clustering"))	
-				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.genes=0)
+				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.features=0)
 				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="cell.embeddings", new.data=pcaCoord_sel)
 				sObj <- Seurat::SetDimReduction(object=sObj, reduction.type="pca", slot="key", new.data="pca")
 				clustRes <- Seurat::FindClusters(sObj, reduction.type="pca", dims.use=1:ncol(pcaCoord_sel), k.param=30, algorithm=1, n.start=100, n.iter=10, resolution=it2clusterResolution)
