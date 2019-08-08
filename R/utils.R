@@ -297,7 +297,7 @@ custom_cicero_cds <- function(
 		monocle3::fData(cicero_cds)$bp2 <- NULL
 		monocle3::fData(cicero_cds) <- cbind(
 			monocle3::fData(cicero_cds),
-			df_for_coords(row.names(monocle3::fData(cicero_cds)))
+			cicero::df_for_coords(row.names(monocle3::fData(cicero_cds)))
 		)
 	}
 	if (!silent) message(sprintf("%s minutes since start", round(difftime(Sys.time(),start,units="mins"),1)))

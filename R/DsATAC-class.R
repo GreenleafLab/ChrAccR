@@ -3137,7 +3137,7 @@ setMethod("getCiceroGeneActivities",
 	) {
 		if (!is.element(regionType, getRegionTypes(.object))) logger.error(c("Unsupported region type:", regionType))
 		if (is.null(names(promoterGr))) logger.error("promoterGr must have names")
-		
+
 		logger.start("Creating Cicero object")
 			cdsObj <- getMonocleCellDataSet(.object, regionType, binarize=TRUE)
 			if (is.null(dimRedCoord)){
@@ -3150,13 +3150,13 @@ setMethod("getCiceroGeneActivities",
 		logger.completed()
 
 		logger.start("Computing grouped correlations")
-			gr <- getCoord(.object, regionType) # regGr[monocle3::fData(ciceroObj)[[1]]]
+			gr <- getCoord(.object, regionType) # should be in the same order as fData(ciceroObj)
 			
 			oo <- suppressWarnings(as.matrix(findOverlaps(resize(resize(gr, 1, "center"), 2*maxDist + 1, "center"), resize(gr, 1, "center"), ignore.strand=TRUE)))
 			oo <- data.frame(i=matrixStats::rowMins(oo), j=matrixStats::rowMaxs(oo))
 			oo <- oo[!duplicated(oo) & oo[,"i"]!=oo[,"j"],]
 			# fast(ish) correlations
-			X <- assay(ciceroObj)
+			X <- monocle3::exprs(ciceroObj)
 			rownames(X) <- NULL
 			colnames(X) <- NULL
 			mu <- safeMatrixStats(X, "rowMeans", na.rm=TRUE)
@@ -3189,7 +3189,7 @@ setMethod("getCiceroGeneActivities",
 			promoterDf <- data.frame(chromosome=seqnames(promoterGr),start=start(promoterGr),end=end(promoterGr), gene=names(promoterGr))
 			cdsObj <- cicero::annotate_cds_by_site(cdsObj, promoterDf)
 
-			nSites <- safeMatrixStats(assay(cdsObj), "colSums")
+			nSites <- safeMatrixStats(monocle3::exprs(cdsObj), "colSums")
 			names(nSites) <- row.names(monocle3::pData(cdsObj))
 			unnorm_ga <- cicero::build_gene_activity_matrix(cdsObj, conns, coaccess_cutoff=corCutOff)
 			naCells <- safeMatrixStats(unnorm_ga, "colSums")==0
@@ -3208,7 +3208,6 @@ setMethod("getCiceroGeneActivities",
 			rowRanges = promoterGr[rownames(ciceroGA)],
 			colData = getSampleAnnot(.object)
 		)
-
 		return(seCicero)
 	}
 )
