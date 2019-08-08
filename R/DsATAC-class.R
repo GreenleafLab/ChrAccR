@@ -3025,6 +3025,76 @@ setMethod("iterativeLSI",
 		return(res)
 	}
 )
+
+#-------------------------------------------------------------------------------
+if (!isGeneric("getMonocleCellDataSet")) {
+	setGeneric(
+		"getMonocleCellDataSet",
+		function(.object, ...) standardGeneric("getMonocleCellDataSet"),
+		signature=c(".object")
+	)
+}
+#' getMonocleCellDataSet-methods
+#'
+#' Obtain \code{cell_data_set} object for analysis using the \code{monocle3} package
+#'
+#' @param .object    \code{\linkS4class{DsATAC}} object
+#' @param regionType name of the region type to be exported
+#' @param binarize   should the counts be binarized
+#' @return a \code{cell_data_set} object containing the counts for the specified region type
+#' 
+#' @rdname getMonocleCellDataSet-DsATAC-method
+#' @docType methods
+#' @aliases getMonocleCellDataSet
+#' @aliases getMonocleCellDataSet,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("getMonocleCellDataSet",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		regionType,
+		binarize=TRUE
+	) {
+		if (!is.element(regionType, getRegionTypes(.object))) logger.error(c("Unsupported region type:", regionType))
+
+		regGr <- getCoord(.object, regionType)
+		regDf <- data.frame(
+			row.names = paste(seqnames(regGr),start(regGr),end(regGr),sep="_"),
+			site_name = paste(seqnames(regGr),start(regGr),end(regGr),sep="_"),
+			chr = gsub("chr", "", as.character(seqnames(regGr))),
+			bp1 = start(regGr),
+			bp2 = end(regGr)
+		)
+		names(regGr) <- regDf$site_name
+		cm <- ChrAccR::getCounts(.object, regionType, allowSparseMatrix=TRUE)
+
+		if (binarize){
+			if (.object@sparseCounts){
+				cm@x[cm@x > 0] <- 1
+			} else {
+				cm[cm > 0] <- 1
+			}
+		}
+		cdsObj <- suppressWarnings(monocle3::new_cell_data_set(
+			cm,
+			cell_metadata = getSampleAnnot(.object),
+			gene_metadata = regDf
+		))
+		monocle3::fData(cdsObj)$site_name <- as.character(monocle3::fData(cdsObj)$site_name)
+		monocle3::fData(cdsObj)$chr <- as.character(monocle3::fData(cdsObj)$chr)
+		monocle3::fData(cdsObj)$bp1 <- as.numeric(monocle3::fData(cdsObj)$bp1)
+		monocle3::fData(cdsObj)$bp2 <- as.numeric(monocle3::fData(cdsObj)$bp2)
+
+		cdsObj <- monocle3::detect_genes(cdsObj)
+		cdsObj <- monocle3::estimate_size_factors(cdsObj)
+
+		return(cdsObj)
+	}
+)
+
 #-------------------------------------------------------------------------------
 
 if (!isGeneric("getCiceroGeneActivities")) {
@@ -3067,40 +3137,9 @@ setMethod("getCiceroGeneActivities",
 	) {
 		if (!is.element(regionType, getRegionTypes(.object))) logger.error(c("Unsupported region type:", regionType))
 		if (is.null(names(promoterGr))) logger.error("promoterGr must have names")
-
-		regGr <- getCoord(.object, regionType)
-		regDf <- data.frame(
-			row.names = paste(seqnames(regGr),start(regGr),end(regGr),sep="_"),
-			site_name = paste(seqnames(regGr),start(regGr),end(regGr),sep="_"),
-			chr = gsub("chr", "", as.character(seqnames(regGr))),
-			bp1 = start(regGr),
-			bp2 = end(regGr)
-		)
-		names(regGr) <- regDf$site_name
-		cm <- ChrAccR::getCounts(.object, regionType, allowSparseMatrix=TRUE)
-		# se <- getCountsSE(.object, regionType)
-
+		
 		logger.start("Creating Cicero object")
-			binarize <- TRUE
-			if (binarize){
-				if (.object@sparseCounts){
-					cm@x[cm@x > 0] <- 1
-				} else {
-					cm[cm > 0] <- 1
-				}
-			}
-			cdsObj <- suppressWarnings(monocle3::new_cell_data_set(
-				cm,
-				cell_metadata = getSampleAnnot(.object),
-				gene_metadata = regDf
-			))
-			monocle3::fData(cdsObj)$site_name <- as.character(monocle3::fData(cdsObj)$site_name)
-			monocle3::fData(cdsObj)$chr <- as.character(monocle3::fData(cdsObj)$chr)
-			monocle3::fData(cdsObj)$bp1 <- as.numeric(monocle3::fData(cdsObj)$bp1)
-			monocle3::fData(cdsObj)$bp2 <- as.numeric(monocle3::fData(cdsObj)$bp2)
-
-			cdsObj <- monocle3::detect_genes(cdsObj)
-			cdsObj <- monocle3::estimate_size_factors(cdsObj)
+			cdsObj <- getMonocleCellDataSet(.object, regionType, binarize=TRUE)
 			if (is.null(dimRedCoord)){
 				logger.error("Automatic dimension reduction not implemented yet. Must supply dimension reduction coordinates")
 			} else {
@@ -3111,25 +3150,33 @@ setMethod("getCiceroGeneActivities",
 		logger.completed()
 
 		logger.start("Computing grouped correlations")
-			gr <- regGr[Biobase::featureData(ciceroObj)[[1]]]
+			gr <- getCoord(.object, regionType) # regGr[monocle3::fData(ciceroObj)[[1]]]
 			
 			oo <- suppressWarnings(as.matrix(findOverlaps(resize(resize(gr, 1, "center"), 2*maxDist + 1, "center"), resize(gr, 1, "center"), ignore.strand=TRUE)))
 			oo <- data.frame(i=matrixStats::rowMins(oo), j=matrixStats::rowMaxs(oo))
 			oo <- oo[!duplicated(oo) & oo[,"i"]!=oo[,"j"],]
-			# fast correlations
-			X <- Biobase::assayData(ciceroObj)$exprs
-			mu <- rowMeans(X, na.rm=TRUE)
-			Xc <- X - mu # centered
+			# fast(ish) correlations
+			X <- assay(ciceroObj)
+			rownames(X) <- NULL
+			colnames(X) <- NULL
+			mu <- safeMatrixStats(X, "rowMeans", na.rm=TRUE)
 
 			logger.start("Computing Pearson correlation coefficients")
-				cc <- apply(oo, 1, FUN=function(idx){
-					x1 <- Xc[idx[1],]
-					x2 <- Xc[idx[2],]
-					return(sum(x1*x2, na.rm=TRUE) / (sqrt(sum(x1^2, na.rm=TRUE)) * sqrt(sum(x2^2, na.rm=TRUE))))
-				})
-				names(cc) <- NULL
+				# chunked processing
+				chkSize <- 1e5
+				chkStarts <- seq(1, nrow(oo), by=chkSize)
+				chkEnds <- nrow(oo)
+				nChunks <- length(chkStarts)
+				if (nChunks > 1) chkEnds <- c(chkStarts[2:length(chkStarts)]-1, chkEnds)
+				cc <- do.call("c", lapply(1:nChunks, FUN=function(i){
+					logger.status(c("Chunk", i, "of", nChunks))
+					oo_cur <- oo[chkStarts[i]:chkEnds[i], ]
+					# centered submatrices
+					Xc1 <- as.matrix(X[oo_cur[,1],,drop=FALSE] - mu[oo_cur[,1]])
+					Xc2 <- as.matrix(X[oo_cur[,2],,drop=FALSE] - mu[oo_cur[,2]])
+					return(rowSums(Xc1*Xc2, na.rm=TRUE) / (sqrt(rowSums(Xc1^2, na.rm=TRUE)) * sqrt(rowSums(Xc2^2, na.rm=TRUE))))
+				}))
 			logger.completed()
-			rm(X, mu, Xc)
 		logger.completed()
 		logger.start("Computing gene activities")
 			conns <- data.frame(
@@ -3142,8 +3189,8 @@ setMethod("getCiceroGeneActivities",
 			promoterDf <- data.frame(chromosome=seqnames(promoterGr),start=start(promoterGr),end=end(promoterGr), gene=names(promoterGr))
 			cdsObj <- cicero::annotate_cds_by_site(cdsObj, promoterDf)
 
-			nSites <- Matrix::colSums(Biobase::assayData(cdsObj)$exprs)
-			names(nSites) <- row.names(Biobase::pData(cdsObj))
+			nSites <- safeMatrixStats(assay(cdsObj), "colSums")
+			names(nSites) <- row.names(monocle3::pData(cdsObj))
 			unnorm_ga <- cicero::build_gene_activity_matrix(cdsObj, conns, coaccess_cutoff=corCutOff)
 			naCells <- safeMatrixStats(unnorm_ga, "colSums")==0
 			if (sum(naCells) > 0) {
