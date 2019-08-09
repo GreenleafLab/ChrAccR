@@ -124,7 +124,7 @@ setMethod("createReport_exploratory",
 			)
 			if (doLogNorm) {
 				txt <- c(txt,
-					" Counts have been log-normalized (log2(count+1))"
+					" Counts have been log-normalized (log2(count+1))."
 				)
 			}
 			rr <- muReportR::addReportSection(rr, "Dimension reduction", txt, level=1L, collapsed=FALSE)
@@ -202,14 +202,16 @@ setMethod("createReport_exploratory",
 			)
 			if (doLogNorm) {
 				txt <- c(txt,
-					" Counts have been log-normalized (log2(count+1))"
+					" Counts have been log-normalized (log2(count+1))."
 				)
 			}
 			rr <- muReportR::addReportSection(rr, "Clustered heatmaps", txt, level=1L, collapsed=FALSE)
 			figSettings <- list(
 				"Region type" = figSettings.region
 			)
-			rr <- muReportR::addReportFigure(rr, "Clustered heatmap", hmPlotL, figSettings)
+			legTxt <- paste("Clustered heatmap. The", varRankCut, "most variable regions are shown.")
+			if (doLogNorm) legTxt <- paste(legTxt, "Counts have been log-normalized (log2(count+1)).")
+			rr <- muReportR::addReportFigure(rr, legTxt, hmPlotL, figSettings)
 		logger.completed()
 
 		doChromVar <- FALSE
