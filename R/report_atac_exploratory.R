@@ -37,6 +37,7 @@ setMethod("createReport_exploratory",
 		.object,
 		reportDir
 	) {
+		# reportDir <- file.path("~/myscratch/temp", getHashString("report"))
 		if (!requireNamespace("muReportR")) logger.error(c("Could not load dependency: muReportR"))
 		initConfigDir <- !dir.exists(file.path(reportDir, "_config"))
 		rr <- muReportR::createReport(file.path(reportDir, "exploratory.html"), "Exploratory Analysis", page.title="Exploratory", init.configuration=initConfigDir, theme="stanford")
@@ -114,18 +115,41 @@ setMethod("createReport_exploratory",
 			rr <- muReportR::addReportParagraph(rr, txt)
 		logger.completed()
 
-		logger.start("Dimension reduction")
+		logger.start("Dimension reduction and heatmap generation")
+			doLogNorm <- getConfigElement("exploratoryLogNormCounts")
+
 			txt <- c(
 				"Read counts are summarized for various region types and the corresponding ",
 				"aggregate count matrices are used for dimension reduction."
 			)
+			if (doLogNorm) {
+				txt <- c(txt,
+					" Counts have been log-normalized (log2(count+1))"
+				)
+			}
 			rr <- muReportR::addReportSection(rr, "Dimension reduction", txt, level=1L, collapsed=FALSE)
 
 			mnames <- c("pca", "umap")
+
+			linkMethod <- "ward.D"
+			corMethod <- "pearson"
+			varRankCut <- 1000L
+			colors.hm <- getConfigElement("colorSchemesCont")
+			if (is.element("heatmap", names(colors.hm))) {
+				colors.hm <- colors.hm[["heatmap"]]
+			} else {
+				colors.hm <- colors.hm[[".default"]]
+			}
+			sannot.sub <- sannot[,setdiff(plotAnnotCols, ".ALL"), drop=FALSE]
+
 			plotL <- list()
+			hmPlotL <- list()
 			for (rt in regionTypes){
 				logger.start(c("Region type:", rt))
-					tcm <- t(getCounts(.object, rt, asMatrix=TRUE))
+					rtString <- normalize.str(rt, return.camel=TRUE)
+					cm <- getCounts(.object, rt, asMatrix=TRUE)
+					if (doLogNorm) cm <- log2(cm + 1)
+					tcm <- t(cm)
 					coords <- list(
 						"pca"  = muRtools::getDimRedCoords.pca(tcm),
 						"umap" = muRtools::getDimRedCoords.umap(tcm)
@@ -134,12 +158,30 @@ setMethod("createReport_exploratory",
 						logger.status(c("Annotation:", gn))
 						for (mn in mnames){
 							pp <- getDimRedPlot(coords[[mn]], annot=sannot, colorCol=gn, shapeCol=FALSE, colScheme=grpColors[[gn]], addLabels=FALSE, addDensity=FALSE, annot.text=NULL) + theme(aspect.ratio=1)
-							plotFn <- paste("dimRed", mn, normalize.str(rt, return.camel=TRUE), normalize.str(gn, return.camel=TRUE), sep="_")
+							plotFn <- paste("dimRed", mn, rtString, normalize.str(gn, return.camel=TRUE), sep="_")
 							repPlot <- muReportR::createReportGgPlot(pp, plotFn, rr, width=7, height=7, create.pdf=TRUE, high.png=0L)
 							repPlot <- muReportR::off(repPlot, handle.errors=TRUE)
 							plotL <- c(plotL, list(repPlot))
 						}
 					}
+
+					logger.status(c("Clustered heatmap"))
+					mostVarIdx <- which(rank(-matrixStats::rowVars(cm, na.rm=TRUE), na.last="keep",ties.method="min") <= varRankCut)
+					cres.col <- as.hclust(getClusteringDendrogram(cm[mostVarIdx,], distMethod="euclidean", linkMethod=linkMethod, corMethod=corMethod))
+					cres.row <- as.hclust(getClusteringDendrogram(tcm[,mostVarIdx], distMethod="euclidean", linkMethod=linkMethod, corMethod=corMethod))
+					plotFn <- paste0("varRegionHeatmap_", rtString)
+					repPlot <- muReportR::createReportPlot(plotFn, rr, width=10, height=10, create.pdf=TRUE, high.png=300L)
+						pheatmap::pheatmap(
+							cm[mostVarIdx,],
+							color=grDevices::colorRampPalette(colors.hm)(100),
+							border_color=NA,
+							cluster_rows=cres.row, cluster_cols=cres.col,
+							annotation_col=sannot.sub,
+							annotation_colors=grpColors,
+							fontsize_row=8, fontsize_col=3
+						)
+					repPlot <- muReportR::off(repPlot)
+					hmPlotL <- c(hmPlotL, list(repPlot))
 				logger.completed()
 			}
 			figSettings.method <- mnames
@@ -154,6 +196,20 @@ setMethod("createReport_exploratory",
 				"Annotation" = figSettings.annot
 			)
 			rr <- muReportR::addReportFigure(rr, "Dimension reduction", plotL, figSettings)
+
+			txt <- c(
+				"Samples have been clustered according to the ", varRankCut, " most variable regions for each region type."
+			)
+			if (doLogNorm) {
+				txt <- c(txt,
+					" Counts have been log-normalized (log2(count+1))"
+				)
+			}
+			rr <- muReportR::addReportSection(rr, "Clustered heatmaps", txt, level=1L, collapsed=FALSE)
+			figSettings <- list(
+				"Region type" = figSettings.region
+			)
+			rr <- muReportR::addReportFigure(rr, "Clustered heatmap", hmPlotL, figSettings)
 		logger.completed()
 
 		doChromVar <- FALSE

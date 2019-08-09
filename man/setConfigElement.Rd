@@ -47,6 +47,9 @@ Set a configuration item to a given value
   \item{\bold{\code{annotationColumns}}}{
       Sample annotation columns to be used for reporting
   }
+  \item{\bold{\code{exploratoryLogNormCounts}}}{
+      Should a log-normalization be applied in the exploratory plot sections of the reports (dimension reduction, heatmaps)
+  }
   \item{\bold{\code{differentialColumns}}}{
       Sample annotation columns to be used for differential testing and reporting
   }

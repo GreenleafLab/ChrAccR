@@ -21,6 +21,7 @@
 .config$chromVarMotifs <- c("jaspar_vert")
 .config$chromVarRegionTypes <- NULL
 .config$annotationColumns <- NULL
+.config$exploratoryLogNormCounts <- TRUE
 .config$differentialColumns <- NULL
 .config$differentialCompNames <- NULL
 .config$differentialAdjColumns <- NULL
@@ -61,6 +62,9 @@
 #'   }
 #'   \item{\bold{\code{annotationColumns}}}{
 #'       Sample annotation columns to be used for reporting
+#'   }
+#'   \item{\bold{\code{exploratoryLogNormCounts}}}{
+#'       Should a log-normalization be applied in the exploratory plot sections of the reports (dimension reduction, heatmaps)
 #'   }
 #'   \item{\bold{\code{differentialColumns}}}{
 #'       Sample annotation columns to be used for differential testing and reporting
