@@ -3151,6 +3151,7 @@ setMethod("getCiceroGeneActivities",
 
 		logger.start("Computing grouped correlations")
 			gr <- getCoord(.object, regionType) # should be in the same order as fData(ciceroObj)
+			names(gr) <- monocle3::fData(ciceroObj)$site_name
 			
 			oo <- suppressWarnings(as.matrix(findOverlaps(resize(resize(gr, 1, "center"), 2*maxDist + 1, "center"), resize(gr, 1, "center"), ignore.strand=TRUE)))
 			oo <- data.frame(i=matrixStats::rowMins(oo), j=matrixStats::rowMaxs(oo))
