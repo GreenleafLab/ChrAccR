@@ -137,6 +137,9 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 			logger.info(c("Including region set:", rt))
 			obj <- regionAggregation(obj, regionSets[[rt]], rt, signal=NULL, dropEmpty=FALSE)
 		}
+		if (obj@diskDump.fragments && .hasSlot(obj, "diskDump.fragments.nSamplesPerFile")){
+			obj@diskDump.fragments.nSamplesPerFile <- 500L
+		}
 	logger.completed()
 
 	logger.start("Reading scATAC data (fragment data)")
@@ -166,15 +169,29 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 				logger.completed()
 				
 				if (keepInsertionInfo) {
+					chunkedFragmentFiles <- obj@diskDump.fragments && .hasSlot(obj, "diskDump.fragments.nSamplesPerFile") && obj@diskDump.fragments.nSamplesPerFile > 1
 					logger.start("Adding fragment data to data structure")
-						for (cid in names(fragGrl)){
-							fgr <- fragGrl[[cid]]
-							if (obj@diskDump.fragments){
+						if (chunkedFragmentFiles){
+							nCells <- length(fragGrl)
+							chunkL <- split(1:nCells, rep(1:ceiling(nCells/obj@diskDump.fragments.nSamplesPerFile), each=obj@diskDump.fragments.nSamplesPerFile)[1:nCells])
+							names(chunkL) <- NULL
+							for (k in 1:length(chunkL)){
+								iis <- chunkL[k]
+								cids <- names(fragGrl)[iis]
 								fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
-								saveRDS(fgr, fn)
-								fgr <- fn
+								saveRDS(fragGrl[iis], fn)
+								obj@fragments[cids] <- rep(list(fn), length(iis))
 							}
-							obj@fragments[[cid]] <- fgr
+						} else {
+							for (cid in names(fragGrl)){
+								fgr <- fragGrl[[cid]]
+								if (obj@diskDump.fragments){
+									fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
+									saveRDS(fgr, fn)
+									fgr <- fn
+								}
+								obj@fragments[[cid]] <- fgr
+							}
 						}
 					logger.completed()
 				}

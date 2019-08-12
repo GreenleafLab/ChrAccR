@@ -34,7 +34,8 @@ setClass("DsATAC",
 		counts = "list",
 		countTransform = "list",
 		sparseCounts = "logical",
-		diskDump.fragments = "logical"
+		diskDump.fragments = "logical",
+		diskDump.fragments.nSamplesPerFile = "integer"
 	),
 	contains = "DsAcc",
 	package = "ChrAccR"
@@ -49,6 +50,7 @@ setMethod("initialize","DsATAC",
 		genome,
 		diskDump,
 		diskDump.fragments,
+		diskDump.fragments.nSamplesPerFile,
 		sparseCounts
 	) {
 		.Object@fragments  <- fragments
@@ -60,6 +62,7 @@ setMethod("initialize","DsATAC",
 		.Object@genome      <- genome
 		.Object@diskDump    <- diskDump
 		.Object@diskDump.fragments <- diskDump.fragments
+		.Object@diskDump.fragments.nSamplesPerFile <- 1L
 		.Object@sparseCounts <- sparseCounts
 		.Object@pkgVersion  <- packageVersion("ChrAccR")
 		.Object
@@ -240,6 +243,9 @@ setMethod("getFragmentGr",
 		if (is.character(fragGr)){
 			if (file.exists(fragGr)) {
 				fragGr <- readRDS(fragGr)
+				if (is.list(fragGr) || is.element(class(fragGr), c("GRangesList", "CompressedGRangesList"))){
+					fragGr <- fragGr[[sampleId]]
+				}
 			} else {
 				logger.error(c("Could not load fragment data from file:", fragGr))
 			}
@@ -737,6 +743,7 @@ setMethod("mergeSamples",
 
 		#insertion data: concatenate GRanges objects
 		if (length(.object@fragments) == nSamples){
+			sids <- names(.object@fragments)
 			logger.status(paste0("Merging sample fragment data..."))
 			insL <- .object@fragments
 			.object@fragments <- lapply(mgL, FUN=function(iis){
@@ -744,11 +751,7 @@ setMethod("mergeSamples",
 				rr <- lapply(seq_along(iis), FUN=function(i){
 					x <- rr[[i]]
 					if (is.character(x)){
-						if (file.exists(x)) {
-							x <- readRDS(x)
-						} else {
-							logger.error(c("Could not load fragment data from file:", x))
-						}
+						x <- getFragmentGr(.object, sids[i])
 					}
 					elementMetadata(x)[,".sample"] <- sampleNames[iis[i]]
 					return(x)
@@ -758,6 +761,9 @@ setMethod("mergeSamples",
 					fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext=".rds")
 					saveRDS(catRes, fn)
 					catRes <- fn
+					# currently merging samples does not support multiple samples per fragment file
+					.object@diskDump.fragments.nSamplesPerFile <- 1L
+					# TODO: support multiple samples per merged fragment file
 				}
 				return(catRes)
 			})
@@ -828,16 +834,10 @@ setMethod("undiskFragmentData",
 		object
 	) {
 		if (length(object@fragments) > 0){
-			object@fragments <- lapply(object@fragments, FUN=function(fragGr){
-				if (is.character(fragGr)){
-					if (file.exists(fragGr)) {
-						fragGr <- readRDS(fragGr)
-					} else {
-						logger.error(c("Could not load fragment data from file:", fragGr))
-					}
-				}
-				return(fragGr)
+			object@fragments <- lapply(getSamples(object), FUN=function(sid){
+				getFragmentGr(object, sid)
 			})
+			names(object@fragments) <- getSamples(object)
 		}
 		object@diskDump.fragments <- FALSE
 		return(object)
@@ -1110,6 +1110,12 @@ setMethod("addInsertionDataFromBam",
 		if (!all(sids %in% getSamples(.object))){
 			logger.error(c("DsATAC dataset does not contain samples:", paste(setdiff(sids, getSamples(.object)), collapse=", ")))
 		}
+
+		# only relevant if fragments from multiple samples are written to the same file (chunkedFragmentFiles)
+		chunkedFragmentFiles <- .object@diskDump.fragments && .hasSlot(.object, "diskDump.fragments.nSamplesPerFile") && .object@diskDump.fragments.nSamplesPerFile > 1
+		curChunkL <- list()
+		curChunkFn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
+
 		for (sid in sids){
 			logger.start(c("Reading insertion data for sample:", sid))
 				if (!is.null(.object@fragments[[sid]])){
@@ -1124,12 +1130,26 @@ setMethod("addInsertionDataFromBam",
 				ga <- setGenomeProps(ga, .object@genome, onlyMainChrs=TRUE)
 				fragGr <- getATACfragments(ga, offsetTn=TRUE)
 				if (.diskDump){
-					fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
-					saveRDS(fragGr, fn)
-					fragGr <- fn
+					if (chunkedFragmentFiles){
+						curChunkL[[sid]] <- fragGr
+						fragGr <- curChunkFn
+						if (length(curChunkL) >= .object@diskDump.fragments.nSamplesPerFile){
+							saveRDS(curChunkL, curChunkFn)
+							# reset after writing chunk
+							curChunkL <- list()
+							curChunkFn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
+						}
+					} else {
+						fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
+						saveRDS(fragGr, fn)
+						fragGr <- fn
+					}
 				}
 				.object@fragments[[sid]] <- fragGr
 			logger.completed()
+		}
+		if (.diskDump && length(curChunkL) > 0){
+			saveRDS(curChunkL, curChunkFn)
 		}
 
 		return(.object)
@@ -1594,18 +1614,40 @@ setMethod("filterChroms",
 		}
 		if (length(.object@fragments) > 0){
 			logger.status("Filtering fragment data")
-			for (sid in names(.object@fragments)){
-				fragGr <- getFragmentGr(.object, sid)
-				idx <- !(as.character(seqnames(fragGr)) %in% exclChrom)
-				fragGr <- fragGr[idx]
-				if (.object@diskDump.fragments){
+			chunkedFragmentFiles <- .object@diskDump.fragments && .hasSlot(.object, "diskDump.fragments.nSamplesPerFile") && .object@diskDump.fragments.nSamplesPerFile > 1
+			if (chunkedFragmentFiles){
+				isFile <- sapply(.object@fragments, is.character)
+				if (!all(isFile)) logger.error("Expected all disk-dumped fragment files")
+				fns <- unlist(.object@fragments)
+				names(fns) <- names(.object@fragments)
+				for (fn in unique(fns)){
+					fragGrl <- readRDS(fn)
+					sids <- names(fragGrl)
+					# filter
+					fragGrl_filt <- endoapply(fragGrl, FUN=function(x){
+						idx <- !(as.character(seqnames(x)) %in% exclChrom)
+						return(x[idx])
+					})
+					names(fragGrl_filt) <- sids
+					# save the list object to disk
 					fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
-					saveRDS(fragGr, fn)
-					fragGr <- fn
+					saveRDS(fragGrl_filt, fn)
+					# replace old filename references
+					.object@fragments[sids] <- rep(list(fn), length(sids))
 				}
-				.object@fragments[[sid]] <- fragGr
+			} else {
+				for (sid in names(.object@fragments)){
+					fragGr <- getFragmentGr(.object, sid)
+					idx <- !(as.character(seqnames(fragGr)) %in% exclChrom)
+					fragGr <- fragGr[idx]
+					if (.object@diskDump.fragments){
+						fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
+						saveRDS(fragGr, fn)
+						fragGr <- fn
+					}
+					.object@fragments[[sid]] <- fragGr
+				}
 			}
-			
 		}
 		return(.object)
 	}
@@ -1654,19 +1696,42 @@ setMethod("filterByGRanges",
 		}
 		if (length(.object@fragments) > 0){
 			logger.status("Filtering fragment data")
-			for (sid in names(.object@fragments)){
-				fragGr <- getFragmentGr(.object, sid)
-				idx <- overlapsAny(fragGr, gr) # whitelist
-				if (method=="black") idx <- !idx
-				fragGr <- fragGr[idx]
-				if (.object@diskDump.fragments){
+			chunkedFragmentFiles <- .object@diskDump.fragments && .hasSlot(.object, "diskDump.fragments.nSamplesPerFile") && .object@diskDump.fragments.nSamplesPerFile > 1
+			if (chunkedFragmentFiles){
+				isFile <- sapply(.object@fragments, is.character)
+				if (!all(isFile)) logger.error("Expected all disk-dumped fragment files")
+				fns <- unlist(.object@fragments)
+				names(fns) <- names(.object@fragments)
+				for (fn in unique(fns)){
+					fragGrl <- readRDS(fn)
+					sids <- names(fragGrl)
+					# filter
+					fragGrl_filt <- endoapply(fragGrl, FUN=function(x){
+						idx <- overlapsAny(fragGr, gr) # whitelist
+						if (method=="black") idx <- !idx
+						return(x[idx])
+					})
+					names(fragGrl_filt) <- sids
+					# save the list object to disk
 					fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
-					saveRDS(fragGr, fn)
-					fragGr <- fn
+					saveRDS(fragGrl_filt, fn)
+					# replace old filename references
+					.object@fragments[sids] <- rep(list(fn), length(sids))
 				}
-				.object@fragments[[sid]] <- fragGr
+			} else {
+				for (sid in names(.object@fragments)){
+					fragGr <- getFragmentGr(.object, sid)
+					idx <- overlapsAny(fragGr, gr) # whitelist
+					if (method=="black") idx <- !idx
+					fragGr <- fragGr[idx]
+					if (.object@diskDump.fragments){
+						fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
+						saveRDS(fragGr, fn)
+						fragGr <- fn
+					}
+					.object@fragments[[sid]] <- fragGr
+				}
 			}
-			
 		}
 		return(.object)
 	}
