@@ -223,10 +223,14 @@ getConsensusPeakSet <- function(grl, mode="no_by_score", grouping=NULL, groupAgr
 
 	res <- NULL
 	if (mode=="no_by_score"){
-		# TODO: check ALTERNATIVES A and B: investigate whether merging all peaks and getting non-overlapping set (instead of iterating over samples)
+		# Testing ALTERNATIVES A and B: investigate whether merging all peaks and getting non-overlapping set (instead of iterating over samples)
 		# is i) faster and ii) yields more consistent results
-		# my guess: i) potentially faster, but not necessarily, ii) results should be very similar
+		# ==>
+		# i) B is much faster
+		# ii) results should be very similar
+		# 
 		# # ALTERNATIVE (A) iterate over samples
+		# i <- 0
 		# for (sid in sampleIds){
 		# 	i <- i + 1
 		# 	logger.status(c("Processing peaks for sample:", sid, paste0("(",i, " of ", length(sampleIds), ")")))
