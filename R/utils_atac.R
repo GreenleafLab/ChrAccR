@@ -196,10 +196,12 @@ getNonOverlappingByScore <- function(gr, scoreCol="score"){
 #'                     to keep it.
 #' @param scoreCol     name of the column to be used as score in the \code{elementMetadata} of the peak sets. This will determine which peak is selected
 #'                     if multiple peaks overlap
+#' @param keepOvInfo   keep annotation columns in the elementMetadata of the results specifying whether a consensus peak overlaps with a
+#'                     peak in each sample
 #' @return \code{GRanges} object the containing consensus peak set
 #' @author Fabian Mueller
 #' @export
-getConsensusPeakSet <- function(grl, mode="no_by_score", grouping=NULL, groupAgreePerc=1.0, scoreCol="score"){
+getConsensusPeakSet <- function(grl, mode="no_by_score", grouping=NULL, groupAgreePerc=1.0, scoreCol="score", keepOvInfo=FALSE){
 	supportedModes <- c("no_by_score")
 	if (!is.element(mode, supportedModes)) logger.error(c("unsupported mode:", mode))
 	if (!is.list(grl) && !is.element(class(grl), c("GRangesList", "CompressedGRangesList"))){
@@ -245,9 +247,11 @@ getConsensusPeakSet <- function(grl, mode="no_by_score", grouping=NULL, groupAgr
 	ovMat <- as.matrix(elementMetadata(res)[,paste0(".ov.", sampleIds)])
 	colnames(ovMat) <- sampleIds
 
-	#remove the helper columns
-	for (sid in sampleIds){
-		elementMetadata(res)[,paste0(".ov.", sid)] <- NULL
+	if (!keepOvInfo){
+		#remove the helper columns
+		for (sid in sampleIds){
+			elementMetadata(res)[,paste0(".ov.", sid)] <- NULL
+		}
 	}
 
 	if (!is.null(grouping) && groupAgreePerc > 0){

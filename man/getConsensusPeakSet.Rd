@@ -5,7 +5,7 @@
 \title{getConsensusPeakSet}
 \usage{
 getConsensusPeakSet(grl, mode = "no_by_score", grouping = NULL,
-  groupAgreePerc = 1, scoreCol = "score")
+  groupAgreePerc = 1, scoreCol = "score", keepOvInfo = FALSE)
 }
 \arguments{
 \item{grl}{list or \code{GRangesList} object containing the peak sets for each sample}
@@ -21,6 +21,9 @@ to keep it.}
 
 \item{scoreCol}{name of the column to be used as score in the \code{elementMetadata} of the peak sets. This will determine which peak is selected
 if multiple peaks overlap}
+
+\item{keepOvInfo}{keep annotation columns in the elementMetadata of the results specifying whether a consensus peak overlaps with a
+peak in each sample}
 }
 \value{
 \code{GRanges} object the containing consensus peak set
