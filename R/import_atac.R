@@ -406,7 +406,7 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 			elementMetadata(rr)[,"score_norm"] <- ecdf(scs)(scs)
 			elementMetadata(rr)[,"sampleId"] <- sid
 
-			#filter peaks with q-value < 0.01
+			# only retain peaks with q-value < 0.01
 			rr <- rr[elementMetadata(rr)[,"negLog10qval"] > -log10(0.01)]
 
 			rr <- trim(promoters(rr, upstream=ceiling(unifWidth/2), downstream=ceiling(unifWidth/2)+1)) #extend each summit on each side by half the width
