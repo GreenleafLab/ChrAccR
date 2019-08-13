@@ -327,8 +327,10 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 	}
 
 	logger.start("Reading peak sets")
-		peakGrl <- lapply(sampleIds, FUN=function(sid){
-			logger.status(c("sample:", sid))
+		nSamples <- length(sampleIds)
+		peakGrl <- lapply(1:nSamples, FUN=function(i){
+			sid <- sampleIds[i]
+			logger.status(c("sample:", sid, paste0("(", i, " of ", nSamples, ")")))
 			return(peakFun(inputFns[sid], sid))
 		})
 		names(peakGrl) <- sampleIds
