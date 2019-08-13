@@ -223,26 +223,35 @@ getConsensusPeakSet <- function(grl, mode="no_by_score", grouping=NULL, groupAgr
 
 	res <- NULL
 	if (mode=="no_by_score"){
-		for (sid in sampleIds){
-			i <- i + 1
-			logger.status(c("Processing peaks for sample:", sid, paste0("(",i, " of ", length(sampleIds), ")")))
-			peakSet.cur <- grl[[sid]]
-			if (!is.element(class(peakSet.cur), c("GRanges"))) logger.error("Not a GRanges object")
+		# TODO: check ALTERNATIVES A and B: investigate whether merging all peaks and getting non-overlapping set (instead of iterating over samples)
+		# is i) faster and ii) yields more consistent results
+		# my guess: i) potentially faster, but not necessarily, ii) results should be very similar
+		# # ALTERNATIVE (A) iterate over samples
+		# for (sid in sampleIds){
+		# 	i <- i + 1
+		# 	logger.status(c("Processing peaks for sample:", sid, paste0("(",i, " of ", length(sampleIds), ")")))
+		# 	peakSet.cur <- grl[[sid]]
+		# 	if (!is.element(class(peakSet.cur), c("GRanges"))) logger.error("Not a GRanges object")
 			
-			#add coverage info for all samples
-			elementMetadata(peakSet.cur)[,paste0(".ov.", sampleIds)] <- FALSE # as.logical(NA)
+		# 	#add coverage info for all samples
+		# 	elementMetadata(peakSet.cur)[,paste0(".ov.", sampleIds)] <- FALSE # as.logical(NA)
 
-			if (is.null(res)){
-				#remove overlapping peaks in initial sample based on normalized scores
-				peakSet.cur <- getNonOverlappingByScore(peakSet.cur, scoreCol=scoreCol)
-				#initialize peak set with all peaks from the first sample
-				elementMetadata(peakSet.cur)[,paste0(".ov.", sid)] <- TRUE
-				res <- peakSet.cur
-			} else {
-				# add new peaks and remove the overlapping ones by taking the peaks with the best score
-				res <- getNonOverlappingByScore(c(res, peakSet.cur), scoreCol=scoreCol)
-				elementMetadata(res)[,paste0(".ov.", sid)] <- overlapsAny(res, peakSet.cur, ignore.strand=TRUE)
-			}
+		# 	if (is.null(res)){
+		# 		#remove overlapping peaks in initial sample based on normalized scores
+		# 		peakSet.cur <- getNonOverlappingByScore(peakSet.cur, scoreCol=scoreCol)
+		# 		#initialize peak set with all peaks from the first sample
+		# 		elementMetadata(peakSet.cur)[,paste0(".ov.", sid)] <- TRUE
+		# 		res <- peakSet.cur
+		# 	} else {
+		# 		# add new peaks and remove the overlapping ones by taking the peaks with the best score
+		# 		res <- getNonOverlappingByScore(c(res, peakSet.cur), scoreCol=scoreCol)
+		# 		elementMetadata(res)[,paste0(".ov.", sid)] <- overlapsAny(res, peakSet.cur, ignore.strand=TRUE)
+		# 	}
+		# }
+		# ALTERNATIVE (B) joined set
+		res <- getNonOverlappingByScore(unlist(grl), scoreCol=scoreCol)
+		for (sid in sampleIds){
+			elementMetadata(res)[,paste0(".ov.", sid)] <- overlapsAny(res, grl[[sid]], ignore.strand=TRUE)
 		}
 	}
 	nTotal <- length(res)
