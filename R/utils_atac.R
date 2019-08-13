@@ -69,6 +69,7 @@ getATACfragments <- function(ga, offsetTn=TRUE){
 	return(res)
 }
 
+#-------------------------------------------------------------------------------
 #' getInsertionSitesFromFragmentGr
 #' 
 #' Given a \code{GAlignmentPairs} or \code{GAlignments} object, return a \code{GRanges} object containing the fragment (or insertion site for single-end data)
@@ -117,6 +118,9 @@ getInsertionSitesFromFragmentGr <- function(fragGr){
 	return(grins)
 }
 
+################################################################################
+# Peak helper functions
+################################################################################
 #' readMACS2peakFile
 #' 
 #' Reads the MACS2 ouput as GRanges
@@ -139,4 +143,134 @@ readMACS2peakFile <- function(fn){
 	elementMetadata(gr)[,"summit"] <- start(gr)+elementMetadata(gr)[,"summitOffset"]
 
 	return(gr)
+}
+
+#-------------------------------------------------------------------------------
+#' getNonOverlappingByScore
+#' 
+#' Retrieve the set of non-verlapping regions by iteratively picking the region with maximum score for
+#' each set of consecutively overlapping regions
+#' @param gr           \code{GRanges} object
+#' @param scoreCol     name of the column to be used as score in the \code{elementMetadata} of the \code{gr} object
+#' @return \code{GRanges} object containing non-overlapping regions
+#' @author Fabian Mueller
+#' @export
+getNonOverlappingByScore <- function(gr, scoreCol="score"){
+	gr.rem <- gr
+
+	res <- GRanges()
+	seqlevels(res) <- seqlevels(gr)
+	seqlengths(res) <- seqlengths(gr)
+	genome(res) <- genome(gr)
+	i <- 0
+	while (length(gr.rem) > 0){
+		i <- i + 1
+		# logger.status(c("iteration", i)) #DEBUG
+		scs <- elementMetadata(gr.rem)[,scoreCol]
+		gr.merged <- reduce(gr.rem, min.gapwidth=0L, with.revmap=TRUE, ignore.strand=TRUE)
+		# maxScoreIdx <- sapply(gr.merged, FUN=function(x){
+		# 	idx <- elementMetadata(x)[,"revmap"][[1]]
+		# 	return(idx[which.max(scs[idx])])
+		# }) #too slow
+		maxScoreIdx <- sapply(elementMetadata(gr.merged)[,"revmap"], FUN=function(idx){
+			return(idx[which.max(scs[idx])])
+		})
+		bait <- gr.rem[maxScoreIdx]
+		res <- c(res, bait)
+		gr.rem <- gr.rem[!overlapsAny(gr.rem, bait, ignore.strand=TRUE)]
+		# logger.info(c(length(gr.rem), "regions left")) #DEBUG
+	}
+	return(res)
+}
+
+#-------------------------------------------------------------------------------
+#' getConsensusPeakSet
+#' 
+#' Retrieve a consensus peak set from a set of peak lists
+#' @param grl		   list or \code{GRangesList} object containing the peak sets for each sample
+#' @param mode         consensus mode. Currently only "no_by_score" (non-overlapping; i.e. select the peak with the highest score from each set of
+#'                     overlapping peaks) is supported.
+#' @param grouping     vector of group memberships (numeric, character or factor). must be of the same length as \code{grl}
+#' @param groupAgreePerc percentile of members in a group required to contain a peak in order to keep it.
+#'                     E.g. a value of 1 (default) means that all replicates in a group are required to contain that peak in order
+#'                     to keep it.
+#' @param scoreCol     name of the column to be used as score in the \code{elementMetadata} of the peak sets. This will determine which peak is selected
+#'                     if multiple peaks overlap
+#' @return \code{GRanges} object the containing consensus peak set
+#' @author Fabian Mueller
+#' @export
+getConsensusPeakSet <- function(grl, mode="no_by_score", grouping=NULL, groupAgreePerc=1.0, scoreCol="score"){
+	supportedModes <- c("no_by_score")
+	if (!is.element(mode, supportedModes)) logger.error(c("unsupported mode:", mode))
+	if (!is.list(grl) && !is.element(class(grl), c("GRangesList", "CompressedGRangesList"))){
+		logger.error("Invalid grl argument. expected list or GRangesList")
+	}
+	nSamples <- length(grl)
+	if (length(grouping) > 0 && length(grouping)!=nSamples) logger.error("Grouping info must match the number of samples")
+	if (is.null(names(grl))){
+		logger.warning("No sample names specified for the peak list. Assigning arbitrary names")
+		names(grl) <- paste0("sample", 1:nSamples)
+	}
+	if (groupAgreePerc > 1 || groupAgreePerc < 0){
+		logger.error(c("Invalid value for groupAgreePerc. Must be in [0,1]"))
+	}
+
+	sampleIds <- names(grl)
+
+	res <- NULL
+	if (mode=="no_by_score"){
+		for (sid in sampleIds){
+			i <- i + 1
+			logger.status(c("Reading peaks for sample:", sid, paste0("(",i, " of ", length(sampleIds), ")")))
+			peakSet.cur <- grl[[sid]]
+			if (!is.element(class(peakSet.cur), c("GRanges"))) logger.error("Not a GRanges object")
+			
+			#add coverage info for all samples
+			elementMetadata(peakSet.cur)[,paste0(".ov.", sampleIds)] <- FALSE # as.logical(NA)
+
+			if (is.null(res)){
+				#remove overlapping peaks in initial sample based on normalized scores
+				peakSet.cur <- getNonOverlappingByScore(peakSet.cur, scoreCol=scoreCol)
+				#initialize peak set with all peaks from the first sample
+				elementMetadata(peakSet.cur)[,paste0(".ov.", sid)] <- TRUE
+				res <- peakSet.cur
+			} else {
+				# add new peaks and remove the overlapping ones by taking the peaks with the best score
+				res <- getNonOverlappingByScore(c(res, peakSet.cur), scoreCol=scoreCol)
+				elementMetadata(res)[,paste0(".ov.", sid)] <- overlapsAny(res, peakSet.cur, ignore.strand=TRUE)
+			}
+		}
+	}
+	nTotal <- length(res)
+	ovMat <- as.matrix(elementMetadata(res)[,paste0(".ov.", sampleIds)])
+	colnames(ovMat) <- sampleIds
+
+	#remove the helper columns
+	for (sid in sampleIds){
+		elementMetadata(res)[,paste0(".ov.", sid)] <- NULL
+	}
+
+	if (!is.null(grouping) && groupAgreePerc > 0){
+		logger.start("Accounting for peak reproducibility across replicates")
+			groupF <- factor(grouping)
+			gRepMat <- matrix(as.logical(NA), nrow=nTotal, ncol=nlevels(groupF))
+			colnames(gRepMat) <- levels(groupF)
+			for (gg in levels(groupF)){
+				sidsRepl <- sampleIds[groupF==gg]
+				ovMat_cur <- ovMat[, sidsRepl, drop=FALSE]
+				nReq <- as.integer(ceiling(groupAgreePerc * length(sidsRepl)))
+				gRepMat[,gg] <- rowSums(ovMat_cur) >= nReq
+			}
+			keep <- matrixStats::rowAnys(gRepMat)
+
+			nRem <- nTotal - sum(keep)
+			logger.info(c("Removed", nRem, "of", nTotal, "peaks", paste0("(",round(nRem/nTotal*100, 2),"%)"), "because they were not reproduced by more than", round(groupAgreePerc*100, 2), "% of samples in any group"))
+			res <- res[keep]
+		logger.completed()
+	}
+
+	#sort
+	res <- sortSeqlevels(res)
+	res <- sort(res)
+	return(res)
 }
