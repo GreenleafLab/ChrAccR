@@ -346,7 +346,7 @@ getNonOverlappingByScore <- function(gr, scoreCol="score"){
 #' @author Fabian Mueller
 #' @export
 getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sampleIdCol=filePrefixCol, type="summits_no_fw", unifWidth=500L, replicateCol=NA, replicatePercReq=1.0, keepOvInfo=FALSE){
-	if (!is.element(type, c("summits_no_fw"))){
+	if (!is.element(type, c("summits_no_fw", "summits_filt_no_fw"))){
 		logger.error(c("Unsupported import type:", type))
 	}
 	if (replicatePercReq > 1 || replicatePercReq < 0){
