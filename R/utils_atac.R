@@ -116,3 +116,27 @@ getInsertionSitesFromFragmentGr <- function(fragGr){
 	grins <- grins[order(as.integer(seqnames(grins)), start(grins), end(grins), as.integer(strand(grins)))]
 	return(grins)
 }
+
+#' readMACS2peakFile
+#' 
+#' Reads the MACS2 ouput as GRanges
+#' @param fn	Filename for MACS2 narrow peak file
+#' @return \code{GRanges} object containing peak information
+#' @author Fabian Mueller
+#' @export
+readMACS2peakFile <- function(fn){
+	if (!is.character(fn) || length(fn)!=1 || !file.exists(fn)){
+		logger.error(c(fn, "is not a valid peak file"))
+	}
+	if (!grepl("_peaks\\.narrowPeak$", fn)){
+		logger.warning(c("MACS2 peak file with unrecognized suffix/file extension:", fn))
+	}
+	df <- readTab(fn, header=FALSE)
+	colnames(df) <- c("chrom", "chromStart", "chromEnd", "name", "score", "strand", "foldChange", "negLog10pval", "negLog10qval", "summitOffset")
+	df[df[,"strand"]==".","strand"] <- "*"
+
+	gr <- muRtools::df2granges(df, ids=df[,"name"], chrom.col=1L, start.col=2L, end.col=3L, strand.col=6L, coord.format="B0RE", assembly=NULL, doSort=TRUE, adjNumChromNames=TRUE)
+	elementMetadata(gr)[,"summit"] <- start(gr)+elementMetadata(gr)[,"summitOffset"]
+
+	return(gr)
+}

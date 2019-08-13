@@ -2454,7 +2454,8 @@ setMethod("callPeaks",
 				logger.status(c("Calling peaks for sample:", sid))
 				fp <- getHashString(pattern=sid)
 				insFn <- file.path(callDir, paste0(fp, "_ins.bed"))
-				peakFn <- file.path(callDir, paste0(fp, "_summits.bed"))
+				# peakFn <- file.path(callDir, paste0(fp, "_summits.bed"))
+				peakFn <- file.path(callDir, paste0(fp, "_peaks.narrowPeak"))
 
 				# logger.status(c("[DEBUG:] Retrieving insertion sites..."))
 				insGr <- getInsertionSites(.object, sid)[[1]]
@@ -2475,11 +2476,16 @@ setMethod("callPeaks",
 				system2(methodOpts$macs2.exec, aa, wait=TRUE, stdout="", stderr="")
 
 				# logger.status(c("[DEBUG:] Reading MACS2 output..."))
-				peakGr <- rtracklayer::import(peakFn, format="BED")
+				# peakGr <- rtracklayer::import(peakFn, format="BED")
+				peakGr <- readMACS2peakFile(peakFn)
 				peakGr <- setGenomeProps(peakGr, .object@genome, onlyMainChrs=TRUE)
 				peakGr <- peakGr[isCanonicalChrom(as.character(seqnames(peakGr)))]
+				elementMetadata(peakGr)[,"calledPeakStart"] <- start(peakGr)
+				elementMetadata(peakGr)[,"calledPeakEnd"] <- end(peakGr)
+				start(peakGr) <- end(peakGr) <- elementMetadata(peakGr)[,"summit"]
 				# scale scores to their percentiles
-				scs <- elementMetadata(peakGr)[,"score"]
+				# scs <- elementMetadata(peakGr)[,"score"]
+				scs <- elementMetadata(peakGr)[,"negLog10qval"]
 				elementMetadata(peakGr)[,"score_norm"] <- ecdf(scs)(scs)
 				elementMetadata(peakGr)[,"name"] <- gsub(paste0("^", fp), sid, elementMetadata(peakGr)[,"name"])#replace the hashstring in the name by just the sample id
 

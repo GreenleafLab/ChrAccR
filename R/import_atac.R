@@ -357,9 +357,15 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 	rownames(sampleAnnot) <- sampleIds
 
 	inputFns <- c()
-	if (type=="summits_no_fw"){
+	if (is.element(type, c("summits_no_fw", "summits_filt_no_fw"))){
 		if (nchar(dataDir) > 0){
-			inputFns <- file.path(dataDir, paste0(sampleAnnot[,filePrefixCol], "_summits.bed"))
+			fns <- NULL
+			if (type=="summits_no_fw"){
+				fns <- paste0(sampleAnnot[,filePrefixCol], "_summits.bed")
+			} else if (type=="summits_filt_no_fw"){
+				fns <- paste0(sampleAnnot[,filePrefixCol], "_peaks.narrowPeak")
+			}
+			inputFns <- file.path(dataDir, fns)
 		} else {
 			inputFns <- sampleAnnot[,filePrefixCol]
 		}
@@ -383,6 +389,26 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 			elementMetadata(rr)[,"score_norm"] <- ecdf(scs)(scs)
 			elementMetadata(rr)[,"sampleId"] <- sid
 			#extend peaks around the summit
+			rr <- trim(promoters(rr, upstream=ceiling(unifWidth/2), downstream=ceiling(unifWidth/2)+1)) #extend each summit on each side by half the width
+			rr <- rr[width(rr)==median(width(rr))] #remove too short regions which might have been trimmed
+			return(rr)
+		}
+	} else if (type=="summits_filt_no_fw"){
+		peakFun <- function(fn, sid){
+			rr <- readMACS2peakFile(fn)
+			rr <- setGenomeProps(rr, genome, onlyMainChrs=TRUE)
+			rr <- rr[isCanonicalChrom(as.character(seqnames(rr)))]
+			elementMetadata(rr)[,"calledPeakStart"] <- start(rr)
+			elementMetadata(rr)[,"calledPeakEnd"] <- end(rr)
+			start(rr) <- end(rr) <- elementMetadata(rr)[,"summit"]
+
+			scs <- elementMetadata(rr)[,"negLog10qval"]
+			elementMetadata(rr)[,"score_norm"] <- ecdf(scs)(scs)
+			elementMetadata(rr)[,"sampleId"] <- sid
+
+			#filter peaks with q-value < 0.01
+			rr <- rr[elementMetadata(rr)[,"negLog10qval"] > -log10(0.01)]
+
 			rr <- trim(promoters(rr, upstream=ceiling(unifWidth/2), downstream=ceiling(unifWidth/2)+1)) #extend each summit on each side by half the width
 			rr <- rr[width(rr)==median(width(rr))] #remove too short regions which might have been trimmed
 			return(rr)
