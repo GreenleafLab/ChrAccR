@@ -194,6 +194,8 @@ getNonOverlappingByScore <- function(gr, scoreCol="score"){
 #' @param groupAgreePerc percentile of members in a group required to contain a peak in order to keep it.
 #'                     E.g. a value of 1 (default) means that all replicates in a group are required to contain that peak in order
 #'                     to keep it.
+#' @param groupConsSelect if set, the peak set will also be checked for consistency, i.e. in order to retain a peak
+#'                     it has to be consistently be present or absent in each group (as specified in \code{groupAgreePerc} percent of samples)
 #' @param scoreCol     name of the column to be used as score in the \code{elementMetadata} of the peak sets. This will determine which peak is selected
 #'                     if multiple peaks overlap
 #' @param keepOvInfo   keep annotation columns in the elementMetadata of the results specifying whether a consensus peak overlaps with a
@@ -201,7 +203,7 @@ getNonOverlappingByScore <- function(gr, scoreCol="score"){
 #' @return \code{GRanges} object the containing consensus peak set
 #' @author Fabian Mueller
 #' @export
-getConsensusPeakSet <- function(grl, mode="no_by_score", grouping=NULL, groupAgreePerc=1.0, scoreCol="score", keepOvInfo=FALSE){
+getConsensusPeakSet <- function(grl, mode="no_by_score", grouping=NULL, groupAgreePerc=1.0, groupConsSelect=FALSE, scoreCol="score", keepOvInfo=FALSE){
 	supportedModes <- c("no_by_score")
 	if (!is.element(mode, supportedModes)) logger.error(c("unsupported mode:", mode))
 	if (!is.list(grl) && !is.element(class(grl), c("GRangesList", "CompressedGRangesList"))){
@@ -223,7 +225,7 @@ getConsensusPeakSet <- function(grl, mode="no_by_score", grouping=NULL, groupAgr
 	if (mode=="no_by_score"){
 		for (sid in sampleIds){
 			i <- i + 1
-			logger.status(c("Reading peaks for sample:", sid, paste0("(",i, " of ", length(sampleIds), ")")))
+			logger.status(c("Processing peaks for sample:", sid, paste0("(",i, " of ", length(sampleIds), ")")))
 			peakSet.cur <- grl[[sid]]
 			if (!is.element(class(peakSet.cur), c("GRanges"))) logger.error("Not a GRanges object")
 			
@@ -257,18 +259,31 @@ getConsensusPeakSet <- function(grl, mode="no_by_score", grouping=NULL, groupAgr
 	if (!is.null(grouping) && groupAgreePerc > 0){
 		logger.start("Accounting for peak reproducibility across replicates")
 			groupF <- factor(grouping)
+			# matrix indicating whether a peak is represented by sufficiently many samples in a group
 			gRepMat <- matrix(as.logical(NA), nrow=nTotal, ncol=nlevels(groupF))
 			colnames(gRepMat) <- levels(groupF)
+			# matrix indicating whether a peak is absent in sufficiently many samples in a group
+			gAbsentMat <- matrix(as.logical(NA), nrow=nTotal, ncol=nlevels(groupF))
+			colnames(gAbsentMat) <- levels(groupF)
 			for (gg in levels(groupF)){
 				sidsRepl <- sampleIds[groupF==gg]
 				ovMat_cur <- ovMat[, sidsRepl, drop=FALSE]
 				nReq <- as.integer(ceiling(groupAgreePerc * length(sidsRepl)))
 				gRepMat[,gg] <- rowSums(ovMat_cur) >= nReq
+				gAbsentMat[,gg] <- rowSums(!ovMat_cur) >= nReq
 			}
 			keep <- matrixStats::rowAnys(gRepMat)
 
 			nRem <- nTotal - sum(keep)
 			logger.info(c("Removed", nRem, "of", nTotal, "peaks", paste0("(",round(nRem/nTotal*100, 2),"%)"), "because they were not reproduced by more than", round(groupAgreePerc*100, 2), "% of samples in any group"))
+
+			if (groupConsSelect){
+				keep2 <- matrixStats::rowAlls(gRepMat | gAbsentMat)
+
+				nRem <- nTotal - sum(keep2)
+				logger.info(c("Removed", nRem, "of", nTotal, "peaks", paste0("(",round(nRem/nTotal*100, 2),"%)"), "because they were not consistent for all groups (", round(groupAgreePerc*100, 2), "% of samples in a group consistently contained or did not contain a peak)"))
+				keep <- keep & keep2
+			}
 			res <- res[keep]
 		logger.completed()
 	}

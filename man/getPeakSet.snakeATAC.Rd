@@ -7,7 +7,7 @@
 getPeakSet.snakeATAC(sampleAnnot, filePrefixCol, genome, dataDir,
   sampleIdCol = filePrefixCol, type = "summits_no_fw",
   unifWidth = 500L, replicateCol = NA, replicatePercReq = 1,
-  keepOvInfo = FALSE)
+  replicateConsSelect = FALSE, keepOvInfo = FALSE)
 }
 \arguments{
 \item{sampleAnnot}{data.frame specifying the sample annotation table}
@@ -29,6 +29,9 @@ getPeakSet.snakeATAC(sampleAnnot, filePrefixCol, genome, dataDir,
 \item{replicatePercReq}{percentile of replicates in a group required to contain a peak in order to keep it.
 E.g. a value of 1 (default) means that all replicates in a group are required to contain that peak in order
 to keep it.}
+
+\item{replicateConsSelect}{if set, the peak set will also be checked for consistency, i.e. in order to retain a peak
+it has to be consistently be present or absent in each replicate group (as specified in \code{replicatePercReq} percent of samples)}
 
 \item{keepOvInfo}{keep annotation columns in the elementMetadata of the results specifying whether a consensus peak overlaps with a
 peak in each sample}

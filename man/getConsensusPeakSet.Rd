@@ -5,7 +5,8 @@
 \title{getConsensusPeakSet}
 \usage{
 getConsensusPeakSet(grl, mode = "no_by_score", grouping = NULL,
-  groupAgreePerc = 1, scoreCol = "score", keepOvInfo = FALSE)
+  groupAgreePerc = 1, groupConsSelect = FALSE, scoreCol = "score",
+  keepOvInfo = FALSE)
 }
 \arguments{
 \item{grl}{list or \code{GRangesList} object containing the peak sets for each sample}
@@ -18,6 +19,9 @@ overlapping peaks) is supported.}
 \item{groupAgreePerc}{percentile of members in a group required to contain a peak in order to keep it.
 E.g. a value of 1 (default) means that all replicates in a group are required to contain that peak in order
 to keep it.}
+
+\item{groupConsSelect}{if set, the peak set will also be checked for consistency, i.e. in order to retain a peak
+it has to be consistently be present or absent in each group (as specified in \code{groupAgreePerc} percent of samples)}
 
 \item{scoreCol}{name of the column to be used as score in the \code{elementMetadata} of the peak sets. This will determine which peak is selected
 if multiple peaks overlap}

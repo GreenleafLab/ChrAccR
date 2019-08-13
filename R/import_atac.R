@@ -249,12 +249,14 @@ DsATAC.bam <- function(sampleAnnot, bamFiles, genome, regionSets=NULL, sampleIdC
 #' @param replicatePercReq percentile of replicates in a group required to contain a peak in order to keep it.
 #'                     E.g. a value of 1 (default) means that all replicates in a group are required to contain that peak in order
 #'                     to keep it.
+#' @param replicateConsSelect if set, the peak set will also be checked for consistency, i.e. in order to retain a peak
+#'                     it has to be consistently be present or absent in each replicate group (as specified in \code{replicatePercReq} percent of samples)
 #' @param keepOvInfo   keep annotation columns in the elementMetadata of the results specifying whether a consensus peak overlaps with a
 #'                     peak in each sample
 #' @return \code{GRanges} object containing consensus peak set
 #' @author Fabian Mueller
 #' @export
-getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sampleIdCol=filePrefixCol, type="summits_no_fw", unifWidth=500L, replicateCol=NA, replicatePercReq=1.0, keepOvInfo=FALSE){
+getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sampleIdCol=filePrefixCol, type="summits_no_fw", unifWidth=500L, replicateCol=NA, replicatePercReq=1.0, replicateConsSelect=FALSE, keepOvInfo=FALSE){
 	if (!is.element(type, c("summits_no_fw", "summits_filt_no_fw"))){
 		logger.error(c("Unsupported import type:", type))
 	}
@@ -324,17 +326,20 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 		}
 	}
 
-	peakGrl <- lapply(sampleIds, FUN=function(sid){
-		peakFun(inputFns[sid], sid)
-	})
-	names(peakGrl) <- sampleIds
+	logger.start("Reading peak sets")
+		peakGrl <- lapply(sampleIds, FUN=function(sid){
+			logger.status(c("sample:", sid))
+			return(peakFun(inputFns[sid], sid))
+		})
+		names(peakGrl) <- sampleIds
+	logger.completed()
 
 	grps <- NULL
 	if (is.element(replicateCol, colnames(sampleAnnot)) && replicatePercReq>0){
 		grps <- sampleAnnot[,replicateCol]
 	}
 
-	res <- getConsensusPeakSet(peakGrl, mode="no_by_score", grouping=grps, groupAgreePerc=replicatePercReq, scoreCol="score_norm", keepOvInfo=keepOvInfo)
+	res <- getConsensusPeakSet(peakGrl, mode="no_by_score", grouping=grps, groupAgreePerc=replicatePercReq, groupConsSelect=replicateConsSelect, scoreCol="score_norm", keepOvInfo=keepOvInfo)
 	return(res)
 }
 #-------------------------------------------------------------------------------
