@@ -341,7 +341,9 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 		grps <- sampleAnnot[,replicateCol]
 	}
 
-	res <- getConsensusPeakSet(peakGrl, mode="no_by_score", grouping=grps, groupAgreePerc=replicatePercReq, groupConsSelect=replicateConsSelect, scoreCol="score_norm", keepOvInfo=keepOvInfo)
+	logger.start("Retrieving consensus peak set")
+		res <- getConsensusPeakSet(peakGrl, mode="no_by_score", grouping=grps, groupAgreePerc=replicatePercReq, groupConsSelect=replicateConsSelect, scoreCol="score_norm", keepOvInfo=keepOvInfo)
+	logger.completed()
 	return(res)
 }
 #-------------------------------------------------------------------------------
