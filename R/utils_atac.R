@@ -227,7 +227,7 @@ getConsensusPeakSet <- function(grl, mode="no_by_score", grouping=NULL, groupAgr
 		# is i) faster and ii) yields more consistent results
 		# ==>
 		# i) B is much faster
-		# ii) results should be very similar
+		# ii) A returns ~20% more peaks
 		# 
 		# # ALTERNATIVE (A) iterate over samples
 		# i <- 0
