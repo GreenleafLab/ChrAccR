@@ -223,11 +223,14 @@ getConsensusPeakSet <- function(grl, mode="no_by_score", grouping=NULL, groupAgr
 
 	res <- NULL
 	if (mode=="no_by_score"){
-		# Testing ALTERNATIVES A and B: investigate whether merging all peaks and getting non-overlapping set (instead of iterating over samples)
+		# Testing ALTERNATIVES A and B: investigate whether merging all peaks and getting non-overlapping set (method B; instead of iterating over samples (method A))
 		# is i) faster and ii) yields more consistent results
 		# ==>
 		# i) B is much faster
-		# ii) A returns ~20% more peaks
+		# ii) both methods initially return similar numbers of peaks (2.16M vs 2.2M in filtered drugPerturb example).
+		#     After filtering for replicate reproducibility, method B had more peaks than method A (578k vs 836k)
+		#     After groupConsSelect, method B retains fewer peaks than method A (33k vs 54k)
+		# ==> Conclusion: go with method B, since it is significantly faster and the changes in the peak sets are not dramatic
 		# 
 		# # ALTERNATIVE (A) iterate over samples
 		# i <- 0
