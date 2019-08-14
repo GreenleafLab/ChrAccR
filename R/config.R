@@ -21,6 +21,7 @@
 .config$chromVarMotifs <- c("jaspar_vert")
 .config$chromVarRegionTypes <- NULL
 .config$annotationColumns <- NULL
+.config$annotationMinGroupSize <- 2L
 .config$exploratoryLogNormCounts <- TRUE
 .config$differentialColumns <- NULL
 .config$differentialCompNames <- NULL
@@ -62,6 +63,9 @@
 #'   }
 #'   \item{\bold{\code{annotationColumns}}}{
 #'       Sample annotation columns to be used for reporting
+#'   }
+#'   \item{\bold{\code{annotationMinGroupSize}}}{
+#'       Minimum size of a group to be used in the reports. Influences which annotation columns are selected for reporting.
 #'   }
 #'   \item{\bold{\code{exploratoryLogNormCounts}}}{
 #'       Should a log-normalization be applied in the exploratory plot sections of the reports (dimension reduction, heatmaps)

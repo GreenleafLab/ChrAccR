@@ -45,7 +45,7 @@ setMethod("createReport_differential",
 		rDir.data <- muReportR::getReportDir(rr, dir="data", absolute=FALSE)
 		rDir.data.abs <- muReportR::getReportDir(rr, dir="data", absolute=TRUE)
 		
-		compTab <- getComparisonTable(.object, cols=getConfigElement("differentialColumns"), compNames=getConfigElement("differentialCompNames"))
+		compTab <- getComparisonTable(.object, cols=getConfigElement("differentialColumns"), compNames=getConfigElement("differentialCompNames"), minGroupSize=getConfigElement("annotationMinGroupSize"))
 
 		if (is.null(compTab)) logger.error("No valid comparisons found")
 		if (nrow(compTab) > 10) logger.warning("An extensive amount of comparisons will be performed. Consider being more specific in the differentialColumns and differentialCompNames options.")

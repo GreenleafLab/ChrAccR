@@ -503,6 +503,7 @@ if (!isGeneric("getComparisonTable")) {
 #' @param .object \code{\linkS4class{DsAcc}} object
 #' @param cols    column names in the sample annotation table to consider for pairwise comparisons
 #' @param compNames  vector of character strings specifying a fixed comparison names to be parsed (format "$GRP1_NAME vs $GRP1_NAME [$ANNOTATION_COLUMN]")
+#' @param minGroupSize Minimum size of a group to be used in comparison. Affects the annotation columns that will be used for comparisons.
 #' @return a \code{data.frame} with comparison inforamtion containing columns for the comparison name (\code{compName}), 
 #'         column in the annotation table (\code{compCol})
 #'         and group names for the two groups in the comparison (\code{grp1Name, grp2Name}),
@@ -520,7 +521,8 @@ setMethod("getComparisonTable",
 	function(
 		.object,
 		cols=NULL,
-		compNames=NULL
+		compNames=NULL,
+		minGroupSize=2L
 	) {
 		colsAdd <- NULL
 		# parse fixed comparison names
@@ -542,7 +544,7 @@ setMethod("getComparisonTable",
 
 		# get comparison info
 		sannot <- getSampleAnnot(.object)
-		sampleGrps <- getGroupsFromTable(sannot, cols=unique(c(colsAdd, cols)))
+		sampleGrps <- getGroupsFromTable(sannot, cols=unique(c(colsAdd, cols)), minGroupSize=minGroupSize)
 		if (length(sampleGrps) < 1) logger.error("No valid comparisons found (to begin with)")
 		compTab <- do.call("rbind", lapply(1:length(sampleGrps), FUN=function(i){
 			tt <- NULL

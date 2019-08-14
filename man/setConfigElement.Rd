@@ -47,6 +47,9 @@ Set a configuration item to a given value
   \item{\bold{\code{annotationColumns}}}{
       Sample annotation columns to be used for reporting
   }
+  \item{\bold{\code{annotationMinGroupSize}}}{
+      Minimum size of a group to be used in the reports. Influences which annotation columns are selected for reporting.
+  }
   \item{\bold{\code{exploratoryLogNormCounts}}}{
       Should a log-normalization be applied in the exploratory plot sections of the reports (dimension reduction, heatmaps)
   }

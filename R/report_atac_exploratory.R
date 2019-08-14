@@ -51,7 +51,7 @@ setMethod("createReport_exploratory",
 
 		sannot <- getSampleAnnot(.object)
 		sannot[,".ALL"] <- "all"
-		sampleGrps <- getGroupsFromTable(sannot, cols=getConfigElement("annotationColumns"))
+		sampleGrps <- getGroupsFromTable(sannot, cols=getConfigElement("annotationColumns"), minGrpSize=getConfigElement("annotationMinGroupSize"))
 		sampleGrps <- c(list(".ALL"=c(1:nrow(sannot))), sampleGrps)
 		grpNames <- names(sampleGrps)
 

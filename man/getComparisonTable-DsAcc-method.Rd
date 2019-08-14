@@ -7,7 +7,7 @@
 \title{getComparisonTable-methods}
 \usage{
 \S4method{getComparisonTable}{DsAcc}(.object, cols = NULL,
-  compNames = NULL)
+  compNames = NULL, minGroupSize = 2L)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsAcc}} object}
@@ -15,6 +15,8 @@
 \item{cols}{column names in the sample annotation table to consider for pairwise comparisons}
 
 \item{compNames}{vector of character strings specifying a fixed comparison names to be parsed (format "$GRP1_NAME vs $GRP1_NAME [$ANNOTATION_COLUMN]")}
+
+\item{minGroupSize}{Minimum size of a group to be used in comparison. Affects the annotation columns that will be used for comparisons.}
 }
 \value{
 a \code{data.frame} with comparison inforamtion containing columns for the comparison name (\code{compName}), 
