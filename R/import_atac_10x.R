@@ -132,7 +132,7 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 	}
 
 	logger.start("Creating DsATAC object")
-		obj <- DsATACsc(cellAnnot, genome, diskDump=diskDump, diskDump.fragments=keepInsertionInfo, diskDump.fragments.nSamplesPerFile=500L, sparseCounts=TRUE)
+		obj <- DsATACsc(cellAnnot, genome, diskDump=diskDump, diskDump.fragments=keepInsertionInfo, sparseCounts=TRUE)
 		for (rt in names(regionSets)){
 			logger.info(c("Including region set:", rt))
 			obj <- regionAggregation(obj, regionSets[[rt]], rt, signal=NULL, dropEmpty=FALSE)
