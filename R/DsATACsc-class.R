@@ -59,6 +59,62 @@ DsATACsc <- function(sampleAnnot, genome, diskDump=FALSE, diskDump.fragments=TRU
 ################################################################################
 # Single-cell methods
 ################################################################################
+#-------------------------------------------------------------------------------
+
+if (!isGeneric("getScQcStatsTab")) {
+	setGeneric(
+		"getScQcStatsTab",
+		function(.object, ...) standardGeneric("getScQcStatsTab"),
+		signature=c(".object")
+	)
+}
+#' getScQcStatsTab-methods
+#'
+#' Retrieve a table of QC statistics for single cells
+#'
+#' @param .object    \code{\linkS4class{DsATACsc}} object
+#' @return an \code{data.frame} contain QC statistics for each cell
+#' 
+#' @rdname getScQcStatsTab-DsATACsc-method
+#' @docType methods
+#' @aliases getScQcStatsTab
+#' @aliases getScQcStatsTab,DsATACsc-method
+#' @author Fabian Mueller
+#' @export
+setMethod("getScQcStatsTab",
+	signature(
+		.object="DsATACsc"
+	),
+	function(
+		.object
+	) {
+		cellAnnot <- getSampleAnnot(.object)
+		sampleIdCn <- findOrderedNames(colnames(cellAnnot), c(".sampleid", "sampleid", ".CR.cellQC.barcode"), ignore.case=TRUE)
+		nFragCns <- c(
+			total=findOrderedNames(colnames(cellAnnot), ".CR.cellQC.total"),
+			pass=findOrderedNames(colnames(cellAnnot), ".CR.cellQC.passed_filters"),
+			tss=findOrderedNames(colnames(cellAnnot), ".CR.cellQC.TSS_fragments"),
+			peak=findOrderedNames(colnames(cellAnnot), ".CR.cellQC.peak_region_fragments"),
+			duplicate=findOrderedNames(colnames(cellAnnot), ".CR.cellQC.duplicate"),
+			mito=findOrderedNames(colnames(cellAnnot), ".CR.cellQC.mitochondrial")
+		)
+		summaryDf <- data.frame(cell=getSamples(.object), sample=rep("sample", nrow(cellAnnot)))
+		if (!is.na(sampleIdCn)) summaryDf[,"sample"] <- cellAnnot[,sampleIdCn]
+		for (cn in c("total", "pass")){
+			summaryDf[,muRtools::normalize.str(paste("n", cn, sep="_"), return.camel=TRUE)] <- cellAnnot[,nFragCns[cn]]
+		}
+		# to be divided by total reads
+		for (cn in c("mito", "duplicate")){
+			if (!is.na(nFragCns[cn])) summaryDf[,muRtools::normalize.str(paste("frac", cn, sep="_"), return.camel=TRUE)] <- cellAnnot[,nFragCns[cn]]/summaryDf[,"nTotal"]
+		}
+		# to be divided by passing reads
+		for (cn in c("tss", "peak")){
+			if (!is.na(nFragCns[cn])) summaryDf[,muRtools::normalize.str(paste("frac", cn, sep="_"), return.camel=TRUE)] <- cellAnnot[,nFragCns[cn]]/summaryDf[,"nPass"]
+		}
+		return(summaryDf)
+	}
+)
+
 if (!isGeneric("unsupervisedAnalysisSc")) {
 	setGeneric(
 		"unsupervisedAnalysisSc",

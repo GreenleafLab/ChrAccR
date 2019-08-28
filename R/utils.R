@@ -134,13 +134,18 @@ getGroupsFromTable <- function(tt, cols=NULL, minGrpSize=2, maxGrpCount=nrow(tt)
 		cname <- colnames(tt)[j]
 
 		vv <- tt[,j]
-		rr <- tapply(idxVec, vv, identity)
+		allNA <- all(is.na(vv))
+		if (allNA){
+			logger.warning(c("Detected only NAs for sample annotation column:", cname))
+		} else {
+			rr <- tapply(idxVec, vv, identity)
 
-		rr <- rr[sapply(rr, length) > 0] # ignore levels that are missing in the dataset
-		rr <- rr[sapply(rr, function(x){!any(is.na(x))})] # ignore levels that are missing in the dataset
-		passesMinSize <- sapply(rr, length) >= minGrpSize
-		if (length(rr) > 1 && length(rr) <= maxGrpCount && all(passesMinSize)){
-			res[[cname]] <- rr
+			rr <- rr[sapply(rr, length) > 0] # ignore levels that are missing in the dataset
+			rr <- rr[sapply(rr, function(x){!any(is.na(x))})] # ignore levels that are missing in the dataset
+			passesMinSize <- sapply(rr, length) >= minGrpSize
+			if (length(rr) > 1 && length(rr) <= maxGrpCount && all(passesMinSize)){
+				res[[cname]] <- rr
+			}
 		}
 	}
 	return(res)

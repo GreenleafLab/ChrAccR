@@ -41,7 +41,7 @@ setMethod("createReport_summary",
 		rDir.data.abs <- muReportR::getReportDir(rr, dir="data", absolute=TRUE)
 
 		hasFragments <- length(.object@fragments) > 0
-		isSingleCell <- class(.object)=="DsATACsc" # TODO
+		isSingleCell <- class(.object)=="DsATACsc"
 
 		fn.sannot <- file.path(rDir.data.abs, "sampleAnnot.tsv")
 		if (isSingleCell) fn.sannot <- file.path(rDir.data.abs, "cellAnnot.tsv")
@@ -97,28 +97,7 @@ setMethod("createReport_summary",
 			)
 			rr <- muReportR::addReportSection(rr, "Cell QC", txt, level=1L, collapsed=FALSE)
 
-			sampleIdCn <- findOrderedNames(colnames(sannot), c(".sampleid", "sampleid", ".CR.cellQC.barcode"), ignore.case=TRUE)
-			nFragCns <- c(
-				total=findOrderedNames(colnames(sannot), ".CR.cellQC.total"),
-				pass=findOrderedNames(colnames(sannot), ".CR.cellQC.passed_filters"),
-				tss=findOrderedNames(colnames(sannot), ".CR.cellQC.TSS_fragments"),
-				peak=findOrderedNames(colnames(sannot), ".CR.cellQC.peak_region_fragments"),
-				duplicate=findOrderedNames(colnames(sannot), ".CR.cellQC.duplicate"),
-				mito=findOrderedNames(colnames(sannot), ".CR.cellQC.mitochondrial")
-			)
-			summaryDf <- data.frame(cell=getSamples(.object), sample=rep("sample", nrow(sannot)))
-			if (!is.na(sampleIdCn)) summaryDf[,"sample"] <- sannot[,sampleIdCn]
-			for (cn in c("total", "pass")){
-				summaryDf[,muRtools::normalize.str(paste("n", cn, sep="_"), return.camel=TRUE)] <- sannot[,nFragCns[cn]]
-			}
-			# to be divided by total reads
-			for (cn in c("mito", "duplicate")){
-				if (!is.na(nFragCns[cn])) summaryDf[,muRtools::normalize.str(paste("frac", cn, sep="_"), return.camel=TRUE)] <- sannot[,nFragCns[cn]]/summaryDf[,"nTotal"]
-			}
-			# to be divided by passing reads
-			for (cn in c("tss", "peak")){
-				if (!is.na(nFragCns[cn])) summaryDf[,muRtools::normalize.str(paste("frac", cn, sep="_"), return.camel=TRUE)] <- sannot[,nFragCns[cn]]/summaryDf[,"nPass"]
-			}
+			summaryDf <- getScQcStatsTab(.object)
 			cns <- setdiff(colnames(summaryDf), c("cell", "sample"))
 
 			sampleStatsTab <- data.frame(
@@ -153,7 +132,7 @@ setMethod("createReport_summary",
 			
 			plotL <- lapply(cns, FUN=function(cn){
 				pp <- ggplot(summaryDf) + aes_string(x="sample", y=cn) +
-				      geom_violin(adjust=1, fill="#676D8D") +
+				      geom_violin(adjust=1, fill="#4d4f53") +
 				      geom_boxplot(aes(fill=NULL), outlier.shape=NA, width=0.2) +
 				      coord_flip() +
 				      theme(axis.title.y=element_blank()) + guides(fill=FALSE) 

@@ -44,6 +44,8 @@ setMethod("createReport_exploratory",
 		rDir.data <- muReportR::getReportDir(rr, dir="data", absolute=FALSE)
 		rDir.data.abs <- muReportR::getReportDir(rr, dir="data", absolute=TRUE)
 
+		isSingleCell <- class(.object)=="DsATACsc"
+		
 		regionTypes <- getRegionTypes(.object)
 		rts <- getConfigElement("regionTypes")
 		if (length(rts) > 0) regionTypes <- intersect(rts, regionTypes)
