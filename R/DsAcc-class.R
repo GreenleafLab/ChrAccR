@@ -430,7 +430,7 @@ saveDsAcc <- function(.object, path, forceDiskDump=FALSE, updateDiskRef=TRUE){
 						ddFns <- unlist(.object@fragments)
 						chunkL <- tapply(1:length(ddFns), ddFns, identity)
 						# check if already chunked
-						createNewChunkL <- !all(elementNROWS(chunkL)==1)
+						createNewChunkL <- all(elementNROWS(chunkL)==1)
 					}
 					if (createNewChunkL){
 						chunkL <- split(1:nSamples, rep(1:ceiling(nSamples/.object@diskDump.fragments.nSamplesPerFile), each=.object@diskDump.fragments.nSamplesPerFile)[1:nSamples])
