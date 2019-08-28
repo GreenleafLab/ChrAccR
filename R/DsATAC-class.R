@@ -748,11 +748,12 @@ setMethod("mergeSamples",
 			logger.status(paste0("Merging sample fragment data..."))
 			insL <- .object@fragments
 			.object@fragments <- lapply(mgL, FUN=function(iis){
-				rr <- insL[iis]
+				curInsL <- insL[iis]
+				curSids <- sids[iis]
 				rr <- lapply(seq_along(iis), FUN=function(i){
-					x <- rr[[i]]
+					x <- curInsL[[i]]
 					if (is.character(x)){
-						x <- getFragmentGr(.object, sids[i])
+						x <- getFragmentGr(.object, curSids[i])
 					}
 					elementMetadata(x)[,".sample"] <- sampleNames[iis[i]]
 					return(x)

@@ -314,6 +314,7 @@ setMethod("iterativeLSI",
 				clustRes <- Seurat::FindClusters(sObj, k.param=30, algorithm=1, n.start=100, n.iter=10, resolution=it0clusterResolution)
 				clustAss_it0 <- factor(paste0("c", clustRes@active.ident), levels=paste0("c", levels(clustRes@active.ident)))
 				names(clustAss_it0) <- names(clustRes@active.ident)
+				logger.info(c("Number of clusters found:", nlevels(clustAss_it0)))
 			logger.completed()
 			logger.start(c("Peak calling"))
 				logger.start("Creating cluster pseudo-bulk samples")
@@ -356,6 +357,7 @@ setMethod("iterativeLSI",
 				clustRes <- Seurat::FindClusters(sObj, k.param=30, algorithm=1, n.start=100, n.iter=10, resolution=it1clusterResolution)
 				clustAss_it1 <- factor(paste0("c", clustRes@active.ident), levels=paste0("c", levels(clustRes@active.ident)))
 				names(clustAss_it1) <- names(clustRes@active.ident)
+				logger.info(c("Number of clusters found:", nlevels(clustAss_it1)))
 			logger.completed()
 
 			if (!is.null(it1mostVarPeaks) && it1mostVarPeaks < nrow(cm)){
@@ -396,6 +398,7 @@ setMethod("iterativeLSI",
 				clustRes <- Seurat::FindClusters(sObj, k.param=30, algorithm=1, n.start=100, n.iter=10, resolution=it2clusterResolution)
 				clustAss <- factor(paste0("c", clustRes@active.ident), levels=paste0("c", levels(clustRes@active.ident)))
 				names(clustAss) <- names(clustRes@active.ident)
+				logger.info(c("Number of clusters found:", nlevels(clustAss)))
 
 				dsr <- addSampleAnnotCol(dsr, "clustAss_it2", as.character(clustAss[cellIds]))
 			logger.completed()

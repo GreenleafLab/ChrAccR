@@ -65,6 +65,10 @@ Set a configuration item to a given value
   \item{\bold{\code{lolaDbPaths}}}{
       Precomputed LOLA databases to be used for enrichment analysis. If \code{NULL} (default), ChrAccR will download an apropriate core database.
   }
+  \item{\bold{\code{scIterativeLsiRegType}}}{
+      For single-cell analysis only: region type to be used for clustering and dimension reduction using iterative LSI. By default (\code{NULL}),
+      ChrAccR will look for a region type named \code{"tiling"}.
+  }
 }
 }
 
