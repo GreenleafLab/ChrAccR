@@ -78,6 +78,7 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 		sa.sample <- sampleAnnot[sid,]
 		rownames(sa.sample) <- NULL
 		sa <- data.frame(
+			.sampleId=sid,
 			cellId=paste(sid, sa[,".CR.cellQC.cell_id"], sep=""),
 			sa.sample,
 			sa.qc,
