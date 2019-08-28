@@ -420,12 +420,22 @@ saveDsAcc <- function(.object, path, forceDiskDump=FALSE, updateDiskRef=TRUE){
 				fragDir <- file.path(path, "fragments")
 				dir.create(fragDir)
 				nSamples <- length(.object@fragments)
+				chunkL <- lapply(1:nSamples, identity)
 				chunkedFragmentFiles <- .hasSlot(.object, "diskDump.fragments.nSamplesPerFile") && .object@diskDump.fragments.nSamplesPerFile > 1
 				if (chunkedFragmentFiles){
-					chunkL <- split(1:nSamples, rep(1:ceiling(nSamples/.object@diskDump.fragments.nSamplesPerFile), each=.object@diskDump.fragments.nSamplesPerFile)[1:nSamples])
-					names(chunkL) <- NULL
-				} else {
-					chunkL <- lapply(1:nSamples, identity)
+					createNewChunkL <- TRUE
+					isDd <- sapply(.object@fragments, is.character)
+					# all disk-dumped?
+					if (all(isDd)){
+						ddFns <- unlist(.object@fragments)
+						chunkL <- tapply(1:length(ddFns), ddFns, identity)
+						# check if already chunked
+						createNewChunkL <- !all(elementNROWS(chunkL)==1)
+					}
+					if (createNewChunkL){
+						chunkL <- split(1:nSamples, rep(1:ceiling(nSamples/.object@diskDump.fragments.nSamplesPerFile), each=.object@diskDump.fragments.nSamplesPerFile)[1:nSamples])
+						names(chunkL) <- NULL
+					}
 				}
 				for (k in 1:length(chunkL)) {
 					fn <- file.path(fragDir, paste0("fragmentGr_", k, ".rds"))
@@ -437,6 +447,7 @@ saveDsAcc <- function(.object, path, forceDiskDump=FALSE, updateDiskRef=TRUE){
 					if (isMix) logger.error("Mix of disk dumped and in-memory fragment objects not supported yet")
 					isFileReady <- all(isFile)
 					if (isFileReady) {
+						# check if all samples in the current chunk are in the same file
 						uu <- unique(unlist(fragGrl))
 						if (length(uu)==1) {
 							fn_source <- uu
