@@ -176,7 +176,7 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 							chunkL <- split(1:nCells, rep(1:ceiling(nCells/obj@diskDump.fragments.nSamplesPerFile), each=obj@diskDump.fragments.nSamplesPerFile)[1:nCells])
 							names(chunkL) <- NULL
 							for (k in 1:length(chunkL)){
-								iis <- chunkL[k]
+								iis <- chunkL[[k]]
 								cids <- names(fragGrl)[iis]
 								fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
 								saveRDS(fragGrl[iis], fn)

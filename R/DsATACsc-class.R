@@ -56,6 +56,9 @@ DsATACsc <- function(sampleAnnot, genome, diskDump=FALSE, diskDump.fragments=TRU
 	return(obj)
 }
 
+################################################################################
+# Single-cell methods
+################################################################################
 if (!isGeneric("unsupervisedAnalysisSc")) {
 	setGeneric(
 		"unsupervisedAnalysisSc",
