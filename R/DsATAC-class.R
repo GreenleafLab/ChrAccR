@@ -753,7 +753,7 @@ setMethod("mergeSamples",
 				# load disk-dumped fragment GRanges into memory
 				isDd <- sapply(curFragL, is.character)
 				if (any(isDd)){
-					ddFns <- unique(unlist(curFragL[[isDd]]))
+					ddFns <- unique(unlist(curFragL[isDd]))
 					# large GRanges list of all samples that have been disk-dumped
 					ddGrl <- do.call("c", lapply(ddFns, FUN=function(fn){
 						rr <- readRDS(fn)
