@@ -1429,7 +1429,7 @@ setMethod("transformCounts",
 					logger.status(c("Region type:", rt))
 					cm <- as.matrix(.object@counts[[rt]])
 					cnames <- colnames(cm)
-					idx <- cm!=0
+					idx <- !is.na(cm) & cm!=0
 					cm[idx] <- log2(cm[idx] + c0)
 					.object@counts[[rt]] <- cm
 					if (.object@diskDump) .object@counts[[rt]] <- as(.object@counts[[rt]], "HDF5Array")
