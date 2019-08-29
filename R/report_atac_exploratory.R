@@ -55,6 +55,7 @@ setMethod("createReport_exploratory",
 		sannot <- getSampleAnnot(.object)
 		sannot[,".ALL"] <- "all"
 
+		cellIds <- getSamples(.object)
 		if (isSingleCell){
 			findItLsiRt <- function(ds){
 				return(findOrderedNames(getRegionTypes(ds), c("tiling", "^t[1-9]"), exact=FALSE, ignore.case=TRUE))
@@ -151,7 +152,33 @@ setMethod("createReport_exploratory",
 		logger.completed()
 
 		if (isSingleCell){
-			a <- "TODO"
+			logger.start("Dimension reduction plots")
+				txt <- c(
+					"Iterative LSI was used for clustering and for dimension reduction."
+				)
+				rr <- muReportR::addReportSection(rr, "Dimension reduction", txt, level=1L, collapsed=FALSE)
+
+				mnames <- "umap"
+				plotL <- list()
+				for (gn in plotAnnotCols){
+					pp <- getDimRedPlot(dre$umapCoord[cellIds,], annot=sannot, colorCol=cn, shapeCol=FALSE, colScheme=grpColors[[gn]], ptSize=0.25, addLabels=FALSE, addDensity=FALSE, annot.text=NULL) + coord_fixed()
+					plotFn <- paste("dimRed", "umap", normalize.str(gn, return.camel=TRUE), sep="_")
+					repPlot <- muReportR::createReportGgPlot(pp, plotFn, rr, width=7, height=7, create.pdf=TRUE, high.png=0L)
+					repPlot <- muReportR::off(repPlot, handle.errors=TRUE)
+					plotL <- c(plotL, list(repPlot))
+				}
+				figSettings.annot <- plotAnnotCols
+				names(figSettings.annot) <- normalize.str(plotAnnotCols, return.camel=TRUE)
+				figSettings.method <- mnames
+				names(figSettings.method) <- mnames
+
+				figSettings <- list(
+					"Method" = figSettings.method,
+					# "Region type" = figSettings.region,
+					"Annotation" = figSettings.annot
+				)
+				rr <- muReportR::addReportFigure(rr, "Dimension reduction", plotL, figSettings)
+			logger.completed()
 		} else {
 			logger.start("Dimension reduction and heatmap generation")
 				doLogNorm <- getConfigElement("exploratoryLogNormCounts")
@@ -284,6 +311,7 @@ setMethod("createReport_exploratory",
 			rr <- muReportR::addReportList(rr, ll, type="u")
 
 			logger.start("Plotting chromVAR results")
+				cvMotifsForDimRed <- getConfigElement("chromVarMotifsForDimRed")
 				colors.cv <- getConfigElement("colorSchemesCont")
 				if (is.element("chromVAR", names(colors.cv))) {
 					colors.cv <- colors.cv[["chromVAR"]]
@@ -295,6 +323,7 @@ setMethod("createReport_exploratory",
 				rankCut <- 100L
 				sannot.sub <- sannot[,setdiff(plotAnnotCols, ".ALL"), drop=FALSE]
 				plotL.var <- list()
+				plotL.dimRed <- list()
 				plotL.hm <- list()
 				for (rt in regionTypes.cv){
 					logger.start(c("Region type:", rt))
@@ -315,20 +344,27 @@ setMethod("createReport_exploratory",
 						cres.row <- as.hclust(getClusteringDendrogram(t(devScores[mostVarIdx,]), distMethod="euclidean", linkMethod=linkMethod, corMethod=corMethod))
 
 						maxDev <- max(abs(devScores[mostVarIdx,]), na.rm=TRUE)
-						plotFn <- paste0("chromVarDevHeatmap_", rts)
-						repPlot <- muReportR::createReportPlot(plotFn, rr, width=10, height=10, create.pdf=TRUE, high.png=300L)
-							pheatmap::pheatmap(
-								devScores[mostVarIdx,],
-								color=grDevices::colorRampPalette(colors.cv)(100),
-								breaks=seq(-maxDev, maxDev, length.out=101), 
-								border_color=NA,
-								cluster_rows=cres.row, cluster_cols=cres.col,
-								annotation_col=sannot.sub,
-								annotation_colors=grpColors,
-								fontsize_row=8, fontsize_col=3
-							)
-						repPlot <- muReportR::off(repPlot)
-						plotL.hm <- c(plotL.hm, list(repPlot))
+
+						if (isSingleCell){
+							cvMotifs <- cvMotifsForDimRed
+							plotFn <- paste0("chromVarDevUmap_", rts)
+							plotL.dimRed <- c(plotL.dimRed, list(repPlot))
+						} else {
+							plotFn <- paste0("chromVarDevHeatmap_", rts)
+							repPlot <- muReportR::createReportPlot(plotFn, rr, width=10, height=10, create.pdf=TRUE, high.png=300L)
+								pheatmap::pheatmap(
+									devScores[mostVarIdx,],
+									color=grDevices::colorRampPalette(colors.cv)(100),
+									breaks=seq(-maxDev, maxDev, length.out=101), 
+									border_color=NA,
+									cluster_rows=cres.row, cluster_cols=cres.col,
+									annotation_col=sannot.sub,
+									annotation_colors=grpColors,
+									fontsize_row=8, fontsize_col=3
+								)
+							repPlot <- muReportR::off(repPlot)
+							plotL.hm <- c(plotL.hm, list(repPlot))
+						}
 					logger.completed()
 				}
 				figSettings.region <- regionTypes.cv
@@ -337,7 +373,9 @@ setMethod("createReport_exploratory",
 					"Region type" = figSettings.region
 				)
 				rr <- muReportR::addReportFigure(rr, "chromVAR variability. TF motifs are shown ordered according to their variability across the dataset.", plotL.var, figSettings)
-				rr <- muReportR::addReportFigure(rr, "chromVAR deviation scores. The heatmap shows the scores for 100 most variable TF motifs across the dataset.", plotL.hm, figSettings)
+				if (length(plotL.hm) > 0) {
+					rr <- muReportR::addReportFigure(rr, "chromVAR deviation scores. The heatmap shows the scores for 100 most variable TF motifs across the dataset.", plotL.hm, figSettings)
+				}
 			logger.completed()
 
 		}

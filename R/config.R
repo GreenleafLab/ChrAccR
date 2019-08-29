@@ -20,6 +20,7 @@
 .config$regionTypes <- NULL
 .config$chromVarMotifs <- c("jaspar_vert")
 .config$chromVarRegionTypes <- NULL
+.config$chromVarMotifsForDimRed <- NULL
 .config$annotationColumns <- NULL
 .config$annotationMinGroupSize <- 2L
 .config$exploratoryLogNormCounts <- TRUE
