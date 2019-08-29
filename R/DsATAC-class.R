@@ -745,20 +745,35 @@ setMethod("mergeSamples",
 
 		#insertion data: concatenate GRanges objects
 		if (length(.object@fragments) == nSamples){
-			sids <- names(.object@fragments)
 			logger.status(paste0("Merging sample fragment data..."))
-			insL <- .object@fragments
+			fragL <- .object@fragments
+			
 			.object@fragments <- lapply(mgL, FUN=function(iis){
-				curInsL <- insL[iis]
-				rr <- lapply(seq_along(iis), FUN=function(i){
-					x <- curInsL[[i]]
-					if (is.character(x)){
-						x <- getFragmentGr(inputObj, sampleNames[iis[i]])
+				curFragL <- fragL[iis]
+				# load disk-dumped fragment GRanges into memory
+				isDd <- sapply(curFragL, is.character)
+				if (any(isDd)){
+					ddFns <- unique(unlist(curFragL[[isDd]]))
+					# large GRanges list of all samples that have been disk-dumped
+					ddGrl <- do.call("c", lapply(ddFns, FUN=function(fn){
+						rr <- readRDS(fn)
+						if (is.element(class(rr), c("GRangesList", "CompressedGRangesList"))){
+							rr <- as.list(rr)
+						}
+						if (!is.list(rr)) rr <- list(rr)
+						return(rr)
+					}))
+					sidsDd <- names(curFragL)[isDd] # sample names of disk dumped fragments
+					for (sid in sidsDd){
+						curFragL[[sid]] <- ddGrl[[sid]]
 					}
+				}
+				# concatenate all GRanges objects
+				catRes <- do.call("c", lapply(seq_along(iis), FUN=function(i){
+					x <- curFragL[[i]]
 					elementMetadata(x)[,".sample"] <- sampleNames[iis[i]]
 					return(x)
-				})
-				catRes <- do.call("c", rr)
+				}))
 				if (.object@diskDump.fragments) {
 					fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext=".rds")
 					saveRDS(catRes, fn)
