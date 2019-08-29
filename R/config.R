@@ -20,7 +20,7 @@
 .config$regionTypes <- NULL
 .config$chromVarMotifs <- c("jaspar_vert")
 .config$chromVarRegionTypes <- NULL
-.config$chromVarMotifsForDimRed <- NULL
+.config$chromVarMotifNamesForDimRed <- NULL
 .config$annotationColumns <- NULL
 .config$annotationMinGroupSize <- 2L
 .config$exploratoryLogNormCounts <- TRUE
@@ -62,6 +62,9 @@
 #'   }
 #' 	 \item{\bold{\code{chromVarMotifs}}}{
 #'       Character vector of names of TF motif sets to be used in ChromVAR analyses
+#'   }
+#'   \item{\bold{\code{chromVarMotifNamesForDimRed}}}{
+#'       Names of motifs to be used for dimension reduction plots in the reports.
 #'   }
 #'   \item{\bold{\code{annotationColumns}}}{
 #'       Sample annotation columns to be used for reporting
