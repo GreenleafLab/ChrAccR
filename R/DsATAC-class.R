@@ -683,7 +683,7 @@ setMethod("mergeSamples",
 		mergeGroups,
 		countAggrFun="sum"
 	) {
-		inObj <- .object
+		inputObj <- .object
 		if (!is.element(countAggrFun, c("sum", "mean", "median"))){
 			logger.error(c("Unknown signal count aggregation function:", countAggrFun))
 		}
@@ -753,7 +753,7 @@ setMethod("mergeSamples",
 				rr <- lapply(seq_along(iis), FUN=function(i){
 					x <- curInsL[[i]]
 					if (is.character(x)){
-						x <- getFragmentGr(inObj, sampleNames[iis[i]])
+						x <- getFragmentGr(inputObj, sampleNames[iis[i]])
 					}
 					elementMetadata(x)[,".sample"] <- sampleNames[iis[i]]
 					return(x)
