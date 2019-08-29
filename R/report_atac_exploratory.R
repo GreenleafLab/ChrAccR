@@ -380,26 +380,31 @@ setMethod("createReport_exploratory",
 
 
 				if (isSingleCell){
-					logger.start("chromVAR deviations projected on dimension reduction")
+					logger.start("chromVAR deviations projected on dimension reduction plots")
 						figSettings.motif <- getMostVarMotifsForPlot
 						names(figSettings.motif) <- normalize.str(getMostVarMotifsForPlot, return.camel=TRUE)
 
+						plotL.dimRed <- list()
 						for (rt in regionTypes.cv){
 							logger.start(c("Region type:", rt))
 								rts <- normalize.str(rt, return.camel=TRUE)
 								cvM <- t(devScores[getMostVarMotifsForPlot, cellIds])
-								sannotForPlot <- data.frame(
-									cvM
-								)
+								maxDev <- max(abs(cvM), na.rm=TRUE)
 								pL <- lapply(colnames(cvM), FUN=function(mm){
-									figFn <- paste0("statDistr_", rts, "_", normalize.str(mm, return.camel=TRUE))
+									pp <- getDimRedPlot(dre$umapCoord[cellIds,], annot=cvM, colorCol=mm, shapeCol=FALSE, colScheme=colors.cv, ptSize=0.25, addLabels=FALSE, addDensity=FALSE, annot.text=NULL) + coord_fixed()
+									figFn <- paste0("chromVarDevUmap_", rts, "_", normalize.str(mm, return.camel=TRUE))
 									repPlot <- muReportR::createReportGgPlot(pp, figFn, rr, width=10, height=5, create.pdf=TRUE, high.png=0L)
 									repPlot <- muReportR::off(repPlot, handle.errors=TRUE)
 									return(repPlot)
 								})
-								
+								plotL.dimRed <- c(plotL.dimRed, pL)
 							logger.completed()
 						}
+						figSettings <- list(
+							"Region type" = figSettings.region,
+							"Motif" = figSettings.motif
+						)
+						rr <- muReportR::addReportFigure(rr, "Dimension reduction annotated with chromVAR deviation scores", plotL.dimRed, figSettings)
 					logger.completed()
 				}
 			logger.completed()
