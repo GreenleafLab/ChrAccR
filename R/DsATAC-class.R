@@ -254,6 +254,71 @@ setMethod("getFragmentGr",
 		return(fragGr)
 	}
 )
+#-------------------------------------------------------------------------------
+if (!isGeneric("getFragmentGrl")) {
+	setGeneric(
+		"getFragmentGrl",
+		function(.object, ...) standardGeneric("getFragmentGrl"),
+		signature=c(".object")
+	)
+}
+#' getFragmentGrl-methods
+#'
+#' Return a list of \code{GRanges} objects of fragment data for a given set of samples
+#'
+#' @param .object \code{\linkS4class{DsATAC}} object
+#' @param sampleIds sample identifiers
+#' @param asGRangesList should a \code{GRangesList} object be returned instead of a regular \code{list}
+#' @return A named list of \code{GRanges} objects containing fragment data
+#'
+#' @rdname getFragmentGrl-DsATAC-method
+#' @docType methods
+#' @aliases getFragmentGrl
+#' @aliases getFragmentGrl,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("getFragmentGrl",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		sampleIds,
+		asGRangesList=FALSE
+	) {
+		if (!all(sampleIds %in% getSamples(.object))) logger.error(c("Invalid samples:", paste(setdiff(sampleIds, getSamples(.object)), collapse=";")))
+		if (!all(sampleIds %in% names(.object@fragments))) logger.error(c("Object does not contain insertion information for samples:", paste(setdiff(sampleIds, names(.object@fragments)), collapse=";")))
+
+		fragL <- .object@fragments[sampleIds]
+		# load disk-dumped fragment GRanges into memory
+		isDd <- sapply(fragL, is.character)
+		if (any(isDd)){
+			ddFns_all <- unlist(fragL[isDd])
+			sidsDd <- names(fragL)[isDd] # sample names of disk dumped fragments
+			fnToSampleL <- tapply(sidsDd, ddFns_all, c)
+			ddFns <- unique(ddFns_all)
+			# large GRanges list of all samples that have been disk-dumped
+			ddGrl <- do.call("c", lapply(ddFns, FUN=function(fn){
+				if (!file.exists(fn)) logger.error(c("Could not load fragment data from file:", fn))
+				rr <- readRDS(fn)
+				if (is.element(class(rr), c("GRangesList", "CompressedGRangesList"))){
+					rr <- as.list(rr)
+				}
+				if (!is.list(rr)) {
+					rr <- list(rr)
+					names(rr) <- fnToSampleL[[fn]]
+				}
+				return(rr)
+			}))
+			
+			fragL[sidsDd] <- ddGrl[sidsDd]
+		}
+		if (asGRangesList){
+			fragL <- GenomicRanges::GRangesList(fragL)
+		}
+		return(fragL)
+	}
+)
 
 #-------------------------------------------------------------------------------
 if (!isGeneric("getFragmentNum")) {
@@ -592,12 +657,12 @@ setMethod("regionAggregation",
 						nSamples_cur <- length(chunkIdxL[[k]])
 						sampleIds_cur <- sampleIds[chunkIdxL[[k]]]
 						logger.status("Retrieving joined insertion sites ...")
-						igr <- getInsertionSitesFromFragmentGr(do.call("c", lapply(1:nSamples_cur, FUN=function(i){
-							# logger.status(c("Sample:", i))
-							rr <- getFragmentGr(.object, sampleIds_cur[i])
-							elementMetadata(rr)[,".sampleIdx"] <- i
-							return(rr)
-						})))
+						fGrl <- getFragmentGrl(.object, sampleIds_cur)
+						nFrags <- elementNROWS(fGrl)
+						fGrl[["use.names"]] <- FALSE # avoid naming in concatenation
+						fGrl <- do.call("c", fGrl)
+						elementMetadata(fGrl)[,".sampleIdx"] <- rep(seq_along(nFrags), nFrags)
+						igr <- getInsertionSitesFromFragmentGr(fGrl)
 						logger.status("computing overlaps with regions ...")
 						oo <- findOverlaps(regGr, igr, ignore.strand=TRUE)
 						# convenient: when constructing sparse matrices, if (i,j) indices are repeated, the x-values are summed up
@@ -749,35 +814,13 @@ setMethod("mergeSamples",
 			fragL <- .object@fragments
 			
 			.object@fragments <- lapply(mgL, FUN=function(iis){
-				curFragL <- fragL[iis]
-				# load disk-dumped fragment GRanges for current group into memory
-				isDd <- sapply(curFragL, is.character)
-				if (any(isDd)){
-					ddFns_all <- unlist(curFragL[isDd])
-					sidsDd <- names(curFragL)[isDd] # sample names of disk dumped fragments
-					fnToSampleL <- tapply(sidsDd, ddFns_all, c)
-					ddFns <- unique(ddFns_all)
-					# large GRanges list of all samples that have been disk-dumped
-					ddGrl <- do.call("c", lapply(ddFns, FUN=function(fn){
-						rr <- readRDS(fn)
-						if (is.element(class(rr), c("GRangesList", "CompressedGRangesList"))){
-							rr <- as.list(rr)
-						}
-						if (!is.list(rr)) {
-							rr <- list(rr)
-							names(rr) <- fnToSampleL[[fn]]
-						}
-						return(rr)
-					}))
-					
-					curFragL[sidsDd] <- ddGrl[sidsDd]
-				}
-				# concatenate all GRanges objects
-				catRes <- do.call("c", lapply(seq_along(iis), FUN=function(i){
-					x <- curFragL[[i]]
-					elementMetadata(x)[,".sample"] <- sampleNames[iis[i]]
-					return(x)
-				}))
+				curSns <- sampleNames[iis]
+				curFragL <- getFragmentGrl(inputObj, curSns)
+				nFrags <- elementNROWS(curFragL)
+				curFragL[["use.names"]] <- FALSE # avoid naming in concatenation
+				catRes <- do.call("c", curFragL)
+				elementMetadata(catRes)[,".sample"] <- rep(curSns, nFrags)
+
 				if (.object@diskDump.fragments) {
 					fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext=".rds")
 					saveRDS(catRes, fn)
@@ -836,7 +879,7 @@ if (!isGeneric("undiskFragmentData")) {
 }
 #' undiskFragmentData-methods
 #'
-#'  converts disk-backed fragment data to in-memory fragment data
+#' converts disk-backed fragment data to in-memory fragment data
 #'
 #' @param object	\code{\linkS4class{DsATAC}} object
 #' @return the modified object
@@ -854,29 +897,7 @@ setMethod("undiskFragmentData",
 	function(
 		object
 	) {
-		if (length(object@fragments) > 0){
-			isDd <- sapply(object@fragments, is.character)
-			if (any(isDd)){
-				ddFns_all <- unlist(object@fragments[isDd])
-				sidsDd <- names(object@fragments)[isDd] # sample names of disk dumped fragments
-				fnToSampleL <- tapply(sidsDd, ddFns_all, c)
-				ddFns <- unique(ddFns_all)
-				# large GRanges list of all samples that have been disk-dumped
-				ddGrl <- do.call("c", lapply(ddFns, FUN=function(fn){
-					rr <- readRDS(fn)
-					if (is.element(class(rr), c("GRangesList", "CompressedGRangesList"))){
-						rr <- as.list(rr)
-					}
-					if (!is.list(rr)) {
-						rr <- list(rr)
-						names(rr) <- fnToSampleL[[fn]]
-					}
-					return(rr)
-				}))
-				
-				object@fragments[sidsDd] <- ddGrl[sidsDd]
-			}
-		}
+		object@fragments <- getFragmentGrl(object, names(object@fragments))
 		object@diskDump.fragments <- FALSE
 		return(object)
 	}
@@ -2784,12 +2805,12 @@ setMethod("getQuickTssEnrichment",
 		sampleIds <- getSamples(.object)
 		nSamples <- length(sampleIds)
 		logger.status("Retrieving joined insertion sites ...")
-		igr <- getInsertionSitesFromFragmentGr(do.call("c", lapply(1:nSamples, FUN=function(i){
-			# logger.status(c("Sample:", i))
-			rr <- getFragmentGr(.object, sampleIds[i])
-			elementMetadata(rr)[,".sampleIdx"] <- i
-			return(rr)
-		})))
+		fGrl <- getFragmentGrl(.object, sampleIds)
+		nFrags <- elementNROWS(fGrl)
+		fGrl[["use.names"]] <- FALSE
+		fGr <- do.call("c", fGrl)
+		elementMetadata(fGr)[,".sampleIdx"] <- rep(seq_along(nFrags), nFrags)
+		igr <- getInsertionSitesFromFragmentGr(fGr)
 		logger.status("computing overlaps with TSS regions ...")
 		oo <- findOverlaps(tsswGr, igr, ignore.strand=TRUE)
 		# convenient: when constructing sparse matrices, if (i,j) indices are repeated, the x-values are summed up
