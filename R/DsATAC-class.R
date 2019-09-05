@@ -659,12 +659,11 @@ setMethod("regionAggregation",
 						nSamples_cur <- length(chunkIdxL[[k]])
 						sampleIds_cur <- sampleIds[chunkIdxL[[k]]]
 						logger.status("Retrieving joined insertion sites ...")
-						fGrl <- getFragmentGrl(.object, sampleIds_cur)
+						fGrl <- getFragmentGrl(.object, sampleIds_cur, asGRangesList=TRUE)
 						nFrags <- elementNROWS(fGrl)
-						fGrl[["use.names"]] <- FALSE # avoid naming in concatenation
-						fGrl <- do.call("c", fGrl)
-						elementMetadata(fGrl)[,".sampleIdx"] <- rep(seq_along(nFrags), nFrags)
-						igr <- getInsertionSitesFromFragmentGr(fGrl)
+						fGr <- unlist(fGr, use.names=FALSE)
+						elementMetadata(fGr)[,".sampleIdx"] <- rep(seq_along(nFrags), nFrags)
+						igr <- getInsertionSitesFromFragmentGr(fGr)
 						logger.status("computing overlaps with regions ...")
 						oo <- findOverlaps(regGr, igr, ignore.strand=TRUE)
 						# convenient: when constructing sparse matrices, if (i,j) indices are repeated, the x-values are summed up
@@ -817,10 +816,9 @@ setMethod("mergeSamples",
 			
 			.object@fragments <- lapply(mgL, FUN=function(iis){
 				curSns <- sampleNames[iis]
-				curFragL <- getFragmentGrl(inputObj, curSns)
+				curFragL <- getFragmentGrl(inputObj, curSns, asGRangesList=TRUE)
 				nFrags <- elementNROWS(curFragL)
-				curFragL[["use.names"]] <- FALSE # avoid naming in concatenation
-				catRes <- do.call("c", curFragL)
+				catRes <- unlist(curFragL, use.names=FALSE)
 				elementMetadata(catRes)[,".sample"] <- rep(curSns, nFrags)
 
 				if (.object@diskDump.fragments) {
@@ -2807,10 +2805,9 @@ setMethod("getQuickTssEnrichment",
 		sampleIds <- getSamples(.object)
 		nSamples <- length(sampleIds)
 		logger.status("Retrieving joined insertion sites ...")
-		fGrl <- getFragmentGrl(.object, sampleIds)
-		nFrags <- elementNROWS(fGrl)
-		fGrl[["use.names"]] <- FALSE
-		fGr <- do.call("c", fGrl)
+		fGr <- getFragmentGrl(.object, sampleIds, asGRangesList=TRUE)
+		nFrags <- elementNROWS(fGr)
+		fGr <- unlist(fGr, use.names=FALSE)
 		elementMetadata(fGr)[,".sampleIdx"] <- rep(seq_along(nFrags), nFrags)
 		igr <- getInsertionSitesFromFragmentGr(fGr)
 		logger.status("computing overlaps with TSS regions ...")
