@@ -750,23 +750,27 @@ setMethod("mergeSamples",
 			
 			.object@fragments <- lapply(mgL, FUN=function(iis){
 				curFragL <- fragL[iis]
-				# load disk-dumped fragment GRanges into memory
+				# load disk-dumped fragment GRanges for current group into memory
 				isDd <- sapply(curFragL, is.character)
 				if (any(isDd)){
-					ddFns <- unique(unlist(curFragL[isDd]))
+					ddFns_all <- unlist(curFragL[isDd])
+					sidsDd <- names(curFragL)[isDd] # sample names of disk dumped fragments
+					fnToSampleL <- tapply(sidsDd, ddFns_all, c)
+					ddFns <- unique(ddFns_all)
 					# large GRanges list of all samples that have been disk-dumped
 					ddGrl <- do.call("c", lapply(ddFns, FUN=function(fn){
 						rr <- readRDS(fn)
 						if (is.element(class(rr), c("GRangesList", "CompressedGRangesList"))){
 							rr <- as.list(rr)
 						}
-						if (!is.list(rr)) rr <- list(rr)
+						if (!is.list(rr)) {
+							rr <- list(rr)
+							names(rr) <- fnToSampleL[[fn]]
+						}
 						return(rr)
 					}))
-					sidsDd <- names(curFragL)[isDd] # sample names of disk dumped fragments
-					for (sid in sidsDd){
-						curFragL[[sid]] <- ddGrl[[sid]]
-					}
+					
+					curFragL[sidsDd] <- ddGrl[sidsDd]
 				}
 				# concatenate all GRanges objects
 				catRes <- do.call("c", lapply(seq_along(iis), FUN=function(i){
@@ -851,10 +855,27 @@ setMethod("undiskFragmentData",
 		object
 	) {
 		if (length(object@fragments) > 0){
-			object@fragments <- lapply(getSamples(object), FUN=function(sid){
-				getFragmentGr(object, sid)
-			})
-			names(object@fragments) <- getSamples(object)
+			isDd <- sapply(object@fragments, is.character)
+			if (any(isDd)){
+				ddFns_all <- unlist(object@fragments[isDd])
+				sidsDd <- names(object@fragments)[isDd] # sample names of disk dumped fragments
+				fnToSampleL <- tapply(sidsDd, ddFns_all, c)
+				ddFns <- unique(ddFns_all)
+				# large GRanges list of all samples that have been disk-dumped
+				ddGrl <- do.call("c", lapply(ddFns, FUN=function(fn){
+					rr <- readRDS(fn)
+					if (is.element(class(rr), c("GRangesList", "CompressedGRangesList"))){
+						rr <- as.list(rr)
+					}
+					if (!is.list(rr)) {
+						rr <- list(rr)
+						names(rr) <- fnToSampleL[[fn]]
+					}
+					return(rr)
+				}))
+				
+				object@fragments[sidsDd] <- ddGrl[sidsDd]
+			}
 		}
 		object@diskDump.fragments <- FALSE
 		return(object)
