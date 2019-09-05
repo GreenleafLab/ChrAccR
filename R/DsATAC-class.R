@@ -298,7 +298,7 @@ setMethod("getFragmentGrl",
 			fnToSampleL <- tapply(sidsDd, ddFns_all, c)
 			ddFns <- unique(ddFns_all)
 			# large GRanges list of all samples that have been disk-dumped
-			ddGrl <- do.call("c", lapply(ddFns, FUN=function(fn){
+			ddGrl <- lapply(ddFns, FUN=function(fn){
 				if (!file.exists(fn)) logger.error(c("Could not load fragment data from file:", fn))
 				rr <- readRDS(fn)
 				if (is.element(class(rr), c("GRangesList", "CompressedGRangesList"))){
@@ -309,7 +309,9 @@ setMethod("getFragmentGrl",
 					names(rr) <- fnToSampleL[[fn]]
 				}
 				return(rr)
-			}))
+			})
+			names(ddGrl) <- NULL
+			ddGrl <- do.call("c", ddGrl)
 			
 			fragL[sidsDd] <- ddGrl[sidsDd]
 		}
