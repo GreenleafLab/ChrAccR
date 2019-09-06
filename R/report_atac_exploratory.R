@@ -77,18 +77,19 @@ setMethod("createReport_exploratory",
 			
 			# annotation
 			qcDf <- getScQcStatsTab(.object)
-			cellIds <- qcDf[,"cell"]
+			# cellIds <- qcDf[,"cell"]
 			sannot[,"clusterAssignment"] <- dre$clustAss[cellIds]
+			sannot <- cbind(sannot, qcDf)
 			pcns <- paste0("PC", 1:3)
 			for (pcn in pcns){
 				sannot[,pcn] <- dre$pcaCoord[cellIds, pcn]
 			}
-			qcAnnotCols <- c(setdiff(colnames(summaryDf), c("cell", "sample")), pcns)
+			qcAnnotCols <- c(setdiff(colnames(qcDf), c("cell", "sample")), pcns)
 			specAnnotCols <- c(specAnnotCols, qcAnnotCols, "clusterAssignment")
 		}
 
 		sampleGrps <- getGroupsFromTable(sannot, cols=specAnnotCols, minGrpSize=getConfigElement("annotationMinGroupSize"))
-		sampleGrps <- c(list(".ALL"=c(1:nrow(sannot))), sampleGrps)
+		sampleGrps <- c(list(".ALL"=list("all"=c(1:nrow(sannot)))), sampleGrps)
 		grpNames <- names(sampleGrps)
 
 		numericCols <- sapply(colnames(sannot), FUN=function(cn){is.numeric(sannot[,cn])})
@@ -161,7 +162,7 @@ setMethod("createReport_exploratory",
 				mnames <- "umap"
 				plotL <- list()
 				for (gn in plotAnnotCols){
-					pp <- getDimRedPlot(dre$umapCoord[cellIds,], annot=sannot, colorCol=cn, shapeCol=FALSE, colScheme=grpColors[[gn]], ptSize=0.25, addLabels=FALSE, addDensity=FALSE, annot.text=NULL) + coord_fixed()
+					pp <- getDimRedPlot(dre$umapCoord[cellIds,], annot=sannot, colorCol=gn, shapeCol=FALSE, colScheme=grpColors[[gn]], ptSize=0.25, addLabels=FALSE, addDensity=FALSE, annot.text=NULL) + coord_fixed()
 					plotFn <- paste("dimRed", "umap", normalize.str(gn, return.camel=TRUE), sep="_")
 					repPlot <- muReportR::createReportGgPlot(pp, plotFn, rr, width=7, height=7, create.pdf=TRUE, high.png=0L)
 					repPlot <- muReportR::off(repPlot, handle.errors=TRUE)
