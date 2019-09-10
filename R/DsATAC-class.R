@@ -353,10 +353,7 @@ setMethod("getFragmentNum",
 		sampleIds=getSamples(.object)
 	) {
 		if (!all(sampleIds %in% getSamples(.object))) logger.error(c("Invalid sampleIds:", paste(setdiff(sampleIds, getSamples(.object)), collapse=", ")))
-		res <- sapply(sampleIds, FUN=function(sid){
-			length(getFragmentGr(.object, sid))
-		})
-		names(res) <- sampleIds
+		res <- elementNROWS(getFragmentGrl(.object, getSamples(.object), asGRangesList=TRUE))
 		return(res)
 	}
 )
@@ -392,10 +389,9 @@ setMethod("getInsertionSites",
 	) {
 		if (!all(samples %in% getSamples(.object))) logger.error(c("Invalid samples:", paste(setdiff(samples, getSamples(.object)), collapse=", ")))
 		if (!all(samples %in% names(.object@fragments))) logger.error(c("Object does not contain insertion information for samples:", paste(setdiff(samples, names(.object@fragments)), collapse=", ")))
-		res <- list()
-		for (sid in samples){
-			res[[sid]] <- getInsertionSitesFromFragmentGr(getFragmentGr(.object, sid))
-		}
+		fGrl <- getFragmentGrl(.object, samples, asGRangesList=TRUE)
+		res <- lapply(fGrl, getInsertionSitesFromFragmentGr)
+		names(res) <- samples
 		return(GRangesList(res))
 	}
 )
@@ -430,9 +426,10 @@ setMethod("getCoverage",
 		samples=getSamples(.object)
 	) {
 		if (!all(samples %in% getSamples(.object))) logger.error(c("Invalid samples:", paste(setdiff(samples, getSamples(.object)), collapse=", ")))
+		insGrl <- getInsertionSites(.object, samples)
 		sampleCovgRle <- lapply(samples, FUN=function(sid){
 			logger.status(c("Computing genome-wide coverage for sample", sid))
-			return(GenomicRanges::coverage(getInsertionSites(.object, sid)[[1]]))
+			return(GenomicRanges::coverage(insGrl[[sid]]))
 		})
 		names(sampleCovgRle) <- samples
 		return(sampleCovgRle)
