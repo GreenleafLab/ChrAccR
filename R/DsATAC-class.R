@@ -453,6 +453,9 @@ setMethod("show","DsATAC",
 		str.disk <- "[in memory object]"
 		if (object@diskDump) str.disk <- "[contains disk-backed data]"
 
+		if (class(object)=="DsATACsc"){
+			cat("Single-cell ")
+		}
 		cat("DsATAC chromatin accessibility dataset \n")
 		cat(str.disk, "\n")
 		cat("contains:\n")
