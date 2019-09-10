@@ -661,7 +661,7 @@ setMethod("regionAggregation",
 						logger.status("Retrieving joined insertion sites ...")
 						fGrl <- getFragmentGrl(.object, sampleIds_cur, asGRangesList=TRUE)
 						nFrags <- elementNROWS(fGrl)
-						fGr <- unlist(fGr, use.names=FALSE)
+						fGr <- unlist(fGrl, use.names=FALSE)
 						elementMetadata(fGr)[,".sampleIdx"] <- rep(seq_along(nFrags), nFrags)
 						igr <- getInsertionSitesFromFragmentGr(fGr)
 						logger.status("computing overlaps with regions ...")
