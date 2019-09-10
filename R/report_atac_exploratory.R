@@ -69,7 +69,7 @@ setMethod("createReport_exploratory",
 			}
 			logger.start("Dimension reduction using iterative LSI")
 				logger.info(c("Using region type:", itLsiRt))
-				dre <- iterativeLSI(.object, it0regionType=itLsiRt, it0clusterResolution=0.6, it1clusterResolution=0.6, it2clusterResolution=0.6)
+				dre <- iterativeLSI(.object, it0regionType=itLsiRt, it0clusterResolution=0.4, it1clusterResolution=0.4, it2clusterResolution=0.4)
 				logger.status("Saving ...")
 				saveRDS(dre, file.path(rDir.data.abs, "dimRed_iterativeLSI_res.rds"))
 				uwot::save_uwot(dre$umapRes, file.path(rDir.data.abs, "dimRed_iterativeLSI_res_uwot"))
