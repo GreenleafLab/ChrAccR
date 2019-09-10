@@ -324,6 +324,11 @@ setMethod("createReport_exploratory",
 				corMethod <- "pearson"
 				rankCut <- 100L
 				sannot.sub <- sannot[,setdiff(plotAnnotCols, ".ALL"), drop=FALSE]
+				if (!is.null(cvMotifsForDimRed)){
+					# normalize motif names to get rid of funky artifacts in ggplot
+					cvMotifsForDimRed <- gsub("::","_",rownames(cvMotifsForDimRed))
+					cvMotifsForDimRed <- gsub("[^[:alnum:]_\\.]","",rownames(cvMotifsForDimRed))
+				}
 				plotL.var <- list()
 				plotL.hm <- list()
 				for (rt in regionTypes.cv){
@@ -339,14 +344,15 @@ setMethod("createReport_exploratory",
 						plotL.var <- c(plotL.var, list(repPlot))
 
 						devScores <- chromVAR::deviationScores(cvd)
-						cres.col <- as.hclust(getClusteringDendrogram(devScores, distMethod="euclidean", linkMethod=linkMethod, corMethod=corMethod))
-
+						rownames(devScores) <- gsub("::","_",rownames(devScores))
+						rownames(devScores) <- gsub("[^[:alnum:]_\\.]","",rownames(devScores))
 						mostVarIdx <- which(rank(-cvv$variability,na.last="keep",ties.method="min") <= rankCut)
-						cres.row <- as.hclust(getClusteringDendrogram(t(devScores[mostVarIdx,]), distMethod="euclidean", linkMethod=linkMethod, corMethod=corMethod))
-
 						maxDev <- max(abs(devScores[mostVarIdx,]), na.rm=TRUE)
 
 						if (!isSingleCell){
+							cres.col <- as.hclust(getClusteringDendrogram(devScores, distMethod="euclidean", linkMethod=linkMethod, corMethod=corMethod))
+							cres.row <- as.hclust(getClusteringDendrogram(t(devScores[mostVarIdx,]), distMethod="euclidean", linkMethod=linkMethod, corMethod=corMethod))
+							
 							plotFn <- paste0("chromVarDevHeatmap_", rts)
 							repPlot <- muReportR::createReportPlot(plotFn, rr, width=10, height=10, create.pdf=TRUE, high.png=300L)
 								pheatmap::pheatmap(
@@ -382,19 +388,19 @@ setMethod("createReport_exploratory",
 
 				if (isSingleCell){
 					logger.start("chromVAR deviations projected on dimension reduction plots")
-						figSettings.motif <- getMostVarMotifsForPlot
-						names(figSettings.motif) <- normalize.str(getMostVarMotifsForPlot, return.camel=TRUE)
+						figSettings.motif <- cvMotifsForDimRed
+						names(figSettings.motif) <- gsub("_", "", normalize.str(cvMotifsForDimRed, return.camel=TRUE))
 
 						plotL.dimRed <- list()
 						for (rt in regionTypes.cv){
 							logger.start(c("Region type:", rt))
 								rts <- normalize.str(rt, return.camel=TRUE)
-								cvM <- t(devScores[getMostVarMotifsForPlot, cellIds])
-								maxDev <- max(abs(cvM), na.rm=TRUE)
+								cvM <- t(devScores[cvMotifsForDimRed, cellIds])
+								maxDev <- quantile(abs(cvM), 0.99, na.rm=TRUE)
 								pL <- lapply(colnames(cvM), FUN=function(mm){
-									pp <- getDimRedPlot(dre$umapCoord[cellIds,], annot=cvM, colorCol=mm, shapeCol=FALSE, colScheme=colors.cv, ptSize=0.25, addLabels=FALSE, addDensity=FALSE, annot.text=NULL) + coord_fixed()
-									figFn <- paste0("chromVarDevUmap_", rts, "_", normalize.str(mm, return.camel=TRUE))
-									repPlot <- muReportR::createReportGgPlot(pp, figFn, rr, width=10, height=5, create.pdf=TRUE, high.png=0L)
+									pp <- getDimRedPlot(dre$umapCoord[cellIds,], annot=cvM, colorCol=mm, shapeCol=FALSE, colScheme=NULL, ptSize=0.25, addLabels=FALSE, addDensity=FALSE, annot.text=NULL) + scale_color_gradientn(colours=colors.cv, limits=c(-maxDev, maxDev), na.value = "#C0C0C0") + coord_fixed()
+									figFn <- paste0("chromVarDevUmap_", rts, "_", gsub("_", "", normalize.str(mm, return.camel=TRUE)))
+									repPlot <- muReportR::createReportGgPlot(pp, figFn, rr, width=7, height=7, create.pdf=TRUE, high.png=0L)
 									repPlot <- muReportR::off(repPlot, handle.errors=TRUE)
 									return(repPlot)
 								})
