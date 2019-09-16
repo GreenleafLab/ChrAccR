@@ -825,12 +825,14 @@ setMethod("mergeSamples",
 					fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext=".rds")
 					saveRDS(catRes, fn)
 					catRes <- fn
-					# currently merging samples does not support multiple samples per fragment file
-					.object@diskDump.fragments.nSamplesPerFile <- 1L
-					# TODO: support multiple samples per merged fragment file
 				}
 				return(catRes)
 			})
+			if (.object@diskDump.fragments){
+				# currently merging samples does not support multiple samples per fragment file
+				.object@diskDump.fragments.nSamplesPerFile <- 1L
+				# TODO: support multiple samples per merged fragment file
+			}
 		}
 
 		return(.object)
