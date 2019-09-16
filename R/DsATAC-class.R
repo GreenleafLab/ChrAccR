@@ -811,28 +811,32 @@ setMethod("mergeSamples",
 
 		#insertion data: concatenate GRanges objects
 		if (length(.object@fragments) == nSamples){
-			logger.status(paste0("Merging sample fragment data..."))
-			fragL <- .object@fragments
-			
-			.object@fragments <- lapply(mgL, FUN=function(iis){
-				curSns <- sampleNames[iis]
-				curFragL <- getFragmentGrl(inputObj, curSns, asGRangesList=TRUE)
-				nFrags <- elementNROWS(curFragL)
-				catRes <- unlist(curFragL, use.names=FALSE)
-				elementMetadata(catRes)[,".sample"] <- rep(curSns, nFrags)
+			logger.start(paste0("Merging sample fragment data"))
+				fragL <- .object@fragments
+				
+				.object@fragments <- lapply(1:length(mgL), FUN=function(i){
+					iis <- mgL[[i]]
+					logger.status(c("Merged sample", i, "of", length(mgL)))
+					curSns <- sampleNames[iis]
+					curFragL <- getFragmentGrl(inputObj, curSns, asGRangesList=TRUE)
+					nFrags <- elementNROWS(curFragL)
+					catRes <- unlist(curFragL, use.names=FALSE)
+					elementMetadata(catRes)[,".sample"] <- rep(curSns, nFrags)
 
-				if (.object@diskDump.fragments) {
-					fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext=".rds")
-					saveRDS(catRes, fn)
-					catRes <- fn
+					if (.object@diskDump.fragments) {
+						logger.status(c("... saving to disk"))
+						fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext=".rds")
+						saveRDS(catRes, fn)
+						catRes <- fn
+					}
+					return(catRes)
+				})
+				if (.object@diskDump.fragments){
+					# currently merging samples does not support multiple samples per fragment file
+					.object@diskDump.fragments.nSamplesPerFile <- 1L
+					# TODO: support multiple samples per merged fragment file
 				}
-				return(catRes)
-			})
-			if (.object@diskDump.fragments){
-				# currently merging samples does not support multiple samples per fragment file
-				.object@diskDump.fragments.nSamplesPerFile <- 1L
-				# TODO: support multiple samples per merged fragment file
-			}
+			logger.completed()
 		}
 
 		return(.object)
