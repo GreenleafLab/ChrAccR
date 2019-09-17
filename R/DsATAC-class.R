@@ -824,13 +824,14 @@ setMethod("mergeSamples",
 					elementMetadata(catRes)[,".sample"] <- rep(curSns, nFrags)
 
 					if (.object@diskDump.fragments) {
-						logger.status(c("... saving to disk"))
+						# logger.status(c("... saving to disk"))
 						fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext=".rds")
 						saveRDS(catRes, fn)
 						catRes <- fn
 					}
 					return(catRes)
 				})
+				names(.object@fragments) <- names(mgL)
 				if (.object@diskDump.fragments){
 					# currently merging samples does not support multiple samples per fragment file
 					.object@diskDump.fragments.nSamplesPerFile <- 1L
