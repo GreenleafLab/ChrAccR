@@ -811,9 +811,7 @@ setMethod("mergeSamples",
 
 		#insertion data: concatenate GRanges objects
 		if (length(.object@fragments) == nSamples){
-			logger.start(paste0("Merging sample fragment data"))
-				fragL <- .object@fragments
-				
+			logger.start(paste0("Merging sample fragment data"))			
 				.object@fragments <- lapply(1:length(mgL), FUN=function(i){
 					iis <- mgL[[i]]
 					logger.status(c("Merged sample", i, "of", length(mgL)))
