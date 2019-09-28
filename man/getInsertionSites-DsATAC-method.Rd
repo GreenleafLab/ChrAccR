@@ -7,15 +7,17 @@
 \title{getInsertionSites-methods}
 \usage{
 \S4method{getInsertionSites}{DsATAC}(.object,
-  samples = getSamples(.object))
+  samples = getSamples(.object), asGRangesList = FALSE)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}
 
 \item{samples}{sample identifiers}
+
+\item{asGRangesList}{should a \code{GRangesList} object be returned instead of a regular \code{list}}
 }
 \value{
-\code{GRangesList} containing Tn5 cut sites for each sample
+\code{list} or \code{GRangesList} containing Tn5 cut sites for each sample
 }
 \description{
 Return a list of insertion sites (Tn5 cut sites) for each sample

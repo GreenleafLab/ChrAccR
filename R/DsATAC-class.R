@@ -299,6 +299,7 @@ setMethod("getFragmentGrl",
 			ddFns <- unique(ddFns_all)
 			# large GRanges list of all samples that have been disk-dumped
 			ddGrl <- lapply(ddFns, FUN=function(fn){
+				# logger.status(fn)
 				if (!file.exists(fn)) logger.error(c("Could not load fragment data from file:", fn))
 				rr <- readRDS(fn)
 				if (is.element(class(rr), c("GRangesList", "CompressedGRangesList"))){
@@ -316,7 +317,7 @@ setMethod("getFragmentGrl",
 			fragL[sidsDd] <- ddGrl[sidsDd]
 		}
 		if (asGRangesList){
-			fragL <- GenomicRanges::GRangesList(fragL)
+			fragL <- GenomicRanges::GRangesList(fragL) # can potentially take long and throw error: 'long vectors not supported yet: memory.c:3715'
 		}
 		return(fragL)
 	}
@@ -371,7 +372,8 @@ if (!isGeneric("getInsertionSites")) {
 #'
 #' @param .object \code{\linkS4class{DsATAC}} object
 #' @param samples sample identifiers
-#' @return \code{GRangesList} containing Tn5 cut sites for each sample
+#' @param asGRangesList should a \code{GRangesList} object be returned instead of a regular \code{list}
+#' @return \code{list} or \code{GRangesList} containing Tn5 cut sites for each sample
 #'
 #' @rdname getInsertionSites-DsATAC-method
 #' @docType methods
@@ -385,14 +387,18 @@ setMethod("getInsertionSites",
 	),
 	function(
 		.object,
-		samples=getSamples(.object)
+		samples=getSamples(.object),
+		asGRangesList=FALSE
 	) {
 		if (!all(samples %in% getSamples(.object))) logger.error(c("Invalid samples:", paste(setdiff(samples, getSamples(.object)), collapse=", ")))
 		if (!all(samples %in% names(.object@fragments))) logger.error(c("Object does not contain insertion information for samples:", paste(setdiff(samples, names(.object@fragments)), collapse=", ")))
-		fGrl <- getFragmentGrl(.object, samples, asGRangesList=TRUE)
+		fGrl <- getFragmentGrl(.object, samples, asGRangesList=FALSE)
 		res <- lapply(fGrl, getInsertionSitesFromFragmentGr)
 		names(res) <- samples
-		return(GRangesList(res))
+		if (asGRangesList){
+			res <- GRangesList(res)
+		}
+		return(res)
 	}
 )
 #-------------------------------------------------------------------------------
