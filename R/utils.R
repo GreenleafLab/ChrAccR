@@ -12,6 +12,31 @@ cleanMem <- function(iter.gc=1L){
 	invisible(NULL)
 }
 
+#' findOrderedNames
+#' 
+#' find the first occurrence of a name in a vector of strings
+#' @param ss character vector in which the name should be found
+#' @param orderedNames vector of names that will be queried. This method will go through them one by one and find the first occurrence
+#'           in the order of the orderedNames provided
+#' @param exact should only be exact matches be reported
+#' @param ignore.case should casing be ignored
+#' @return the string that matches the first occurrence in the order of \code{orderedNames}. Returns \code{NA} if no match is found.
+#' @author Fabian Mueller
+#' @export
+findOrderedNames <- function(x, orderedNames, exact=TRUE, ignore.case=FALSE){
+	rr <- NA
+	for (cn in orderedNames){
+		pat <- gsub(".", "\\.", cn, fixed=TRUE)
+		if (exact) pat <- paste0("^", pat, "$")
+		foundCn <- grep(pat, x, value=TRUE, ignore.case=ignore.case)[1]
+		if (!is.na(foundCn)) {
+			rr <- foundCn
+			break
+		}
+	}
+	return(rr)
+}
+
 #' isCanonicalChrom
 #' 
 #' for a character string of chromosome names, determine if it is a canonical chromosome
@@ -109,13 +134,18 @@ getGroupsFromTable <- function(tt, cols=NULL, minGrpSize=2, maxGrpCount=nrow(tt)
 		cname <- colnames(tt)[j]
 
 		vv <- tt[,j]
-		rr <- tapply(idxVec, vv, identity)
+		allNA <- all(is.na(vv))
+		if (allNA){
+			logger.warning(c("Detected only NAs for sample annotation column:", cname))
+		} else {
+			rr <- tapply(idxVec, vv, identity)
 
-		rr <- rr[sapply(rr, length) > 0] # ignore levels that are missing in the dataset
-		rr <- rr[sapply(rr, function(x){!any(is.na(x))})] # ignore levels that are missing in the dataset
-		passesMinSize <- sapply(rr, length) >= minGrpSize
-		if (length(rr) > 1 && length(rr) <= maxGrpCount && all(passesMinSize)){
-			res[[cname]] <- rr
+			rr <- rr[sapply(rr, length) > 0] # ignore levels that are missing in the dataset
+			rr <- rr[sapply(rr, function(x){!any(is.na(x))})] # ignore levels that are missing in the dataset
+			passesMinSize <- sapply(rr, length) >= minGrpSize
+			if (length(rr) > 1 && length(rr) <= maxGrpCount && all(passesMinSize)){
+				res[[cname]] <- rr
+			}
 		}
 	}
 	return(res)

@@ -67,6 +67,7 @@ Collate:
     'utils_filehandling.R'
     'DsAcc-class.R'
     'DsATAC-class.R'
+    'DsATACsc-class.R'
     'DsNOMe-class.R'
     'import_atac.R'
     'import_atac_10x.R'

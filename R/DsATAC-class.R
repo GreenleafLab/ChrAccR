@@ -34,7 +34,8 @@ setClass("DsATAC",
 		counts = "list",
 		countTransform = "list",
 		sparseCounts = "logical",
-		diskDump.fragments = "logical"
+		diskDump.fragments = "logical",
+		diskDump.fragments.nSamplesPerFile = "integer"
 	),
 	contains = "DsAcc",
 	package = "ChrAccR"
@@ -49,6 +50,7 @@ setMethod("initialize","DsATAC",
 		genome,
 		diskDump,
 		diskDump.fragments,
+		diskDump.fragments.nSamplesPerFile,
 		sparseCounts
 	) {
 		.Object@fragments  <- fragments
@@ -60,6 +62,7 @@ setMethod("initialize","DsATAC",
 		.Object@genome      <- genome
 		.Object@diskDump    <- diskDump
 		.Object@diskDump.fragments <- diskDump.fragments
+		.Object@diskDump.fragments.nSamplesPerFile <- diskDump.fragments.nSamplesPerFile
 		.Object@sparseCounts <- sparseCounts
 		.Object@pkgVersion  <- packageVersion("ChrAccR")
 		.Object
@@ -78,6 +81,7 @@ DsATAC <- function(sampleAnnot, genome, diskDump=FALSE, diskDump.fragments=TRUE,
 		genome,
 		diskDump,
 		diskDump.fragments,
+		diskDump.fragments.nSamplesPerFile=1L,
 		sparseCounts
 	)
 	return(obj)
@@ -240,11 +244,81 @@ setMethod("getFragmentGr",
 		if (is.character(fragGr)){
 			if (file.exists(fragGr)) {
 				fragGr <- readRDS(fragGr)
+				if (is.list(fragGr) || is.element(class(fragGr), c("GRangesList", "CompressedGRangesList"))){
+					fragGr <- fragGr[[sampleId]]
+				}
 			} else {
 				logger.error(c("Could not load fragment data from file:", fragGr))
 			}
 		}
 		return(fragGr)
+	}
+)
+#-------------------------------------------------------------------------------
+if (!isGeneric("getFragmentGrl")) {
+	setGeneric(
+		"getFragmentGrl",
+		function(.object, ...) standardGeneric("getFragmentGrl"),
+		signature=c(".object")
+	)
+}
+#' getFragmentGrl-methods
+#'
+#' Return a list of \code{GRanges} objects of fragment data for a given set of samples
+#'
+#' @param .object \code{\linkS4class{DsATAC}} object
+#' @param sampleIds sample identifiers
+#' @param asGRangesList should a \code{GRangesList} object be returned instead of a regular \code{list}
+#' @return A named list of \code{GRanges} objects containing fragment data
+#'
+#' @rdname getFragmentGrl-DsATAC-method
+#' @docType methods
+#' @aliases getFragmentGrl
+#' @aliases getFragmentGrl,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("getFragmentGrl",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		sampleIds,
+		asGRangesList=FALSE
+	) {
+		if (!all(sampleIds %in% getSamples(.object))) logger.error(c("Invalid samples:", paste(setdiff(sampleIds, getSamples(.object)), collapse=";")))
+		if (!all(sampleIds %in% names(.object@fragments))) logger.error(c("Object does not contain insertion information for samples:", paste(setdiff(sampleIds, names(.object@fragments)), collapse=";")))
+
+		fragL <- .object@fragments[sampleIds]
+		# load disk-dumped fragment GRanges into memory
+		isDd <- sapply(fragL, is.character)
+		if (any(isDd)){
+			ddFns_all <- unlist(fragL[isDd])
+			sidsDd <- names(fragL)[isDd] # sample names of disk dumped fragments
+			fnToSampleL <- tapply(sidsDd, ddFns_all, c)
+			ddFns <- unique(ddFns_all)
+			# large GRanges list of all samples that have been disk-dumped
+			ddGrl <- lapply(ddFns, FUN=function(fn){
+				if (!file.exists(fn)) logger.error(c("Could not load fragment data from file:", fn))
+				rr <- readRDS(fn)
+				if (is.element(class(rr), c("GRangesList", "CompressedGRangesList"))){
+					rr <- as.list(rr)
+				}
+				if (!is.list(rr)) {
+					rr <- list(rr)
+					names(rr) <- fnToSampleL[[fn]]
+				}
+				return(rr)
+			})
+			names(ddGrl) <- NULL
+			ddGrl <- do.call("c", ddGrl)
+			
+			fragL[sidsDd] <- ddGrl[sidsDd]
+		}
+		if (asGRangesList){
+			fragL <- GenomicRanges::GRangesList(fragL)
+		}
+		return(fragL)
 	}
 )
 
@@ -279,10 +353,7 @@ setMethod("getFragmentNum",
 		sampleIds=getSamples(.object)
 	) {
 		if (!all(sampleIds %in% getSamples(.object))) logger.error(c("Invalid sampleIds:", paste(setdiff(sampleIds, getSamples(.object)), collapse=", ")))
-		res <- sapply(sampleIds, FUN=function(sid){
-			length(getFragmentGr(.object, sid))
-		})
-		names(res) <- sampleIds
+		res <- elementNROWS(getFragmentGrl(.object, getSamples(.object), asGRangesList=TRUE))
 		return(res)
 	}
 )
@@ -318,10 +389,9 @@ setMethod("getInsertionSites",
 	) {
 		if (!all(samples %in% getSamples(.object))) logger.error(c("Invalid samples:", paste(setdiff(samples, getSamples(.object)), collapse=", ")))
 		if (!all(samples %in% names(.object@fragments))) logger.error(c("Object does not contain insertion information for samples:", paste(setdiff(samples, names(.object@fragments)), collapse=", ")))
-		res <- list()
-		for (sid in samples){
-			res[[sid]] <- getInsertionSitesFromFragmentGr(getFragmentGr(.object, sid))
-		}
+		fGrl <- getFragmentGrl(.object, samples, asGRangesList=TRUE)
+		res <- lapply(fGrl, getInsertionSitesFromFragmentGr)
+		names(res) <- samples
 		return(GRangesList(res))
 	}
 )
@@ -356,9 +426,10 @@ setMethod("getCoverage",
 		samples=getSamples(.object)
 	) {
 		if (!all(samples %in% getSamples(.object))) logger.error(c("Invalid samples:", paste(setdiff(samples, getSamples(.object)), collapse=", ")))
+		insGrl <- getInsertionSites(.object, samples)
 		sampleCovgRle <- lapply(samples, FUN=function(sid){
 			logger.status(c("Computing genome-wide coverage for sample", sid))
-			return(GenomicRanges::coverage(getInsertionSites(.object, sid)[[1]]))
+			return(GenomicRanges::coverage(insGrl[[sid]]))
 		})
 		names(sampleCovgRle) <- samples
 		return(sampleCovgRle)
@@ -382,6 +453,9 @@ setMethod("show","DsATAC",
 		str.disk <- "[in memory object]"
 		if (object@diskDump) str.disk <- "[contains disk-backed data]"
 
+		if (class(object)=="DsATACsc"){
+			cat("Single-cell ")
+		}
 		cat("DsATAC chromatin accessibility dataset \n")
 		cat(str.disk, "\n")
 		cat("contains:\n")
@@ -585,12 +659,11 @@ setMethod("regionAggregation",
 						nSamples_cur <- length(chunkIdxL[[k]])
 						sampleIds_cur <- sampleIds[chunkIdxL[[k]]]
 						logger.status("Retrieving joined insertion sites ...")
-						igr <- getInsertionSitesFromFragmentGr(do.call("c", lapply(1:nSamples_cur, FUN=function(i){
-							# logger.status(c("Sample:", i))
-							rr <- getFragmentGr(.object, sampleIds_cur[i])
-							elementMetadata(rr)[,".sampleIdx"] <- i
-							return(rr)
-						})))
+						fGrl <- getFragmentGrl(.object, sampleIds_cur, asGRangesList=TRUE)
+						nFrags <- elementNROWS(fGrl)
+						fGr <- unlist(fGrl, use.names=FALSE)
+						elementMetadata(fGr)[,".sampleIdx"] <- rep(seq_along(nFrags), nFrags)
+						igr <- getInsertionSitesFromFragmentGr(fGr)
 						logger.status("computing overlaps with regions ...")
 						oo <- findOverlaps(regGr, igr, ignore.strand=TRUE)
 						# convenient: when constructing sparse matrices, if (i,j) indices are repeated, the x-values are summed up
@@ -676,6 +749,7 @@ setMethod("mergeSamples",
 		mergeGroups,
 		countAggrFun="sum"
 	) {
+		inputObj <- .object
 		if (!is.element(countAggrFun, c("sum", "mean", "median"))){
 			logger.error(c("Unknown signal count aggregation function:", countAggrFun))
 		}
@@ -737,30 +811,31 @@ setMethod("mergeSamples",
 
 		#insertion data: concatenate GRanges objects
 		if (length(.object@fragments) == nSamples){
-			logger.status(paste0("Merging sample fragment data..."))
-			insL <- .object@fragments
-			.object@fragments <- lapply(mgL, FUN=function(iis){
-				rr <- insL[iis]
-				rr <- lapply(seq_along(iis), FUN=function(i){
-					x <- rr[[i]]
-					if (is.character(x)){
-						if (file.exists(x)) {
-							x <- readRDS(x)
-						} else {
-							logger.error(c("Could not load fragment data from file:", x))
-						}
+			logger.start(paste0("Merging sample fragment data"))			
+				.object@fragments <- lapply(1:length(mgL), FUN=function(i){
+					iis <- mgL[[i]]
+					logger.status(c("Merged sample", i, "of", length(mgL)))
+					curSns <- sampleNames[iis]
+					curFragL <- getFragmentGrl(inputObj, curSns, asGRangesList=TRUE)
+					nFrags <- elementNROWS(curFragL)
+					catRes <- unlist(curFragL, use.names=FALSE)
+					elementMetadata(catRes)[,".sample"] <- rep(curSns, nFrags)
+
+					if (.object@diskDump.fragments) {
+						# logger.status(c("... saving to disk"))
+						fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext=".rds")
+						saveRDS(catRes, fn)
+						catRes <- fn
 					}
-					elementMetadata(x)[,".sample"] <- sampleNames[iis[i]]
-					return(x)
+					return(catRes)
 				})
-				catRes <- do.call("c", rr)
-				if (.object@diskDump.fragments) {
-					fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext=".rds")
-					saveRDS(catRes, fn)
-					catRes <- fn
+				names(.object@fragments) <- names(mgL)
+				if (.object@diskDump.fragments){
+					# currently merging samples does not support multiple samples per fragment file
+					.object@diskDump.fragments.nSamplesPerFile <- 1L
+					# TODO: support multiple samples per merged fragment file
 				}
-				return(catRes)
-			})
+			logger.completed()
 		}
 
 		return(.object)
@@ -809,7 +884,7 @@ if (!isGeneric("undiskFragmentData")) {
 }
 #' undiskFragmentData-methods
 #'
-#'  converts disk-backed fragment data to in-memory fragment data
+#' converts disk-backed fragment data to in-memory fragment data
 #'
 #' @param object	\code{\linkS4class{DsATAC}} object
 #' @return the modified object
@@ -827,18 +902,7 @@ setMethod("undiskFragmentData",
 	function(
 		object
 	) {
-		if (length(object@fragments) > 0){
-			object@fragments <- lapply(object@fragments, FUN=function(fragGr){
-				if (is.character(fragGr)){
-					if (file.exists(fragGr)) {
-						fragGr <- readRDS(fragGr)
-					} else {
-						logger.error(c("Could not load fragment data from file:", fragGr))
-					}
-				}
-				return(fragGr)
-			})
-		}
+		object@fragments <- getFragmentGrl(object, names(object@fragments))
 		object@diskDump.fragments <- FALSE
 		return(object)
 	}
@@ -1110,6 +1174,12 @@ setMethod("addInsertionDataFromBam",
 		if (!all(sids %in% getSamples(.object))){
 			logger.error(c("DsATAC dataset does not contain samples:", paste(setdiff(sids, getSamples(.object)), collapse=", ")))
 		}
+
+		# only relevant if fragments from multiple samples are written to the same file (chunkedFragmentFiles)
+		chunkedFragmentFiles <- .object@diskDump.fragments && .hasSlot(.object, "diskDump.fragments.nSamplesPerFile") && .object@diskDump.fragments.nSamplesPerFile > 1
+		curChunkL <- list()
+		curChunkFn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
+
 		for (sid in sids){
 			logger.start(c("Reading insertion data for sample:", sid))
 				if (!is.null(.object@fragments[[sid]])){
@@ -1124,12 +1194,26 @@ setMethod("addInsertionDataFromBam",
 				ga <- setGenomeProps(ga, .object@genome, onlyMainChrs=TRUE)
 				fragGr <- getATACfragments(ga, offsetTn=TRUE)
 				if (.diskDump){
-					fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
-					saveRDS(fragGr, fn)
-					fragGr <- fn
+					if (chunkedFragmentFiles){
+						curChunkL[[sid]] <- fragGr
+						fragGr <- curChunkFn
+						if (length(curChunkL) >= .object@diskDump.fragments.nSamplesPerFile){
+							saveRDS(curChunkL, curChunkFn)
+							# reset after writing chunk
+							curChunkL <- list()
+							curChunkFn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
+						}
+					} else {
+						fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
+						saveRDS(fragGr, fn)
+						fragGr <- fn
+					}
 				}
 				.object@fragments[[sid]] <- fragGr
 			logger.completed()
+		}
+		if (.diskDump && length(curChunkL) > 0){
+			saveRDS(curChunkL, curChunkFn)
 		}
 
 		return(.object)
@@ -1594,18 +1678,40 @@ setMethod("filterChroms",
 		}
 		if (length(.object@fragments) > 0){
 			logger.status("Filtering fragment data")
-			for (sid in names(.object@fragments)){
-				fragGr <- getFragmentGr(.object, sid)
-				idx <- !(as.character(seqnames(fragGr)) %in% exclChrom)
-				fragGr <- fragGr[idx]
-				if (.object@diskDump.fragments){
+			chunkedFragmentFiles <- .object@diskDump.fragments && .hasSlot(.object, "diskDump.fragments.nSamplesPerFile") && .object@diskDump.fragments.nSamplesPerFile > 1
+			if (chunkedFragmentFiles){
+				isFile <- sapply(.object@fragments, is.character)
+				if (!all(isFile)) logger.error("Expected all disk-dumped fragment files")
+				fns <- unlist(.object@fragments)
+				names(fns) <- names(.object@fragments)
+				for (fn in unique(fns)){
+					fragGrl <- readRDS(fn)
+					sids <- names(fragGrl)
+					# filter
+					fragGrl_filt <- endoapply(fragGrl, FUN=function(x){
+						idx <- !(as.character(seqnames(x)) %in% exclChrom)
+						return(x[idx])
+					})
+					names(fragGrl_filt) <- sids
+					# save the list object to disk
 					fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
-					saveRDS(fragGr, fn)
-					fragGr <- fn
+					saveRDS(fragGrl_filt, fn)
+					# replace old filename references
+					.object@fragments[sids] <- rep(list(fn), length(sids))
 				}
-				.object@fragments[[sid]] <- fragGr
+			} else {
+				for (sid in names(.object@fragments)){
+					fragGr <- getFragmentGr(.object, sid)
+					idx <- !(as.character(seqnames(fragGr)) %in% exclChrom)
+					fragGr <- fragGr[idx]
+					if (.object@diskDump.fragments){
+						fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
+						saveRDS(fragGr, fn)
+						fragGr <- fn
+					}
+					.object@fragments[[sid]] <- fragGr
+				}
 			}
-			
 		}
 		return(.object)
 	}
@@ -1654,19 +1760,42 @@ setMethod("filterByGRanges",
 		}
 		if (length(.object@fragments) > 0){
 			logger.status("Filtering fragment data")
-			for (sid in names(.object@fragments)){
-				fragGr <- getFragmentGr(.object, sid)
-				idx <- overlapsAny(fragGr, gr) # whitelist
-				if (method=="black") idx <- !idx
-				fragGr <- fragGr[idx]
-				if (.object@diskDump.fragments){
+			chunkedFragmentFiles <- .object@diskDump.fragments && .hasSlot(.object, "diskDump.fragments.nSamplesPerFile") && .object@diskDump.fragments.nSamplesPerFile > 1
+			if (chunkedFragmentFiles){
+				isFile <- sapply(.object@fragments, is.character)
+				if (!all(isFile)) logger.error("Expected all disk-dumped fragment files")
+				fns <- unlist(.object@fragments)
+				names(fns) <- names(.object@fragments)
+				for (fn in unique(fns)){
+					fragGrl <- readRDS(fn)
+					sids <- names(fragGrl)
+					# filter
+					fragGrl_filt <- endoapply(fragGrl, FUN=function(x){
+						idx <- overlapsAny(fragGr, gr) # whitelist
+						if (method=="black") idx <- !idx
+						return(x[idx])
+					})
+					names(fragGrl_filt) <- sids
+					# save the list object to disk
 					fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
-					saveRDS(fragGr, fn)
-					fragGr <- fn
+					saveRDS(fragGrl_filt, fn)
+					# replace old filename references
+					.object@fragments[sids] <- rep(list(fn), length(sids))
 				}
-				.object@fragments[[sid]] <- fragGr
+			} else {
+				for (sid in names(.object@fragments)){
+					fragGr <- getFragmentGr(.object, sid)
+					idx <- overlapsAny(fragGr, gr) # whitelist
+					if (method=="black") idx <- !idx
+					fragGr <- fragGr[idx]
+					if (.object@diskDump.fragments){
+						fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
+						saveRDS(fragGr, fn)
+						fragGr <- fn
+					}
+					.object@fragments[[sid]] <- fragGr
+				}
 			}
-			
 		}
 		return(.object)
 	}
@@ -2624,7 +2753,7 @@ setMethod("getTssEnrichment",
 )
 
 ################################################################################
-# Single-cell analyses
+# Single-cell/ high-sample number analyses
 ################################################################################
 if (!isGeneric("getQuickTssEnrichment")) {
 	setGeneric(
@@ -2681,12 +2810,11 @@ setMethod("getQuickTssEnrichment",
 		sampleIds <- getSamples(.object)
 		nSamples <- length(sampleIds)
 		logger.status("Retrieving joined insertion sites ...")
-		igr <- getInsertionSitesFromFragmentGr(do.call("c", lapply(1:nSamples, FUN=function(i){
-			# logger.status(c("Sample:", i))
-			rr <- getFragmentGr(.object, sampleIds[i])
-			elementMetadata(rr)[,".sampleIdx"] <- i
-			return(rr)
-		})))
+		fGr <- getFragmentGrl(.object, sampleIds, asGRangesList=TRUE)
+		nFrags <- elementNROWS(fGr)
+		fGr <- unlist(fGr, use.names=FALSE)
+		elementMetadata(fGr)[,".sampleIdx"] <- rep(seq_along(nFrags), nFrags)
+		igr <- getInsertionSitesFromFragmentGr(fGr)
 		logger.status("computing overlaps with TSS regions ...")
 		oo <- findOverlaps(tsswGr, igr, ignore.strand=TRUE)
 		# convenient: when constructing sparse matrices, if (i,j) indices are repeated, the x-values are summed up
@@ -2711,324 +2839,6 @@ setMethod("getQuickTssEnrichment",
 		
 		tsse <- Matrix::colSums(cm_tss, na.rm=TRUE) / Matrix::colSums(cm_bg, na.rm=TRUE)
 		return(tsse)
-	}
-)
-#-------------------------------------------------------------------------------
-
-if (!isGeneric("unsupervisedAnalysisSc")) {
-	setGeneric(
-		"unsupervisedAnalysisSc",
-		function(.object, ...) standardGeneric("unsupervisedAnalysisSc"),
-		signature=c(".object")
-	)
-}
-#' unsupervisedAnalysisSc-methods
-#'
-#' Perform unsupervised analysis on single-cell data. Performs dimensionality reduction
-#' and clustering.
-#'
-#' @param .object    \code{\linkS4class{DsATAC}} object
-#' @param regionType character string specifying the region type
-#' @param regionIdx  indices of regions to be used (logical or integer vector). If \code{NULL} (default) all regions of the specified regionType will be used.
-#' @param dimRedMethod character string specifying the dimensionality reduction method. Currently on \code{"tf-idf_irlba"} is supported
-#' @param usePcs     integer vector specifying the principal components to use for UMAP and clustering
-#' @param clusteringMethod character string specifying the clustering method. Currently on \code{"seurat_louvain"} is supported
-#' @return an \code{S3} object containing dimensionality reduction results and clustering
-#' 
-#' @rdname unsupervisedAnalysisSc-DsATAC-method
-#' @docType methods
-#' @aliases unsupervisedAnalysisSc
-#' @aliases unsupervisedAnalysisSc,DsATAC-method
-#' @author Fabian Mueller
-#' @export
-setMethod("unsupervisedAnalysisSc",
-	signature(
-		.object="DsATAC"
-	),
-	function(
-		.object,
-		regionType,
-		regionIdx=NULL,
-		dimRedMethod="tf-idf_irlba",
-		usePcs=1:50,
-		clusteringMethod="seurat_louvain"
-	) {
-		if (!is.element(regionType, getRegionTypes(.object))) logger.error(c("Unsupported region type:", regionType))
-		if (!is.element(dimRedMethod, c("tf-idf_irlba"))) logger.error(c("Unsupported dimRedMethod:", dimRedMethod))
-		if (!is.integer(usePcs)) logger.error(c("usePcs must be an integer vector"))
-		if (!is.element(clusteringMethod, c("seurat_louvain"))) logger.error(c("Unsupported clusteringMethod:", clusteringMethod))
-		if (!is.null(regionIdx)){
-			if (is.logical(regionIdx)) regionIdx <- which(regionIdx)
-			if (!is.integer(regionIdx) || any(regionIdx < 1) || any(regionIdx > getNRegions(.object, regionType))) logger.error("Invalid regionIdx")
-		}
-
-		dsn <- .object
-		if (!is.null(regionIdx)){
-			nRegs <- getNRegions(.object, regionType)
-			logger.info(c("Retaining", length(regionIdx), "regions for dimensionality reduction"))
-			idx <- rep(TRUE,  nRegs)
-			idx[regionIdx] <- FALSE
-			dsn <- removeRegions(.object, idx, regionType)
-		}
-		if (dimRedMethod=="tf-idf_irlba"){
-			logger.start(c("Performing dimensionality reduction using", dimRedMethod))			
-				if (length(dsn@countTransform[[regionType]]) > 0) logger.warning("Counts have been pre-normalized. dimRedMethod 'tf-idf_irlba' might not be applicable.")
-				
-				if (!is.element("tf-idf", dsn@countTransform[[regionType]])){
-					dsn <- transformCounts(dsn, method="tf-idf", regionTypes=regionType)
-				}
-
-				cm <- ChrAccR::getCounts(dsn, regionType, asMatrix=TRUE)
-				pcaCoord <- muRtools::getDimRedCoords.pca(t(cm), components=1:max(usePcs), method="irlba_svd")
-			logger.completed()
-		}
-		cellIds <- colnames(cm)
-		logger.start(c("Getting UMAP coordinates"))	
-			umapCoord <- muRtools::getDimRedCoords.umap(pcaCoord[,usePcs])
-			umapRes <- attr(umapCoord, "umapRes")
-			attr(umapCoord, "umapRes") <- NULL
-		logger.completed()
-
-		if (clusteringMethod=="seurat_louvain"){
-			logger.start(c("Performing clustering using", clusteringMethod))	
-				if (!requireNamespace("Seurat")) logger.error(c("Could not load dependency: Seurat"))
-				# Louvain clustering using Seurat
-				dummyMat <- matrix(11.0, ncol=length(cellIds), nrow=11)
-				colnames(dummyMat) <- cellIds
-				rownames(dummyMat) <- paste0("df", 1:nrow(dummyMat))
-				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.features=0, assay="ATAC")
-				sObj[["pca"]] <- Seurat::CreateDimReducObject(embeddings=pcaCoord, key="PC_", assay="ATAC")
-				sObj <- Seurat::FindNeighbors(sObj, reduction="pca", assay="ATAC", dims=usePcs, k.param=30)
-				clustRes <- Seurat::FindClusters(sObj, k.param=30, algorithm=1, n.start=100, n.iter=10)
-				clustAss <- factor(paste0("c", clustRes@active.ident), levels=paste0("c", levels(clustRes@active.ident)))
-				names(clustAss) <- names(clustRes@active.ident)
-			logger.completed()
-		}
-		res <- list(
-			pcaCoord=pcaCoord,
-			umapCoord=umapCoord,
-			umapRes=umapRes,
-			clustAss=clustAss,
-			regionType=regionType,
-			regionIdx=regionIdx
-		)
-		class(res) <- "unsupervisedAnalysisResultSc"
-		return(res)
-	}
-)
-#-------------------------------------------------------------------------------
-
-if (!isGeneric("iterativeLSI")) {
-	setGeneric(
-		"iterativeLSI",
-		function(.object, ...) standardGeneric("iterativeLSI"),
-		signature=c(".object")
-	)
-}
-#' iterativeLSI-methods
-#'
-#' EXPERIMENTAL: Perform iterative LSI clustering as described in doi:10.1101/696328
-#'
-#' @param .object    \code{\linkS4class{DsATAC}} object
-#' @param it0regionType character string specifying the region type to start with
-#' @param it0nMostAcc the number of the most accessible regions to consider in iteration 0
-#' @param it0pcs      the principal components to consider in iteration 0
-#' @param it0clusterResolution resolution paramter for Seurat's  clustering (\code{Seurat::FindClusters}) in iteration 0
-#' @param it0nTopPeaksPerCluster the number of best peaks to be considered for each cluster in the merged peak set (iteration 0)
-#' @param it1pcs      the principal components to consider in iteration 0
-#' @param it1clusterResolution resolution paramter for Seurat's  clustering (\code{Seurat::FindClusters}) in iteration 1
-#' @param it1mostVarPeaks the number of the most variable peaks to consider after iteration 1
-#' @param it2pcs      the principal components to consider in the final iteration (2)
-#' @param it2clusterResolution resolution paramter for Seurat's  clustering (\code{Seurat::FindClusters}) in the final iteration (2)
-#' @return an \code{S3} object containing dimensionality reduction results and clustering
-#' 
-#' @rdname iterativeLSI-DsATAC-method
-#' @docType methods
-#' @aliases iterativeLSI
-#' @aliases iterativeLSI,DsATAC-method
-#' @author Fabian Mueller
-#' @export
-setMethod("iterativeLSI",
-	signature(
-		.object="DsATAC"
-	),
-	function(
-		.object,
-		it0regionType="t5k",
-		it0nMostAcc=20000L,
-		it0pcs=2:25,
-		it0clusterResolution=0.8,
-		it0nTopPeaksPerCluster=2e5,
-		it1pcs=1:50,
-		it1clusterResolution=0.8,
-		it1mostVarPeaks=50000L,
-		it2pcs=1:50,
-		it2clusterResolution=0.8
-	) {
-		callParams <- as.list(match.call())
-		callParams <- callParams[setdiff(names(callParams), ".object")]
-		cellIds <- getSamples(.object)
-		if (length(.object@fragments) != length(cellIds)) logger.error("Object does not contain fragment information for all samples")
-
-		ph <- getSampleAnnot(.object)
-		depthCol <- colnames(ph) %in% c("numIns", ".CR.cellQC.passed_filters", ".CR.cellQC.total")
-		depthV <- NULL
-		if (any(depthCol)){
-			depthV <- ph[,colnames(ph)[depthCol][1]]
-		}
-
-		logger.start("Iteration 0")
-			dsr <- .object
-			for (rt in setdiff(getRegionTypes(dsr), it0regionType)){
-				dsr <- removeRegionType(dsr, rt)
-			}
-			if (!is.null(it0nMostAcc)){
-				regAcc <- safeMatrixStats(ChrAccR::getCounts(dsr, it0regionType, allowSparseMatrix=TRUE), statFun="rowMeans", na.rm=TRUE)
-				if (it0nMostAcc < length(regAcc)){
-					idx2rem <- rank(-regAcc, na.last="keep", ties.method="min") > it0nMostAcc
-					logger.info(c("Retaining the", sum(!idx2rem), "most accessible regions for dimensionality reduction"))
-					dsr <- removeRegions(dsr, idx2rem, it0regionType)
-				}
-			}
-			logger.start(c("Performing TF-IDF-based dimension reduction"))
-				if (length(dsr@countTransform[[it0regionType]]) > 0) logger.warning("Counts have been pre-normalized. 'tf-idf' might not be applicable.")
-				dsn <- transformCounts(dsr, method="tf-idf", regionTypes=it0regionType)
-
-				cm <- ChrAccR::getCounts(dsn, it0regionType, allowSparseMatrix=TRUE)
-				pcaCoord_it0 <- muRtools::getDimRedCoords.pca(safeMatrixStats(cm, "t"), components=1:max(it0pcs), method="irlba_svd")
-				if (!is.null(depthV)){
-					cc <- cor(pcaCoord_it0[,1], depthV, method="spearman")
-					logger.info(c("Correlation (Spearman) of PC1 with cell fragment counts:", round(cc, 4)))
-				}
-				pcaCoord_it0 <- pcaCoord_it0[, it0pcs, drop=FALSE]
-			logger.completed()
-			logger.start(c("Clustering"))	
-				if (!requireNamespace("Seurat")) logger.error(c("Could not load dependency: Seurat"))
-				# Louvain clustering using Seurat
-				dummyMat <- matrix(11.0, ncol=length(cellIds), nrow=11)
-				colnames(dummyMat) <- cellIds
-				rownames(dummyMat) <- paste0("df", 1:nrow(dummyMat))
-				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.features=0, assay="ATAC")
-				sObj[["pca"]] <- Seurat::CreateDimReducObject(embeddings=pcaCoord_it0, key="PC_", assay="ATAC")
-				sObj <- Seurat::FindNeighbors(sObj, reduction="pca", assay="ATAC", dims=1:ncol(pcaCoord_it0), k.param=30)
-				clustRes <- Seurat::FindClusters(sObj, k.param=30, algorithm=1, n.start=100, n.iter=10, resolution=it0clusterResolution)
-				clustAss_it0 <- factor(paste0("c", clustRes@active.ident), levels=paste0("c", levels(clustRes@active.ident)))
-				names(clustAss_it0) <- names(clustRes@active.ident)
-			logger.completed()
-			logger.start(c("Peak calling"))
-				logger.start("Creating cluster pseudo-bulk samples")
-					dsr <- addSampleAnnotCol(dsr, "clustAss_it0", as.character(clustAss_it0[cellIds]))
-					dsrClust <- mergeSamples(dsr, "clustAss_it0", countAggrFun="sum")
-				logger.completed()
-				logger.start("Calling peaks")
-					clustPeakGrl <- callPeaks(dsrClust)
-					if (!is.null(it0nTopPeaksPerCluster)){
-						logger.info(paste0("Selecting the", it0nTopPeaksPerCluster, " peaks with highest score for each cluster"))
-						clustPeakGrl <- GRangesList(lapply(clustPeakGrl, FUN=function(x){
-							idx <- rank(-elementMetadata(x)[,"score_norm"], na.last="keep", ties.method="min") <= it0nTopPeaksPerCluster
-							x[idx]
-						}))
-					}
-					
-					peakUnionGr <- getNonOverlappingByScore(unlist(clustPeakGrl), scoreCol="score_norm")
-					peakUnionGr <- sortGr(peakUnionGr)
-				logger.completed()
-				logger.start("Aggregating counts for union peak set")
-					# dsrClust <- regionAggregation(dsrClust, peakUnionGr, "clusterPeaks", signal="insertions", dropEmpty=FALSE)
-					dsr <- regionAggregation(dsr, peakUnionGr, "clusterPeaks", signal="insertions", dropEmpty=FALSE, bySample=FALSE)
-				logger.completed()
-			logger.completed()
-		logger.completed()
-
-		logger.start("Iteration 1")
-			it1regionType <- "clusterPeaks"
-			logger.start(c("Performing TF-IDF-based dimension reduction"))
-				dsr <- removeRegionType(dsr, it0regionType)
-				dsn <- transformCounts(dsr, method="tf-idf", regionTypes=it1regionType) #TODO: renormalize based on sequencing depth rather than aggregated counts across peaks only?
-				cm <- ChrAccR::getCounts(dsn, it1regionType, allowSparseMatrix=TRUE)
-				pcaCoord_it1 <- muRtools::getDimRedCoords.pca(safeMatrixStats(cm, "t"), components=1:max(it1pcs), method="irlba_svd")[, it1pcs, drop=FALSE]
-			logger.completed()
-
-			logger.start(c("Clustering"))	
-				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.features=0, assay="ATAC")
-				sObj[["pca"]] <- Seurat::CreateDimReducObject(embeddings=pcaCoord_it1, key="PC_", assay="ATAC")
-				sObj <- Seurat::FindNeighbors(sObj, reduction="pca", assay="ATAC", dims=1:ncol(pcaCoord_it1), k.param=30)
-				clustRes <- Seurat::FindClusters(sObj, k.param=30, algorithm=1, n.start=100, n.iter=10, resolution=it1clusterResolution)
-				clustAss_it1 <- factor(paste0("c", clustRes@active.ident), levels=paste0("c", levels(clustRes@active.ident)))
-				names(clustAss_it1) <- names(clustRes@active.ident)
-			logger.completed()
-
-			if (!is.null(it1mostVarPeaks) && it1mostVarPeaks < nrow(cm)){
-				logger.start(c("Identifying cluster-variable peaks"))
-					logger.start("Creating cluster pseudo-bulk samples")
-						dsr <- addSampleAnnotCol(dsr, "clustAss_it1", as.character(clustAss_it1[cellIds]))
-						dsrClust <- mergeSamples(dsr, "clustAss_it1", countAggrFun="sum")
-					logger.completed()
-					logger.start("Identifying target peaks")
-						dsnClust <- transformCounts(dsrClust, method="RPKM", regionTypes=it1regionType)
-						l2cpm <- log2(ChrAccR::getCounts(dsnClust, it1regionType) / 1e3 + 1) # compute log2(CPM) from RPKM
-						peakVar <- matrixStats::rowVars(l2cpm, na.rm=TRUE)
-						if (it1mostVarPeaks < length(peakVar)){
-							idx2rem <- rank(-peakVar, na.last="keep", ties.method="min") > it1mostVarPeaks
-							logger.info(c("Retaining the", sum(!idx2rem), "most variable peaks"))
-							dsr <- removeRegions(dsr, idx2rem, it1regionType)
-						}
-						peakCoords <- ChrAccR::getCoord(dsr, it1regionType)
-					logger.completed()
-				logger.completed()
-			}
-		logger.completed()
-
-		logger.start("Iteration 2")
-			it2regionType <- it1regionType
-			logger.start(c("Performing TF-IDF-based dimension reduction"))
-				bcm_unnorm <- ChrAccR::getCounts(dsr, it2regionType, allowSparseMatrix=TRUE) > 0 # unnormalized binary count matrix
-				idfBase <- log(1 + ncol(bcm_unnorm) / safeMatrixStats(bcm_unnorm, "rowSums", na.rm=TRUE))
-				dsn <- transformCounts(dsr, method="tf-idf", regionTypes=it2regionType) #TODO: renormalize based on sequencing depth rather than aggregated counts across peaks only?
-				cm <- ChrAccR::getCounts(dsn, it2regionType, allowSparseMatrix=TRUE)
-				pcaCoord <- muRtools::getDimRedCoords.pca(safeMatrixStats(cm, "t"), components=1:max(it2pcs), method="irlba_svd")
-				pcaCoord_sel <- pcaCoord[, it2pcs, drop=FALSE]
-			logger.completed()
-			logger.start(c("Clustering"))
-				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.features=0, assay="ATAC")
-				sObj[["pca"]] <- Seurat::CreateDimReducObject(embeddings=pcaCoord_sel, key="PC_", assay="ATAC")
-				sObj <- Seurat::FindNeighbors(sObj, reduction="pca", assay="ATAC", dims=1:ncol(pcaCoord_sel), k.param=30)
-				clustRes <- Seurat::FindClusters(sObj, k.param=30, algorithm=1, n.start=100, n.iter=10, resolution=it2clusterResolution)
-				clustAss <- factor(paste0("c", clustRes@active.ident), levels=paste0("c", levels(clustRes@active.ident)))
-				names(clustAss) <- names(clustRes@active.ident)
-
-				dsr <- addSampleAnnotCol(dsr, "clustAss_it2", as.character(clustAss[cellIds]))
-			logger.completed()
-			logger.start(c("UMAP coordinates"))	
-				umapCoord <- muRtools::getDimRedCoords.umap(pcaCoord_sel)
-				umapRes <- attr(umapCoord, "umapRes")
-				attr(umapCoord, "umapRes") <- NULL
-			logger.completed()
-		logger.completed()
-
-		res <- list(
-			pcaCoord=pcaCoord,
-			pcs = it2pcs,
-			idfBase=idfBase,
-			umapCoord=umapCoord,
-			umapRes=umapRes,
-			clustAss=clustAss,
-			regionGr=peakCoords,
-			clusterPeaks_unfiltered=peakUnionGr,
-			iterationData = list(
-				iteration0 = list(
-					pcaCoord=pcaCoord_it0,
-					clustAss=clustAss_it0
-				),
-				iteration1 = list(
-					pcaCoord=pcaCoord_it1,
-					clustAss=clustAss_it1
-				)
-			),
-			.params=callParams
-		)
-		class(res) <- "iterativeLSIResultSc"
-		return(res)
 	}
 )
 

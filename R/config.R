@@ -20,6 +20,7 @@
 .config$regionTypes <- NULL
 .config$chromVarMotifs <- c("jaspar_vert")
 .config$chromVarRegionTypes <- NULL
+.config$chromVarMotifNamesForDimRed <- NULL
 .config$annotationColumns <- NULL
 .config$annotationMinGroupSize <- 2L
 .config$exploratoryLogNormCounts <- TRUE
@@ -27,6 +28,7 @@
 .config$differentialCompNames <- NULL
 .config$differentialAdjColumns <- NULL
 .config$lolaDbPaths <- NULL
+.config$scIterativeLsiRegType <- NULL
 
 #' setConfigElement
 #'
@@ -61,6 +63,9 @@
 #' 	 \item{\bold{\code{chromVarMotifs}}}{
 #'       Character vector of names of TF motif sets to be used in ChromVAR analyses
 #'   }
+#'   \item{\bold{\code{chromVarMotifNamesForDimRed}}}{
+#'       Names of motifs to be used for dimension reduction plots in the reports.
+#'   }
 #'   \item{\bold{\code{annotationColumns}}}{
 #'       Sample annotation columns to be used for reporting
 #'   }
@@ -81,6 +86,10 @@
 #'   }
 #'   \item{\bold{\code{lolaDbPaths}}}{
 #'       Precomputed LOLA databases to be used for enrichment analysis. If \code{NULL} (default), ChrAccR will download an apropriate core database.
+#'   }
+#'   \item{\bold{\code{scIterativeLsiRegType}}}{
+#'       For single-cell analysis only: region type to be used for clustering and dimension reduction using iterative LSI. By default (\code{NULL}),
+#'       ChrAccR will look for a region type named \code{"tiling"}.
 #'   }
 #' }
 #' @author Fabian Mueller

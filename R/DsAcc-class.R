@@ -419,20 +419,55 @@ saveDsAcc <- function(.object, path, forceDiskDump=FALSE, updateDiskRef=TRUE){
 			logger.start("Saving fragment data to RDS")
 				fragDir <- file.path(path, "fragments")
 				dir.create(fragDir)
-				for (i in 1:length(.object@fragments)) {
-					fn <- file.path(fragDir, paste0("fragmentGr_", i, ".rds"))
-					fragGr <- .object@fragments[[i]]
-					if (is.character(fragGr)){
-						if (file.exists(fragGr)) {
-							file.copy(fragGr, fn)
+				nSamples <- length(.object@fragments)
+				chunkL <- lapply(1:nSamples, identity)
+				chunkedFragmentFiles <- .hasSlot(.object, "diskDump.fragments.nSamplesPerFile") && .object@diskDump.fragments.nSamplesPerFile > 1
+				if (chunkedFragmentFiles){
+					createNewChunkL <- TRUE
+					isDd <- sapply(.object@fragments, is.character)
+					# all disk-dumped?
+					if (all(isDd)){
+						ddFns <- unlist(.object@fragments)
+						chunkL <- tapply(1:length(ddFns), ddFns, identity)
+						# check if already chunked
+						createNewChunkL <- all(elementNROWS(chunkL)==1)
+					}
+					if (createNewChunkL){
+						chunkL <- split(1:nSamples, rep(1:ceiling(nSamples/.object@diskDump.fragments.nSamplesPerFile), each=.object@diskDump.fragments.nSamplesPerFile)[1:nSamples])
+						names(chunkL) <- NULL
+					}
+				}
+				for (k in 1:length(chunkL)) {
+					fn <- file.path(fragDir, paste0("fragmentGr_", k, ".rds"))
+					iis <- chunkL[[k]]
+					fragGrl <- .object@fragments[chunkL[[k]]]
+					fn_source <- ""
+					isFile <- sapply(fragGrl, is.character)
+					isMix <- length(unique(isFile)) != 1
+					if (isMix) logger.error("Mix of disk dumped and in-memory fragment objects not supported yet")
+					isFileReady <- all(isFile)
+					if (isFileReady) {
+						# check if all samples in the current chunk are in the same file
+						uu <- unique(unlist(fragGrl))
+						if (length(uu)==1) {
+							fn_source <- uu
 						} else {
-							logger.error(c("Could not find fragment data in file:", x))
+							logger.error("Repackaging of already packaged fragments not supported yet")
+						}
+					}
+					if (isFileReady){
+						if (file.exists(fn_source)) {
+							file.copy(fn_source, fn)
+						} else {
+							logger.error(c("Could not find fragment data file:", fn_source))
 						}
 					} else {
-						saveRDS(fragGr, fn)
+						saveRDS(fragGrl, fn)
 					}
 					if (updateDiskRef){
-						.object@fragments[[i]] <- fn
+						for (i in chunkL[[k]]){
+							.object@fragments[[i]] <- fn
+						}
 					}
 				}
 			logger.completed()
@@ -475,11 +510,24 @@ loadDsAcc <- function(path){
 	# load fragment data from RDS
 	if (.hasSlot(.object, "diskDump.fragments") && .object@diskDump.fragments && .hasSlot(.object, "fragments") && !is.null(.object@fragments) && length(.object@fragments) > 0){
 		logger.start("Updating fragment RDS file references")
+			nSamples <- length(.object@fragments)
 			fragDir <- file.path(path, "fragments")
-			for (i in 1:length(.object@fragments)) {
-				fn <- file.path(fragDir, paste0("fragmentGr_", i, ".rds"))
-				if (!file.exists(fn)) logger.error(paste0("Invalid save: Could not find fragment file:", fn))
-				.object@fragments[[i]] <- fn
+			
+			chunkedFragmentFiles <- .hasSlot(.object, "diskDump.fragments.nSamplesPerFile") && .object@diskDump.fragments.nSamplesPerFile > 1
+			if (!chunkedFragmentFiles){
+				for (i in 1:nSamples) {
+					fn <- file.path(fragDir, paste0("fragmentGr_", i, ".rds"))
+					if (!file.exists(fn)) logger.error(paste0("Invalid save: Could not find fragment file:", fn))
+					.object@fragments[[i]] <- fn
+				}
+			} else {
+				fragFns <- list.files(fragDir, pattern="fragmentGr_")
+				for (fn in fragFns){
+					fn_full <- file.path(fragDir, fn)
+					fGrl <- readRDS(fn_full)
+					if (!all(names(fGrl) %in% names(.object@fragments))) logger.error(c("Incompatible fragment file: could not find sample names from file:", fn))
+					.object@fragments[names(fGrl)] <- rep(list(fn_full), length(fGrl))
+				}
 			}
 		logger.completed()
 	}
