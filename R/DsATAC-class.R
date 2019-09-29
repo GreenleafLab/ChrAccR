@@ -1391,7 +1391,42 @@ setMethod("removeSamples",
 		return(.object)
 	}
 )
-
+#-------------------------------------------------------------------------------
+#' Subsetting DsATAC datasets by sample
+#' 
+#' NOTE: '[' operator for DsATAC does not reorder samples
+#'
+#' @param x DsATAC object
+#' @param i sample names or indices
+setMethod("[", "DsATAC",
+	function(x, i){
+		if (missing(i)) return(x)
+		sampleIds <- getSamples(x)
+		nSamples <- length(sampleIds)
+		inds2keep <- rep(FALSE, nSamples)
+		if (is.numeric(i)){
+			if (any(i > nSamples | i < 1)) {
+				logger.error(c("Invalid values in i"))
+			}
+			inds2keep[i] <- TRUE
+		} else if (is.logical(i)){
+			inds2keep <- !i
+		} else if (is.character(i)){
+			if (!all(i %in% sampleIds)){
+				logger.error(c("Could not find the following sample ids:", paste(setdiff(i, sampleIds), collapse=",")))
+			}
+			inds2keep <- sampleIds %in% i
+		}
+		if (sum(inds2keep)>=nSamples){
+			logger.info("Nothing to be done: keeping object as is")
+			return(x)
+		}
+		if (is.character(i) || is.numeric(i)){
+			logger.info("NOTE: '[' operator for DsATAC does not reorder samples")
+		}
+		return(removeSamples(x, !inds2keep))
+	}
+)
 #-------------------------------------------------------------------------------
 if (!isGeneric("transformCounts")) {
 	setGeneric(
@@ -2003,7 +2038,7 @@ setMethod("aggregateRegionCounts",
 			}
 			logger.start("Computing region kmer frequencies")
 				kmerFreqM <- do.call("cbind", lapply(0:(wm-1), FUN=function(i){
-					logger.status(paste0("i=",i))
+					if (i%%50 == 0) logger.status(paste0("i=",i))
 					wGr <- trim(resize(GenomicRanges::shift(regionGr, i-ceiling(k/2)), width=k, fix="start", ignore.strand=TRUE))
 					rr <- Biostrings::oligonucleotideFrequency(Biostrings::Views(go, wGr), width=k, simplify.as="collapsed")
 					return(rr)
@@ -2245,6 +2280,110 @@ setMethod("getChromVarDev",
 		ridx <- safeMatrixStats(assay(countSe), "rowSums") > 0 & safeMatrixStats(assay(mmObj), "rowSums") > 0 # only consider regions where there is an actual motif match and counts
 		res <- chromVAR::computeDeviations(object=countSe[ridx,], annotations=mmObj[ridx,])
 
+		return(res)
+	}
+)
+
+################################################################################
+# Footprinting
+################################################################################
+if (!isGeneric("getMotifFootprints")) {
+	setGeneric(
+		"getMotifFootprints",
+		function(.object, ...) standardGeneric("getMotifFootprints"),
+		signature=c(".object")
+	)
+}
+#' getMotifFootprints-methods
+#'
+#' Perform enrichment analysis for (TF) motif footprinting
+#'
+#' @param .object    \code{\linkS4class{DsATAC}} object
+#' @param motifNames character vector of motif names
+#' @param samples sample identifiers
+#' @param motifFlank number of base pairs flanking the motif on each side
+#' @param type       (PLACEHOLDER ARGUMENT: NOT IMPLEMENTED YET) character string specifying the region type or \code{".genome"} (default) for genome-wide profiling
+#' @param motifDb    either a character string (currently only "jaspar" and sets contained in \code{chromVARmotifs} ("homer", "encode", "cisbp") are supported) or an object containing PWMs
+#'                   that can be used by \code{motifmatchr::matchMotifs} (such as an \code{PFMatrixList} or \code{PWMatrixList} object)
+#' @return a \code{list} of footprinting results with one element for each motif. Each motif's results contain summary data frames with aggregated counts
+#'         across all motif occurrences and a \code{ggplot} object for plotting footprints
+#' 
+#' @rdname getMotifFootprints-DsATAC-method
+#' @docType methods
+#' @aliases getMotifFootprints
+#' @aliases getMotifFootprints,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+#' @examples
+#' \dontrun{
+#' dsa <- ChrAccRex::loadExample("dsAtac_ia_example")
+#' motifNames <- c("MA1419.1_IRF4", "MA0139.1_CTCF", "MA0037.3_GATA3")
+#' samples <- c("TeffNaive_U_1001", "TeffNaive_U_1002", "TeffMem_U_1001", "TeffMem_U_1002")
+#' fps <- getMotifFootprints(dsa, motifNames, samples)
+#' fps[["MA1419.1_IRF4"]]
+#' }
+setMethod("getMotifFootprints",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		motifNames,
+		samples=getSamples(.object),
+		motifFlank=250L,
+		type=".genome",
+		motifDb="jaspar"
+	) {
+		if (type!=".genome"){
+			logger.warning("Currently only '.genome' is supported as 'type' argument")
+			type <- ".genome"
+		}
+		logger.start("Finding motif occurrences")
+			motifGrl <- getMotifOccurrences(motifNames, motifDb=motifDb, genome=.object@genome)
+
+			motifLens <- sapply(motifNames, FUN=function(mn){
+				as.integer(median(width(motifGrl[[mn]])))
+			})
+			names(motifLens) <- motifNames
+		logger.completed()
+
+		logger.start("Computing sample coverage")
+			sampleCovg <- getCoverage(.object, samples=samples)
+			# TODO: filter by region type
+		logger.completed()
+		logger.start("Computing k-mer frequencies")
+			sampleKmerFreqM <- getInsertionKmerFreq(.object, samples=samples, k=6, normGenome=TRUE)
+			# TODO: filter by region type
+		logger.completed()
+
+		res <- lapply(motifNames, FUN=function(mn){
+			logger.start(c("Motif:", mn))
+				motifCenGr <- unique(trim(resize(motifGrl[[mn]], width=2*motifFlank+1, fix="center", ignore.strand=TRUE)))
+				footprintDf <- aggregateRegionCounts(.object, motifCenGr, samples=samples, sampleCovg=sampleCovg, sampleKmerFreqM=sampleKmerFreqM)
+				footprintDf$pos <- footprintDf$pos - (motifFlank+1) # offset the position: aggregateRegionCounts returns positions in [0,regionWidth]
+
+				motifLen <- motifLens[mn]
+				motifUp <- -ceiling(motifLen/2) + 1
+				motifDown <- floor(motifLen/2)
+
+				ppm <- ggplot(footprintDf, aes(x=pos, y=countNormBiasCor, color=sampleId, group=sampleId, fill=sampleId)) + 
+					  annotate("rect", xmin=motifUp, xmax=motifDown, ymin=-Inf, ymax=Inf, fill="#d9d9d9") +
+				      geom_line() #+ geom_smooth(aes(group=cellType),size=2,alpha=0.15,method="gam",formula=y ~ s(x, bs = "cs"))
+
+				ppb <- ggplot(footprintDf, aes(x=pos, y=Tn5biasNorm, color=sampleId, group=sampleId, fill=sampleId)) + 
+					  annotate("rect", xmin=motifUp, xmax=motifDown, ymin=-Inf, ymax=Inf, fill="#d9d9d9") +
+				      geom_line()
+				pp <- cowplot::plot_grid(ppm, ppb, ncol=1)
+				rr <- list(
+					footprintDf=footprintDf,
+					plot=pp,
+					motifLen=motifLen
+				)
+			logger.completed()
+			return(rr)
+		})
+		names(res) <- motifNames
+		
 		return(res)
 	}
 )

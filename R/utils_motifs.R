@@ -89,6 +89,53 @@ prepareMotifmatchr <- function(genome, motifs){
 	return(res)
 }
 
+#' getMotifOccurrences
+#' 
+#' Find occurrences of motifs in a given genome
+#' @param motifNames character vector of motif names
+#' @param motifDb either a character string (currently only "jaspar" and sets contained in \code{chromVARmotifs} ("homer", "encode", "cisbp") are supported) or an object containing PWMs
+#'               that can be used by \code{motifmatchr::matchMotifs} (such as an \code{PFMatrixList} or \code{PWMatrixList} object)
+#' @param genome character string specifying genome assembly
+#' @return a \code{GenomicRangesList} containing motif occurrences
+#' @author Fabian Mueller
+#' @export
+getMotifOccurrences <- function(motifNames=NULL, motifDb="jaspar", genome="hg38"){
+	mmArgs <- prepareMotifmatchr(genome, motifDb)
+	if (is.null(motifNames)) motifNames <- names(mmArgs$motifs)
+	motifNames_in <- motifNames
+	motifNames <- intersect(motifNames, names(mmArgs$motifs))
+	missingMotifs <- setdiff(motifNames_in, motifNames)
+	if (length(missingMotifs) > 0){
+		logger.warning(c(length(missingMotifs), "of", length(motifNames_in), "motifs were not found in the annotation database:", paste(missingMotifs, collapse=", ")))
+	}
+
+	seqlengths <- muRtools::getSeqlengths4assembly(genome, onlyMainChrs=TRUE)
+	validChroms <- names(seqlengths)
+	# for each chromosome, get the motif matches
+	gr <- do.call("c", lapply(validChroms, FUN=function(chromName){
+		# logger.status(c("chr:", chromName))#TODO: remove comment
+		mmRes <- motifmatchr::matchMotifs(mmArgs$motifs[motifNames], mmArgs$genome[[chromName]], out="positions")
+		# convert the resulting IRangesList to GRanges
+		return(do.call("c", lapply(names(mmRes), FUN=function(motifName){
+			x <- unlist(mmRes[[motifName]])
+			rr <- GRanges()
+			if (length(x) > 0){
+				elementMetadata(x)[,"motifName"] <- motifName
+				strands <- elementMetadata(x)[,"strand"]
+				elementMetadata(x)[,"strand"] <- NULL
+				rr <- GRanges(seqnames=chromName,ranges=x,strand=strands)
+			}
+			seqlevels(rr) <- validChroms
+			seqlengths(rr) <- seqlengths
+			genome(rr) <- genome
+			return(rr)
+		})))
+	}))
+	elementMetadata(gr)[,"motifName"] <- factor(elementMetadata(gr)[,"motifName"], levels=motifNames)
+	resGrl <- split(gr, elementMetadata(gr)[,"motifName"])
+	return(resGrl)
+}
+
 #' permutePWMatrix
 #'
 #' randomly permute the columns of a \code{TFBSTools::PWMatrix} object
