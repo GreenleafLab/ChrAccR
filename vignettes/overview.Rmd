@@ -377,14 +377,14 @@ pheatmap::pheatmap(devZ[1:20,])
 
 To get an overview of the activity of certain transcription factors, you can generate footprint plots which are aggreagtions of insertion counts in windows surrounding all occurrences of a motif genome-wide. ChrAccR normalizes these counts using kmer frequencies and also plots the background distribution using all insertion sites (not just the ones occurring near motifs). You can compute the data used to generate these plots using the `getMotifFootprints` function. Note that currently the computation of the kmer biases is quite compute intense. We therefor recommend to limit the analysis to a few samples and motifs.
 ```{r, message = FALSE, warning = FALSE, eval = FALSE}
-motifNames <- c("MA0652.1_IRF8", "MA0139.1_CTCF", "MA0037.3_GATA3")
-# motifNames <- grep("(IRF8|CTCF|GATA3)$", names(prepareMotifmatchr("hg38", "jaspar")$motifs), value=TRUE) # alternative by searching for patterns
+motifNames <- c("MA1419.1_IRF4", "MA0139.1_CTCF", "MA0037.3_GATA3")
+# motifNames <- grep("(IRF4|CTCF|GATA3)$", names(prepareMotifmatchr("hg38", "jaspar")$motifs), value=TRUE) # alternative by searching for patterns
 samples <- c("TeffNaive_U_1001", "TeffNaive_U_1002", "TeffMem_U_1001", "TeffMem_U_1002")
 fps <- getMotifFootprints(dsa, motifNames, samples)
 # the results of the footprinting as data.frame for later plotting
-str(fps[["MA0652.1_IRF8"]]$footprintDf)
+str(fps[["MA1419.1_IRF4"]]$footprintDf)
 # the result also contains a ggplot object, which can directly be plotted
-fps[["MA0652.1_IRF8"]]$plot
+fps[["MA1419.1_IRF4"]]$plot
 ```
 
 ## Exporting to high-level Bioconductor data structures
