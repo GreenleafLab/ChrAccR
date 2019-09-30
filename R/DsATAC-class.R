@@ -2340,6 +2340,7 @@ setMethod("getMotifFootprints",
 			type <- ".genome"
 		}
 		logger.start("Finding motif occurrences")
+			mmArgs <- prepareMotifmatchr(.object@genome, motifDb) # currently only used for motif logo plotting. Could be omitted if that is not desired
 			motifGrl <- getMotifOccurrences(motifNames, motifDb=motifDb, genome=.object@genome)
 
 			motifLens <- sapply(motifNames, FUN=function(mn){
@@ -2367,6 +2368,7 @@ setMethod("getMotifFootprints",
 				motifUp <- -ceiling(motifLen/2) + 1
 				motifDown <- floor(motifLen/2)
 
+				# plot
 				ppm <- ggplot(footprintDf, aes(x=pos, y=countNormBiasCor, color=sampleId, group=sampleId, fill=sampleId)) + 
 					  annotate("rect", xmin=motifUp, xmax=motifDown, ymin=-Inf, ymax=Inf, fill="#d9d9d9") +
 				      geom_line() #+ geom_smooth(aes(group=cellType),size=2,alpha=0.15,method="gam",formula=y ~ s(x, bs = "cs"))
@@ -2374,6 +2376,13 @@ setMethod("getMotifFootprints",
 				ppb <- ggplot(footprintDf, aes(x=pos, y=Tn5biasNorm, color=sampleId, group=sampleId, fill=sampleId)) + 
 					  annotate("rect", xmin=motifUp, xmax=motifDown, ymin=-Inf, ymax=Inf, fill="#d9d9d9") +
 				      geom_line()
+
+				# add sequence logo
+				logo <- hmSeqLogo(mmArgs$motifs[[mn]], unit(0.5, "npc"), unit(0.5, "npc"), 1, 1, ic.scale=TRUE)
+				logoHeight <- (max(dd[,"countNormBiasCor"], na.rm=TRUE) - min(dd[,"countNormBiasCor"], na.rm=TRUE)) * 0.2
+				logoY <- max(dd[,"countNormBiasCor"], na.rm=TRUE) - logoHeight
+				ppm <- ppm + cowplot::draw_plot(logo, 100, logoY, 100, logoHeight)
+
 				pp <- cowplot::plot_grid(ppm, ppb + theme(legend.position="none"), ncol=1, rel_heights=c(2, 1), align="v", axis="lr")
 				rr <- list(
 					footprintDf=footprintDf,

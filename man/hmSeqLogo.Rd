@@ -4,7 +4,8 @@
 \alias{hmSeqLogo}
 \title{hmSeqLogo}
 \usage{
-hmSeqLogo(pwm, x, y, width, height, ic.scale = TRUE)
+hmSeqLogo(pwm, x = unit(0.5, "npc"), y = unit(0.5, "npc"), width = 1,
+  height = 1, ic.scale = TRUE)
 }
 \arguments{
 \item{pwm}{PWM (from TFBSTools package)}
@@ -25,6 +26,11 @@ Draws the motif
 \description{
 Draw a sequence motif logo in a Complex Heatmap using grid.
 adapted from \code{seqLogo::seqLogo()}
+}
+\examples{
+\dontrun{
+hmSeqLogo(prepareMotifmatchr("hg38", "jaspar")$motifs[["MA0137.3_STAT1"]], unit(0.5, "npc"), unit(0.5, "npc"), 0.5, 0.5, ic.scale=TRUE)
+}
 }
 \author{
 Fabian Mueller
