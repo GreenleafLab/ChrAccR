@@ -2379,8 +2379,8 @@ setMethod("getMotifFootprints",
 
 				# add sequence logo
 				logo <- hmSeqLogo(mmArgs$motifs[[mn]], unit(0.5, "npc"), unit(0.5, "npc"), 1, 1, ic.scale=TRUE)
-				logoHeight <- (max(dd[,"countNormBiasCor"], na.rm=TRUE) - min(dd[,"countNormBiasCor"], na.rm=TRUE)) * 0.2
-				logoY <- max(dd[,"countNormBiasCor"], na.rm=TRUE) - logoHeight
+				logoHeight <- (max(footprintDf[,"countNormBiasCor"], na.rm=TRUE) - min(footprintDf[,"countNormBiasCor"], na.rm=TRUE)) * 0.2
+				logoY <- max(footprintDf[,"countNormBiasCor"], na.rm=TRUE) - logoHeight
 				ppm <- ppm + cowplot::draw_plot(logo, 100, logoY, 100, logoHeight)
 
 				pp <- cowplot::plot_grid(ppm, ppb + theme(legend.position="none"), ncol=1, rel_heights=c(2, 1), align="v", axis="lr")
