@@ -2318,7 +2318,7 @@ if (!isGeneric("getMotifFootprints")) {
 #' \dontrun{
 #' dsa <- ChrAccRex::loadExample("dsAtac_ia_example")
 #' motifNames <- c("MA1419.1_IRF4", "MA0139.1_CTCF", "MA0037.3_GATA3")
-#' # motifNames <- grep("(IRF4|CTCF|GATA3)$", names(prepareMotifmatchr("hg38", "jaspar")$motifs), value=TRUE) # alternative by searching
+#' # motifNames <- grep("(IRF4|CTCF|GATA3)$", names(prepareMotifmatchr("hg38", "jaspar")$motifs), value=TRUE, ignore.case=TRUE) # alternative by searching
 #' samples <- c("TeffNaive_U_1001", "TeffNaive_U_1002", "TeffMem_U_1001", "TeffMem_U_1002")
 #' fps <- getMotifFootprints(dsa, motifNames, samples)
 #' fps[["MA1419.1_IRF4"]]$plot
