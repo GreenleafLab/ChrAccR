@@ -23,6 +23,7 @@ Suggests:
     R.utils,
     tools,
     grid,
+    cowplot,
     rtracklayer,
     DESeq2,
     limma,
