@@ -2374,7 +2374,7 @@ setMethod("getMotifFootprints",
 				ppb <- ggplot(footprintDf, aes(x=pos, y=Tn5biasNorm, color=sampleId, group=sampleId, fill=sampleId)) + 
 					  annotate("rect", xmin=motifUp, xmax=motifDown, ymin=-Inf, ymax=Inf, fill="#d9d9d9") +
 				      geom_line()
-				pp <- cowplot::plot_grid(ppm, ppb, ncol=1)
+				pp <- cowplot::plot_grid(ppm, ppb + theme(legend.position="none"), ncol=1, rel_heights=c(2, 1), align="v", axis="lr")
 				rr <- list(
 					footprintDf=footprintDf,
 					plot=pp,
