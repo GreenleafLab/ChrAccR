@@ -382,9 +382,9 @@ motifNames <- c("MA1419.1_IRF4", "MA0139.1_CTCF", "MA0037.3_GATA3")
 samples <- c("TeffNaive_U_1001", "TeffNaive_U_1002", "TeffMem_U_1001", "TeffMem_U_1002")
 fps <- getMotifFootprints(dsa, motifNames, samples)
 # the results of the footprinting as data.frame for later plotting
-str(fps[["MA1419.1_IRF4"]]$footprintDf)
-# the result also contains a ggplot object, which can directly be plotted
-fps[["MA1419.1_IRF4"]]$plot
+str(fps[["MA0139.1_CTCF"]]$footprintDf)
+# the result also contains a plot object, which can directly be drawn
+fps[["MA0139.1_CTCF"]]$plot
 ```
 
 ## Exporting to high-level Bioconductor data structures
