@@ -199,6 +199,10 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 				
 			logger.completed()
 		}
+		# just to make sure: reorder fragment list
+		if (keepInsertionInfo) {
+			obj@fragments <- obj@fragments[getSamples(obj)]
+		}
 	logger.completed()
 	
 	return(obj)
