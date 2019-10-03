@@ -93,7 +93,7 @@ getInsertionSitesFromFragmentGr <- function(fragGr){
 			peEnds   <- resize(fragGr, width=1, fix="end")
 		} else {
 			# mixed paired-end and single-end data
-			logger.warning(c("mixed paired-end and single-end data detected for sample", sid))
+			logger.warning(c("mixed paired-end and single-end data detected"))
 			peStarts <- resize(fragGr[isW], width=1, fix="start")
 			peEnds   <- resize(fragGr[isW], width=1, fix="end")
 		}
