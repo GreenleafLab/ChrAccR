@@ -434,7 +434,7 @@ setMethod("getCoverage",
 		if (!all(samples %in% getSamples(.object))) logger.error(c("Invalid samples:", paste(setdiff(samples, getSamples(.object)), collapse=", ")))
 		insGrl <- getInsertionSites(.object, samples)
 		sampleCovgRle <- lapply(samples, FUN=function(sid){
-			logger.status(c("Computing genome-wide coverage for sample", sid))
+			# logger.status(c("Computing genome-wide coverage for sample", sid))
 			return(GenomicRanges::coverage(insGrl[[sid]]))
 		})
 		names(sampleCovgRle) <- samples
@@ -2992,7 +2992,8 @@ setMethod("getQuickTssEnrichment",
 		)
 		colnames(cm_bg) <- sampleIds
 		
-		tsse <- Matrix::colSums(cm_tss, na.rm=TRUE) / Matrix::colSums(cm_bg, na.rm=TRUE)
+		# tsse <- Matrix::colSums(cm_tss, na.rm=TRUE) / Matrix::colSums(cm_bg, na.rm=TRUE)
+		tsse <- Matrix::colMeans(cm_tss, na.rm=TRUE) / Matrix::colMeans(cm_bg, na.rm=TRUE)
 		return(tsse)
 	}
 )
