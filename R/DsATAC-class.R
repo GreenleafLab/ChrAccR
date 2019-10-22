@@ -2368,6 +2368,13 @@ setMethod("getMotifFootprints",
 				motifUp <- -ceiling(motifLen/2) + 1
 				motifDown <- floor(motifLen/2)
 
+				# Definitions according to [Corces, Granja, et al. (2018). The chromatin accessibility landscape of primary human cancers. Science, 362(6413)]
+				absPos <- abs(footprintDf[,"pos"])
+				i_base <- ceiling(motifLen/2) + 5
+				fp_baseMean  <- mean(footprintDf[absPos <= i_base, "countNormBiasCor"], na.rm=TRUE)
+				fp_flankMean <- mean(footprintDf[absPos > i_base & absPos <= 50, "countNormBiasCor"], na.rm=TRUE)
+				fp_bgMean    <- mean(footprintDf[absPos >= 200, "countNormBiasCor"], na.rm=TRUE)
+
 				# plot
 				ppm <- ggplot(footprintDf, aes(x=pos, y=countNormBiasCor, color=sampleId, group=sampleId, fill=sampleId)) + 
 					  annotate("rect", xmin=motifUp, xmax=motifDown, ymin=-Inf, ymax=Inf, fill="#d9d9d9") +
@@ -2387,7 +2394,9 @@ setMethod("getMotifFootprints",
 				rr <- list(
 					footprintDf=footprintDf,
 					plot=pp,
-					motifLen=motifLen
+					motifLen=motifLen,
+					fpFlankAcc=log2(fp_flankMean/fp_bgMean),
+					fpDepth=log2(fp_baseMean/fp_flankMean)
 				)
 			logger.completed()
 			return(rr)
