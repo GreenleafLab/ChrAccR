@@ -2946,14 +2946,16 @@ setMethod("getQuickTssEnrichment",
 	function(
 		.object,
 		tssGr,
-		tssW=100L,
-		distBg=2000L
+		tssW=101L,
+		distBg=1950L
 	) {
 		if (!all(width(tssGr)==1)) logger.error("tssGr must be a GRanges object in which each element has width=1")
 
 		# background windows
-		bgLeftGr <- suppressWarnings(trim(resize(GenomicRanges::shift(tssGr, -distBg), width=floor(tssW/2), fix="center", ignore.strand=TRUE)))
-		bgRightGr <- suppressWarnings(trim(resize(GenomicRanges::shift(tssGr, distBg), width=floor(tssW/2), fix="center", ignore.strand=TRUE)))
+		# bgLeftGr <- suppressWarnings(trim(resize(GenomicRanges::shift(tssGr, -distBg), width=floor(tssW/2), fix="center", ignore.strand=TRUE)))
+		# bgRightGr <- suppressWarnings(trim(resize(GenomicRanges::shift(tssGr, distBg), width=floor(tssW/2), fix="center", ignore.strand=TRUE)))
+		bgLeftGr <- suppressWarnings(trim(resize(GenomicRanges::shift(tssGr, -distBg), width=tssW, fix="center", ignore.strand=TRUE)))
+		bgRightGr <- suppressWarnings(trim(resize(GenomicRanges::shift(tssGr, distBg), width=tssW, fix="center", ignore.strand=TRUE)))
 		#extend the window by the flanking and smoothing lengths
 		tsswGr <- suppressWarnings(trim(resize(tssGr, width=tssW, fix="center", ignore.strand=TRUE)))
 
@@ -2991,9 +2993,12 @@ setMethod("getQuickTssEnrichment",
 			dims=c(nRegs, nSamples)
 		)
 		colnames(cm_bg) <- sampleIds
-		
+
 		# tsse <- Matrix::colSums(cm_tss, na.rm=TRUE) / Matrix::colSums(cm_bg, na.rm=TRUE)
-		tsse <- Matrix::colMeans(cm_tss, na.rm=TRUE) / Matrix::colMeans(cm_bg, na.rm=TRUE)
+		# normalize per basepair		
+		normCounts_tss <- Matrix::colSums(cm_tss, na.rm=TRUE) / tssW
+		normCounts_bg  <- Matrix::colSums(cm_bg, na.rm=TRUE) / (2*tssW) # 2 background regions per TSS
+		tsse <- normCounts_tss / pmax(normCounts_bg, 1)
 		return(tsse)
 	}
 )
