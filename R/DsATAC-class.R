@@ -2395,6 +2395,7 @@ setMethod("getMotifFootprints",
 					footprintDf=footprintDf,
 					plot=pp,
 					motifLen=motifLen,
+					nMotifs=length(motifCenGr),
 					fpFlankAcc=log2(fp_flankMean/fp_bgMean),
 					fpDepth=log2(fp_baseMean/fp_flankMean)
 				)
