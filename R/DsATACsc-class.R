@@ -59,6 +59,114 @@ DsATACsc <- function(sampleAnnot, genome, diskDump=FALSE, diskDump.fragments=TRU
 ################################################################################
 # Single-cell methods
 ################################################################################
+if (!isGeneric("simulateDoublets")) {
+	setGeneric(
+		"simulateDoublets",
+		function(.object, ...) standardGeneric("simulateDoublets"),
+		signature=c(".object")
+	)
+}
+#' simulateDoublets-methods
+#'
+#' EXPERIMENTAL: Simulate doublets by adding counts in matrices for each region set
+#'
+#' @param .object    \code{\linkS4class{DsATACsc}} object
+#' @param byGroup    sample by group. Must be a column name in the sample annotation table
+#' @param n          number of doublets to simulate (per group)
+#' @param sampleRatio fraction of non-zero events to subsample. If \code{0 < sampleRatio < 1}, the individual cell counts will be subsampled
+#'                   for each region.
+#' @return an \code{\linkS4class{DsATACsc}} object containing counts for simulated doublets. Fragment data will be discarded.
+#' 
+#' @rdname simulateDoublets-DsATACsc-method
+#' @docType methods
+#' @aliases simulateDoublets
+#' @aliases simulateDoublets,DsATACsc-method
+#' @author Fabian Mueller
+#' @export
+setMethod("simulateDoublets",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		byGroup=NULL,
+		n=10000,
+		sampleRatio=1.0
+	) {
+		.sampleSparseMat <- function(mat, sampleRatio=0.5){
+			total <- length(mat@x)
+			sampleTo <- floor(total * (1-sampleRatio))
+			mat@x[sample(seq_len(total), sampleTo)] <- 0
+			mat <- drop0(mat)
+			mat
+		}
+		.sampleDensMat <- function(mat, sampleRatio=0.5){
+			nonZero <- which(mat > 0)
+			sampleTo <- floor(length(nonZero) * (1-sampleRatio))
+			mat[sample(nonZero, sampleTo)] <- 0
+		}
+		
+		if (class(.object)!="DsATACsc"){
+			logger.warning("Doublet detection is intended for single-cell datasets [DsATACsc] only. Applying it to general DsATAC objects is intended for backwards compatibility only.")
+		}
+
+		res <- removeFragmentData(.object)
+		nCells <- length(getSamples(.object))
+		if (is.null(byGroup)){
+			idx <- cbind(sample(seq_len(nCells), n, replace=TRUE), sample(seq_len(nCells), n, replace=TRUE))
+		} else {
+			ggs <- getSampleAnnot(.object)
+			if (!is.element(byGroup, colnames(ggs))){
+				logger.error("byGroup must be a valid column name in the sample annotation")
+			}
+			logger.info(paste0("Simulating doublets by group: '", byGroup, "'..."))
+			gIdx <- getGroupsFromTable(ggs[,byGroup, drop=FALSE], minGrpSize=1)[[1]]
+			idx <- do.call("rbind", lapply(gIdx, FUN=function(x){
+				 cbind(sample(x, n, replace=TRUE), sample(x, n, replace=TRUE))
+			}))
+		}
+		colnames(idx) <- c("idx1", "idx2")
+		n <- nrow(idx)
+
+		ph <- data.frame(doubletId=paste0("d", 1:n), idx)
+		res@sampleAnnot <- ph
+		rownames(res@sampleAnnot) <- ph[,"doubletId"]
+		res@diskDump <- FALSE
+
+		regTypes <- getRegionTypes(.object)
+		for (rt in regTypes){
+			logger.status(paste0("Simulating doublets for region set: '", rt, "'..."))
+			cm <- ChrAccR::getCounts(.object, rt, allowSparseMatrix=TRUE)
+			pkg <- attr(class(cm), "package")
+			isSparse <- is.character(pkg) && pkg=="Matrix"
+
+			cm1 <- cm[, idx[, 1], drop=FALSE]
+			cm2 <- cm[, idx[, 2], drop=FALSE]
+			if (sampleRatio > 0 && sampleRatio < 1){
+				logger.info(c("Subsampling to ratio:", sampleRatio))
+				if (isSparse){
+					cm1 <- .sampleSparseMat(cm1, sampleRatio)
+					cm2 <- .sampleSparseMat(cm2, sampleRatio)
+				} else {
+					cm1 <- .sampleDensMat(cm1, sampleRatio)
+					cm2 <- .sampleDensMat(cm2, sampleRatio)
+				}
+			}
+			cmm <- cm1 + cm2
+			colnames(cmm) <- ph[,"doubletId"]
+
+			if (res@sparseCounts & !isSparse) {
+				res@counts[[rt]] <- as(cmm, "sparseMatrix")
+				res@counts[[rt]] <- drop0(res@counts[[rt]])
+			} else {
+				res@counts[[rt]] <- cmm
+			}
+			if (res@diskDump) res@counts[[rt]] <- as(res@counts[[rt]], "HDF5Array")
+		}
+
+		return(res)
+	}
+)
 #-------------------------------------------------------------------------------
 
 if (!isGeneric("getScQcStatsTab")) {
