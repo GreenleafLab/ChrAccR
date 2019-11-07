@@ -2913,13 +2913,12 @@ setMethod("getTssEnrichment",
 		normTailW=100L,
 		smoothW=25L
 	) {
-		if (!all(width(tssGr)==1)) logger.error("tssGr must be a GRanges object in which each element has width=1")
-
 		if (is.null(tssGr)){
 			annoPkg <- getChrAccRAnnotationPackage(.object@genome)
 			if (is.null(annoPkg)) logger.error("Annotation package needed")
 			tssGr <- get("getGeneAnnotation", asNamespace(annoPkg))(anno="gencode_coding", type="tssGr")
 		}
+		if (!all(width(tssGr)==1)) logger.error("tssGr must be a GRanges object in which each element has width=1")
 
 		#extend the window by the flanking and smoothing lengths
 		tssGr <- unique(trim(resize(tssGr, width=2*(flank+smoothW)+1, fix="center", ignore.strand=TRUE)))
@@ -3003,7 +3002,6 @@ setMethod("getQuickTssEnrichment",
 			if (is.null(annoPkg)) logger.error("Annotation package needed")
 			tssGr <- get("getGeneAnnotation", asNamespace(annoPkg))(anno="gencode_coding", type="tssGr")
 		}
-
 		if (!all(width(tssGr)==1)) logger.error("tssGr must be a GRanges object in which each element has width=1")
 
 		# background windows

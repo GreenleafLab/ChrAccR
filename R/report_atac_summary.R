@@ -204,11 +204,27 @@ setMethod("createReport_summary",
 					# retrieve corresponding TSS coordinates corresponding to the specified gene model
 					tssGr <- NULL
 					geneModelVer <- getConfigElement("geneModelVersions")[.object@genome]
+					annoPkg <- getChrAccRAnnotationPackage(.object@genome)
 					if (grepl("^gencode", geneModelVer)){
-						tssGr <- muRtools::getAnnotGrl.gencode(geneModelVer)[["gene"]]
-						tssGr <- tssGr[elementMetadata(tssGr)[,"gene_type"]=="protein_coding"]
-						if (length(tssGr) < 1) logger.error("Could not retrieve TSS coordinates")
-						tssGr <- promoters(tssGr, upstream=0, downstream=1)
+						downloadGencode <- TRUE
+						# gencode version already annotated?
+						if (!is.null(annoPkg)){
+							geneAnnoName <- "gencode_coding"
+							annoParams <- get("getGenomeParams", asNamespace(annoPkg))()
+							useAnno <- is.element(geneAnnoName, names(annoParams$geneAnno)) && annoParams$geneAnno[[geneAnnoName]]$version==geneModelVer
+							if (useAnno) {
+								logger.info(c("Using annotation package:", annoPkg))
+								tssGr <- get("getGeneAnnotation", asNamespace(annoPkg))(anno=geneAnnoName, type="tssGr")
+								downloadGencode <- FALSE
+							}
+						}
+						# gencode version not annotated --> download
+						if (downloadGencode)
+							tssGr <- muRtools::getAnnotGrl.gencode(geneModelVer)[["gene"]]
+							tssGr <- tssGr[elementMetadata(tssGr)[,"gene_type"]=="protein_coding"]
+							if (length(tssGr) < 1) logger.error("Could not retrieve TSS coordinates")
+							tssGr <- promoters(tssGr, upstream=0, downstream=1)
+						}
 					} else {
 						logger.error("Incompatible gene model")
 					}
