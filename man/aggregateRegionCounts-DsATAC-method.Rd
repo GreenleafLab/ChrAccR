@@ -9,7 +9,7 @@
 \S4method{aggregateRegionCounts}{DsATAC}(.object, regionGr,
   samples = getSamples(.object), countAggrFun = "sum",
   norm = "tailMean", normTailW = 0.1, kmerBiasAdj = TRUE, k = 6,
-  sampleCovg = NULL, sampleKmerFreqM = NULL)
+  sampleCovg = NULL, sampleKmerFreqM = NULL, regionKmerFreqM = NULL)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}
@@ -33,6 +33,11 @@ Currently only \code{'tailMean'} is supported, which computes normalization fact
 
 \item{sampleKmerFreqM}{to save compute time, a matrix of sample kmer frequency at insertion sites (as computed by \code{getInsertionKmerFreq(.object, ...)}) can be supplied.
 If not, it will be computed on the fly. Only relevant if \code{kmerBiasAdj==TRUE}.}
+
+\item{regionKmerFreqM}{to save compute time, a matrix of region kmer frequencies (kmers X window width).
+Must have the same number of rows as the specified (or computed) \code{sampleKmerFreqM} (kmers)
+and the same number of columns as the window width (median width of \code{regionGr}).
+Only relevant if \code{kmerBiasAdj==TRUE}.}
 }
 \value{
 a \code{data.frame} containing position-wise counts (raw, normalized and optionally Tn5-bias-corrected) for each sample

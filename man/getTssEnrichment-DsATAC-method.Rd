@@ -6,7 +6,7 @@
 \alias{getTssEnrichment}
 \title{getTssEnrichment-methods}
 \usage{
-\S4method{getTssEnrichment}{DsATAC}(.object, sampleId, tssGr,
+\S4method{getTssEnrichment}{DsATAC}(.object, sampleId, tssGr = NULL,
   flank = 2000L, normTailW = 100L, smoothW = 25L)
 }
 \arguments{
