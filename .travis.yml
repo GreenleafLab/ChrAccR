@@ -37,3 +37,9 @@ deploy:
   local-dir: docs
   on:
     branch: master
+
+################################################################################
+# To avoid exceeding TRAVIS time limit:
+# 1. Remove 'Suggests:' (except knitr) from DESCRIPTION
+# 2. add 'r_build_args: --no-build-vignettes' to this file (.travis.yml)
+################################################################################

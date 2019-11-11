@@ -4,10 +4,10 @@
 
 * __Package name:__ ChrAccR
 * __Title:__ Analyzing chromatin accessibility data in R
-* __Description:__ Tools for analyzing chromatin accessibility data in R. Currently supports ATAC-seq and NOMe-seq data analysis.
+* __Description:__ Tools for analyzing chromatin accessibility data in R. Currently mainly supports ATAC-seq data analysis.
 * __Author/Maintainer:__ Fabian Mueller (<muellerf@stanford.edu>)
-* __Version:__ 0.9.3
-* __Date:__ 2019-07-29
+* __Version:__ 0.9.6
+* __Date:__ 2019-11-11
 
 
 ## Installation
