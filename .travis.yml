@@ -5,7 +5,6 @@ r:
 r_packages:
 - pheatmap
 - pkgdown
-- knitr
 # - devtools
 bioc_packages:
 - BSgenome.Hsapiens.UCSC.hg38
@@ -24,7 +23,7 @@ addons:
     - libgsl0-dev
 # before_script:
 #   - Rscript -e 'devtools::document()'
-r_build_args: --no-build-vignettes
+# r_build_args: --no-build-vignettes
 r_check_args: --no-build-vignettes
 warnings_are_errors: false
 # automatically build pkgdown site using the gh-pages branch
@@ -41,6 +40,6 @@ deploy:
 
 ################################################################################
 # To avoid exceeding TRAVIS time limit:
-# 1. Remove 'Suggests:' from DESCRIPTION
+# 1. Remove 'Suggests:' (except knitr) from DESCRIPTION
 # 2. add 'r_build_args: --no-build-vignettes' to this file (.travis.yml)
 ################################################################################
