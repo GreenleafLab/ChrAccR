@@ -15,7 +15,7 @@ cleanMem <- function(iter.gc=1L){
 #' findOrderedNames
 #' 
 #' find the first occurrence of a name in a vector of strings
-#' @param ss character vector in which the name should be found
+#' @param x character vector in which the name should be found
 #' @param orderedNames vector of names that will be queried. This method will go through them one by one and find the first occurrence
 #'           in the order of the orderedNames provided
 #' @param exact should only be exact matches be reported
