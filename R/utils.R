@@ -52,6 +52,7 @@ isCanonicalChrom <- function(ss){
 
 #' fastDelayedArrayToMatrix
 #' 
+#' [not needed anymore according to the DelayedArray developers]
 #' faster subsetting by index of DelayedArrays via linear indexing.
 #' Code taken from: https://github.com/Bioconductor/DelayedArray/issues/13
 #' @param X \code{DelayedArray}
