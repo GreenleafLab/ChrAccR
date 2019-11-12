@@ -133,27 +133,43 @@ setMethod("getCounts",
 		if (!is.element(type, getRegionTypes(.object))) logger.error(c("Unsupported region type:", type))
 		res <- .object@counts[[type]]
 
-		if (.object@diskDump){
-			if (!is.null(i) || !is.null(j) || asMatrix){
-				# DelayedArray can have serious performance issues, when indexing is not done efficiently
-				# --> workaround-function: fastDelayedArrayToMatrix()
-				res <- fastDelayedArrayToMatrix(res, i=i, j=j) # not needed any more (?): issue should be fixed starting with HDF5Array version 1.11.11 (https://github.com/Bioconductor/DelayedArray/issues/13)
-				cns <- colnames(res)
-				if (!asMatrix){
-					res <- as(res, "HDF5Array")
-					colnames(res) <- cns
-				}
-			}
-		} else {
-			if (!is.null(i)) res <- res[i,,drop=FALSE]
-			if (!is.null(j)) res <- res[,j,drop=FALSE]
-			if (asMatrix && !is.matrix(res) && !(.object@sparseCounts && allowSparseMatrix)){
+		# # OLD
+		# if (.object@diskDump){
+		# 	if (!is.null(i) || !is.null(j) || asMatrix){
+		# 		# DelayedArray can have serious performance issues, when indexing is not done efficiently
+		# 		# --> workaround-function: fastDelayedArrayToMatrix()
+		# 		res <- fastDelayedArrayToMatrix(res, i=i, j=j) # not needed any more (?): issue should be fixed starting with HDF5Array version 1.11.11 (https://github.com/Bioconductor/DelayedArray/issues/13)
+		# 		cns <- colnames(res)
+		# 		if (!asMatrix){
+		# 			res <- as(res, "HDF5Array")
+		# 			colnames(res) <- cns
+		# 		}
+		# 	}
+		# } else {
+		# 	if (!is.null(i)) res <- res[i,,drop=FALSE]
+		# 	if (!is.null(j)) res <- res[,j,drop=FALSE]
+		# 	if (asMatrix && !is.matrix(res) && !(.object@sparseCounts && allowSparseMatrix)){
+		# 		res <- as.matrix(res)
+		# 		if (!naIsZero && .object@sparseCounts){
+		# 			res[res==0] <- NA
+		# 		}
+		# 	}
+		# }
+		# # ###
+
+		if (!is.null(i)) res <- res[i,,drop=FALSE]
+		if (!is.null(j)) res <- res[,j,drop=FALSE]
+		if (asMatrix && !is.matrix(res)){
+			if (.object@diskDump) {
 				res <- as.matrix(res)
-				if (!naIsZero && .object@sparseCounts){
+			} else if (.object@sparseCounts && !allowSparseMatrix){
+				res <- as.matrix(res)
+				if (!naIsZero){
 					res[res==0] <- NA
 				}
 			}
 		}
+
 		if (naIsZero){
 			res[is.na(res)] <- 0
 		}
