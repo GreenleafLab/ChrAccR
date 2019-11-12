@@ -3,6 +3,7 @@
 export(DsATAC.bam)
 export(DsATAC.cellranger)
 export(DsATAC.snakeATAC)
+export(DsATACsc.fragments)
 export(DsNOMe.bisSNP)
 export(cleanMem)
 export(computeDiffAcc.rnb.nome)
