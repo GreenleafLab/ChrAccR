@@ -219,7 +219,7 @@ setMethod("createReport_summary",
 							}
 						}
 						# gencode version not annotated --> download
-						if (downloadGencode)
+						if (downloadGencode){
 							tssGr <- muRtools::getAnnotGrl.gencode(geneModelVer)[["gene"]]
 							tssGr <- tssGr[elementMetadata(tssGr)[,"gene_type"]=="protein_coding"]
 							if (length(tssGr) < 1) logger.error("Could not retrieve TSS coordinates")
