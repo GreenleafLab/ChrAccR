@@ -136,6 +136,37 @@ setMethod("getSampleAnnot",
 	}
 )
 #-------------------------------------------------------------------------------
+if (!isGeneric("getGenome")) {
+	setGeneric(
+		"getGenome",
+		function(.object) standardGeneric("getGenome"),
+		signature=c(".object")
+	)
+}
+#' getGenome-methods
+#'
+#' Return the genome assembly
+#'
+#' @param .object \code{\linkS4class{DsAcc}} object
+#' @return Character string containing the genome assembly
+#'
+#' @rdname getGenome-DsAcc-method
+#' @docType methods
+#' @aliases getGenome
+#' @aliases getGenome,DsAcc-method
+#' @author Fabian Mueller
+#' @export
+setMethod("getGenome",
+	signature(
+		.object="DsAcc"
+	),
+	function(
+		.object
+	) {
+		return(.object@genome)
+	}
+)
+#-------------------------------------------------------------------------------
 if (!isGeneric("getRegionTypes")) {
 	setGeneric(
 		"getRegionTypes",
