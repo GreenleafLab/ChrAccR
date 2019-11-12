@@ -29,6 +29,7 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 		logger.info(c("Automatically determined column '", sampleIdCol, "' as sample identifier column"))
 	}
 	sampleIds <- sampleAnnot[,sampleIdCol]
+	nSamples <- length(sampleIds)
 
 	if (is.null(regionSets)){
 		logger.info(c("Using default region sets:", paste("tiling200bp", collapse=", ")))
@@ -38,23 +39,26 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 	}
 	
 	if (is.null(cellAnnot)){
-		cellAnnot <- do.call("rbind", lapply(1:nrow(sampleAnnot), FUN=function(i){
-			sid <- sampleIds[i]
-			fragTab <- readTab(fragmentFiles[i], header=FALSE)
-			colnames(fragTab) <- c("chrom", "chromStart", "chromEnd", "barcode", "duplicateCount")
-			fragCounts <- table(fragTab[,"barcode"])
-			sa.sample <- sampleAnnot[sid,]
-			rownames(sa.sample) <- NULL
-			sa <- data.frame(
-				.sampleId=sid,
-				cellId=paste(sid, names(fragCounts), sep="_"),
-				barcode=names(fragCounts),
-				sa.sample,
-				nFrags=fragCounts,
-				stringsAsFactors=FALSE
-			)
-			return(sa)
-		}))
+		logger.start("Preparing cell annotation")
+			cellAnnot <- do.call("rbind", lapply(1:nSamples, FUN=function(i){
+				sid <- sampleIds[i]
+				logger.status(c("Importing sample", ":", sid, paste0("(", i, " of ", nSamples, ")")))
+				fragTab <- readTab(fragmentFiles[i], header=FALSE)
+				colnames(fragTab) <- c("chrom", "chromStart", "chromEnd", "barcode", "duplicateCount")
+				fragCounts <- table(fragTab[,"barcode"])
+				sa.sample <- sampleAnnot[sid,]
+				rownames(sa.sample) <- NULL
+				sa <- data.frame(
+					.sampleId=sid,
+					cellId=paste(sid, names(fragCounts), sep="_"),
+					barcode=names(fragCounts),
+					sa.sample,
+					nFrags=fragCounts,
+					stringsAsFactors=FALSE
+				)
+				return(sa)
+			}))
+		logger.completed()
 	} else {
 		if (!is.element("cellId", colnames(cellAnnot))){
 			logger.error("Invalid parameter: cellAnnot. Expected table with column 'cellId'")
@@ -72,7 +76,6 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 	logger.completed()
 
 	logger.start("Reading scATAC data (fragment data)")
-		nSamples <- length(sampleIds)
 		for (i in seq_along(fragmentFiles)){
 			sid <- sampleIds[i]
 			logger.start(c("Importing sample", ":", sid, paste0("(", i, " of ", nSamples, ")")))
