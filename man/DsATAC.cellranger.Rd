@@ -6,8 +6,7 @@
 \usage{
 DsATAC.cellranger(sampleAnnot, sampleDirPrefixCol, genome, dataDir = "",
   regionSets = NULL, addPeakRegions = TRUE,
-  sampleIdCol = sampleDirPrefixCol, diskDump = FALSE,
-  keepInsertionInfo = FALSE)
+  sampleIdCol = sampleDirPrefixCol, keepInsertionInfo = FALSE)
 }
 \arguments{
 \item{sampleAnnot}{data.frame specifying the sample annotation table}
@@ -23,8 +22,6 @@ DsATAC.cellranger(sampleAnnot, sampleDirPrefixCol, genome, dataDir = "",
 \item{addPeakRegions}{should a merged set of peaks be created as one of the region sets (merged, non-overlapping peaks of width=500bp from the peaks of individual samples)}
 
 \item{sampleIdCol}{column name or index in the sample annotation table containing unique sample identifiers}
-
-\item{diskDump}{should large data objects (count matrices, fragment data, ...) be disk-backed to save main memory}
 
 \item{keepInsertionInfo}{flag indicating whether to maintain the insertion information in the resulting object.}
 }
