@@ -276,4 +276,3 @@ setMethod("createReport_summary",
 		invisible(rr)
 	}
 )
-# report <- createReport_summary(dsr, file.path(config$.anaDir, "reports"))
