@@ -155,13 +155,6 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 #' @author Fabian Mueller
 #' @export
 DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="", regionSets=NULL, addPeakRegions=TRUE, sampleIdCol=sampleDirPrefixCol, keepInsertionInfo=FALSE){
-	# sampleAnnot <- data.frame(
-	# 	sampleId=c("sample1", "sample2"),
-	# 	sampleSubDir=c("scATAC_test", "scATAC_test"),
-	# 	stringsAsFactors = FALSE
-	# )
-	# ds <- DsATAC.cellranger(sampleAnnot, "sampleSubDir", "hg38", dataDir="~/myscratch/scATAC", regionSets=NULL, addPeakRegions=TRUE, sampleIdCol="sampleId", diskDump=FALSE, keepInsertionInfo=TRUE)
-
 	sampleIds <- as.character(sampleAnnot[,sampleIdCol])
 	rownames(sampleAnnot) <- sampleIds
 
