@@ -10,12 +10,11 @@
 #' @param regionSets   a list of GRanges objects which contain region sets over which count data will be aggregated
 #' @param sampleIdCol  column name or index in the sample annotation table containing unique sample identifiers
 #' @param cellAnnot    (optional) annotation table of all cells in the dataset. Must contain a \code{'cellId'} and \code{'cellBarcode'} columns.
-#' @param diskDump     should large data objects (count matrices, fragment data, ...) be disk-backed to save main memory
 #' @param keepInsertionInfo flag indicating whether to maintain the insertion information in the resulting object.
 #' @return \code{\linkS4class{DsATACsc}} object
 #' @author Fabian Mueller
 #' @export
-DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NULL, sampleIdCol=NULL, cellAnnot=NULL, diskDump=FALSE, keepInsertionInfo=FALSE){
+DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NULL, sampleIdCol=NULL, cellAnnot=NULL, keepInsertionInfo=FALSE){
 	if (!is.character(fragmentFiles)) logger.error("Invalid value for fragmentFiles. Expected character")
 	if (length(fragmentFiles)==1 && is.element(fragmentFiles, colnames(sampleAnnot))){
 		fragmentFiles <- sampleAnnot[,fragmentFiles]
@@ -67,7 +66,7 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 	rownames(cellAnnot) <- cellAnnot[,"cellId"]
 	
 	logger.start("Creating DsATAC object")
-		obj <- DsATACsc(cellAnnot, genome, diskDump=diskDump, diskDump.fragments=keepInsertionInfo, sparseCounts=TRUE)
+		obj <- DsATACsc(cellAnnot, genome, diskDump=FALSE, diskDump.fragments=keepInsertionInfo, sparseCounts=TRUE)
 		for (rt in names(regionSets)){
 			logger.info(c("Including region set:", rt))
 			obj <- regionAggregation(obj, regionSets[[rt]], rt, signal=NULL, dropEmpty=FALSE)
@@ -151,12 +150,11 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 #' @param regionSets   a list of GRanges objects which contain region sets over which count data will be aggregated
 #' @param addPeakRegions should a merged set of peaks be created as one of the region sets (merged, non-overlapping peaks of width=500bp from the peaks of individual samples)
 #' @param sampleIdCol  column name or index in the sample annotation table containing unique sample identifiers
-#' @param diskDump     should large data objects (count matrices, fragment data, ...) be disk-backed to save main memory
 #' @param keepInsertionInfo flag indicating whether to maintain the insertion information in the resulting object.
 #' @return \code{\linkS4class{DsATAC}} object
 #' @author Fabian Mueller
 #' @export
-DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="", regionSets=NULL, addPeakRegions=TRUE, sampleIdCol=sampleDirPrefixCol, diskDump=FALSE, keepInsertionInfo=FALSE){
+DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="", regionSets=NULL, addPeakRegions=TRUE, sampleIdCol=sampleDirPrefixCol, keepInsertionInfo=FALSE){
 	# sampleAnnot <- data.frame(
 	# 	sampleId=c("sample1", "sample2"),
 	# 	sampleSubDir=c("scATAC_test", "scATAC_test"),
@@ -275,7 +273,7 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 	}
 
 	fragmentFiles <- file.path(sampleDirs, "fragments.tsv.gz")
-	obj <- DsATACsc.fragments(sampleAnnot, fragmentFiles, genome=genome, regionSets=regionSets, sampleIdCol=sampleIdCol, cellAnnot=cellAnnot, diskDump=diskDump, keepInsertionInfo=keepInsertionInfo)
+	obj <- DsATACsc.fragments(sampleAnnot, fragmentFiles, genome=genome, regionSets=regionSets, sampleIdCol=sampleIdCol, cellAnnot=cellAnnot, keepInsertionInfo=keepInsertionInfo)
 	
 	return(obj)
 }

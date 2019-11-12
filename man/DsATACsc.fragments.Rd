@@ -5,8 +5,7 @@
 \title{DsATACsc.fragments}
 \usage{
 DsATACsc.fragments(sampleAnnot, fragmentFiles, genome, regionSets = NULL,
-  sampleIdCol = NULL, cellAnnot = NULL, diskDump = FALSE,
-  keepInsertionInfo = FALSE)
+  sampleIdCol = NULL, cellAnnot = NULL, keepInsertionInfo = FALSE)
 }
 \arguments{
 \item{sampleAnnot}{data.frame specifying the sample annotation table}
@@ -21,9 +20,7 @@ and must not contain a header line}
 
 \item{sampleIdCol}{column name or index in the sample annotation table containing unique sample identifiers}
 
-\item{cellAnnot}{(optional) annotation table of all cells in the dataset. Must contain a \code{'cellId'} column.}
-
-\item{diskDump}{should large data objects (count matrices, fragment data, ...) be disk-backed to save main memory}
+\item{cellAnnot}{(optional) annotation table of all cells in the dataset. Must contain a \code{'cellId'} and \code{'cellBarcode'} columns.}
 
 \item{keepInsertionInfo}{flag indicating whether to maintain the insertion information in the resulting object.}
 }
