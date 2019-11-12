@@ -64,6 +64,8 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 			logger.error("Invalid parameter: cellAnnot. Expected table with column 'cellId'")
 		}
 	}
+	rownames(cellAnnot) <- cellAnnot[,"cellId"]
+	
 	logger.start("Creating DsATAC object")
 		obj <- DsATACsc(cellAnnot, genome, diskDump=diskDump, diskDump.fragments=keepInsertionInfo, sparseCounts=TRUE)
 		for (rt in names(regionSets)){
