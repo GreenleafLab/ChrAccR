@@ -629,9 +629,9 @@ setMethod("regionAggregation",
 			.object@counts[[type]] <- Matrix::sparseMatrix(i=c(), j=c(), x=1, dims=c(nRegs,nSamples))
 		} else {
 			.object@counts[[type]] <- matrix(as.integer(NA), nrow=nRegs, ncol=nSamples)
+			if (.object@diskDump) .object@counts[[type]] <- as(.object@counts[[type]], "HDF5Array")
 		}
 		
-		if (.object@diskDump) .object@counts[[type]] <- as(.object@counts[[type]], "HDF5Array")
 		colnames(.object@counts[[type]]) <- sampleIds
 		.object@countTransform[[type]] <- character(0)
 
