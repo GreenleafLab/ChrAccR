@@ -9,7 +9,7 @@
 #' @param genome       genome assembly
 #' @param regionSets   a list of GRanges objects which contain region sets over which count data will be aggregated
 #' @param sampleIdCol  column name or index in the sample annotation table containing unique sample identifiers
-#' @param cellAnnot    (optional) annotation table of all cells in the dataset. Must contain a \code{'cellId'} column.
+#' @param cellAnnot    (optional) annotation table of all cells in the dataset. Must contain a \code{'cellId'} and \code{'cellBarcode'} columns.
 #' @param diskDump     should large data objects (count matrices, fragment data, ...) be disk-backed to save main memory
 #' @param keepInsertionInfo flag indicating whether to maintain the insertion information in the resulting object.
 #' @return \code{\linkS4class{DsATACsc}} object
@@ -42,7 +42,7 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 		logger.start("Preparing cell annotation")
 			cellAnnot <- do.call("rbind", lapply(1:nSamples, FUN=function(i){
 				sid <- sampleIds[i]
-				logger.status(c("Importing sample", ":", sid, paste0("(", i, " of ", nSamples, ")")))
+				logger.status(c("Sample:", sid, paste0("(", i, " of ", nSamples, ")")))
 				fragTab <- readTab(fragmentFiles[i], header=FALSE)
 				colnames(fragTab) <- c("chrom", "chromStart", "chromEnd", "barcode", "duplicateCount")
 				fragCounts <- table(fragTab[,"barcode"])
@@ -51,7 +51,7 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 				sa <- data.frame(
 					.sampleId=sid,
 					cellId=paste(sid, names(fragCounts), sep="_"),
-					barcode=names(fragCounts),
+					cellBarcode=names(fragCounts),
 					sa.sample,
 					nFrags=fragCounts,
 					stringsAsFactors=FALSE
@@ -81,7 +81,7 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 			logger.start(c("Importing sample", ":", sid, paste0("(", i, " of ", nSamples, ")")))
 				sampleIdx <- cellAnnot[,sampleIdCol]==sid
 				barcode2cellId <- cellAnnot[sampleIdx,"cellId"]
-				names(barcode2cellId) <- cellAnnot[sampleIdx,".CR.cellQC.barcode"]
+				names(barcode2cellId) <- cellAnnot[sampleIdx,"cellBarcode"]
 
 				logger.start("Preparing fragment data")
 					fragGr <- readTab(fragmentFiles[i], header=FALSE)
@@ -239,6 +239,7 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 
 	cellAnnot <- do.call("rbind", lapply(cellAnnotL, FUN=function(x){x[,colnames.intersect]}))
 	rownames(cellAnnot) <- cellAnnot[,"cellId"]
+	cellAnnot[,"cellBarcode"] <- cellAnnot[,".CR.cellQC.barcode"]
 
 	# optionally merge peak sets and add to region sets (peaks.bed)
 	if (addPeakRegions){
