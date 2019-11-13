@@ -49,7 +49,7 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 				fragCounts <- table(fragTab[,"barcode"])
 				if (minFragsPerBarcode > 0){
 					idx <- fragCounts >= minFragsPerBarcode
-					logger.info(c("  Keeping", sum(idx), paste0("[of ", length(idx), "]"), "barcodes with more than", minFragsPerBarcode, "fragments"))
+					logger.info(c("Keeping", sum(idx), paste0("[of ", length(idx), "]"), "barcodes with more than", minFragsPerBarcode, "fragments"))
 					fragCounts <- fragCounts[idx]
 				}
 				sa.sample <- sampleAnnot[sid,]
