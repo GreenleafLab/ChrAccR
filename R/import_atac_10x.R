@@ -9,12 +9,13 @@
 #' @param genome       genome assembly
 #' @param regionSets   a list of GRanges objects which contain region sets over which count data will be aggregated
 #' @param sampleIdCol  column name or index in the sample annotation table containing unique sample identifiers
+#' @param minFragsPerBarcode minimum number of fragments required for a barcode to be kept. [Only relevant if \code{cellAnnot==NULL}]
 #' @param cellAnnot    (optional) annotation table of all cells in the dataset. Must contain a \code{'cellId'} and \code{'cellBarcode'} columns.
 #' @param keepInsertionInfo flag indicating whether to maintain the insertion information in the resulting object.
 #' @return \code{\linkS4class{DsATACsc}} object
 #' @author Fabian Mueller
 #' @export
-DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NULL, sampleIdCol=NULL, cellAnnot=NULL, keepInsertionInfo=FALSE){
+DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NULL, sampleIdCol=NULL, minFragsPerBarcode=500L, cellAnnot=NULL, keepInsertionInfo=FALSE){
 	if (!is.character(fragmentFiles)) logger.error("Invalid value for fragmentFiles. Expected character")
 	if (length(fragmentFiles)==1 && is.element(fragmentFiles, colnames(sampleAnnot))){
 		fragmentFiles <- sampleAnnot[,fragmentFiles]
@@ -39,7 +40,6 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 	}
 	
 	if (is.null(cellAnnot)){
-		minFrags <- 100L
 		logger.start("Preparing cell annotation")
 			cellAnnot <- do.call("rbind", lapply(1:nSamples, FUN=function(i){
 				sid <- sampleIds[i]
@@ -47,9 +47,11 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 				fragTab <- readTab(fragmentFiles[i], header=FALSE)
 				colnames(fragTab) <- c("chrom", "chromStart", "chromEnd", "barcode", "duplicateCount")
 				fragCounts <- table(fragTab[,"barcode"])
-				idx <- fragCounts >= minFrags
-				logger.info(c("  Keeping", sum(idx), "[of", length(idx), "] cells with more than", minFrags, "fragments"))
-				fragCounts <- fragCounts[idx]
+				if (minFragsPerBarcode > 0){
+					idx <- fragCounts >= minFragsPerBarcode
+					logger.info(c("  Keeping", sum(idx), paste0("[of", length(idx), "]"), "barcodes with more than", minFragsPerBarcode, "fragments"))
+					fragCounts <- fragCounts[idx]
+				}
 				sa.sample <- sampleAnnot[sid,]
 				rownames(sa.sample) <- NULL
 				sa <- data.frame(
