@@ -2029,9 +2029,6 @@ setMethod("aggregateRegionCounts",
 		if (!all(idx)){
 			logger.warning(c("not all elements in GRanges have the same width. --> discarding", sum(!idx), "of", length(idx), "regions that do not."))
 			regionGr <- regionGr[idx]
-			if (!is.null(regionKmerFreqM)){
-				regionKmerFreqM <- regionKmerFreqM[idx,,drop=FALSE]
-			}
 		}
 
 		if (kmerBiasAdj && !is.null(regionKmerFreqM) && ncol(regionKmerFreqM)!=wm){
