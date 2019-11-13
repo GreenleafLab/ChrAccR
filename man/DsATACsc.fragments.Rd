@@ -5,7 +5,8 @@
 \title{DsATACsc.fragments}
 \usage{
 DsATACsc.fragments(sampleAnnot, fragmentFiles, genome, regionSets = NULL,
-  sampleIdCol = NULL, cellAnnot = NULL, keepInsertionInfo = FALSE)
+  sampleIdCol = NULL, minFragsPerBarcode = 200L, cellAnnot = NULL,
+  keepInsertionInfo = FALSE)
 }
 \arguments{
 \item{sampleAnnot}{data.frame specifying the sample annotation table}
@@ -19,6 +20,8 @@ and must not contain a header line}
 \item{regionSets}{a list of GRanges objects which contain region sets over which count data will be aggregated}
 
 \item{sampleIdCol}{column name or index in the sample annotation table containing unique sample identifiers}
+
+\item{minFragsPerBarcode}{minimum number of fragments required for a barcode to be kept. [Only relevant if \code{cellAnnot==NULL}]}
 
 \item{cellAnnot}{(optional) annotation table of all cells in the dataset. Must contain a \code{'cellId'} and \code{'cellBarcode'} columns.}
 
