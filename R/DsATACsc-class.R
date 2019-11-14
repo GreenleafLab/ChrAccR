@@ -199,8 +199,8 @@ setMethod("getScQcStatsTab",
 		cellAnnot <- getSampleAnnot(.object)
 		sampleIdCn <- findOrderedNames(colnames(cellAnnot), c(".sampleid", "sampleid", ".CR.cellQC.barcode"), ignore.case=TRUE)
 		nFragCns <- c(
-			total=findOrderedNames(colnames(cellAnnot), ".CR.cellQC.total"),
-			pass=findOrderedNames(colnames(cellAnnot), ".CR.cellQC.passed_filters"),
+			total=findOrderedNames(colnames(cellAnnot), c(".CR.cellQC.total", "nFrags")),
+			pass=findOrderedNames(colnames(cellAnnot), c(".CR.cellQC.passed_filters", "nFrags")),
 			tss=findOrderedNames(colnames(cellAnnot), ".CR.cellQC.TSS_fragments"),
 			peak=findOrderedNames(colnames(cellAnnot), ".CR.cellQC.peak_region_fragments"),
 			duplicate=findOrderedNames(colnames(cellAnnot), ".CR.cellQC.duplicate"),
@@ -208,6 +208,14 @@ setMethod("getScQcStatsTab",
 		)
 		summaryDf <- data.frame(cell=getSamples(.object), sample=rep("sample", nrow(cellAnnot)))
 		if (!is.na(sampleIdCn)) summaryDf[,"sample"] <- cellAnnot[,sampleIdCn]
+		if (is.na(nFragCns["total"]) && is.na(nFragCns["pass"])){
+			logger.info("Number of fragments not annotated. --> trying to count from fragment data")
+			hasFragments <- length(.object@fragments) > 0
+			if (!hasFragments) logger.error("No fragment data found")
+			cellAnnot[,".countedFragments"] <- getFragmentNum(.object)
+			nFragCns["total"] <- ".countedFragments"
+			nFragCns["pass"] <- ".countedFragments"
+		}
 		for (cn in c("total", "pass")){
 			summaryDf[,muRtools::normalize.str(paste("n", cn, sep="_"), return.camel=TRUE)] <- cellAnnot[,nFragCns[cn]]
 		}
