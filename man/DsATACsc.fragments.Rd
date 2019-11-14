@@ -5,7 +5,8 @@
 \title{DsATACsc.fragments}
 \usage{
 DsATACsc.fragments(sampleAnnot, fragmentFiles, genome, regionSets = NULL,
-  sampleIdCol = NULL, minFragsPerBarcode = 200L, cellAnnot = NULL,
+  sampleIdCol = NULL, minFragsPerBarcode = 500L,
+  maxFragsPerBarcode = Inf, cellAnnot = NULL,
   keepInsertionInfo = FALSE)
 }
 \arguments{
@@ -22,6 +23,8 @@ and must not contain a header line}
 \item{sampleIdCol}{column name or index in the sample annotation table containing unique sample identifiers}
 
 \item{minFragsPerBarcode}{minimum number of fragments required for a barcode to be kept. [Only relevant if \code{cellAnnot==NULL}]}
+
+\item{maxFragsPerBarcode}{maximum number of fragments per barcode. Only barcodes with fewer fragments will be kept. [Only relevant if \code{cellAnnot==NULL}]}
 
 \item{cellAnnot}{(optional) annotation table of all cells in the dataset. Must contain a \code{'cellId'} and \code{'cellBarcode'} columns.}
 
