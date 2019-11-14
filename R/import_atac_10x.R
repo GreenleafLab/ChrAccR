@@ -35,6 +35,7 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 	if (is.null(regionSets)){
 		logger.info(c("Using default region sets:", paste("tiling200bp", collapse=", ")))
 		regionSets <- GRangesList(
+			tiling5kb=getTilingRegions(genome, width=200L, onlyMainChrs=TRUE),
 			tiling200bp=getTilingRegions(genome, width=200L, onlyMainChrs=TRUE)
 		)
 	}
@@ -180,6 +181,7 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 	if (is.null(regionSets)){
 		logger.info(c("Using default region sets:", paste("tiling200bp", collapse=", ")))
 		regionSets <- GRangesList(
+			tiling5kb=getTilingRegions(genome, width=200L, onlyMainChrs=TRUE),
 			tiling200bp=getTilingRegions(genome, width=200L, onlyMainChrs=TRUE)
 		)
 	}
