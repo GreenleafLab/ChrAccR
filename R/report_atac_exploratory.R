@@ -74,6 +74,12 @@ setMethod("createReport_exploratory",
 				saveRDS(dre, file.path(rDir.data.abs, "dimRed_iterativeLSI_res.rds"))
 				uwot::save_uwot(dre$umapRes, file.path(rDir.data.abs, "dimRed_iterativeLSI_res_uwot"))
 			logger.completed()
+			logger.start("Aggregating counts across initial cluster peaks")
+				.object <- regionAggregation(.object, dre$clusterPeaks_unfiltered, ".peaks.itlsi", signal="insertions", dropEmpty=FALSE, bySample=FALSE)
+			logger.completed()
+			# logger.start("Aggregating counts across regions selected for dimension reduction")
+			# 	.object <- regionAggregation(.object, dre$regionGr, "dimRedRegs", signal="insertions", dropEmpty=FALSE, bySample=FALSE)
+			# logger.completed()
 			
 			# annotation
 			qcDf <- getScQcStatsTab(.object)
