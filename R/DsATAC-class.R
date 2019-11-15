@@ -370,7 +370,8 @@ setMethod("getFragmentNum",
 		sampleIds=getSamples(.object)
 	) {
 		if (!all(sampleIds %in% getSamples(.object))) logger.error(c("Invalid sampleIds:", paste(setdiff(sampleIds, getSamples(.object)), collapse=", ")))
-		res <- elementNROWS(getFragmentGrl(.object, getSamples(.object), asGRangesList=TRUE))
+		fgrl <- getFragmentGrl(.object, getSamples(.object), asGRangesList=FALSE)
+		res <- sapply(fgrl, length)
 		return(res)
 	}
 )
@@ -681,9 +682,10 @@ setMethod("regionAggregation",
 						nSamples_cur <- length(chunkIdxL[[k]])
 						sampleIds_cur <- sampleIds[chunkIdxL[[k]]]
 						logger.status("Retrieving joined insertion sites ...")
-						fGrl <- getFragmentGrl(.object, sampleIds_cur, asGRangesList=TRUE)
-						nFrags <- elementNROWS(fGrl)
-						fGr <- unlist(fGrl, use.names=FALSE)
+						fGrl <- getFragmentGrl(.object, sampleIds_cur, asGRangesList=FALSE)
+						nFrags <- sapply(fGrl, length)
+						fGr <- do.call("c", unname(fGrl))
+						# fGr <- unlist(fGrl, use.names=FALSE)
 						elementMetadata(fGr)[,".sampleIdx"] <- rep(seq_along(nFrags), nFrags)
 						igr <- getInsertionSitesFromFragmentGr(fGr)
 						logger.status("computing overlaps with regions ...")
@@ -838,9 +840,10 @@ setMethod("mergeSamples",
 					iis <- mgL[[i]]
 					logger.status(c("Merged sample", i, "of", length(mgL)))
 					curSns <- sampleNames[iis]
-					curFragL <- getFragmentGrl(inputObj, curSns, asGRangesList=TRUE)
-					nFrags <- elementNROWS(curFragL)
-					catRes <- unlist(curFragL, use.names=FALSE)
+					curFragL <- getFragmentGrl(inputObj, curSns, asGRangesList=FALSE)
+					nFrags <- sapply(curFragL, length)
+					catRes <- do.call("c", unname(curFragL))
+					# catRes <- unlist(curFragL, use.names=FALSE)
 					elementMetadata(catRes)[,".sample"] <- rep(curSns, nFrags)
 
 					if (.object@diskDump.fragments) {
@@ -1027,10 +1030,16 @@ setMethod("addCountDataFromGRL",
 		if (!all(sids %in% getSamples(.object))){
 			logger.error(c("DsATAC dataset does not contain samples:", paste(setdiff(sids, getSamples(.object)), collapse=", ")))
 		}
-		if (class(grl)!="GRangesList") grl <- GRangesList(grl)
-		gr.c <- unlist(grl, use.names=FALSE)
+		if (class(grl)=="GRangesList") {
+			nElem <- elementNROWS(grl)
+			gr.c <- unlist(grl, use.names=FALSE)
+		} else {
+			nElem <- sapply(grl, length)
+			gr.c <- do.call("c", unname(grl))
+		}
+		
 		if (length(gr.c) < 1) logger.error("[addCountDataFromGRL] invalid GRL: Must be of length 1 or more")
-		sampleIds <- rep(names(grl), times=elementNROWS(grl))
+		sampleIds <- rep(names(grl), times=nElem)
 		sampleIds.cm <- getSamples(.object)
 		rts <- getRegionTypes(.object)
 
@@ -1891,19 +1900,25 @@ setMethod("regionSetCounts",
 		rsl,
 		bySample=FALSE
 	) {
-		if (class(rsl)!="GRangesList") rsl <- GRangesList(rsl)
-
-		res <- matrix(as.numeric(NA), nrow=length(rsl), ncol=length(getSamples(.object)))
+		nr <- length(rsl)
+		res <- matrix(as.numeric(NA), nrow=nr, ncol=length(getSamples(.object)))
 		if (bySample){
-			rslGr <- unlist(rsl, use.names=FALSE)
-			idx.rsl <- rep(1:length(rsl), times=elementNROWS(rsl))
+			if (class(rsl)=="GRangesList"){
+				nc <- elementNROWS(rsl)
+				rslGr <- unlist(rsl, use.names=FALSE)
+			} else {
+				nc <- sapply(rsl, length)
+				rslGr <- do.call("c", unname(rsl))
+			}
+			
+			idx.rsl <- rep(1:nr, times=nc)
 
 			res <- do.call("cbind", lapply(getSamples(.object), FUN=function(sid){
 				logger.status(c("Summarizing fragment counts for sample", sid))
 				insGr <- getInsertionSites(.object, sid)[[1]]
 				ov <- countOverlaps(rslGr, insGr, ignore.strand=TRUE)
 				rr <- tapply(ov, idx.rsl, sum)
-				rr <- rr[as.character(1:length(rsl))] # make sure the counts are returned in the same order as in rsl (not sure, if really necessary)
+				rr <- rr[as.character(1:nr)] # make sure the counts are returned in the same order as in rsl (not sure, if really necessary)
 				return(rr)
 			}))
 			rownames(res) <- names(rsl)
@@ -3033,9 +3048,10 @@ setMethod("getQuickTssEnrichment",
 		sampleIds <- getSamples(.object)
 		nSamples <- length(sampleIds)
 		logger.status("Retrieving joined insertion sites ...")
-		fGr <- getFragmentGrl(.object, sampleIds, asGRangesList=TRUE)
-		nFrags <- elementNROWS(fGr)
-		fGr <- unlist(fGr, use.names=FALSE)
+		fGr <- getFragmentGrl(.object, sampleIds, asGRangesList=FALSE)
+		nFrags <- sapply(fGr, length)
+		fGr <- do.call("c", unname(fGr))
+		# fGr <- unlist(fGr, use.names=FALSE)
 		elementMetadata(fGr)[,".sampleIdx"] <- rep(seq_along(nFrags), nFrags)
 		igr <- getInsertionSitesFromFragmentGr(fGr)
 		logger.status("computing overlaps with TSS regions ...")
