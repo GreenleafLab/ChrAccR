@@ -1837,7 +1837,7 @@ setMethod("filterByGRanges",
 					sids <- names(fragGrl)
 					# filter
 					fragGrl_filt <- endoapply(fragGrl, FUN=function(x){
-						idx <- overlapsAny(fragGr, gr) # whitelist
+						idx <- overlapsAny(x, gr) # whitelist
 						if (method=="black") idx <- !idx
 						return(x[idx])
 					})
