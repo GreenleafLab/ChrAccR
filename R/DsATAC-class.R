@@ -2426,9 +2426,7 @@ setMethod("getMotifFootprints",
 				footprintDf$pos <- footprintDf$pos - (motifFlank+1) # offset the position: aggregateRegionCounts returns positions in [0,regionWidth]
 
 				motifLen <- motifLens[mn]
-				motifUp <- -ceiling(motifLen/2) + 1
-				motifDown <- floor(motifLen/2)
-
+				
 				# Definitions according to [Corces, Granja, et al. (2018). The chromatin accessibility landscape of primary human cancers. Science, 362(6413)]
 				absPos <- abs(footprintDf[,"pos"])
 				i_base <- ceiling(motifLen/2) + 5
@@ -2437,21 +2435,25 @@ setMethod("getMotifFootprints",
 				fp_bgMean    <- mean(footprintDf[absPos >= 200, "countNormBiasCor"], na.rm=TRUE)
 
 				# plot
-				ppm <- ggplot(footprintDf, aes(x=pos, y=countNormBiasCor, color=sampleId, group=sampleId, fill=sampleId)) + 
-					  annotate("rect", xmin=motifUp, xmax=motifDown, ymin=-Inf, ymax=Inf, fill="#d9d9d9") +
-				      geom_line() #+ geom_smooth(aes(group=cellType),size=2,alpha=0.15,method="gam",formula=y ~ s(x, bs = "cs"))
+				pp <- plotFootprint(footprintDf, pwm=motifObj[[mn]], colorMap=NULL)
+				# motifUp <- -ceiling(motifLen/2) + 1
+				# motifDown <- floor(motifLen/2)
+				# ppm <- ggplot(footprintDf, aes(x=pos, y=countNormBiasCor, color=sampleId, group=sampleId, fill=sampleId)) + 
+				# 	  annotate("rect", xmin=motifUp, xmax=motifDown, ymin=-Inf, ymax=Inf, fill="#d9d9d9") +
+				#       geom_line() #+ geom_smooth(aes(group=cellType),size=2,alpha=0.15,method="gam",formula=y ~ s(x, bs = "cs"))
 
-				ppb <- ggplot(footprintDf, aes(x=pos, y=Tn5biasNorm, color=sampleId, group=sampleId, fill=sampleId)) + 
-					  annotate("rect", xmin=motifUp, xmax=motifDown, ymin=-Inf, ymax=Inf, fill="#d9d9d9") +
-				      geom_line()
+				# ppb <- ggplot(footprintDf, aes(x=pos, y=Tn5biasNorm, color=sampleId, group=sampleId, fill=sampleId)) + 
+				# 	  annotate("rect", xmin=motifUp, xmax=motifDown, ymin=-Inf, ymax=Inf, fill="#d9d9d9") +
+				#       geom_line()
 
-				# add sequence logo
-				logo <- hmSeqLogo(motifObj[[mn]], unit(0.5, "npc"), unit(0.5, "npc"), 1, 1, ic.scale=TRUE)
-				logoHeight <- (max(footprintDf[,"countNormBiasCor"], na.rm=TRUE) - min(footprintDf[,"countNormBiasCor"], na.rm=TRUE)) * 0.2
-				logoY <- max(footprintDf[,"countNormBiasCor"], na.rm=TRUE) - logoHeight
-				ppm <- ppm + cowplot::draw_plot(logo, 100, logoY, 100, logoHeight)
+				# # add sequence logo
+				# logo <- hmSeqLogo(motifObj[[mn]], unit(0.5, "npc"), unit(0.5, "npc"), 1, 1, ic.scale=TRUE)
+				# logoHeight <- (max(footprintDf[,"countNormBiasCor"], na.rm=TRUE) - min(footprintDf[,"countNormBiasCor"], na.rm=TRUE)) * 0.2
+				# logoY <- max(footprintDf[,"countNormBiasCor"], na.rm=TRUE) - logoHeight
+				# ppm <- ppm + cowplot::draw_plot(logo, 100, logoY, 100, logoHeight)
 
-				pp <- cowplot::plot_grid(ppm, ppb + theme(legend.position="none"), ncol=1, rel_heights=c(2, 1), align="v", axis="lr")
+				# pp <- cowplot::plot_grid(ppm, ppb + theme(legend.position="none"), ncol=1, rel_heights=c(2, 1), align="v", axis="lr")
+
 				rr <- list(
 					footprintDf=footprintDf,
 					plot=pp,
