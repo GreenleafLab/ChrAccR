@@ -447,3 +447,51 @@ hmSeqLogo <- function(pwm, x=unit(0.5, "npc"), y=unit(0.5, "npc"), width=1, heig
 	}
 	grid::grid.polygon(x=unit(letters$x, unitType), y=unit(letters$y, unitType), id=letters$id, gp=grid::gpar(fill=letters$fill,col="transparent"))
 }
+
+################################################################################
+# Footprint plotting
+################################################################################
+#' plotFootprint
+#'
+#' Plot motif footprinting results
+#'
+#' @param footprintDf \code{data.frame} used for plotting (as output by \code{getMotifFootprints(...)$footprintDf})
+#' @param pwm   PWM used for plotting the sequence logo (from TFBSTools package or output from \code{prepareMotifmatchr(...)$motifs})
+#' @return A \code{ggplot2} object containing the motif plot
+#' @author Fabian Mueller
+#' @noRd
+plotFootprint <- function(footprintDf, pwm=NULL, colorMap=NULL){
+	motifLen <- motifUp <- motifDown <- NULL
+	if (!is.null(pwm)){
+		motifLen <- length(pwm)
+		motifUp <- -ceiling(motifLen/2) + 1
+		motifDown <- floor(motifLen/2)
+	}
+	# plot
+	if (is.null(colorMap)){
+		ggCs <- muRtools::ggAutoColorScale(footprintDf[,"sampleId"], method="color")
+	} else {
+		ggCs <- scale_color_manual(values=colorMap)
+	}
+	ppm <- ggplot(footprintDf, aes(x=pos, y=countNormBiasCor, color=sampleId, group=sampleId, fill=sampleId)) + ggCs
+	ppb <- ggplot(footprintDf, aes(x=pos, y=Tn5biasNorm, color=sampleId, group=sampleId, fill=sampleId)) + ggCs
+
+	if (!is.null(motifLen)){
+		ppm <- ppm + annotate("rect", xmin=motifUp, xmax=motifDown, ymin=-Inf, ymax=Inf, fill="#d9d9d9") 
+		ppb <- ppb + annotate("rect", xmin=motifUp, xmax=motifDown, ymin=-Inf, ymax=Inf, fill="#d9d9d9")
+	}
+
+	ppm <- ppm + geom_line() #+ geom_smooth(aes(group=cellType),size=2,alpha=0.15,method="gam",formula=y ~ s(x, bs = "cs"))
+	ppb <- ppb + geom_line()
+
+	if (!is.null(pwm)){
+		# add sequence logo
+		logo <- hmSeqLogo(pwm, unit(0.5, "npc"), unit(0.5, "npc"), 1, 1, ic.scale=TRUE)
+		logoHeight <- (max(footprintDf[,"countNormBiasCor"], na.rm=TRUE) - min(footprintDf[,"countNormBiasCor"], na.rm=TRUE)) * 0.2
+		logoY <- max(footprintDf[,"countNormBiasCor"], na.rm=TRUE) - logoHeight
+		ppm <- ppm + cowplot::draw_plot(logo, 100, logoY, 100, logoHeight)
+	}
+
+	pp <- cowplot::plot_grid(ppm, ppb + theme(legend.position="none"), ncol=1, rel_heights=c(2, 1), align="v", axis="lr")
+	return(pp)
+}

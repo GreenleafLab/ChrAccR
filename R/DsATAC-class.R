@@ -370,7 +370,8 @@ setMethod("getFragmentNum",
 		sampleIds=getSamples(.object)
 	) {
 		if (!all(sampleIds %in% getSamples(.object))) logger.error(c("Invalid sampleIds:", paste(setdiff(sampleIds, getSamples(.object)), collapse=", ")))
-		res <- elementNROWS(getFragmentGrl(.object, getSamples(.object), asGRangesList=TRUE))
+		fgrl <- getFragmentGrl(.object, getSamples(.object), asGRangesList=FALSE)
+		res <- sapply(fgrl, length)
 		return(res)
 	}
 )
@@ -681,9 +682,10 @@ setMethod("regionAggregation",
 						nSamples_cur <- length(chunkIdxL[[k]])
 						sampleIds_cur <- sampleIds[chunkIdxL[[k]]]
 						logger.status("Retrieving joined insertion sites ...")
-						fGrl <- getFragmentGrl(.object, sampleIds_cur, asGRangesList=TRUE)
-						nFrags <- elementNROWS(fGrl)
-						fGr <- unlist(fGrl, use.names=FALSE)
+						fGrl <- getFragmentGrl(.object, sampleIds_cur, asGRangesList=FALSE)
+						nFrags <- sapply(fGrl, length)
+						fGr <- do.call("c", unname(fGrl))
+						# fGr <- unlist(fGrl, use.names=FALSE)
 						elementMetadata(fGr)[,".sampleIdx"] <- rep(seq_along(nFrags), nFrags)
 						igr <- getInsertionSitesFromFragmentGr(fGr)
 						logger.status("computing overlaps with regions ...")
@@ -838,9 +840,10 @@ setMethod("mergeSamples",
 					iis <- mgL[[i]]
 					logger.status(c("Merged sample", i, "of", length(mgL)))
 					curSns <- sampleNames[iis]
-					curFragL <- getFragmentGrl(inputObj, curSns, asGRangesList=TRUE)
-					nFrags <- elementNROWS(curFragL)
-					catRes <- unlist(curFragL, use.names=FALSE)
+					curFragL <- getFragmentGrl(inputObj, curSns, asGRangesList=FALSE)
+					nFrags <- sapply(curFragL, length)
+					catRes <- do.call("c", unname(curFragL))
+					# catRes <- unlist(curFragL, use.names=FALSE)
 					elementMetadata(catRes)[,".sample"] <- rep(curSns, nFrags)
 
 					if (.object@diskDump.fragments) {
@@ -1027,10 +1030,16 @@ setMethod("addCountDataFromGRL",
 		if (!all(sids %in% getSamples(.object))){
 			logger.error(c("DsATAC dataset does not contain samples:", paste(setdiff(sids, getSamples(.object)), collapse=", ")))
 		}
-		if (class(grl)!="GRangesList") grl <- GRangesList(grl)
-		gr.c <- unlist(grl, use.names=FALSE)
+		if (class(grl)=="GRangesList") {
+			nElem <- elementNROWS(grl)
+			gr.c <- unlist(grl, use.names=FALSE)
+		} else {
+			nElem <- sapply(grl, length)
+			gr.c <- do.call("c", unname(grl))
+		}
+		
 		if (length(gr.c) < 1) logger.error("[addCountDataFromGRL] invalid GRL: Must be of length 1 or more")
-		sampleIds <- rep(names(grl), times=elementNROWS(grl))
+		sampleIds <- rep(names(grl), times=nElem)
 		sampleIds.cm <- getSamples(.object)
 		rts <- getRegionTypes(.object)
 
@@ -1828,7 +1837,7 @@ setMethod("filterByGRanges",
 					sids <- names(fragGrl)
 					# filter
 					fragGrl_filt <- endoapply(fragGrl, FUN=function(x){
-						idx <- overlapsAny(fragGr, gr) # whitelist
+						idx <- overlapsAny(x, gr) # whitelist
 						if (method=="black") idx <- !idx
 						return(x[idx])
 					})
@@ -1891,19 +1900,25 @@ setMethod("regionSetCounts",
 		rsl,
 		bySample=FALSE
 	) {
-		if (class(rsl)!="GRangesList") rsl <- GRangesList(rsl)
-
-		res <- matrix(as.numeric(NA), nrow=length(rsl), ncol=length(getSamples(.object)))
+		nr <- length(rsl)
+		res <- matrix(as.numeric(NA), nrow=nr, ncol=length(getSamples(.object)))
 		if (bySample){
-			rslGr <- unlist(rsl, use.names=FALSE)
-			idx.rsl <- rep(1:length(rsl), times=elementNROWS(rsl))
+			if (class(rsl)=="GRangesList"){
+				nc <- elementNROWS(rsl)
+				rslGr <- unlist(rsl, use.names=FALSE)
+			} else {
+				nc <- sapply(rsl, length)
+				rslGr <- do.call("c", unname(rsl))
+			}
+			
+			idx.rsl <- rep(1:nr, times=nc)
 
 			res <- do.call("cbind", lapply(getSamples(.object), FUN=function(sid){
 				logger.status(c("Summarizing fragment counts for sample", sid))
 				insGr <- getInsertionSites(.object, sid)[[1]]
 				ov <- countOverlaps(rslGr, insGr, ignore.strand=TRUE)
 				rr <- tapply(ov, idx.rsl, sum)
-				rr <- rr[as.character(1:length(rsl))] # make sure the counts are returned in the same order as in rsl (not sure, if really necessary)
+				rr <- rr[as.character(1:nr)] # make sure the counts are returned in the same order as in rsl (not sure, if really necessary)
 				return(rr)
 			}))
 			rownames(res) <- names(rsl)
@@ -1991,6 +2006,10 @@ if (!isGeneric("aggregateRegionCounts")) {
 #' @param sampleCovg to save compute time, a sample coverage track list (as computed by \code{getCoverage(.object)}) can be supplied. If not, it will be computed on the fly.
 #' @param sampleKmerFreqM to save compute time, a matrix of sample kmer frequency at insertion sites (as computed by \code{getInsertionKmerFreq(.object, ...)}) can be supplied.
 #'                   If not, it will be computed on the fly. Only relevant if \code{kmerBiasAdj==TRUE}.
+#' @param regionKmerFreqM to save compute time, a matrix of region kmer frequencies (kmers X window width).
+#'                   Must have the same number of rows as the specified (or computed) \code{sampleKmerFreqM} (kmers)
+#'                   and the same number of columns as the window width (median width of \code{regionGr}).
+#'                   Only relevant if \code{kmerBiasAdj==TRUE}.
 #' @return a \code{data.frame} containing position-wise counts (raw, normalized and optionally Tn5-bias-corrected) for each sample
 #' 
 #' @rdname aggregateRegionCounts-DsATAC-method
@@ -2013,10 +2032,12 @@ setMethod("aggregateRegionCounts",
 		kmerBiasAdj=TRUE,
 		k=6,
 		sampleCovg=NULL,
-		sampleKmerFreqM=NULL
+		sampleKmerFreqM=NULL,
+		regionKmerFreqM=NULL
 	) {
 		if (!all(samples %in% getSamples(.object))) logger.error(c("Invalid samples:", paste(setdiff(samples, getSamples(.object)), collapse=", ")))
 		if (!is.element(countAggrFun, c("sum", "mean", "median"))) logger.error(c("Invalid value for countAggrFun:", countAggrFun))
+
 		ww <- width(regionGr)
 		wm <- as.integer(median(ww))
 		idx <- ww==wm
@@ -2024,6 +2045,11 @@ setMethod("aggregateRegionCounts",
 			logger.warning(c("not all elements in GRanges have the same width. --> discarding", sum(!idx), "of", length(idx), "regions that do not."))
 			regionGr <- regionGr[idx]
 		}
+
+		if (kmerBiasAdj && !is.null(regionKmerFreqM) && ncol(regionKmerFreqM)!=wm){
+			logger.error(c("Invalid value for regionKmerFreqM. expected a window size of", wm, "rows, but input has", ncol(regionKmerFreqM)))
+		}
+
 		if (!is.element(norm, c("tailMean"))) logger.error("Invalid value for 'norm' (normalization method)")
 		if (normTailW < 1 && normTailW>0){
 			normTailW <- ceiling(wm*normTailW)
@@ -2052,14 +2078,18 @@ setMethod("aggregateRegionCounts",
 			} else {
 				if (!all(samples %in% colnames(sampleKmerFreqM))) logger.error("'sampleKmerFreqM' does not cover all samples")
 			}
-			logger.start("Computing region kmer frequencies")
-				kmerFreqM <- do.call("cbind", lapply(0:(wm-1), FUN=function(i){
-					if (i%%50 == 0) logger.status(paste0("i=",i))
-					wGr <- trim(resize(GenomicRanges::shift(regionGr, i-ceiling(k/2)), width=k, fix="start", ignore.strand=TRUE))
-					rr <- Biostrings::oligonucleotideFrequency(Biostrings::Views(go, wGr), width=k, simplify.as="collapsed")
-					return(rr)
-				}))
-			logger.completed()
+			if (is.null(regionKmerFreqM)) {
+				logger.start("Computing region kmer frequencies")
+					kmerFreqM <- do.call("cbind", lapply(0:(wm-1), FUN=function(i){
+						if (i%%50 == 0) logger.status(paste0("i=",i))
+						wGr <- trim(resize(GenomicRanges::shift(regionGr, i-ceiling(k/2)), width=k, fix="start", ignore.strand=TRUE))
+						rr <- Biostrings::oligonucleotideFrequency(Biostrings::Views(go, wGr), width=k, simplify.as="collapsed")
+						return(rr)
+					}))
+				logger.completed()
+			} else {
+				kmerFreqM <- regionKmerFreqM
+			}
 			if (!all(rownames(kmerFreqM)==rownames(sampleKmerFreqM))) logger.error("kmers in frequency matrices do not match")
 		}
 		# given a RleList object (cov) with genomic coverage (as computed by GenomicRanges::coverage) and a GRanges
@@ -2356,8 +2386,18 @@ setMethod("getMotifFootprints",
 			type <- ".genome"
 		}
 		logger.start("Finding motif occurrences")
-			mmArgs <- prepareMotifmatchr(.object@genome, motifDb) # currently only used for motif logo plotting. Could be omitted if that is not desired
-			motifGrl <- getMotifOccurrences(motifNames, motifDb=motifDb, genome=.object@genome)
+			motifKmerFreqML <- NULL # region window k-mer frequencies for bias correction
+			annoPkg <- getChrAccRAnnotationPackage(.object@genome)
+			if (!is.null(annoPkg)){
+				logger.info(c("Using annotation from package:", annoPkg))
+				motifObj        <- get("getMotifAnnotation", asNamespace(annoPkg))(anno=motifDb, type="motifs")
+				motifGrl        <- get("getMotifAnnotation", asNamespace(annoPkg))(anno=motifDb, type="motifOccGrl")
+				motifKmerFreqML <- get("getMotifAnnotation", asNamespace(annoPkg))(anno=motifDb, type="motifWindowKmerFreq")
+			} else {
+				logger.info("Using motifmatchr")
+				motifObj <- prepareMotifmatchr(.object@genome, motifDb)$motifs # currently only used for motif logo plotting. Could be omitted if that is not desired
+				motifGrl <- getMotifOccurrences(motifNames, motifDb=motifDb, genome=.object@genome)
+			}
 
 			motifLens <- sapply(motifNames, FUN=function(mn){
 				as.integer(median(width(motifGrl[[mn]])))
@@ -2369,7 +2409,7 @@ setMethod("getMotifFootprints",
 			sampleCovg <- getCoverage(.object, samples=samples)
 			# TODO: filter by region type
 		logger.completed()
-		logger.start("Computing k-mer frequencies")
+		logger.start("Computing sample insertion k-mer frequencies")
 			sampleKmerFreqM <- getInsertionKmerFreq(.object, samples=samples, k=6, normGenome=TRUE)
 			# TODO: filter by region type
 		logger.completed()
@@ -2377,13 +2417,16 @@ setMethod("getMotifFootprints",
 		res <- lapply(motifNames, FUN=function(mn){
 			logger.start(c("Motif:", mn))
 				motifCenGr <- unique(trim(resize(motifGrl[[mn]], width=2*motifFlank+1, fix="center", ignore.strand=TRUE)))
-				footprintDf <- aggregateRegionCounts(.object, motifCenGr, samples=samples, sampleCovg=sampleCovg, sampleKmerFreqM=sampleKmerFreqM)
+				regKmerFreqM <- NULL # region window k-mer frequencies for bias correction
+				if (length(motifKmerFreqML) > 0){
+					regKmerFreqM <- motifKmerFreqML[[mn]]
+				}
+
+				footprintDf <- aggregateRegionCounts(.object, motifCenGr, samples=samples, sampleCovg=sampleCovg, sampleKmerFreqM=sampleKmerFreqM, regionKmerFreqM=regKmerFreqM)
 				footprintDf$pos <- footprintDf$pos - (motifFlank+1) # offset the position: aggregateRegionCounts returns positions in [0,regionWidth]
 
 				motifLen <- motifLens[mn]
-				motifUp <- -ceiling(motifLen/2) + 1
-				motifDown <- floor(motifLen/2)
-
+				
 				# Definitions according to [Corces, Granja, et al. (2018). The chromatin accessibility landscape of primary human cancers. Science, 362(6413)]
 				absPos <- abs(footprintDf[,"pos"])
 				i_base <- ceiling(motifLen/2) + 5
@@ -2392,21 +2435,25 @@ setMethod("getMotifFootprints",
 				fp_bgMean    <- mean(footprintDf[absPos >= 200, "countNormBiasCor"], na.rm=TRUE)
 
 				# plot
-				ppm <- ggplot(footprintDf, aes(x=pos, y=countNormBiasCor, color=sampleId, group=sampleId, fill=sampleId)) + 
-					  annotate("rect", xmin=motifUp, xmax=motifDown, ymin=-Inf, ymax=Inf, fill="#d9d9d9") +
-				      geom_line() #+ geom_smooth(aes(group=cellType),size=2,alpha=0.15,method="gam",formula=y ~ s(x, bs = "cs"))
+				pp <- plotFootprint(footprintDf, pwm=motifObj[[mn]], colorMap=NULL)
+				# motifUp <- -ceiling(motifLen/2) + 1
+				# motifDown <- floor(motifLen/2)
+				# ppm <- ggplot(footprintDf, aes(x=pos, y=countNormBiasCor, color=sampleId, group=sampleId, fill=sampleId)) + 
+				# 	  annotate("rect", xmin=motifUp, xmax=motifDown, ymin=-Inf, ymax=Inf, fill="#d9d9d9") +
+				#       geom_line() #+ geom_smooth(aes(group=cellType),size=2,alpha=0.15,method="gam",formula=y ~ s(x, bs = "cs"))
 
-				ppb <- ggplot(footprintDf, aes(x=pos, y=Tn5biasNorm, color=sampleId, group=sampleId, fill=sampleId)) + 
-					  annotate("rect", xmin=motifUp, xmax=motifDown, ymin=-Inf, ymax=Inf, fill="#d9d9d9") +
-				      geom_line()
+				# ppb <- ggplot(footprintDf, aes(x=pos, y=Tn5biasNorm, color=sampleId, group=sampleId, fill=sampleId)) + 
+				# 	  annotate("rect", xmin=motifUp, xmax=motifDown, ymin=-Inf, ymax=Inf, fill="#d9d9d9") +
+				#       geom_line()
 
-				# add sequence logo
-				logo <- hmSeqLogo(mmArgs$motifs[[mn]], unit(0.5, "npc"), unit(0.5, "npc"), 1, 1, ic.scale=TRUE)
-				logoHeight <- (max(footprintDf[,"countNormBiasCor"], na.rm=TRUE) - min(footprintDf[,"countNormBiasCor"], na.rm=TRUE)) * 0.2
-				logoY <- max(footprintDf[,"countNormBiasCor"], na.rm=TRUE) - logoHeight
-				ppm <- ppm + cowplot::draw_plot(logo, 100, logoY, 100, logoHeight)
+				# # add sequence logo
+				# logo <- hmSeqLogo(motifObj[[mn]], unit(0.5, "npc"), unit(0.5, "npc"), 1, 1, ic.scale=TRUE)
+				# logoHeight <- (max(footprintDf[,"countNormBiasCor"], na.rm=TRUE) - min(footprintDf[,"countNormBiasCor"], na.rm=TRUE)) * 0.2
+				# logoY <- max(footprintDf[,"countNormBiasCor"], na.rm=TRUE) - logoHeight
+				# ppm <- ppm + cowplot::draw_plot(logo, 100, logoY, 100, logoHeight)
 
-				pp <- cowplot::plot_grid(ppm, ppb + theme(legend.position="none"), ncol=1, rel_heights=c(2, 1), align="v", axis="lr")
+				# pp <- cowplot::plot_grid(ppm, ppb + theme(legend.position="none"), ncol=1, rel_heights=c(2, 1), align="v", axis="lr")
+
 				rr <- list(
 					footprintDf=footprintDf,
 					plot=pp,
@@ -2891,11 +2938,16 @@ setMethod("getTssEnrichment",
 	function(
 		.object,
 		sampleId,
-		tssGr,
+		tssGr=NULL,
 		flank=2000L,
 		normTailW=100L,
 		smoothW=25L
 	) {
+		if (is.null(tssGr)){
+			annoPkg <- getChrAccRAnnotationPackage(.object@genome)
+			if (is.null(annoPkg)) logger.error("Annotation package needed")
+			tssGr <- get("getGeneAnnotation", asNamespace(annoPkg))(anno="gencode_coding", type="tssGr")
+		}
 		if (!all(width(tssGr)==1)) logger.error("tssGr must be a GRanges object in which each element has width=1")
 
 		#extend the window by the flanking and smoothing lengths
@@ -2971,10 +3023,15 @@ setMethod("getQuickTssEnrichment",
 	),
 	function(
 		.object,
-		tssGr,
+		tssGr=NULL,
 		tssW=101L,
 		distBg=1950L
 	) {
+		if (is.null(tssGr)){
+			annoPkg <- getChrAccRAnnotationPackage(.object@genome)
+			if (is.null(annoPkg)) logger.error("Annotation package needed")
+			tssGr <- get("getGeneAnnotation", asNamespace(annoPkg))(anno="gencode_coding", type="tssGr")
+		}
 		if (!all(width(tssGr)==1)) logger.error("tssGr must be a GRanges object in which each element has width=1")
 
 		# background windows
@@ -2993,9 +3050,10 @@ setMethod("getQuickTssEnrichment",
 		sampleIds <- getSamples(.object)
 		nSamples <- length(sampleIds)
 		logger.status("Retrieving joined insertion sites ...")
-		fGr <- getFragmentGrl(.object, sampleIds, asGRangesList=TRUE)
-		nFrags <- elementNROWS(fGr)
-		fGr <- unlist(fGr, use.names=FALSE)
+		fGr <- getFragmentGrl(.object, sampleIds, asGRangesList=FALSE)
+		nFrags <- sapply(fGr, length)
+		fGr <- do.call("c", unname(fGr))
+		# fGr <- unlist(fGr, use.names=FALSE)
 		elementMetadata(fGr)[,".sampleIdx"] <- rep(seq_along(nFrags), nFrags)
 		igr <- getInsertionSitesFromFragmentGr(fGr)
 		logger.status("computing overlaps with TSS regions ...")
@@ -3132,13 +3190,18 @@ setMethod("getCiceroGeneActivities",
 	function(
 		.object,
 		regionType,
-		promoterGr,
+		promoterGr=NULL,
 		maxDist=250000L,
 		corCutOff=0.35,
 		dimRedCoord=NULL,
 		knn.k=50
 	) {
 		if (!is.element(regionType, getRegionTypes(.object))) logger.error(c("Unsupported region type:", regionType))
+		if (is.null(promoterGr)){
+			annoPkg <- getChrAccRAnnotationPackage(.object@genome)
+			if (is.null(annoPkg)) logger.error("Annotation package needed")
+			promoterGr <- get("getGeneAnnotation", asNamespace(annoPkg))(type="promoterGr")
+		}
 		if (is.null(names(promoterGr))) logger.error("promoterGr must have names")
 
 		logger.start("Creating Cicero object")
