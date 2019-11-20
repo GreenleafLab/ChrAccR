@@ -1435,7 +1435,7 @@ setMethod("[", "DsATAC",
 			}
 			inds2keep[i] <- TRUE
 		} else if (is.logical(i)){
-			inds2keep <- !i
+			inds2keep <- i
 		} else if (is.character(i)){
 			if (!all(i %in% sampleIds)){
 				logger.error(c("Could not find the following sample ids:", paste(setdiff(i, sampleIds), collapse=",")))
