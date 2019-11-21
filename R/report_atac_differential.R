@@ -211,6 +211,7 @@ setMethod("createReport_differential",
 									logger.start(c("comparison", i, ":", compTab[i,"compName"]))
 										dm <- diffTabL[[rt]][[i]]
 										for (funName in names(isDiffFuns)){
+											#[TODO] slow: currently takes ~6min per method on a large database -->parallelize (maybe one analysis with different user sets per region type)
 											logger.start(c("Comparing using method", diffFunDesc[funName]))
 												isDiff <- isDiffFuns[[funName]](dm)
 												isDiff[is.na(isDiff)] <- FALSE
