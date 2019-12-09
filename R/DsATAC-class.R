@@ -3058,6 +3058,7 @@ setMethod("getTssEnrichmentBatch",
 		dd[negIdx] <- -dd[negIdx]
 		sampleIdx <- elementMetadata(iGro)[,".sampleIdx"]
 
+		logger.status("computing TSS profiles ...")
 		countV <- rep(0L, 2*flank+1)
 		names(countV) <- as.character(-flank:flank)
 		profileMat <- do.call("rbind", tapply(dd, sampleIdx, FUN=function(x){
@@ -3073,6 +3074,7 @@ setMethod("getTssEnrichmentBatch",
 		bgIdx <- c(1:normTailW, (L-normTailW+1):L) # indices of the regions to use as background
 		tssWidx <- (flank-floor(tssW/2)):(flank+floor(tssW/2))+1 # indices corresponding to window around TSS
 
+		logger.status("normalizing TSS profiles ...")
 		bgMeans <- rowMeans(profileMat[,bgIdx], na.rm=TRUE)
 		normFactors <- pmax(bgMeans, 0.5) # low count samples/cells
 
