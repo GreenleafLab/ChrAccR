@@ -2918,7 +2918,7 @@ if (!isGeneric("getTssEnrichment")) {
 #'
 #' @param .object    \code{\linkS4class{DsATAC}} object
 #' @param sampleId   sample to be plotted
-#' @param tssGr      \code{GRanges} object containing TSS coordinates
+#' @param tssGr      \code{GRanges} object containing TSS coordinates or NULL to get default set from annotation package
 #' @param flank      number of bases flanking each TSS that will be added on each side
 #' @param normTailW  number of bases on each side whose counts will be used to normalize the data
 #' @param smoothW    radius of the window (in bp) that will be used to smooth the data, i.e. the total width of the
@@ -2988,6 +2988,119 @@ setMethod("getTssEnrichment",
 ################################################################################
 # Single-cell/ high-sample number analyses
 ################################################################################
+if (!isGeneric("getTssEnrichmentBatch")) {
+	setGeneric(
+		"getTssEnrichmentBatch",
+		function(.object, ...) standardGeneric("getTssEnrichmentBatch"),
+		signature=c(".object")
+	)
+}
+#' getTssEnrichmentBatch-methods
+#'
+#' Get TSS enrichment data and plot
+#'
+#' @param .object    \code{\linkS4class{DsATAC}} object
+#' @param tssGr      \code{GRanges} object containing TSS coordinates or NULL to get default set from annotation package
+#' @param sampleIds  sampleIds for which TSS enrichment should be computed
+#' @param flank      number of bases flanking each TSS that will be added on each side
+#' @param normTailW  number of bases on each side whose counts will be used to normalize the data
+#' @param smoothW    diameter of the window (in bp) that will be used to smooth the data
+#' @return a list containing TSS enrichment data and a \code{ggplot} object containing TSS enrichment plot
+#' 
+#' @rdname getTssEnrichmentBatch-DsATAC-method
+#' @docType methods
+#' @aliases getTssEnrichmentBatch
+#' @aliases getTssEnrichmentBatch,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("getTssEnrichmentBatch",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		tssGr=NULL,
+		sampleIds=getSamples(.object),
+		tssW=201L,
+		flank=2000L,
+		normTailW=200L,
+		smoothW=51L
+	) {
+		if (is.null(tssGr)){
+			annoPkg <- getChrAccRAnnotationPackage(.object@genome)
+			if (is.null(annoPkg)) logger.error("Annotation package needed")
+			tssGr <- get("getGeneAnnotation", asNamespace(annoPkg))(anno="gencode_coding", type="tssGr")
+		}
+		if (!all(width(tssGr)==1)) logger.error("tssGr must be a GRanges object in which each element has width=1")
+
+		#extend the window by the flanking lengths
+		L <- 2*flank+1
+		tsswGr <- suppressWarnings(trim(resize(tssGr, width=L, fix="center", ignore.strand=TRUE)))
+
+		nRegs <- length(tssGr)
+		if (length(tsswGr) != nRegs) logger.error("length error: tss window set")
+
+		nSamples <- length(sampleIds)
+		logger.status("Retrieving joined insertion sites ...")
+		fGr <- getFragmentGrl(.object, sampleIds, asGRangesList=FALSE)
+		nFrags <- sapply(fGr, length)
+		fGr <- do.call("c", unname(fGr))
+		# fGr <- unlist(fGr, use.names=FALSE)
+		elementMetadata(fGr)[,".sampleIdx"] <- rep(seq_along(nFrags), nFrags)
+		igr <- getInsertionSitesFromFragmentGr(fGr)
+		logger.status("computing overlaps with TSS regions ...")
+		oo <- findOverlaps(tsswGr, igr, ignore.strand=TRUE)
+		tssGro <- tssGr[queryHits(oo)]
+		iGro <- igr[subjectHits(oo)]
+		# dd <- -grSignedDistance(tssGro, iGro)
+		dd <- start(iGro) - start(tssGro)
+		negIdx <- as.logical(strand(tssGro)=="-")
+		dd[negIdx] <- -dd[negIdx]
+		sampleIdx <- elementMetadata(iGro)[,".sampleIdx"]
+
+		countV <- rep(0L, 2*flank+1)
+		names(countV) <- as.character(-flank:flank)
+		profileMat <- do.call("rbind", tapply(dd, sampleIdx, FUN=function(x){
+			posCounts <- table(x)
+			res <- countV
+			res[names(posCounts)] <- posCounts
+			res
+		}))
+		if (!all(rownames(profileMat)==as.character(1:nSamples))) logger.error("could not retrieve profiles for all samples")
+		if (ncol(profileMat)!=L) logger.error("Computing profile matrix failed: incorrect dimensions")
+		rownames(profileMat) <- sampleIds
+		colnames(profileMat) <- NULL
+		bgIdx <- c(1:normTailW, (L-normTailW+1):L) # indices of the regions to use as background
+		tssWidx <- (flank-floor(tssW/2)):(flank+floor(tssW/2))+1 # indices corresponding to window around TSS
+
+		bgMeans <- rowMeans(profileMat[,bgIdx], na.rm=TRUE)
+		normFactors <- pmax(bgMeans, 0.5) # low count samples/cells
+
+		profileMatNorm <- profileMat/normFactors # divide rows by row normalization factor
+
+		profileMatSmoothed <- t(apply(profileMatNorm, 1, FUN=function(x){
+			zoo::rollmean(x, smoothW, fill=1)
+			# convolve(c(fillV, x, fillV), rep(1, smoothW), type="filter")/smoothW
+		}))
+
+		profileMatNorm[!is.finite(profileMatNorm)] <- NA
+		profileMatSmoothed[!is.finite(profileMatSmoothed)] <- NA
+		tsse <- matrixStats::rowMaxs(profileMatNorm[tssWidx,], na.rm=TRUE)
+		tsse.s <- matrixStats::rowMaxs(profileMatSmoothed[tssWidx,], na.rm=TRUE)
+
+		res <- list(
+			profileMatNorm=profileMatNorm,
+			profileMatSmoothed=profileMatSmoothed,
+			pos=(-flank):flank,
+			tssEnrichment=tsse,
+			tssEnrichment.smoothed=tsse.s
+		)
+		return(res)
+	}
+)
+
+#-------------------------------------------------------------------------------
+# DEPRECATED
 if (!isGeneric("getQuickTssEnrichment")) {
 	setGeneric(
 		"getQuickTssEnrichment",
@@ -3027,6 +3140,7 @@ setMethod("getQuickTssEnrichment",
 		tssW=101L,
 		distBg=1950L
 	) {
+		logger.warning(c("getQuickTssEnrichment is deprecated. Use 'getTssEnrichmentBatch' instead"))
 		if (is.null(tssGr)){
 			annoPkg <- getChrAccRAnnotationPackage(.object@genome)
 			if (is.null(annoPkg)) logger.error("Annotation package needed")
