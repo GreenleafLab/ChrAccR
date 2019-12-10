@@ -3087,12 +3087,12 @@ setMethod("getTssEnrichmentBatch",
 
 		profileMatNorm[!is.finite(profileMatNorm)] <- NA
 		profileMatSmoothed[!is.finite(profileMatSmoothed)] <- NA
-		tsse <- matrixStats::rowMaxs(profileMatNorm[tssWidx,], na.rm=TRUE)
-		tsse.s <- matrixStats::rowMaxs(profileMatSmoothed[tssWidx,], na.rm=TRUE)
+		tsse <- matrixStats::rowMaxs(profileMatNorm[,tssWidx], na.rm=TRUE)
+		tsse.s <- matrixStats::rowMaxs(profileMatSmoothed[,tssWidx], na.rm=TRUE)
 
 		res <- list(
-			profileMatNorm=profileMatNorm,
-			profileMatSmoothed=profileMatSmoothed,
+			profileMatNorm=t(profileMatNorm),
+			profileMatSmoothed=t(profileMatSmoothed),
 			pos=(-flank):flank,
 			tssEnrichment=tsse,
 			tssEnrichment.smoothed=tsse.s
