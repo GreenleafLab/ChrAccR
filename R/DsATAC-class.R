@@ -3041,17 +3041,20 @@ setMethod("getTssEnrichmentBatch",
 		if (length(tsswGr) != nRegs) logger.error("length error: tss window set")
 
 		nSamples <- length(sampleIds)
-		logger.status("Retrieving joined insertion sites ...")
+		logger.status("Retrieving fragment data ...")
 		fGr <- getFragmentGrl(.object, sampleIds, asGRangesList=FALSE)
 		nFrags <- sapply(fGr, length)
 		fGr <- do.call("c", unname(fGr))
 		# fGr <- unlist(fGr, use.names=FALSE)
 		elementMetadata(fGr)[,".sampleIdx"] <- rep(seq_along(nFrags), nFrags)
+		logger.status("Retrieving joined insertion sites ...")
 		igr <- getInsertionSitesFromFragmentGr(fGr)
+		rm(fGr) # clean-up
 		logger.status("computing overlaps with TSS regions ...")
 		oo <- findOverlaps(tsswGr, igr, ignore.strand=TRUE)
 		tssGro <- tssGr[queryHits(oo)]
 		iGro <- igr[subjectHits(oo)]
+		rm(igr) # clean-up
 		# dd <- -grSignedDistance(tssGro, iGro)
 		dd <- start(iGro) - start(tssGro)
 		negIdx <- as.logical(strand(tssGro)=="-")
@@ -3116,6 +3119,7 @@ if (!isGeneric("getQuickTssEnrichment")) {
 #'
 #' @param .object    \code{\linkS4class{DsATAC}} object
 #' @param tssGr      \code{GRanges} object containing TSS coordinates
+#' @param sampleIds  sampleIds for which TSS enrichment should be computed
 #' @param tssW		 width to consider arount the TSS
 #' @param distBg     number of bases flanking each TSS that will be added on each side
 #' @return a vector of TSS enrichment values for each sample/cell in the dataset
@@ -3138,8 +3142,9 @@ setMethod("getQuickTssEnrichment",
 	function(
 		.object,
 		tssGr=NULL,
-		tssW=101L,
-		distBg=1950L
+		sampleIds=getSamples(.object),
+		tssW=201L,
+		distBg=1900L
 	) {
 		if (is.null(tssGr)){
 			annoPkg <- getChrAccRAnnotationPackage(.object@genome)
@@ -3161,7 +3166,6 @@ setMethod("getQuickTssEnrichment",
 		if (length(bgLeftGr) != nRegs)  logger.error("length error: left background set")
 		if (length(bgRightGr) != nRegs) logger.error("length error: right background set")
 
-		sampleIds <- getSamples(.object)
 		nSamples <- length(sampleIds)
 		logger.status("Retrieving joined insertion sites ...")
 		fGr <- getFragmentGrl(.object, sampleIds, asGRangesList=FALSE)
