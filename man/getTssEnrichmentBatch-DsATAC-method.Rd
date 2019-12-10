@@ -24,7 +24,7 @@
 \item{smoothW}{diameter of the window (in bp) that will be used to smooth the data}
 }
 \value{
-a list containing TSS enrichment data and a \code{ggplot} object containing TSS enrichment plot
+a list containing TSS enrichment data
 }
 \description{
 Get TSS enrichment data and plot

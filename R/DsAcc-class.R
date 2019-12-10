@@ -493,7 +493,7 @@ saveDsAcc <- function(.object, path, forceDiskDump=FALSE, updateDiskRef=TRUE){
 							logger.error(c("Could not find fragment data file:", fn_source))
 						}
 					} else {
-						saveRDS(fragGrl, fn)
+						saveRDS(fragGrl, fn, compress=FALSE)
 					}
 					if (updateDiskRef){
 						for (i in chunkL[[k]]){
@@ -507,7 +507,7 @@ saveDsAcc <- function(.object, path, forceDiskDump=FALSE, updateDiskRef=TRUE){
 	}
 
 	dsFn <- file.path(path, "ds.rds")
-	saveRDS(.object, dsFn)
+	saveRDS(.object, dsFn, compress=FALSE)
 
 	invisible(.object)
 }

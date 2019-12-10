@@ -849,7 +849,7 @@ setMethod("mergeSamples",
 					if (.object@diskDump.fragments) {
 						# logger.status(c("... saving to disk"))
 						fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext=".rds")
-						saveRDS(catRes, fn)
+						saveRDS(catRes, fn, compress=FALSE)
 						catRes <- fn
 					}
 					return(catRes)
@@ -1229,14 +1229,14 @@ setMethod("addInsertionDataFromBam",
 						curChunkL[[sid]] <- fragGr
 						fragGr <- curChunkFn
 						if (length(curChunkL) >= .object@diskDump.fragments.nSamplesPerFile){
-							saveRDS(curChunkL, curChunkFn)
+							saveRDS(curChunkL, curChunkFn, compress=FALSE)
 							# reset after writing chunk
 							curChunkL <- list()
 							curChunkFn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
 						}
 					} else {
 						fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
-						saveRDS(fragGr, fn)
+						saveRDS(fragGr, fn, compress=FALSE)
 						fragGr <- fn
 					}
 				}
@@ -1244,7 +1244,7 @@ setMethod("addInsertionDataFromBam",
 			logger.completed()
 		}
 		if (.diskDump && length(curChunkL) > 0){
-			saveRDS(curChunkL, curChunkFn)
+			saveRDS(curChunkL, curChunkFn, compress=FALSE)
 		}
 
 		return(.object)
@@ -1761,7 +1761,7 @@ setMethod("filterChroms",
 					names(fragGrl_filt) <- sids
 					# save the list object to disk
 					fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
-					saveRDS(fragGrl_filt, fn)
+					saveRDS(fragGrl_filt, fn, compress=FALSE)
 					# replace old filename references
 					.object@fragments[sids] <- rep(list(fn), length(sids))
 				}
@@ -1772,7 +1772,7 @@ setMethod("filterChroms",
 					fragGr <- fragGr[idx]
 					if (.object@diskDump.fragments){
 						fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
-						saveRDS(fragGr, fn)
+						saveRDS(fragGr, fn, compress=FALSE)
 						fragGr <- fn
 					}
 					.object@fragments[[sid]] <- fragGr
@@ -1844,7 +1844,7 @@ setMethod("filterByGRanges",
 					names(fragGrl_filt) <- sids
 					# save the list object to disk
 					fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
-					saveRDS(fragGrl_filt, fn)
+					saveRDS(fragGrl_filt, fn, compress=FALSE)
 					# replace old filename references
 					.object@fragments[sids] <- rep(list(fn), length(sids))
 				}
@@ -1856,7 +1856,7 @@ setMethod("filterByGRanges",
 					fragGr <- fragGr[idx]
 					if (.object@diskDump.fragments){
 						fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
-						saveRDS(fragGr, fn)
+						saveRDS(fragGr, fn, compress=FALSE)
 						fragGr <- fn
 					}
 					.object@fragments[[sid]] <- fragGr
@@ -3005,7 +3005,7 @@ if (!isGeneric("getTssEnrichmentBatch")) {
 #' @param flank      number of bases flanking each TSS that will be added on each side
 #' @param normTailW  number of bases on each side whose counts will be used to normalize the data
 #' @param smoothW    diameter of the window (in bp) that will be used to smooth the data
-#' @return a list containing TSS enrichment data and a \code{ggplot} object containing TSS enrichment plot
+#' @return a list containing TSS enrichment data
 #' 
 #' @rdname getTssEnrichmentBatch-DsATAC-method
 #' @docType methods
@@ -3102,7 +3102,6 @@ setMethod("getTssEnrichmentBatch",
 )
 
 #-------------------------------------------------------------------------------
-# DEPRECATED
 if (!isGeneric("getQuickTssEnrichment")) {
 	setGeneric(
 		"getQuickTssEnrichment",
@@ -3142,7 +3141,6 @@ setMethod("getQuickTssEnrichment",
 		tssW=101L,
 		distBg=1950L
 	) {
-		logger.warning(c("getQuickTssEnrichment is deprecated. Use 'getTssEnrichmentBatch' instead"))
 		if (is.null(tssGr)){
 			annoPkg <- getChrAccRAnnotationPackage(.object@genome)
 			if (is.null(annoPkg)) logger.error("Annotation package needed")
