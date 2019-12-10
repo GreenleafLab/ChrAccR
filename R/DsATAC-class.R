@@ -849,7 +849,7 @@ setMethod("mergeSamples",
 					if (.object@diskDump.fragments) {
 						# logger.status(c("... saving to disk"))
 						fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext=".rds")
-						saveRDS(catRes, fn, compress=FALSE)
+						saveRDS(catRes, fn, compress=TRUE)
 						catRes <- fn
 					}
 					return(catRes)
@@ -1229,14 +1229,14 @@ setMethod("addInsertionDataFromBam",
 						curChunkL[[sid]] <- fragGr
 						fragGr <- curChunkFn
 						if (length(curChunkL) >= .object@diskDump.fragments.nSamplesPerFile){
-							saveRDS(curChunkL, curChunkFn, compress=FALSE)
+							saveRDS(curChunkL, curChunkFn, compress=TRUE)
 							# reset after writing chunk
 							curChunkL <- list()
 							curChunkFn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
 						}
 					} else {
 						fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
-						saveRDS(fragGr, fn, compress=FALSE)
+						saveRDS(fragGr, fn, compress=TRUE)
 						fragGr <- fn
 					}
 				}
@@ -1244,7 +1244,7 @@ setMethod("addInsertionDataFromBam",
 			logger.completed()
 		}
 		if (.diskDump && length(curChunkL) > 0){
-			saveRDS(curChunkL, curChunkFn, compress=FALSE)
+			saveRDS(curChunkL, curChunkFn, compress=TRUE)
 		}
 
 		return(.object)
@@ -1761,7 +1761,7 @@ setMethod("filterChroms",
 					names(fragGrl_filt) <- sids
 					# save the list object to disk
 					fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
-					saveRDS(fragGrl_filt, fn, compress=FALSE)
+					saveRDS(fragGrl_filt, fn, compress=TRUE)
 					# replace old filename references
 					.object@fragments[sids] <- rep(list(fn), length(sids))
 				}
@@ -1772,7 +1772,7 @@ setMethod("filterChroms",
 					fragGr <- fragGr[idx]
 					if (.object@diskDump.fragments){
 						fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
-						saveRDS(fragGr, fn, compress=FALSE)
+						saveRDS(fragGr, fn, compress=TRUE)
 						fragGr <- fn
 					}
 					.object@fragments[[sid]] <- fragGr
@@ -1844,7 +1844,7 @@ setMethod("filterByGRanges",
 					names(fragGrl_filt) <- sids
 					# save the list object to disk
 					fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
-					saveRDS(fragGrl_filt, fn, compress=FALSE)
+					saveRDS(fragGrl_filt, fn, compress=TRUE)
 					# replace old filename references
 					.object@fragments[sids] <- rep(list(fn), length(sids))
 				}
@@ -1856,7 +1856,7 @@ setMethod("filterByGRanges",
 					fragGr <- fragGr[idx]
 					if (.object@diskDump.fragments){
 						fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
-						saveRDS(fragGr, fn, compress=FALSE)
+						saveRDS(fragGr, fn, compress=TRUE)
 						fragGr <- fn
 					}
 					.object@fragments[[sid]] <- fragGr

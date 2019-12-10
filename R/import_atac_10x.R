@@ -126,7 +126,7 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 								iis <- chunkL[[k]]
 								cids <- names(fragGrl)[iis]
 								fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
-								saveRDS(fragGrl[iis], fn, compress=FALSE)
+								saveRDS(fragGrl[iis], fn, compress=TRUE)
 								obj@fragments[cids] <- rep(list(fn), length(iis))
 							}
 						} else {
@@ -134,7 +134,7 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 								fgr <- fragGrl[[cid]]
 								if (obj@diskDump.fragments){
 									fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
-									saveRDS(fgr, fn, compress=FALSE)
+									saveRDS(fgr, fn, compress=TRUE)
 									fgr <- fn
 								}
 								obj@fragments[[cid]] <- fgr
