@@ -67,6 +67,18 @@ prepareMotifmatchr <- function(genome, motifs){
 		if (is.element("cisbp", motifs)){
 			if (!requireNamespace("chromVARmotifs")) logger.error(c("Could not load dependency: chromVARmotifs"))
 			if (spec == "Mus musculus"){
+				data("mouse_pwms_v1")
+				motifL <- c(motifL, chromVARmotifs::mouse_pwms_v1)
+			} else if (spec == "Homo sapiens"){
+				data("human_pwms_v1")
+				motifL <- c(motifL, chromVARmotifs::human_pwms_v1)
+			} else {
+				logger.warning(c("Could not find cisBP annotation for species", spec))
+			}
+		}
+		if (is.element("cisbp_v2", motifs)){
+			if (!requireNamespace("chromVARmotifs")) logger.error(c("Could not load dependency: chromVARmotifs"))
+			if (spec == "Mus musculus"){
 				data("mouse_pwms_v2")
 				motifL <- c(motifL, chromVARmotifs::mouse_pwms_v2)
 			} else if (spec == "Homo sapiens"){
@@ -75,7 +87,7 @@ prepareMotifmatchr <- function(genome, motifs){
 			} else {
 				logger.warning(c("Could not find cisBP annotation for species", spec))
 			}
-		} 
+		}
 		if (length(motifL) < 1) {
 			logger.error(c("No motifs were loaded. Unsupported motifs (?) :", motifs))
 		}	
@@ -193,7 +205,7 @@ permutePWMatrixList <- function(pwmL, nperm=100){
 getJasparSymbols <- function(ss){
 	ss <- gsub("^MA[0-9]+\\.[1-9]_", "", ss) # jaspar prefix
 	ss <- gsub("\\(var\\..*\\)", "", ss) # jaspar variation names
-	return(strsplit(ss, "::")) # jaspar multiple TFs (separated by ::)
+	return(strsplit(ss, "::")) # jaspar multiple TFs (separated by ::); # TODO: treat fusion genes, e.g. "MA0149.1_EWSR1-FLI1"
 }
 
 #' getJasparAnnot

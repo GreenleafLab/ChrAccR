@@ -2,6 +2,24 @@
 # Various annotation functionality
 ################################################################################
 
+#' getChrAccRAnnotationPackage
+#' 
+#' retrieve the corresponding ChrAccRAnnotation package for a given genome
+#' @param genome character string specifying the genome
+#' @return name of the annotation package, if installed. \code{NULL} and a warning if the package is not installed
+#' @author Fabian Mueller
+getChrAccRAnnotationPackage <- function(genome){
+	# genome <- "hg38"
+	pkgName <- paste0("ChrAccRAnnotation", gsub("^([[:alnum:]])","\\U\\1", genome, perl=TRUE)) # upper case first letter
+	if (!require(pkgName, quietly=TRUE, character.only=TRUE)) {
+		logger.warning(c("Could not find annotation package:", pkgName))
+		pkgName <- NULL
+	}
+	return(pkgName)
+	# # to get a function specifically from a package:
+	# get("getGenomeParams", asNamespace(pkgName))
+}
+
 ################################################################################
 # TF annotation
 ################################################################################

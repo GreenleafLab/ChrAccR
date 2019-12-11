@@ -36,6 +36,7 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 	if (is.null(regionSets)){
 		logger.info(c("Using default region sets:", paste("tiling200bp", collapse=", ")))
 		regionSets <- GRangesList(
+			tiling5kb=getTilingRegions(genome, width=200L, onlyMainChrs=TRUE),
 			tiling200bp=getTilingRegions(genome, width=200L, onlyMainChrs=TRUE)
 		)
 	}
@@ -50,7 +51,7 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 				fragCounts <- table(fragTab[,"barcode"])
 				if (minFragsPerBarcode > 0){
 					idx <- fragCounts >= minFragsPerBarcode
-					logger.info(c("  Keeping", sum(idx), paste0("[of ", length(idx), "]"), "barcodes with more than", minFragsPerBarcode, "fragments"))
+					logger.info(c("Keeping", sum(idx), paste0("[of ", length(idx), "]"), "barcodes with more than", minFragsPerBarcode, "fragments"))
 					fragCounts <- fragCounts[idx]
 				}
 				if (is.finite(maxFragsPerBarcode)){
@@ -125,7 +126,7 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 								iis <- chunkL[[k]]
 								cids <- names(fragGrl)[iis]
 								fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
-								saveRDS(fragGrl[iis], fn)
+								saveRDS(fragGrl[iis], fn, compress=TRUE)
 								obj@fragments[cids] <- rep(list(fn), length(iis))
 							}
 						} else {
@@ -133,7 +134,7 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 								fgr <- fragGrl[[cid]]
 								if (obj@diskDump.fragments){
 									fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
-									saveRDS(fgr, fn)
+									saveRDS(fgr, fn, compress=TRUE)
 									fgr <- fn
 								}
 								obj@fragments[[cid]] <- fgr
@@ -186,6 +187,7 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 	if (is.null(regionSets)){
 		logger.info(c("Using default region sets:", paste("tiling200bp", collapse=", ")))
 		regionSets <- GRangesList(
+			tiling5kb=getTilingRegions(genome, width=200L, onlyMainChrs=TRUE),
 			tiling200bp=getTilingRegions(genome, width=200L, onlyMainChrs=TRUE)
 		)
 	}

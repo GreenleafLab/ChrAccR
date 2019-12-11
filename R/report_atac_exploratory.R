@@ -76,6 +76,7 @@ setMethod("createReport_exploratory",
 			logger.completed()
 			logger.start("Aggregating counts across initial cluster peaks")
 				.object <- regionAggregation(.object, dre$clusterPeaks_unfiltered, ".peaks.itlsi", signal="insertions", dropEmpty=FALSE, bySample=FALSE)
+				regionTypes <- c(regionTypes, ".peaks.itlsi")
 			logger.completed()
 			# logger.start("Aggregating counts across regions selected for dimension reduction")
 			# 	.object <- regionAggregation(.object, dre$regionGr, "dimRedRegs", signal="insertions", dropEmpty=FALSE, bySample=FALSE)
@@ -168,7 +169,10 @@ setMethod("createReport_exploratory",
 				mnames <- "umap"
 				plotL <- list()
 				for (gn in plotAnnotCols){
-					pp <- getDimRedPlot(dre$umapCoord[cellIds,], annot=sannot, colorCol=gn, shapeCol=FALSE, colScheme=grpColors[[gn]], ptSize=0.25, addLabels=FALSE, addDensity=FALSE, annot.text=NULL) + coord_fixed()
+					oor <- sample.int(length(cellIds)) # random order of points
+					x <- dre$umapCoord[cellIds,][oor,]
+					aa <- sannot[oor, ]
+					pp <- getDimRedPlot(x, annot=aa, colorCol=gn, shapeCol=FALSE, colScheme=grpColors[[gn]], ptSize=0.25, addLabels=FALSE, addDensity=FALSE, annot.text=NULL) + coord_fixed()
 					plotFn <- paste("dimRed", "umap", normalize.str(gn, return.camel=TRUE), sep="_")
 					repPlot <- muReportR::createReportGgPlot(pp, plotFn, rr, width=7, height=7, create.pdf=TRUE, high.png=0L)
 					repPlot <- muReportR::off(repPlot, handle.errors=TRUE)
