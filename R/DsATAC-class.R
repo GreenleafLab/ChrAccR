@@ -3043,8 +3043,11 @@ setMethod("getTssEnrichmentBatch",
 		nSamples <- length(sampleIds)
 		logger.status("Retrieving fragment data ...")
 		fGr <- getFragmentGrl(.object, sampleIds, asGRangesList=FALSE)
+		logger.status("[DEBUG] ...(1)...") # TODO: remove DEBUG messages
 		nFrags <- sapply(fGr, length)
+		logger.status("[DEBUG] ...(2)...") # TODO: remove DEBUG messages
 		fGr <- do.call("c", unname(fGr))
+		logger.status("[DEBUG] ...(3)...") # TODO: remove DEBUG messages
 		# fGr <- unlist(fGr, use.names=FALSE)
 		elementMetadata(fGr)[,".sampleIdx"] <- rep(seq_along(nFrags), nFrags)
 		logger.status("Retrieving joined insertion sites ...")
