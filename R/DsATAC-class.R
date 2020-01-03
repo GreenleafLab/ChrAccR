@@ -1414,6 +1414,7 @@ setMethod("removeSamples",
 			chunkedFragmentFiles <- .hasSlot(.object, "diskDump.fragments.nSamplesPerFile") && .object@diskDump.fragments.nSamplesPerFile > 1
 			if (chunkedFragmentFiles){
 				logger.warning("Repackaging of chunked fragment files not supported yet. Use 'ChrAccR:::undiskFragmentData' if you want to save the dataset later.")
+				# TODO: Make this possible. See code for 'filterChroms' for template
 			}
 		}
 		
