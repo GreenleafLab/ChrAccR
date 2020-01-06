@@ -147,6 +147,28 @@ setMethod("createReport_summary",
 				"Statistic" = figSettings.stat
 			)
 			rr <- muReportR::addReportFigure(rr, "Distribution of cell statistics", plotL, figSettings)
+
+			if (all(c("tssEnrichment") %in% cns)){
+				sampleIds <- sampleStatsTab[,"sample"]
+				plotL <- lapply(1:length(sampleIds), FUN=function(i){
+					subDf <- summaryDf[summaryDf[,"sample"]==sampleIds[i],]
+					df2p <- data.frame(
+						log_nPass = log10(subDf[,"nPass"]),
+						tssEnrichment = subDf[,"tssEnrichment"]
+					)
+					pp <- muRtools::create.densityScatter(df2p, is.special=NULL, sparse.points=0.01)
+					figFn <- paste0("sampleTssEnrich_s", i)
+					repPlot <- muReportR::createReportGgPlot(pp, figFn, rr, width=7, height=7, create.pdf=TRUE, high.png=0L)
+					repPlot <- muReportR::off(repPlot, handle.errors=TRUE)
+					return(repPlot)
+				})
+				figSettings.sampleId <- sampleIds
+				names(figSettings.sampleId) <- paste0("s", 1:length(sampleIds))
+				figSettings <- list(
+					"Sample" = figSettings.sampleId
+				)
+				rr <- muReportR::addReportFigure(rr, "Cell QC statistics: number of fragments vs. TSS enrichment", plotL, figSettings)
+			}
 		} else {
 			if (hasFragments){
 				txt <- c(

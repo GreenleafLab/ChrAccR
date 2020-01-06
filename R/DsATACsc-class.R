@@ -227,6 +227,11 @@ setMethod("getScQcStatsTab",
 		for (cn in c("tss", "peak")){
 			if (!is.na(nFragCns[cn])) summaryDf[,muRtools::normalize.str(paste("frac", cn, sep="_"), return.camel=TRUE)] <- cellAnnot[,nFragCns[cn]]/summaryDf[,"nPass"]
 		}
+		# tssEnrichment
+		cn <- findOrderedNames(colnames(cellAnnot), c("tssEnrichment", "tssEnrichment_smoothed", "tssEnrichment_unsmoothed"))
+		if (!is.na(cn)){
+			summaryDf[,"tssEnrichment"] <- cellAnnot[,cn]
+		}
 		return(summaryDf)
 	}
 )

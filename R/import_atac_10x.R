@@ -13,10 +13,11 @@
 #' @param maxFragsPerBarcode maximum number of fragments per barcode. Only barcodes with fewer fragments will be kept. [Only relevant if \code{cellAnnot==NULL}]
 #' @param cellAnnot    (optional) annotation table of all cells in the dataset. Must contain a \code{'cellId'} and \code{'cellBarcode'} columns.
 #' @param keepInsertionInfo flag indicating whether to maintain the insertion information in the resulting object.
+#' @param cellQcStats  flag indicating whether to compute additional cell QC statistics (TSS enrichment, etc.).
 #' @return \code{\linkS4class{DsATACsc}} object
 #' @author Fabian Mueller
 #' @export
-DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NULL, sampleIdCol=NULL, minFragsPerBarcode=500L, maxFragsPerBarcode=Inf, cellAnnot=NULL, keepInsertionInfo=FALSE){
+DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NULL, sampleIdCol=NULL, minFragsPerBarcode=500L, maxFragsPerBarcode=Inf, cellAnnot=NULL, keepInsertionInfo=FALSE, cellQcStats=TRUE){
 	if (!is.character(fragmentFiles)) logger.error("Invalid value for fragmentFiles. Expected character")
 	if (length(fragmentFiles)==1 && is.element(fragmentFiles, colnames(sampleAnnot))){
 		fragmentFiles <- sampleAnnot[,fragmentFiles]
@@ -150,6 +151,17 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 			obj@fragments <- obj@fragments[getSamples(obj)]
 		}
 	logger.completed()
+
+	annoPkg <- getChrAccRAnnotationPackage(obj@genome)
+	if (keepInsertionInfo && cellQcStats) {
+		if (!is.null(annoPkg)){
+			logger.start("Calculating cell TSS enrichment")
+				tsse <- getTssEnrichmentBatch(obj, tssGr=NULL)
+				obj <- addSampleAnnotCol(obj, "tssEnrichment_unsmoothed", tsse$tssEnrichment)
+				obj <- addSampleAnnotCol(obj, "tssEnrichment", tsse$tssEnrichment.smoothed)
+			logger.completed()
+		}
+	}
 	return(obj)
 }
 

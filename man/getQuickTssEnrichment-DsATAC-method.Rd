@@ -7,12 +7,14 @@
 \title{getQuickTssEnrichment-methods}
 \usage{
 \S4method{getQuickTssEnrichment}{DsATAC}(.object, tssGr = NULL,
-  tssW = 101L, distBg = 1950L)
+  sampleIds = getSamples(.object), tssW = 201L, distBg = 1900L)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}
 
 \item{tssGr}{\code{GRanges} object containing TSS coordinates}
+
+\item{sampleIds}{sampleIds for which TSS enrichment should be computed}
 
 \item{tssW}{width to consider arount the TSS}
 

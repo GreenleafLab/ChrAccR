@@ -7,7 +7,7 @@
 DsATACsc.fragments(sampleAnnot, fragmentFiles, genome, regionSets = NULL,
   sampleIdCol = NULL, minFragsPerBarcode = 500L,
   maxFragsPerBarcode = Inf, cellAnnot = NULL,
-  keepInsertionInfo = FALSE)
+  keepInsertionInfo = FALSE, cellQcStats = TRUE)
 }
 \arguments{
 \item{sampleAnnot}{data.frame specifying the sample annotation table}
@@ -29,6 +29,8 @@ and must not contain a header line}
 \item{cellAnnot}{(optional) annotation table of all cells in the dataset. Must contain a \code{'cellId'} and \code{'cellBarcode'} columns.}
 
 \item{keepInsertionInfo}{flag indicating whether to maintain the insertion information in the resulting object.}
+
+\item{cellQcStats}{flag indicating whether to compute additional cell QC statistics (TSS enrichment, etc.).}
 }
 \value{
 \code{\linkS4class{DsATACsc}} object

@@ -161,7 +161,7 @@ setMethod("createReport_differential",
 								logger.start(c("Comparing using method", diffFunDesc[funName]))
 									isDiff <- isDiffFuns[[funName]](dm)
 									isDiff[is.na(isDiff)] <- FALSE
-									pp <- create.densityScatter(df2p.ma, is.special=isDiff, sparse.points=0.001)
+									pp <- muRtools::create.densityScatter(df2p.ma, is.special=isDiff, sparse.points=0.001)
 									plotFn <- paste0("maPlot_", i, "_", normalize.str(rt, return.camel=TRUE), "_", funName)
 									repPlot <- muReportR::createReportGgPlot(pp, plotFn, rr, width=7, height=7, create.pdf=TRUE, high.png=0L)
 									repPlot <- muReportR::off(repPlot, handle.errors=TRUE)
