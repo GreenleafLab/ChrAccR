@@ -72,6 +72,9 @@ Set a configuration item to a given value
       For single-cell analysis only: region type to be used for clustering and dimension reduction using iterative LSI. By default (\code{NULL}),
       ChrAccR will look for a region type named \code{"tiling"}.
   }
+  \item{\bold{\code{scIterativeLsiClusterResolution}}}{
+      For single-cell analysis only: Cluster resolution to use for iterative LSI (default: \code{0.4}).
+  }
 }
 }
 

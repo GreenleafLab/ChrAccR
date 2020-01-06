@@ -29,6 +29,7 @@
 .config$differentialAdjColumns <- NULL
 .config$lolaDbPaths <- NULL
 .config$scIterativeLsiRegType <- NULL
+.config$scIterativeLsiClusterResolution <- 0.4
 
 #' setConfigElement
 #'
@@ -90,6 +91,9 @@
 #'   \item{\bold{\code{scIterativeLsiRegType}}}{
 #'       For single-cell analysis only: region type to be used for clustering and dimension reduction using iterative LSI. By default (\code{NULL}),
 #'       ChrAccR will look for a region type named \code{"tiling"}.
+#'   }
+#'   \item{\bold{\code{scIterativeLsiClusterResolution}}}{
+#'       For single-cell analysis only: Cluster resolution to use for iterative LSI (default: \code{0.4}).
 #'   }
 #' }
 #' @author Fabian Mueller
