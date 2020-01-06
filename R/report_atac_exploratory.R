@@ -11,6 +11,7 @@ if (!isGeneric("createReport_exploratory")) {
 #'
 #' @param .object    \code{\linkS4class{DsATAC}} object
 #' @param reportDir  directory in which the report will be created
+#' @param itLsiObj   [for single-cell only; optional] pre-computed result of a call to \code{iterativeLSI(.object, ...)}
 #' @return (invisible) \code{muReportR::Report} object containing the report
 #' 
 #' @rdname createReport_exploratory-DsATAC-method
@@ -35,7 +36,8 @@ setMethod("createReport_exploratory",
 	),
 	function(
 		.object,
-		reportDir
+		reportDir,
+		itLsiObj=NULL
 	) {
 		# reportDir <- file.path("~/myscratch/temp", getHashString("report"))
 		if (!requireNamespace("muReportR")) logger.error(c("Could not load dependency: muReportR"))
@@ -57,22 +59,39 @@ setMethod("createReport_exploratory",
 
 		cellIds <- getSamples(.object)
 		if (isSingleCell){
-			findItLsiRt <- function(ds){
-				return(findOrderedNames(getRegionTypes(ds), c("tiling", "^t[1-9]"), exact=FALSE, ignore.case=TRUE))
-			}
-			itLsiRt <- getConfigElement("scIterativeLsiRegType")
-			if (length(itLsiRt) < 1) {
-				itLsiRt <- findItLsiRt(.object)
-				if (is.na(itLsiRt)) {
-					logger.error("Could not determine region type for iterative LSI")
+			dre <- itLsiObj
+			runItLsi <- is.null(itLsiObj)
+			if (!runItLsi){
+				isCompatible <- class(itLsiObj) == "iterativeLSIResultSc" && 
+				                all(cellIds %in% names(itLsiObj$clustAss)) &&
+				                all(cellIds %in% rownames(itLsiObj$pcaCoord)) &&
+				                all(cellIds %in% rownames(itLsiObj$umapCoord))
+				if (!isCompatible){
+					logger.warning("Incompatible itLsiObj object. --> running iterative LSI")
+					runItLsi <- TRUE
 				}
 			}
-			logger.start("Dimension reduction using iterative LSI")
-				logger.info(c("Using region type:", itLsiRt))
-				clustRes <- getConfigElement("scIterativeLsiClusterResolution")
-				logger.info(c("Using cluster resolution:", clustRes))
-				dre <- iterativeLSI(.object, it0regionType=itLsiRt, it0clusterResolution=clustRes, it1clusterResolution=clustRes, it2clusterResolution=clustRes)
-				logger.status("Saving ...")
+			if (runItLsi){
+				findItLsiRt <- function(ds){
+					return(findOrderedNames(getRegionTypes(ds), c("tiling", "^t[1-9]"), exact=FALSE, ignore.case=TRUE))
+				}
+				itLsiRt <- getConfigElement("scIterativeLsiRegType")
+				if (length(itLsiRt) < 1) {
+					itLsiRt <- findItLsiRt(.object)
+					if (is.na(itLsiRt)) {
+						logger.error("Could not determine region type for iterative LSI")
+					}
+				}
+				logger.start("Dimension reduction using iterative LSI")
+					logger.info(c("Using region type:", itLsiRt))
+					clustRes <- getConfigElement("scIterativeLsiClusterResolution")
+					logger.info(c("Using cluster resolution:", clustRes))
+					dre <- iterativeLSI(.object, it0regionType=itLsiRt, it0clusterResolution=clustRes, it1clusterResolution=clustRes, it2clusterResolution=clustRes)
+				logger.completed()
+			} else {
+				logger.info("Using pre-computed iterative LSI result")
+			}
+			logger.start("Saving iterative LSI result")
 				saveRDS(dre, file.path(rDir.data.abs, "dimRed_iterativeLSI_res.rds"))
 				uwot::save_uwot(dre$umapRes, file.path(rDir.data.abs, "dimRed_iterativeLSI_res_uwot"))
 			logger.completed()

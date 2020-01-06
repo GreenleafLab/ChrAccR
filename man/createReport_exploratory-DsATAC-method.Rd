@@ -6,12 +6,15 @@
 \alias{createReport_exploratory}
 \title{createReport_exploratory-methods}
 \usage{
-\S4method{createReport_exploratory}{DsATAC}(.object, reportDir)
+\S4method{createReport_exploratory}{DsATAC}(.object, reportDir,
+  itLsiObj = NULL)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}
 
 \item{reportDir}{directory in which the report will be created}
+
+\item{itLsiObj}{[for single-cell only; optional] pre-computed result of a call to \code{iterativeLSI(.object, ...)}}
 }
 \value{
 (invisible) \code{muReportR::Report} object containing the report
