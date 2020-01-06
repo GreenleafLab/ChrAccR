@@ -161,7 +161,11 @@ setMethod("createReport_summary",
 						log_nPass = log10(subDf[,"nPass"]),
 						tssEnrichment = subDf[,"tssEnrichment"]
 					)
-					pp <- muRtools::create.densityScatter(df2p, is.special=NULL, sparse.points=0.01)
+					df2p[, "pointDens"] <- muRtools::getPointDensity(df2p[, "log_nPass"], df2p[, "tssEnrichment"], n=100)
+
+					pp <- ggplot(df2p) + aes_string(x="log_nPass", y="tssEnrichment", color="pointDens") + geom_point(size=0.5) + 
+					      muRtools::ggAutoColorScale(df2p[, "pointDens"], method="color")
+					# pp <- muRtools::create.densityScatter(df2p, is.special=NULL, sparse.points=0.01)
 					figFn <- paste0("sampleTssEnrich_s", i)
 					repPlot <- muReportR::createReportGgPlot(pp, figFn, rr, width=7, height=7, create.pdf=TRUE, high.png=0L)
 					repPlot <- muReportR::off(repPlot, handle.errors=TRUE)
