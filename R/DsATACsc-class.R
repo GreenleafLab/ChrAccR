@@ -236,6 +236,64 @@ setMethod("getScQcStatsTab",
 	}
 )
 
+#-------------------------------------------------------------------------------
+if (!isGeneric("filterCellsTssEnrichment")) {
+	setGeneric(
+		"filterCellsTssEnrichment",
+		function(.object, ...) standardGeneric("filterCellsTssEnrichment"),
+		signature=c(".object")
+	)
+}
+#' filterCellsTssEnrichment-methods
+#'
+#' Filter out cells with low TSS enrichment
+#'
+#' @param .object  \code{\linkS4class{DsATAC}} object
+#' @param cutoff   TSS enrichment cutoff to filter cells
+#' @return modified \code{\linkS4class{DsATAC}} object without filtered cells
+#' 
+#' @rdname filterCellsTssEnrichment-DsATAC-method
+#' @docType methods
+#' @aliases filterCellsTssEnrichment
+#' @aliases filterCellsTssEnrichment,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("filterCellsTssEnrichment",
+	signature(
+		.object="DsATACsc"
+	),
+	function(
+		.object,
+		cutoff=6
+	) {
+		cellAnnot <- getSampleAnnot(.object)
+		cn <- findOrderedNames(colnames(cellAnnot), c(".tssEnrichment", ".tssEnrichment_smoothed", "tssEnrichment", ".tssEnrichment_unsmoothed"))
+		if (is.na(cn)){
+			logger.info("TSS enrichment not annotated. Computing TSS enrichment ...")
+			tsseRes <- getTssEnrichmentBatch(.object, tssGr=NULL)
+			.object <- addSampleAnnotCol(.object, ".tssEnrichment_unsmoothed", tsseRes$tssEnrichment)
+			.object <- addSampleAnnotCol(.object, ".tssEnrichment", tsseRes$tssEnrichment.smoothed)
+			cn <- ".tssEnrichment_unsmoothed"
+			cellAnnot <- getSampleAnnot(.object)
+		}
+		tsse <- cellAnnot[,cn]
+
+		.object <- .object[tsse >= cutoff]
+
+		# workaround: currently saving single-cell DsATAC datasets does not support re-chunking of disk-dumped fragment data
+		chunkedFragmentFiles <- .object@diskDump.fragments && .hasSlot(.object, "diskDump.fragments.nSamplesPerFile") && .object@diskDump.fragments.nSamplesPerFile > 1
+		if (chunkedFragmentFiles){
+			logger.start("Undisking ...")
+				.object <- undiskFragmentData(.object)
+			logger.completed()
+		}
+
+		return(.object)
+	}
+)
+
+#-------------------------------------------------------------------------------
+
 if (!isGeneric("unsupervisedAnalysisSc")) {
 	setGeneric(
 		"unsupervisedAnalysisSc",
