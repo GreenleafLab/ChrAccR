@@ -157,8 +157,8 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 		if (!is.null(annoPkg)){
 			logger.start("Calculating cell TSS enrichment")
 				tsse <- getTssEnrichmentBatch(obj, tssGr=NULL)
-				obj <- addSampleAnnotCol(obj, "tssEnrichment_unsmoothed", tsse$tssEnrichment)
-				obj <- addSampleAnnotCol(obj, "tssEnrichment", tsse$tssEnrichment.smoothed)
+				obj <- addSampleAnnotCol(obj, ".tssEnrichment_unsmoothed", tsse$tssEnrichment)
+				obj <- addSampleAnnotCol(obj, ".tssEnrichment", tsse$tssEnrichment.smoothed)
 			logger.completed()
 		}
 	}

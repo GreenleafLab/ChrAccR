@@ -106,7 +106,12 @@ setMethod("createReport_summary",
 			)
 			sampleStatsTab[,"nCells"] <- table(summaryDf[,"sample"])[sampleStatsTab[,"sample"]]
 			for (cn in cns){
-				sampleStatsTab[,paste0("median_fragment_", cn)] <- sapply(sampleStatsTab[,"sample"], FUN=function(ss){
+				infix <- ""
+				if (!is.element(cn, c("tssEnrichment"))){
+					infix <- "fragment_"
+				}
+				sampleSummaryCn <- paste0("median_", infix, cn)
+				sampleStatsTab[,sampleSummaryCn] <- sapply(sampleStatsTab[,"sample"], FUN=function(ss){
 					median(summaryDf[summaryDf[,"sample"]==ss, cn], na.rm=TRUE)
 				})
 			}
