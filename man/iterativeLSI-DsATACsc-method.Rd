@@ -11,7 +11,7 @@
   it0nTopPeaksPerCluster = 2e+05, it1pcs = 1:50,
   it1clusterResolution = 0.8, it1mostVarPeaks = 50000L,
   it2pcs = 1:50, it2clusterResolution = 0.8,
-  umapParams = list(distMethod = "euclidean", min_dist = 0.6, n_neighbors
+  umapParams = list(distMethod = "euclidean", min_dist = 0.5, n_neighbors
   = 25))
 }
 \arguments{

@@ -446,7 +446,7 @@ setMethod("iterativeLSI",
 		it2clusterResolution=0.8,
 		umapParams=list(
 			distMethod="euclidean",
-			min_dist=0.6,
+			min_dist=0.5,
 			n_neighbors=25
 		)
 	) {
