@@ -10,7 +10,9 @@
   it0nMostAcc = 20000L, it0pcs = 2:25, it0clusterResolution = 0.8,
   it0nTopPeaksPerCluster = 2e+05, it1pcs = 1:50,
   it1clusterResolution = 0.8, it1mostVarPeaks = 50000L,
-  it2pcs = 1:50, it2clusterResolution = 0.8)
+  it2pcs = 1:50, it2clusterResolution = 0.8,
+  umapParams = list(distMethod = "euclidean", min_dist = 0.6, n_neighbors
+  = 25))
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATACsc}} object}
@@ -34,6 +36,8 @@
 \item{it2pcs}{the principal components to consider in the final iteration (2)}
 
 \item{it2clusterResolution}{resolution paramter for Seurat's  clustering (\code{Seurat::FindClusters}) in the final iteration (2)}
+
+\item{umapParams}{parameters to compute UMAP coordinates (passed on to \code{muRtools::getDimRedCoords.umap} and further to \code{uwot::umap})}
 }
 \value{
 an \code{S3} object containing dimensionality reduction results and clustering

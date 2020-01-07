@@ -419,6 +419,7 @@ if (!isGeneric("iterativeLSI")) {
 #' @param it1mostVarPeaks the number of the most variable peaks to consider after iteration 1
 #' @param it2pcs      the principal components to consider in the final iteration (2)
 #' @param it2clusterResolution resolution paramter for Seurat's  clustering (\code{Seurat::FindClusters}) in the final iteration (2)
+#' @param umapParams  parameters to compute UMAP coordinates (passed on to \code{muRtools::getDimRedCoords.umap} and further to \code{uwot::umap})
 #' @return an \code{S3} object containing dimensionality reduction results and clustering
 #' 
 #' @rdname iterativeLSI-DsATACsc-method
@@ -442,7 +443,12 @@ setMethod("iterativeLSI",
 		it1clusterResolution=0.8,
 		it1mostVarPeaks=50000L,
 		it2pcs=1:50,
-		it2clusterResolution=0.8
+		it2clusterResolution=0.8,
+		umapParams=list(
+			distMethod="euclidean",
+			min_dist=0.6,
+			n_neighbors=25
+		)
 	) {
 		callParams <- as.list(match.call())
 		callParams <- callParams[setdiff(names(callParams), ".object")]
@@ -581,8 +587,9 @@ setMethod("iterativeLSI",
 
 				dsr <- addSampleAnnotCol(dsr, "clustAss_it2", as.character(clustAss[cellIds]))
 			logger.completed()
-			logger.start(c("UMAP coordinates"))	
-				umapCoord <- muRtools::getDimRedCoords.umap(pcaCoord_sel)
+			logger.start(c("UMAP coordinates"))
+				paramL <- c(list(X=pcaCoord_sel), umapParams)
+				umapCoord <- do.call(muRtools::getDimRedCoords.umap, paramL)
 				umapRes <- attr(umapCoord, "umapRes")
 				attr(umapCoord, "umapRes") <- NULL
 			logger.completed()
