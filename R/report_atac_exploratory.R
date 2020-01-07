@@ -357,8 +357,8 @@ setMethod("createReport_exploratory",
 				sannot.sub <- sannot[,setdiff(plotAnnotCols, ".ALL"), drop=FALSE]
 				if (!is.null(cvMotifsForDimRed)){
 					# normalize motif names to get rid of funky artifacts in ggplot
-					cvMotifsForDimRed <- gsub("::","_",rownames(cvMotifsForDimRed))
-					cvMotifsForDimRed <- gsub("[^[:alnum:]_\\.]","",rownames(cvMotifsForDimRed))
+					cvMotifsForDimRed <- gsub("::","_",cvMotifsForDimRed)
+					cvMotifsForDimRed <- gsub("[^[:alnum:]_\\.]","",cvMotifsForDimRed)
 				}
 				plotL.var <- list()
 				plotL.hm <- list()
