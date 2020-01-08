@@ -58,9 +58,13 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", reg
 	}
 	if (is.null(regionSets)){
 		logger.info(c("Using default region sets:", paste("tiling200bp", collapse=", ")))
-		regionSets <- GRangesList(
+		regionSets <- list(
 			tiling200bp=getTilingRegions(genome, width=200L, onlyMainChrs=TRUE)
 		)
+		annoPkg <- getChrAccRAnnotationPackage(genome)
+		if (!is.null(annoPkg)){
+			regionSets[["promoter"]] <- get("getGeneAnnotation", asNamespace(annoPkg))(anno="gencode_coding", type="promoterGr")
+		}
 	}
 	if (length(names(regionSets)) < 1){
 		logger.error("Region sets must be named")

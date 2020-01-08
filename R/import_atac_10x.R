@@ -35,10 +35,14 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 	nSamples <- length(sampleIds)
 
 	if (is.null(regionSets)){
-		regionSets <- GRangesList(
+		regionSets <- list(
 			tiling5kb=getTilingRegions(genome, width=200L, onlyMainChrs=TRUE),
 			tiling200bp=getTilingRegions(genome, width=200L, onlyMainChrs=TRUE)
 		)
+		annoPkg <- getChrAccRAnnotationPackage(genome)
+		if (!is.null(annoPkg)){
+			regionSets[["promoter"]] <- get("getGeneAnnotation", asNamespace(annoPkg))(anno="gencode_coding", type="promoterGr")
+		}
 		logger.info(c("Using default region sets:", paste(names(regionSets), collapse=", ")))
 	}
 	
@@ -198,10 +202,14 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 	}
 	if (is.null(regionSets)){
 		logger.info(c("Using default region sets:", paste("tiling200bp", collapse=", ")))
-		regionSets <- GRangesList(
+		regionSets <- list(
 			tiling5kb=getTilingRegions(genome, width=200L, onlyMainChrs=TRUE),
 			tiling200bp=getTilingRegions(genome, width=200L, onlyMainChrs=TRUE)
 		)
+		annoPkg <- getChrAccRAnnotationPackage(genome)
+		if (!is.null(annoPkg)){
+			regionSets[["promoter"]] <- get("getGeneAnnotation", asNamespace(annoPkg))(anno="gencode_coding", type="promoterGr")
+		}
 	}
 	if (length(names(regionSets)) < 1){
 		logger.error("Region sets must be named")
