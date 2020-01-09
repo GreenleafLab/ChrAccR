@@ -106,8 +106,8 @@ The output object includes the final singular values/principal components (`itls
 str(itlsi$pcaCoord)
 str(itlsi$umapCoord)
 str(itlsi$clustAss)
-itlsi$clusterPeaks_unfiltered
-itlsi$regionGr
+length(itlsi$clusterPeaks_unfiltered)
+length(itlsi$regionGr)
 ```
 
 You can use the resulting low-dimensional projections to characterize variability in your dataset according to various cell annotions. Here, we visualize the final cluster assignment ...
