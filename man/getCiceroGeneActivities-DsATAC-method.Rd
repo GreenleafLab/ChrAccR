@@ -19,15 +19,17 @@
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}
 
+\item{regionType}{region type of regions that will be linked to the promoter (typical some sort of peak annotation)}
+
 \item{promoterGr}{\code{GRanges} object of promoter coordinates}
 
 \item{maxDist}{maximum distance to consider for region-region interactions}
 
+\item{corCutOff}{cutoff of correlation coefficients (Pearson) to consider for region-region interactions}
+
 \item{dimRedCoord}{matrix of reduced dimension coordinates. must have coordinates for all samples/cells in the dataset}
 
 \item{knn.k}{parameter k for Cicero's k-nearest-neighbor method}
-
-\item{corCutoff}{cutoff of correlation coefficients (Pearson) to consider for region-region interactions}
 }
 \value{
 an \code{SummarizedExperiment} object containing gene activities for all cells/samples in the dataset

@@ -23,6 +23,8 @@
 
 \item{sampleIds}{sampleIds for which TSS enrichment should be computed}
 
+\item{tssW}{size of the core TSS window}
+
 \item{flank}{number of bases flanking each TSS that will be added on each side}
 
 \item{normTailW}{number of bases on each side whose counts will be used to normalize the data}

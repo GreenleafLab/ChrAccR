@@ -3007,6 +3007,7 @@ if (!isGeneric("getTssEnrichmentBatch")) {
 #' @param .object    \code{\linkS4class{DsATAC}} object
 #' @param tssGr      \code{GRanges} object containing TSS coordinates or NULL to get default set from annotation package
 #' @param sampleIds  sampleIds for which TSS enrichment should be computed
+#' @param tssW       size of the core TSS window
 #' @param flank      number of bases flanking each TSS that will be added on each side
 #' @param normTailW  number of bases on each side whose counts will be used to normalize the data
 #' @param smoothW    diameter of the window (in bp) that will be used to smooth the data
@@ -3296,9 +3297,10 @@ if (!isGeneric("getCiceroGeneActivities")) {
 #' Obtain Cicero gene activities
 #'
 #' @param .object    \code{\linkS4class{DsATAC}} object
+#' @param regionType region type of regions that will be linked to the promoter (typical some sort of peak annotation)
 #' @param promoterGr \code{GRanges} object of promoter coordinates
 #' @param maxDist    maximum distance to consider for region-region interactions
-#' @param corCutoff  cutoff of correlation coefficients (Pearson) to consider for region-region interactions
+#' @param corCutOff  cutoff of correlation coefficients (Pearson) to consider for region-region interactions
 #' @param dimRedCoord matrix of reduced dimension coordinates. must have coordinates for all samples/cells in the dataset
 #' @param knn.k      parameter k for Cicero's k-nearest-neighbor method
 #' @return an \code{SummarizedExperiment} object containing gene activities for all cells/samples in the dataset
