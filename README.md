@@ -2,13 +2,9 @@
 
 [![Build Status](https://travis-ci.org/GreenleafLab/ChrAccR.svg?branch=master)](https://travis-ci.org/GreenleafLab/ChrAccR)
 
-* __Package name:__ ChrAccR
-* __Title:__ Analyzing chromatin accessibility data in R
-* __Description:__ Tools for analyzing chromatin accessibility data in R. Currently mainly supports ATAC-seq data analysis.
-* __Author/Maintainer:__ Fabian Mueller (<muellerf@stanford.edu>)
-* __Version:__ 0.9.6
-* __Date:__ 2019-11-11
+Welcome to `ChrAccR`, an R package that provides tools for the comprehensive analysis chromatin accessibility data. The package implements methods for data quality control, exploratory analyses (including unsupervised methods for dimension reduction, clustering and quantifying transcription factor activities) and the identification and characterization of differentially accessible regions. It can be used for the analysis of large bulk datasets comprising hundreds of samples as well as for single-cell datasets with 10s to 100s of thousands of cells. 
 
+Requiring only a limited set of R commands, ChrAccR generates analysis reports that can be interactively explored, facilitate a comprehensive analysis overview of a given dataset and are easily shared with collaborators. The package is therefore particularly useful for users with limited bioinformatic expertise, researchers new to chromatin analysis or institutional core facilities providing ATAC-seq as a service. Additionally, the package provides numerous utility functions for custom R scripting that allow more in-depth analyses of chromatin accessibility datasets.
 
 ## Installation
 

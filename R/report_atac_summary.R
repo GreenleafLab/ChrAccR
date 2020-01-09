@@ -93,7 +93,7 @@ setMethod("createReport_summary",
 
 		if (isSingleCell){
 			txt <- c(
-				"This section provides an overview on single-cell QC statistics."
+				"This section provides an overview on single-cell QC statistics. Summary plots show the distribution of statistics per sample."
 			)
 			rr <- muReportR::addReportSection(rr, "Cell QC", txt, level=1L, collapsed=FALSE)
 
@@ -154,6 +154,12 @@ setMethod("createReport_summary",
 			rr <- muReportR::addReportFigure(rr, "Distribution of cell statistics", plotL, figSettings)
 
 			if (all(c("tssEnrichment") %in% cns)){
+
+				txt <- c("The plot below shows two frequently used statistics that can be used to asses per-cell quality. ",
+					     "The normalized enrichment of insertions at transcription start sites is plotted against the absolute number of fragments."
+				)
+				rr <- muReportR::addReportParagraph(rr, txt)
+
 				sampleIds <- sampleStatsTab[,"sample"]
 				plotL <- lapply(1:length(sampleIds), FUN=function(i){
 					subDf <- summaryDf[summaryDf[,"sample"]==sampleIds[i],]

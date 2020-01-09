@@ -81,7 +81,7 @@ library(ggplot2)
 theme_set(muRtools::theme_nogrid())
 ```
 
-The example data used in this vignette was designed for illustrating the functionality of `ChrAccR` rather than a full analysis. It contains ATAC-seq data for a subset of different T cell samples from the immune atlas dataset [@Calderon:2018ha] and it focuses on only a subset of the human genome (approximately 1%). It can be loaded using:
+The example data used in this vignette was designed for illustrating the functionality of `ChrAccR` rather than a full analysis. It contains ATAC-seq data for a subset of different T cell samples from the immune atlas dataset [@Calderon:2019cb] and it focuses on only a subset of the human genome (approximately 1%). It can be loaded using:
 ```{r, message = FALSE, warning = FALSE}
 dsa <- ChrAccRex::loadExample("dsAtac_ia_example")
 ```
@@ -457,49 +457,36 @@ references:
     issued:
       year: 2017
     type: article-journal
-  - id: Calderon:2018ha
+  - id: Calderon:2019cb
     title: Landscape of stimulation-responsive chromatin across diverse human immune cells
     author: 
     - family: Calderon
-      given: Diego
     - family: Nguyen
-      given: Michelle LT
     - family: Mezger
-      given: Anja
     - family: Kathiria
-      given: Arwa
+    - family: Müller
     - family: Nguyen
-      given: Vinh
     - family: Lescano
-      given: Ninnia
     - family: Wu
-      given: Beijing
     - family: Trombetta
-      given: John
     - family: Ribado
-      given: Jessica V
     - family: Knowles
-      given: David A
     - family: Gao
-      given: Ziyue
+    - family: Blaeschke
     - family: Parent
-      given: Audrey V
     - family: Burt
-      given: Trevor D
     - family: Anderson
-      given: Mark S
     - family: Criswell
-      given: Lindsey A
     - family: Greenleaf
-      given: William J
     - family: Marson
-      given: Alexander
     - family: Pritchard
-      given: Johnathan K
-    container-title: biorxiv.org
-    DOI: 10.1101/409722
+    container-title: Nature Genetics
+    DOI: 10.1038/s41588-019-0505-9
+    volume: 51
+    number: 10
+    page: 1494-1505
     issued:
-      year: 2018
+      year: 2019
     type: article-journal
 ---
 
