@@ -6,8 +6,7 @@
 \alias{getFragmentNum}
 \title{getFragmentNum-methods}
 \usage{
-\S4method{getFragmentNum}{DsATAC}(.object,
-  sampleIds = getSamples(.object))
+\S4method{getFragmentNum}{DsATAC}(.object, sampleIds = getSamples(.object))
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}

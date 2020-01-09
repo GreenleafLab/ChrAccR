@@ -4,8 +4,13 @@
 \alias{getMotifClustering}
 \title{getMotifClustering}
 \usage{
-getMotifClustering(k = 0, distM = NULL, assembly = "hg38",
-  motifs = "jaspar", clusterMethod = "pam")
+getMotifClustering(
+  k = 0,
+  distM = NULL,
+  assembly = "hg38",
+  motifs = "jaspar",
+  clusterMethod = "pam"
+)
 }
 \arguments{
 \item{k}{number of clusters. \code{k<1} will result in an automatically selected clustering which is precomputed and stored in \code{ChrAccR}.

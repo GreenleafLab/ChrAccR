@@ -4,10 +4,19 @@
 \alias{DsATAC.snakeATAC}
 \title{DsATAC.snakeATAC}
 \usage{
-DsATAC.snakeATAC(sampleAnnot, filePrefixCol, genome, dataDir = "",
-  regionSets = NULL, sampleIdCol = filePrefixCol, type = "insBam",
-  diskDump = FALSE, keepInsertionInfo = TRUE, bySample = FALSE,
-  pairedEnd = TRUE)
+DsATAC.snakeATAC(
+  sampleAnnot,
+  filePrefixCol,
+  genome,
+  dataDir = "",
+  regionSets = NULL,
+  sampleIdCol = filePrefixCol,
+  type = "insBam",
+  diskDump = FALSE,
+  keepInsertionInfo = TRUE,
+  bySample = FALSE,
+  pairedEnd = TRUE
+)
 }
 \arguments{
 \item{sampleAnnot}{data.frame specifying the sample annotation table}

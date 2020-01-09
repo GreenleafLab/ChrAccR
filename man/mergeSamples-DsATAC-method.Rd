@@ -6,8 +6,7 @@
 \alias{mergeSamples}
 \title{mergeSamples-methods}
 \usage{
-\S4method{mergeSamples}{DsATAC}(.object, mergeGroups,
-  countAggrFun = "sum")
+\S4method{mergeSamples}{DsATAC}(.object, mergeGroups, countAggrFun = "sum")
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}

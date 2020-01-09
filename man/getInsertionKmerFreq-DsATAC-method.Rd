@@ -6,8 +6,12 @@
 \alias{getInsertionKmerFreq}
 \title{getInsertionKmerFreq-methods}
 \usage{
-\S4method{getInsertionKmerFreq}{DsATAC}(.object,
-  samples = getSamples(.object), k = 6, normGenome = FALSE)
+\S4method{getInsertionKmerFreq}{DsATAC}(
+  .object,
+  samples = getSamples(.object),
+  k = 6,
+  normGenome = FALSE
+)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}

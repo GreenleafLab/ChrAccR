@@ -4,9 +4,16 @@
 \alias{DsATAC.cellranger}
 \title{DsATAC.cellranger}
 \usage{
-DsATAC.cellranger(sampleAnnot, sampleDirPrefixCol, genome, dataDir = "",
-  regionSets = NULL, addPeakRegions = TRUE,
-  sampleIdCol = sampleDirPrefixCol, keepInsertionInfo = FALSE)
+DsATAC.cellranger(
+  sampleAnnot,
+  sampleDirPrefixCol,
+  genome,
+  dataDir = "",
+  regionSets = NULL,
+  addPeakRegions = TRUE,
+  sampleIdCol = sampleDirPrefixCol,
+  keepInsertionInfo = FALSE
+)
 }
 \arguments{
 \item{sampleAnnot}{data.frame specifying the sample annotation table}

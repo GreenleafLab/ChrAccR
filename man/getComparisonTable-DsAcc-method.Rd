@@ -6,8 +6,7 @@
 \alias{getComparisonTable}
 \title{getComparisonTable-methods}
 \usage{
-\S4method{getComparisonTable}{DsAcc}(.object, cols = NULL,
-  compNames = NULL, minGroupSize = 2L)
+\S4method{getComparisonTable}{DsAcc}(.object, cols = NULL, compNames = NULL, minGroupSize = 2L)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsAcc}} object}

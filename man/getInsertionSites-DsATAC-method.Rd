@@ -6,8 +6,11 @@
 \alias{getInsertionSites}
 \title{getInsertionSites-methods}
 \usage{
-\S4method{getInsertionSites}{DsATAC}(.object,
-  samples = getSamples(.object), asGRangesList = FALSE)
+\S4method{getInsertionSites}{DsATAC}(
+  .object,
+  samples = getSamples(.object),
+  asGRangesList = FALSE
+)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}

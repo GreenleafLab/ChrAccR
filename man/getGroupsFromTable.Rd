@@ -4,8 +4,7 @@
 \alias{getGroupsFromTable}
 \title{getGroupsFromTable}
 \usage{
-getGroupsFromTable(tt, cols = NULL, minGrpSize = 2,
-  maxGrpCount = nrow(tt) - 1)
+getGroupsFromTable(tt, cols = NULL, minGrpSize = 2, maxGrpCount = nrow(tt) - 1)
 }
 \arguments{
 \item{tt}{table to retrieve groupings for}

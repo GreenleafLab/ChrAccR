@@ -6,9 +6,16 @@
 \alias{getDiffAcc}
 \title{getDiffAcc-methods}
 \usage{
-\S4method{getDiffAcc}{DsATAC}(.object, regionType, comparisonCol,
-  grp1Name = NULL, grp2Name = NULL, adjustCols = character(0),
-  method = "DESeq2", diffObj = NULL)
+\S4method{getDiffAcc}{DsATAC}(
+  .object,
+  regionType,
+  comparisonCol,
+  grp1Name = NULL,
+  grp2Name = NULL,
+  adjustCols = character(0),
+  method = "DESeq2",
+  diffObj = NULL
+)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}

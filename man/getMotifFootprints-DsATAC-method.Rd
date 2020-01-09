@@ -6,9 +6,14 @@
 \alias{getMotifFootprints}
 \title{getMotifFootprints-methods}
 \usage{
-\S4method{getMotifFootprints}{DsATAC}(.object, motifNames,
-  samples = getSamples(.object), motifFlank = 250L, type = ".genome",
-  motifDb = "jaspar")
+\S4method{getMotifFootprints}{DsATAC}(
+  .object,
+  motifNames,
+  samples = getSamples(.object),
+  motifFlank = 250L,
+  type = ".genome",
+  motifDb = "jaspar"
+)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}

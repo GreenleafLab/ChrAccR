@@ -406,7 +406,7 @@ if (!isGeneric("iterativeLSI")) {
 }
 #' iterativeLSI-methods
 #'
-#' EXPERIMENTAL: Perform iterative LSI clustering as described in doi:10.1101/696328
+#' Perform iterative LSI clustering and dimension reduction as described in doi:10.1038/s41587-019-0332-7
 #'
 #' @param .object    \code{\linkS4class{DsATACsc}} object
 #' @param it0regionType character string specifying the region type to start with
@@ -420,7 +420,12 @@ if (!isGeneric("iterativeLSI")) {
 #' @param it2pcs      the principal components to consider in the final iteration (2)
 #' @param it2clusterResolution resolution paramter for Seurat's  clustering (\code{Seurat::FindClusters}) in the final iteration (2)
 #' @param umapParams  parameters to compute UMAP coordinates (passed on to \code{muRtools::getDimRedCoords.umap} and further to \code{uwot::umap})
-#' @return an \code{S3} object containing dimensionality reduction results and clustering
+#' @return an \code{S3} object containing dimensionality reduction results, peak sets and clustering
+#' 
+#' @details
+#' In order to obtain a low dimensional representation of single-cell ATAC datasets in terms of principal components and UMAP coordinates, we recommend an iterative application of the Latent Semantic Indexing approach [10.1016/j.cell.2018.06.052] described in [doi:10.1038/s41587-019-0332-7]. This approach also identifies cell clusters and a peak set that represents a consensus peak set of cluster peaks in a given dataset. In brief, in an initial iteration clusters are identified based on the most accessible regions (e.g. genomic tiling regions). Here, the counts are first normalized using the term frequency–inverse document frequency (TF-IDF) transformation and singular values are computed based on these normalized counts in selected regions (i.e. the most accessible regions in the initial iteration). Clusters are identified based on the singular values using Louvain clustering (as implemented in the \code{Seurat} package). Peak calling is then performed on the aggregated insertion sites from all cells of each cluster (using MACS2) and a union/consensus set of peaks uniform-length non-overlapping peaks is selected. In a second iteration, the peak regions whose TF-IDF-normalized counts which exhibit the most variability across the initial clusters provide the basis for a refined clustering using derived singular values. In the final iteration, the most variable peaks across the refined clusters are identified as the final peak set and singular values are computed again. Based on these final singular values UMAP coordinates are computed for low-dimensional projection.
+#' 
+#' The output object includes the final singular values/principal components (\code{result$pcaCoord}), the low-dimensional coordinates (\code{result$umapCoord}), the final cluster assignment of all cells (\code{result$clustAss}), the complete, unfiltered initial cluster peak set (\code{result$clusterPeaks_unfiltered}) as well as the final cluster-variable peak set (\code{result$regionGr}).
 #' 
 #' @rdname iterativeLSI-DsATACsc-method
 #' @docType methods

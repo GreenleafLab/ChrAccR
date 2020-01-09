@@ -1,0 +1,337 @@
+---
+output:
+  html_document:
+    theme: cosmo
+    toc: true
+    toc_float: true
+    number_sections: true
+# output: rmarkdown::html_vignette
+# output:
+#   rmdformats::readthedown:
+#     highlight: kate
+author: Fabian Mueller
+date: "`r Sys.Date()`"
+title: |
+  | Analysis of single-cell ATAC-seq
+  | data using ChrAccR
+vignette: >
+  %\VignetteIndexEntry{singlecell}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = FALSE,
+  comment = ">"
+)
+```
+```{r, echo=FALSE}
+htmltools::img(src = knitr::image_uri(system.file(file.path("extdata", "chraccr_logo.png"), package="ChrAccR")), 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; right:0; padding:10px; height:96px;')
+```
+
+# Introduction
+
+Single-cell ATAC datasets can be analyzed much like bulk datasets using `ChrAccR`. Please refer to the main vignette for a guide on how to analyze bulk data. First, let us load the package and prepare the plot style used in the remainder of this vignette.
+
+```{r, message = FALSE, warning = FALSE}
+library(ChrAccR)
+# load ggplot library and set the plotting theme
+library(ggplot2)
+theme_set(theme_bw())
+```
+
+# Loading the example data
+
+In addition to bulk data, the `ChrAccRex` data package contains a small example single-cell ATAC-seq datasets. If you haven't already installed `ChrAccRex` use
+```{r, message = FALSE, warning = FALSE, eval = FALSE}
+devtools::install_github("GreenleafLab/ChrAccRex")
+```
+
+The example data used in this vignette was designed for illustrating the functionality of `ChrAccR` rather than a full analysis. It contains ATAC-seq data for a subset of 3000 cells derived from peripheral blood and bone marrow samples describing human hematopoiesis [@Granja:nbt:2019] and it focuses on only a subset of the human genome (chromosomes 1 and 21). It can be loaded using:
+```{r, message = FALSE, warning = FALSE}
+dsa <- ChrAccRex::loadExample("dsAtacSc_hema_example")
+```
+
+# `DsATACsc` data structure
+
+Analysis of single-cell datasets in `ChrAccR` works much like bulk datasets. `ChrAccR` implements a special subclass of `DsATAC` for storing and operating on single-cell datasets. This subclass is called `DsATACsc`. The main difference is that the ''samples'' are actually individual cells:
+
+```{r, message = FALSE, warning = FALSE}
+dsa
+```
+
+# Quality control statistics
+
+The annotation table stored with the dataset object can contain a number of statistics that are useful for cell quality control and filtering.
+
+```{r, message = FALSE, warning = FALSE}
+cell_anno <- getSampleAnnot(dsa)
+colnames(cell_anno)
+```
+
+```{r, message = FALSE, warning = FALSE}
+cutoff_tss <- 15
+cutoff_nfrags <- 4000
+ggplot(cell_anno) + aes(x=log10(nFrags), y=.tssEnrichment) + 
+    geom_hline(yintercept=cutoff_tss, color="green") +
+    geom_vline(xintercept=log10(cutoff_nfrags), color="green") + 
+    geom_point(size=0.5) + facet_wrap(~sampleId)
+dsa_filtered <- dsa[cell_anno[,".tssEnrichment"] > cutoff_tss & cell_anno[,"nFrags"] > cutoff_nfrags]
+length(getSamples(dsa))
+length(getSamples(dsa_filtered))
+```
+
+# Exploratory analysis
+
+## Dimension reduction and clustering using iterative LSI
+
+In order to obtain a low dimensional representation of single-cell ATAC datasets in terms of principal components and UMAP coordinates, we recommend an iterative application of the Latent Semantic Indexing approach [@Cusanovich:2018gj] described in [@Granja:nbt:2019]. This approach also identifies cell clusters and a peak set that represents a consensus peak set of cluster peaks in a given dataset. In brief, in an initial iteration clusters are identified based on the most accessible regions (e.g. genomic tiling regions). Here, the counts are first normalized using the term frequency–inverse document frequency (TF-IDF) transformation and singular values are computed based on these normalized counts in selected regions (i.e. the most accessible regions in the initial iteration). Clusters are identified based on the singular values using Louvain clustering (as implemented in the `Seurat` package). Peak calling is then performed on the aggregated insertion sites from all cells of each cluster (using MACS2) and a union/consensus set of peaks uniform-length non-overlapping peaks is selected. In a second iteration, the peak regions whose TF-IDF-normalized counts which exhibit the most variability across the initial clusters provide the basis for a refined clustering using derived singular values. In the final iteration, the most variable peaks across the refined clusters are identified as the final peak set and singular values are computed again. Based on these final singular values UMAP coordinates are computed for low-dimensional projection.
+
+```{r, message = FALSE, warning = FALSE, eval=FALSE}
+# requires MACS2 for peak calling
+itlsi <- iterativeLSI(dsa, it0regionType="tiling5kb", it0clusterResolution=0.4, it1clusterResolution=0.4, it2clusterResolution=0.4)
+```
+
+```{r, message = FALSE, warning = FALSE}
+# load precomputed object
+itlsi <- ChrAccRex::loadExample("itLsiObj_hema_example")
+```
+
+The output object includes the final singular values/principal components (`itlsi$pcaCoord`), the low-dimensional coordinates (`itlsi$umapCoord`), the final cluster assignment of all cells (`itlsi$clustAss`), the complete, unfiltered initial cluster peak set (`itlsi$clusterPeaks_unfiltered`) as well as the final cluster-variable peak set (`itlsi$regionGr`):
+
+```{r, message = FALSE, warning = FALSE}
+str(itlsi$pcaCoord)
+str(itlsi$umapCoord)
+str(itlsi$clustAss)
+length(itlsi$clusterPeaks_unfiltered)
+length(itlsi$regionGr)
+```
+
+You can use the resulting low-dimensional projections to characterize variability in your dataset according to various cell annotions. Here, we visualize the final cluster assignment ...
+
+```{r, message = FALSE, warning = FALSE}
+df <- data.frame(
+  itlsi$umapCoord,
+  cluster = itlsi$clustAss,
+  cellId = rownames(itlsi$umapCoord),
+  sampleSource = getSampleAnnot(dsa)[,"cellType"],
+  stringsAsFactors = FALSE
+)
+
+ggplot(df, aes(x=UMAP1, y=UMAP2, color=cluster)) + geom_point(size=0.25)
+```
+
+... as well as the annotated sample source:
+
+```{r, message = FALSE, warning = FALSE}
+ggplot(df, aes(x=UMAP1, y=UMAP2, color=sampleSource)) + geom_point(size=0.25)
+```
+
+## chromVAR deviations
+We utilize `chromVAR` in order to determine the genome-wide TF motif activity for each cell [@Schep:2017je]. You can use the low-dimensional projection in order to visualize variability in TF motif accessibility across all cells in the manifold.
+
+```{r, message = FALSE, warning = FALSE}
+cvRes <- getChromVarDev(dsa, ".peaks.itlsi", motifs="jaspar")
+devZ <- t(chromVAR::deviations(cvRes))
+
+motifNames <- c("MA0036.3_GATA2", "MA0652.1_IRF8", "MA0102.3_CEBPA", "MA0690.1_TBX21")
+df_with_cv <- data.frame(df, devZ[,motifNames])
+
+plotL <- lapply(motifNames, FUN=function(mn){
+  ggplot(df_with_cv, aes_string(x="UMAP1", y="UMAP2", color=mn)) + geom_point(size=0.25) + scale_color_gradient2(midpoint=0, low="blue", mid="white", high="red")
+})
+do.call(cowplot::plot_grid, plotL)
+```
+
+## Gene activity
+
+We can also define gene activity as the combined chromatin accessibility of a gene promoter and peaks that correlated with it across all accessibility profiles. This functionality is nicely implemented in the `cicero` and `monocle` packages and `ChrAccR` provides a wrapper function to compute gene activities from `DsATAC` datasets:
+
+```{r, message = FALSE, warning = FALSE, eval=FALSE}
+# requires monocle3 to be installed
+library(monocle3)
+
+promoter_gr <- getCoord(dsa, "promoter")
+names(promoter_gr) <- GenomicRanges::elementMetadata(promoter_gr)[,"gene_name"]
+gene_act <- getCiceroGeneActivities(
+  dsa,
+  ".peaks.itlsi",
+  promoterGr=promoter_gr,
+  dimRedCoord=itlsi$pcaCoord
+)
+```
+
+# Analyzing the full dataset
+
+The full dataset of the single-cell human hematopoiesis study [@Granja:nbt:2019] is publicly available. Here, we show how `ChrAccR` can be applied to create a dataset from scratch using the aligned fragment files as input. Downstream steps can be run as shown above for the example subset of the data.
+Since the full dataset comprises high-quality profiles for a large number of cells, the analysis of such high-dimensional data has considerable resource requirements. We recommend to run it on a machine with a large amount of memory. The runtime for some of the folowing steps can exceed multiple hours.
+
+## Preparing the dataset from fragment data
+
+The main input for creating a single-cell dataset in `ChrAccR` are files containing the coordinates of sequenced fragments. Such fragment files can be obtained from the output of the CellRanger software (10x Genomics). For the hematopoiesis dataset analyzed here [@Granja:nbt:2019], these files are available from GEO ([GEO accession: GSE139369)](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE139369)). First, download the `GSE139369_RAW.tar` file and unpack it (in the following, we assume that you unpacked the files to a directory called `fragment_data`).
+In addition to the fragment data, a sample annotation table that contains information on the samples' phenotypes and technical parameters is needed. Here, we create one from the filenames:
+
+```{r, message = FALSE, warning = FALSE, eval = FALSE}
+fragmentFiles <- list.files("fragment_data", pattern=".fragments.tsv.gz")
+sampleAnnotation <- data.frame(
+  sampleId = gsub("^(GSM[0-9]+)_scATAC_(.+).fragments\\.tsv\\.gz$", "\\2", fragmentFiles),
+  geoAccession = gsub("^(GSM[0-9]+)_scATAC_(.+).fragments\\.tsv\\.gz$", "\\1", fragmentFiles),
+  fragmentFilename = fragmentFiles,
+  stringsAsFactors = FALSE
+)
+sampleAnnotation[,"source"] <- gsub("^(MPAL|CD34|BMMC|PBMC).+", "\\1", sampleAnnotation[,"sampleId"])
+# only samples from healthy donors
+sampleAnnotation <- sampleAnnotation[sampleAnnotation[,"source"]!="MPAL",]
+```
+
+Then we can create a `DsATACsc` dataset from the fragment files:
+
+```{r, message = FALSE, warning = FALSE, eval = FALSE}
+dsa_full_raw <- DsATACsc.fragments(
+  sampleAnnotation,
+  file.path('fragment_data', sampleAnnotation[,"fragmentFilename"]),
+  "hg19",
+  regionSets=NULL,
+  sampleIdCol="sampleId",
+  minFragsPerBarcode=1000L,
+  maxFragsPerBarcode=50000L,
+  keepInsertionInfo=TRUE
+)
+```
+
+## Filtering low quality cells
+
+It is recommended to filter low quality cells from the datasets. In the code above, we already set a threshold for the minimum and maximum number of fragments for each cell in order for it to be included in the dataset. The following code also limits the dataset to cells that exhibit a sufficiently high signal-to-noise ratio, as defined by the enrichment of Tn5 insertions at transcription start sites (TSS) relative to background.
+
+```{r, message = FALSE, warning = FALSE, eval = FALSE}
+tsse_cutoff <- 8
+dsa_full <- filterCellsTssEnrichment(dsa_full_raw, tsse_cutoff)
+```
+
+## Dimension reduction and clustering using iterative LSI
+
+We recommend to use the iterative LSI approach outlined above to obtain a relatively robust dimensionality reduction and clustering of cells. We compute the reduced components and coordinates in the code below. We also add the assigned cluster for each cell to the dataset annotation and aggregate the Tn5 insertion counts for the computed consensus peak set.
+
+```{r, message = FALSE, warning = FALSE, eval = FALSE}
+itlsi <- iterativeLSI(dsa_full, it0regionType="tiling5kb", it0clusterResolution=0.4, it1clusterResolution=0.4, it2clusterResolution=0.4)
+
+# add cluster assignment to cell annotation
+dsa_full <- addSampleAnnot(dsa_full, "cluster_itlsi", itlsi$clustAss)
+
+# aggregate insertions accross the consensus set of cluster peaks derived during iterative LSI
+dsa_full <- regionAggregation(dsa_full, itlsi$clusterPeaks_unfiltered, "peaks_itlsi", signal="insertions", dropEmpty=FALSE, bySample=FALSE)
+```
+
+
+# Analysis reports
+
+`ChrAccR` also provides methods to automatically generate analysis reports that summarize most of the above analysis steps. The reports for the full single-cell dataset described here can also be found in the ['Resource' section](https://greenleaflab.github.io/ChrAccR/articles/articles/resource.html) of the ChrAccR website.
+Provided with a `DsATAC` dataset these reports can be generated with a call to the corresponding `createReport_*` function. For instance, the `createReport_summary` generates a report containing an overview of sample and cell statistics:
+
+```{r, message = FALSE, warning = FALSE, eval=FALSE}
+createReport_summary(dsa_full, file.path("reports"))
+```
+
+The report generated by the `createReport_exploratory` functions comprises unsupervised analysis, including dimensionality reduction and the quantification of transcription factor activities. Analysis parameters for generating these reports can be configures using the `setConfigElement` function.
+
+```{r, message = FALSE, warning = FALSE, eval=FALSE}
+chromVarMotifsToPlot <- c("MA0036.3_GATA2", "MA0652.1_IRF8", "MA0102.3_CEBPA", "MA0466.2_CEBPB", "MA1141.1_FOS::JUND", "MA0080.4_SPI1", "MA0105.4_NFKB1", "MA0014.3_PAX5", "MA0002.2_RUNX1", "MA0690.1_TBX21")
+
+setConfigElement("annotationColumns", c(".sampleId", "cellType", "nFrags", "tssEnrichment"))
+setConfigElement("scIterativeLsiRegType", "tiling5kb")
+setConfigElement("scIterativeLsiClusterResolution", 0.4)
+setConfigElement("chromVarMotifNamesForDimRed", chromVarMotifsToPlot)
+
+createReport_exploratory(dsa_full, file.path("reports"))
+```
+
+# Session Info
+
+```{r}
+Sys.Date()
+```
+
+```{r}
+sessionInfo()
+```
+
+# References
+
+---
+link-citations: yes
+references:
+  - id: Granja:nbt:2019
+    title: Single-cell multiomic analysis identifies regulatory programs in mixed-phenotype acute leukemia
+    author: 
+    - family: Granja
+    - family: Klemm
+    - family: McGinnis
+    - family: Kathiria
+    - family: Mezger
+    - family: Corces
+    - family: Parks
+    - family: Gars
+    - family: Liedtke
+    - family: Zheng
+    - family: Chang
+    - family: Majeti
+    - family: Greenleaf
+    container-title: Nature Biotechnology
+    DOI: 10.1038/s41587-019-0332-7
+    volume: 37
+    number: 12
+    page: 1458-1465
+    issued:
+      year: 2019
+    type: article-journal
+  - id: Cusanovich:2018gj
+    title: A Single-Cell Atlas of In Vivo Mammalian Chromatin Accessibility
+    author: 
+    - family: Cusanovich
+    - family: Hill
+    - family: Aghamirzaie
+    - family: Daza
+    - family: Pliner
+    - family: Berletch
+    - family: Filippova
+    - family: Huang
+    - family: Christiansen
+    - family: DeWitt
+    - family: Lee
+    - family: Regalado
+    - family: Read
+    - family: Steemers
+    - family: Disteche
+    - family: Trapnell
+    - family: Shendure
+    container-title: Cell
+    DOI: 10.1016/j.cell.2018.06.052
+    volume: 174
+    number: 5
+    page: 1309-1324
+    issued:
+      year: 2018
+    type: article-journal
+  - id: Schep:2017je
+    title: "chromVAR: inferring transcription-factor-associated accessibility from single-cell epigenomic data"
+    author: 
+    - family: Schep
+      given: Alicia N
+    - family: Wu
+      given: Beijing
+    - family: Buenrostro
+      given: Jason D
+    - family: Greenleaf
+      given: William J
+    container-title: Nature methods
+    DOI: 10.1038/nmeth.4401
+    volume: 14
+    number: 10
+    page: 975-978
+    issued:
+      year: 2017
+    type: article-journal
+---

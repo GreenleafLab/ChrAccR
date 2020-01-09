@@ -5,8 +5,7 @@
 \alias{removeRegions,DsNOMe-method}
 \title{removeRegions-methods}
 \usage{
-\S4method{removeRegions}{DsNOMe}(.object, indices, type = "sites",
-  reaggregate = TRUE)
+\S4method{removeRegions}{DsNOMe}(.object, indices, type = "sites", reaggregate = TRUE)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsNOMe}} object}

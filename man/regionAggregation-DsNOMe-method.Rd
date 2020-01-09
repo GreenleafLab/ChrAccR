@@ -6,8 +6,13 @@
 \alias{regionAggregation}
 \title{regionAggregation-methods}
 \usage{
-\S4method{regionAggregation}{DsNOMe}(.object, regGr, type,
-  methAggrFun = "weightedMean", dropEmpty = TRUE)
+\S4method{regionAggregation}{DsNOMe}(
+  .object,
+  regGr,
+  type,
+  methAggrFun = "weightedMean",
+  dropEmpty = TRUE
+)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsNOMe}} object}

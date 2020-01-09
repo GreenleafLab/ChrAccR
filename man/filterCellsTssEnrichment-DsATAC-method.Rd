@@ -4,6 +4,7 @@
 \name{filterCellsTssEnrichment,DsATACsc-method}
 \alias{filterCellsTssEnrichment,DsATACsc-method}
 \alias{filterCellsTssEnrichment}
+\alias{filterCellsTssEnrichment,DsATAC-method}
 \title{filterCellsTssEnrichment-methods}
 \usage{
 \S4method{filterCellsTssEnrichment}{DsATACsc}(.object, cutoff = 6)

@@ -6,8 +6,7 @@
 \alias{maskMethNA}
 \title{maskMethNA-methods}
 \usage{
-\S4method{maskMethNA}{DsNOMe}(.object, mask, type = "sites",
-  reaggregate = TRUE)
+\S4method{maskMethNA}{DsNOMe}(.object, mask, type = "sites", reaggregate = TRUE)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsNOMe}} object}

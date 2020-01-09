@@ -6,8 +6,7 @@
 \alias{getMonocleCellDataSet}
 \title{getMonocleCellDataSet-methods}
 \usage{
-\S4method{getMonocleCellDataSet}{DsATAC}(.object, regionType,
-  binarize = TRUE)
+\S4method{getMonocleCellDataSet}{DsATAC}(.object, regionType, binarize = TRUE)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}

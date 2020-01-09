@@ -4,9 +4,15 @@
 \alias{getComparisonInfo}
 \title{getComparisonInfo}
 \usage{
-getComparisonInfo(dsa, cmpNames = NULL,
-  regionTypes = getRegionTypes(dsa), allPairs = TRUE,
-  adjPairCols = NULL, minGrpSize = 1L, maxGrpCount = NULL)
+getComparisonInfo(
+  dsa,
+  cmpNames = NULL,
+  regionTypes = getRegionTypes(dsa),
+  allPairs = TRUE,
+  adjPairCols = NULL,
+  minGrpSize = 1L,
+  maxGrpCount = NULL
+)
 }
 \arguments{
 \item{dsa}{\code{\linkS4class{DsAcc}} object}

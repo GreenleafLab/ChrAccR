@@ -6,8 +6,7 @@
 \alias{createReport_exploratory}
 \title{createReport_exploratory-methods}
 \usage{
-\S4method{createReport_exploratory}{DsATAC}(.object, reportDir,
-  itLsiObj = NULL)
+\S4method{createReport_exploratory}{DsATAC}(.object, reportDir, itLsiObj = NULL)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}

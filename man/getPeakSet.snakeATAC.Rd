@@ -4,10 +4,19 @@
 \alias{getPeakSet.snakeATAC}
 \title{getPeakSet.snakeATAC}
 \usage{
-getPeakSet.snakeATAC(sampleAnnot, filePrefixCol, genome, dataDir,
-  sampleIdCol = filePrefixCol, type = "summits_no_fw",
-  unifWidth = 500L, replicateCol = NA, replicatePercReq = 1,
-  replicateConsSelect = FALSE, keepOvInfo = FALSE)
+getPeakSet.snakeATAC(
+  sampleAnnot,
+  filePrefixCol,
+  genome,
+  dataDir,
+  sampleIdCol = filePrefixCol,
+  type = "summits_no_fw",
+  unifWidth = 500L,
+  replicateCol = NA,
+  replicatePercReq = 1,
+  replicateConsSelect = FALSE,
+  keepOvInfo = FALSE
+)
 }
 \arguments{
 \item{sampleAnnot}{data.frame specifying the sample annotation table}

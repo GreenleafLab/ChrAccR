@@ -6,9 +6,15 @@
 \alias{getTssEnrichmentBatch}
 \title{getTssEnrichmentBatch-methods}
 \usage{
-\S4method{getTssEnrichmentBatch}{DsATAC}(.object, tssGr = NULL,
-  sampleIds = getSamples(.object), tssW = 201L, flank = 2000L,
-  normTailW = 200L, smoothW = 51L)
+\S4method{getTssEnrichmentBatch}{DsATAC}(
+  .object,
+  tssGr = NULL,
+  sampleIds = getSamples(.object),
+  tssW = 201L,
+  flank = 2000L,
+  normTailW = 200L,
+  smoothW = 51L
+)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}
