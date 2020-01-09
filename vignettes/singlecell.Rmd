@@ -106,8 +106,8 @@ The output object includes the final singular values/principal components (`itls
 str(itlsi$pcaCoord)
 str(itlsi$umapCoord)
 str(itlsi$clustAss)
-clusterPeaks_unfiltered
-regionGr
+itlsi$clusterPeaks_unfiltered
+itlsi$regionGr
 ```
 
 You can use the resulting low-dimensional projections to characterize variability in your dataset according to various cell annotions. Here, we visualize the final cluster assignment ...
@@ -149,6 +149,7 @@ do.call(cowplot::plot_grid, plotL)
 ## Gene activity
 
 We can also define gene activity as the combined chromatin accessibility of a gene promoter and peaks that correlated with it across all accessibility profiles. This functionality is nicely implemented in the `cicero` and `monocle` packages and `ChrAccR` provides a wrapper function to compute gene activities from `DsATAC` datasets:
+
 ```{r, message = FALSE, warning = FALSE, eval=FALSE}
 # requires monocle3 to be installed
 library(monocle3)
