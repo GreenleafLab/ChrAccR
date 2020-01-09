@@ -4,10 +4,10 @@
 \name{simulateDoublets,DsATAC-method}
 \alias{simulateDoublets,DsATAC-method}
 \alias{simulateDoublets}
+\alias{simulateDoublets,DsATACsc-method}
 \title{simulateDoublets-methods}
 \usage{
-\S4method{simulateDoublets}{DsATAC}(.object, byGroup = NULL, n = 10000,
-  sampleRatio = 1)
+\S4method{simulateDoublets}{DsATAC}(.object, byGroup = NULL, n = 10000, sampleRatio = 1)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATACsc}} object}

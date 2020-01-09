@@ -17,7 +17,7 @@
 \code{GRanges} object containing fragment data
 }
 \description{
-getFragmentGr-methods
+
 }
 \author{
 Fabian Mueller

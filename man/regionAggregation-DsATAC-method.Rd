@@ -5,9 +5,16 @@
 \alias{regionAggregation,DsATAC-method}
 \title{regionAggregation-methods}
 \usage{
-\S4method{regionAggregation}{DsATAC}(.object, regGr, type, signal = NULL,
-  aggrFun = "median", dropEmpty = TRUE, bySample = TRUE,
-  chunkSize = 10000L)
+\S4method{regionAggregation}{DsATAC}(
+  .object,
+  regGr,
+  type,
+  signal = NULL,
+  aggrFun = "median",
+  dropEmpty = TRUE,
+  bySample = TRUE,
+  chunkSize = 10000L
+)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}

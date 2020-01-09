@@ -4,10 +4,18 @@
 \alias{DsATACsc.fragments}
 \title{DsATACsc.fragments}
 \usage{
-DsATACsc.fragments(sampleAnnot, fragmentFiles, genome, regionSets = NULL,
-  sampleIdCol = NULL, minFragsPerBarcode = 500L,
-  maxFragsPerBarcode = Inf, cellAnnot = NULL,
-  keepInsertionInfo = FALSE, cellQcStats = TRUE)
+DsATACsc.fragments(
+  sampleAnnot,
+  fragmentFiles,
+  genome,
+  regionSets = NULL,
+  sampleIdCol = NULL,
+  minFragsPerBarcode = 500L,
+  maxFragsPerBarcode = Inf,
+  cellAnnot = NULL,
+  keepInsertionInfo = FALSE,
+  cellQcStats = TRUE
+)
 }
 \arguments{
 \item{sampleAnnot}{data.frame specifying the sample annotation table}

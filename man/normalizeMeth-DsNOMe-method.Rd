@@ -6,8 +6,7 @@
 \alias{normalizeMeth}
 \title{normalizeMeth-methods}
 \usage{
-\S4method{normalizeMeth}{DsNOMe}(.object, type = "sites",
-  method = "quantile", reaggregate = TRUE)
+\S4method{normalizeMeth}{DsNOMe}(.object, type = "sites", method = "quantile", reaggregate = TRUE)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsNOMe}} object}

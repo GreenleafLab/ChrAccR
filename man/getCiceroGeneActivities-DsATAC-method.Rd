@@ -6,9 +6,15 @@
 \alias{getCiceroGeneActivities}
 \title{getCiceroGeneActivities-methods}
 \usage{
-\S4method{getCiceroGeneActivities}{DsATAC}(.object, regionType,
-  promoterGr = NULL, maxDist = 250000L, corCutOff = 0.35,
-  dimRedCoord = NULL, knn.k = 50)
+\S4method{getCiceroGeneActivities}{DsATAC}(
+  .object,
+  regionType,
+  promoterGr = NULL,
+  maxDist = 250000L,
+  corCutOff = 0.35,
+  dimRedCoord = NULL,
+  knn.k = 50
+)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}

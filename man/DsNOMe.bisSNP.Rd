@@ -4,8 +4,7 @@
 \alias{DsNOMe.bisSNP}
 \title{DsNOMe.bisSNP}
 \usage{
-DsNOMe.bisSNP(inputFns, sampleAnnot, genome,
-  sampleIds = rownames(sampleAnnot))
+DsNOMe.bisSNP(inputFns, sampleAnnot, genome, sampleIds = rownames(sampleAnnot))
 }
 \arguments{
 \item{inputFns}{a NAMED vector of input file names}

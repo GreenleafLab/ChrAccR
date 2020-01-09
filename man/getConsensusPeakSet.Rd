@@ -4,9 +4,15 @@
 \alias{getConsensusPeakSet}
 \title{getConsensusPeakSet}
 \usage{
-getConsensusPeakSet(grl, mode = "no_by_score", grouping = NULL,
-  groupAgreePerc = 1, groupConsSelect = FALSE, scoreCol = "score",
-  keepOvInfo = FALSE)
+getConsensusPeakSet(
+  grl,
+  mode = "no_by_score",
+  grouping = NULL,
+  groupAgreePerc = 1,
+  groupConsSelect = FALSE,
+  scoreCol = "score",
+  keepOvInfo = FALSE
+)
 }
 \arguments{
 \item{grl}{list or \code{GRangesList} object containing the peak sets for each sample}

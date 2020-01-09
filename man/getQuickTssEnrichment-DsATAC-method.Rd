@@ -6,8 +6,13 @@
 \alias{getQuickTssEnrichment}
 \title{getQuickTssEnrichment-methods}
 \usage{
-\S4method{getQuickTssEnrichment}{DsATAC}(.object, tssGr = NULL,
-  sampleIds = getSamples(.object), tssW = 201L, distBg = 1900L)
+\S4method{getQuickTssEnrichment}{DsATAC}(
+  .object,
+  tssGr = NULL,
+  sampleIds = getSamples(.object),
+  tssW = 201L,
+  distBg = 1900L
+)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}

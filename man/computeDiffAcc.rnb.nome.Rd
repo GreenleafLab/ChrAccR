@@ -5,11 +5,19 @@
 \alias{rnb.execute.computeDiffMeth}
 \title{computeDiffAcc.rnb.nome}
 \usage{
-computeDiffAcc.rnb.nome(dsn, cmpCols, regionTypes = getRegionTypes(dsn),
-  covgThres = 5L, allPairs = TRUE, adjPairCols = NULL,
-  adjCols = NULL, skipSites = FALSE,
+computeDiffAcc.rnb.nome(
+  dsn,
+  cmpCols,
+  regionTypes = getRegionTypes(dsn),
+  covgThres = 5L,
+  allPairs = TRUE,
+  adjPairCols = NULL,
+  adjCols = NULL,
+  skipSites = FALSE,
   disk.dump = rnb.getOption("disk.dump.big.matrices"),
-  disk.dump.dir = tempfile(pattern = "diffMethTables_"), ...)
+  disk.dump.dir = tempfile(pattern = "diffMethTables_"),
+  ...
+)
 }
 \arguments{
 \item{dsn}{\code{\linkS4class{DsNOMe}} object}

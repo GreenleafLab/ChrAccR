@@ -6,10 +6,19 @@
 \alias{aggregateRegionCounts}
 \title{aggregateRegionCounts-methods}
 \usage{
-\S4method{aggregateRegionCounts}{DsATAC}(.object, regionGr,
-  samples = getSamples(.object), countAggrFun = "sum",
-  norm = "tailMean", normTailW = 0.1, kmerBiasAdj = TRUE, k = 6,
-  sampleCovg = NULL, sampleKmerFreqM = NULL, regionKmerFreqM = NULL)
+\S4method{aggregateRegionCounts}{DsATAC}(
+  .object,
+  regionGr,
+  samples = getSamples(.object),
+  countAggrFun = "sum",
+  norm = "tailMean",
+  normTailW = 0.1,
+  kmerBiasAdj = TRUE,
+  k = 6,
+  sampleCovg = NULL,
+  sampleKmerFreqM = NULL,
+  regionKmerFreqM = NULL
+)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}

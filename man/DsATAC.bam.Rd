@@ -4,9 +4,16 @@
 \alias{DsATAC.bam}
 \title{DsATAC.bam}
 \usage{
-DsATAC.bam(sampleAnnot, bamFiles, genome, regionSets = NULL,
-  sampleIdCol = NULL, diskDump = FALSE, keepInsertionInfo = TRUE,
-  pairedEnd = TRUE)
+DsATAC.bam(
+  sampleAnnot,
+  bamFiles,
+  genome,
+  regionSets = NULL,
+  sampleIdCol = NULL,
+  diskDump = FALSE,
+  keepInsertionInfo = TRUE,
+  pairedEnd = TRUE
+)
 }
 \arguments{
 \item{sampleAnnot}{data.frame specifying the sample annotation table}
@@ -42,7 +49,7 @@ unzip(downFn, exdir=".")
 # prepare the sample annotation table
 sampleAnnotFn <- file.path("tcells", "samples.tsv")
 bamDir <- file.path("tcells", "bam")
-sampleAnnot <- read.table(sampleAnnotFn, sep="\\t", header=TRUE, stringsAsFactors=FALSE)
+sampleAnnot <- read.table(sampleAnnotFn, sep="\t", header=TRUE, stringsAsFactors=FALSE)
 # add a column that ChrAccR can use to find the correct bam file for each sample
 sampleAnnot[,"bamFilenameFull"] <- file.path(bamDir, sampleAnnot[,"bamFilename"])
 # prepare the dataset

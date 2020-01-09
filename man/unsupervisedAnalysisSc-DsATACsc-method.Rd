@@ -6,9 +6,14 @@
 \alias{unsupervisedAnalysisSc}
 \title{unsupervisedAnalysisSc-methods}
 \usage{
-\S4method{unsupervisedAnalysisSc}{DsATACsc}(.object, regionType,
-  regionIdx = NULL, dimRedMethod = "tf-idf_irlba", usePcs = 1:50,
-  clusteringMethod = "seurat_louvain")
+\S4method{unsupervisedAnalysisSc}{DsATACsc}(
+  .object,
+  regionType,
+  regionIdx = NULL,
+  dimRedMethod = "tf-idf_irlba",
+  usePcs = 1:50,
+  clusteringMethod = "seurat_louvain"
+)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATACsc}} object}

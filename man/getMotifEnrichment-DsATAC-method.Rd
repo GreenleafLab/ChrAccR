@@ -6,8 +6,7 @@
 \alias{getMotifEnrichment}
 \title{getMotifEnrichment-methods}
 \usage{
-\S4method{getMotifEnrichment}{DsATAC}(.object, type, idx,
-  motifs = "jaspar")
+\S4method{getMotifEnrichment}{DsATAC}(.object, type, idx, motifs = "jaspar")
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}

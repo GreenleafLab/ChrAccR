@@ -6,8 +6,13 @@
 \alias{exportCountTracks}
 \title{exportCountTracks-methods}
 \usage{
-\S4method{exportCountTracks}{DsATAC}(.object, type, outDir,
-  formats = c("bed", "igv"), groupBy = NULL)
+\S4method{exportCountTracks}{DsATAC}(
+  .object,
+  type,
+  outDir,
+  formats = c("bed", "igv"),
+  groupBy = NULL
+)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}

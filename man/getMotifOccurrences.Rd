@@ -4,8 +4,7 @@
 \alias{getMotifOccurrences}
 \title{getMotifOccurrences}
 \usage{
-getMotifOccurrences(motifNames = NULL, motifDb = "jaspar",
-  genome = "hg38")
+getMotifOccurrences(motifNames = NULL, motifDb = "jaspar", genome = "hg38")
 }
 \arguments{
 \item{motifNames}{character vector of motif names}

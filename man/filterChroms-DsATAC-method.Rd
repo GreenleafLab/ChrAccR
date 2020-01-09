@@ -6,8 +6,7 @@
 \alias{filterChroms}
 \title{filterChroms-methods}
 \usage{
-\S4method{filterChroms}{DsATAC}(.object, exclChrom = c("chrX", "chrY",
-  "chrM"))
+\S4method{filterChroms}{DsATAC}(.object, exclChrom = c("chrX", "chrY", "chrM"))
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}

@@ -6,8 +6,12 @@
 \alias{transformCounts}
 \title{transformCounts-methods}
 \usage{
-\S4method{transformCounts}{DsATAC}(.object, method = "quantile",
-  regionTypes = getRegionTypes(.object), ...)
+\S4method{transformCounts}{DsATAC}(
+  .object,
+  method = "quantile",
+  regionTypes = getRegionTypes(.object),
+  ...
+)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}

@@ -4,8 +4,14 @@
 \alias{hmSeqLogo}
 \title{hmSeqLogo}
 \usage{
-hmSeqLogo(pwm, x = unit(0.5, "npc"), y = unit(0.5, "npc"), width = 1,
-  height = 1, ic.scale = TRUE)
+hmSeqLogo(
+  pwm,
+  x = unit(0.5, "npc"),
+  y = unit(0.5, "npc"),
+  width = 1,
+  height = 1,
+  ic.scale = TRUE
+)
 }
 \arguments{
 \item{pwm}{PWM (from TFBSTools package)}

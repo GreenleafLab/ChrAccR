@@ -6,8 +6,7 @@
 \alias{getFragmentGrl}
 \title{getFragmentGrl-methods}
 \usage{
-\S4method{getFragmentGrl}{DsATAC}(.object, sampleIds,
-  asGRangesList = FALSE)
+\S4method{getFragmentGrl}{DsATAC}(.object, sampleIds, asGRangesList = FALSE)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}

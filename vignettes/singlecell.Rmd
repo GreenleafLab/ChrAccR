@@ -88,6 +88,8 @@ length(getSamples(dsa_filtered))
 
 ## Dimension reduction and clustering using iterative LSI
 
+In order to obtain a low dimensional representation of single-cell ATAC datasets in terms of principal components and UMAP coordinates, we recommend an iterative application of the Latent Semantic Indexing approach [@Cusanovich:2018gj] described in [@Granja:nbt:2019]. This approach also identifies cell clusters and a peak set that represents a consensus peak set of cluster peaks in a given dataset. In brief, in an initial iteration clusters are identified based on the most accessible regions (e.g. genomic tiling regions). Here, the counts are first normalized using the term frequency–inverse document frequency (TF-IDF) transformation and singular values are computed based on these normalized counts in selected regions (i.e. the most accessible regions in the initial iteration). Clusters are identified based on the singular values using Louvain clustering (as implemented in the `Seurat` package). Peak calling is then performed on the aggregated insertion sites from all cells of each cluster (using MACS2) and a union/consensus set of peaks uniform-length non-overlapping peaks is selected. In a second iteration, the peak regions whose TF-IDF-normalized counts which exhibit the most variability across the initial clusters provide the basis for a refined clustering using derived singular values. In the final iteration, the most variable peaks across the refined clusters are identified as the final peak set and singular values are computed again. Based on these final singular values UMAP coordinates are computed for low-dimensional projection.
+
 ```{r, message = FALSE, warning = FALSE, eval=FALSE}
 # requires MACS2 for peak calling
 itlsi <- iterativeLSI(dsa, it0regionType="tiling5kb", it0clusterResolution=0.4, it1clusterResolution=0.4, it2clusterResolution=0.4)
@@ -97,6 +99,18 @@ itlsi <- iterativeLSI(dsa, it0regionType="tiling5kb", it0clusterResolution=0.4, 
 # load precomputed object
 itlsi <- ChrAccRex::loadExample("itLsiObj_hema_example")
 ```
+
+The output object includes the final singular values/principal components (`itlsi$pcaCoord`), the low-dimensional coordinates (`itlsi$umapCoord`), the final cluster assignment of all cells (`itlsi$clustAss`), the complete, unfiltered initial cluster peak set (`itlsi$clusterPeaks_unfiltered`) as well as the final cluster-variable peak set (`itlsi$regionGr`):
+
+```{r, message = FALSE, warning = FALSE}
+str(itlsi$pcaCoord)
+str(itlsi$umapCoord)
+str(itlsi$clustAss)
+clusterPeaks_unfiltered
+regionGr
+```
+
+You can use the resulting low-dimensional projections to characterize variability in your dataset according to various cell annotions. Here, we visualize the final cluster assignment ...
 
 ```{r, message = FALSE, warning = FALSE}
 df <- data.frame(
@@ -110,11 +124,14 @@ df <- data.frame(
 ggplot(df, aes(x=UMAP1, y=UMAP2, color=cluster)) + geom_point(size=0.25)
 ```
 
+... as well as the annotated sample source:
+
 ```{r, message = FALSE, warning = FALSE}
 ggplot(df, aes(x=UMAP1, y=UMAP2, color=sampleSource)) + geom_point(size=0.25)
 ```
 
 ## chromVAR deviations
+We utilize `chromVAR` in order to determine the genome-wide TF motif activity for each cell [@Schep:2017je]. You can use the low-dimensional projection in order to visualize variability in TF motif accessibility across all cells in the manifold.
 
 ```{r, message = FALSE, warning = FALSE}
 cvRes <- getChromVarDev(dsa, ".peaks.itlsi", motifs="jaspar")
@@ -131,6 +148,7 @@ do.call(cowplot::plot_grid, plotL)
 
 ## Gene activity
 
+We can also define gene activity as the combined chromatin accessibility of a gene promoter and peaks that correlated with it across all accessibility profiles. This functionality is nicely implemented in the `cicero` and `monocle` packages and `ChrAccR` provides a wrapper function to compute gene activities from `DsATAC` datasets:
 ```{r, message = FALSE, warning = FALSE, eval=FALSE}
 # requires monocle3 to be installed
 library(monocle3)
@@ -268,5 +286,51 @@ references:
     issued:
       year: 2019
     type: article-journal
+  - id: Cusanovich:2018gj
+    title: A Single-Cell Atlas of In Vivo Mammalian Chromatin Accessibility
+    author: 
+    - family: Cusanovich
+    - family: Hill
+    - family: Aghamirzaie
+    - family: Daza
+    - family: Pliner
+    - family: Berletch
+    - family: Filippova
+    - family: Huang
+    - family: Christiansen
+    - family: DeWitt
+    - family: Lee
+    - family: Regalado
+    - family: Read
+    - family: Steemers
+    - family: Disteche
+    - family: Trapnell
+    - family: Shendure
+    container-title: Cell
+    DOI: 10.1016/j.cell.2018.06.052
+    volume: 174
+    number: 5
+    page: 1309-1324
+    issued:
+      year: 2018
+    type: article-journal
+  - id: Schep:2017je
+    title: "chromVAR: inferring transcription-factor-associated accessibility from single-cell epigenomic data"
+    author: 
+    - family: Schep
+      given: Alicia N
+    - family: Wu
+      given: Beijing
+    - family: Buenrostro
+      given: Jason D
+    - family: Greenleaf
+      given: William J
+    container-title: Nature methods
+    DOI: 10.1038/nmeth.4401
+    volume: 14
+    number: 10
+    page: 975-978
+    issued:
+      year: 2017
+    type: article-journal
 ---
-

@@ -3,7 +3,6 @@
 \docType{package}
 \name{ChrAccR}
 \alias{ChrAccR}
-\alias{ChrAccR-package}
 \title{ChrAccR: Analyzing chromatin accessibility data in R.}
 \description{
 Tools for analyzing chromatin accessibility data in R. Currently supports ATAC-seq and NOMe-seq data analysis.
