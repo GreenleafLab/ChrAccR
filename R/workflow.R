@@ -495,8 +495,8 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 			if (doRepMerge){
 				logger.info("Rows in the sample annotation table contain duplicate ids. --> treating these as replicates")
 				repGrps <- sampleAnnot[,sampleIdCol]
+				sampleAnnot[,".sampleId_made_unique"] <- make.unique(sampleAnnot[,sampleIdCol], sep="_")
 				sampleIdCol <- ".sampleId_made_unique"
-				sampleAnnot[,sampleIdCol] <- make.unique(sampleAnnot[,sampleIdCol], sep="_")
 			}
 			logger.start("Preparing DsATAC dataset from input files")
 				if (inputType == "bulk_bam"){
@@ -553,6 +553,7 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 		}
 	}
 	#---------------------------------------------------------------------------
+	# TODO: identify consensus peak set?
 	doNorm <- !isSingleCell && is.element(startStage, c("raw", "filtered"))
 	if (doNorm){
 		logger.start("Running normalization analysis")
