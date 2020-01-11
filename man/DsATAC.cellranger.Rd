@@ -12,7 +12,8 @@ DsATAC.cellranger(
   regionSets = NULL,
   addPeakRegions = TRUE,
   sampleIdCol = sampleDirPrefixCol,
-  keepInsertionInfo = FALSE
+  keepInsertionInfo = FALSE,
+  diskDump.fragments = keepInsertionInfo
 )
 }
 \arguments{
@@ -31,6 +32,8 @@ DsATAC.cellranger(
 \item{sampleIdCol}{column name or index in the sample annotation table containing unique sample identifiers}
 
 \item{keepInsertionInfo}{flag indicating whether to maintain the insertion information in the resulting object.}
+
+\item{diskDump.fragments}{Keep fragment coordinates stored on disk rather than in main memory. This saves memory, but increases runtime and I/O.}
 }
 \value{
 \code{\linkS4class{DsATAC}} object

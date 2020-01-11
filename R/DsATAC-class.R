@@ -2861,7 +2861,8 @@ setMethod("callPeaks",
 					"--format", "BED",
 					argV
 				)
-				system2(methodOpts$macs2.exec, aa, wait=TRUE, stdout="", stderr="")
+				system2(methodOpts$macs2.exec, aa, wait=TRUE, stdout="", stderr="") # MACS2 log messages to console
+				# system2(methodOpts$macs2.exec, aa, wait=TRUE, stdout=FALSE, stderr=FALSE) # suppress MACS2 log messages
 
 				# logger.status(c("[DEBUG:] Reading MACS2 output..."))
 				# peakGr <- rtracklayer::import(peakFn, format="BED")

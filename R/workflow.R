@@ -240,6 +240,7 @@ run_atac_filtering <- function(dsa, anaDir){
 	}
 	if (length(exclChroms) > 0){
 		logger.start("Chromosome filtering")
+			logger.info(c("Excluding chromosomes:", paste(exclChroms, collapse=",")))
 			dsf <- filterChroms(dsf, exclChrom=exclChroms)
 			filterStats$regionStats[,"after_chrom"] <- sapply(regTypes, FUN=function(rt){getNRegions(dsf, rt)})
 		logger.completed()
@@ -574,9 +575,9 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 				} else if (inputType == "sc_fragments"){
 					minFrags <- getConfigElement("filteringScMinFragmentsPerCell")
 					maxFrags <- getConfigElement("filteringScMaxFragmentsPerCell")
-					dsa <- DsATACsc.fragments(sampleAnnot, inputFns, genome, regionSets=regionSets, sampleIdCol=sampleIdCol, minFragsPerBarcode=minFrags, maxFragsPerBarcode=maxFrags, cellAnnot=NULL, keepInsertionInfo=TRUE, cellQcStats=TRUE)
+					dsa <- DsATACsc.fragments(sampleAnnot, inputFns, genome, regionSets=regionSets, sampleIdCol=sampleIdCol, minFragsPerBarcode=minFrags, maxFragsPerBarcode=maxFrags, cellAnnot=NULL, keepInsertionInfo=TRUE, diskDump.fragments=FALSE, cellQcStats=TRUE)
 				} else if (inputType == "sc_cellranger"){
-					dsa <- DsATAC.cellranger(sampleAnnot, input, genome, dataDir="", regionSets=regionSets, addPeakRegions=TRUE, sampleIdCol=sampleIdCol, keepInsertionInfo=TRUE)
+					dsa <- DsATAC.cellranger(sampleAnnot, input, genome, dataDir="", regionSets=regionSets, addPeakRegions=TRUE, sampleIdCol=sampleIdCol, keepInsertionInfo=TRUE, diskDump.fragments=FALSE)
 				}
 				if (doRepMerge){
 					logger.start("Merging replicates")

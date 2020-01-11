@@ -13,11 +13,12 @@
 #' @param maxFragsPerBarcode maximum number of fragments per barcode. Only barcodes with fewer fragments will be kept. [Only relevant if \code{cellAnnot==NULL}]
 #' @param cellAnnot    (optional) annotation table of all cells in the dataset. Must contain a \code{'cellId'} and \code{'cellBarcode'} columns.
 #' @param keepInsertionInfo flag indicating whether to maintain the insertion information in the resulting object.
+#' @param diskDump.fragments Keep fragment coordinates stored on disk rather than in main memory. This saves memory, but increases runtime and I/O.
 #' @param cellQcStats  flag indicating whether to compute additional cell QC statistics (TSS enrichment, etc.).
 #' @return \code{\linkS4class{DsATACsc}} object
 #' @author Fabian Mueller
 #' @export
-DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NULL, sampleIdCol=NULL, minFragsPerBarcode=500L, maxFragsPerBarcode=Inf, cellAnnot=NULL, keepInsertionInfo=FALSE, cellQcStats=TRUE){
+DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NULL, sampleIdCol=NULL, minFragsPerBarcode=500L, maxFragsPerBarcode=Inf, cellAnnot=NULL, keepInsertionInfo=FALSE, diskDump.fragments=keepInsertionInfo, cellQcStats=TRUE){
 	if (!is.character(fragmentFiles)) logger.error("Invalid value for fragmentFiles. Expected character")
 	if (length(fragmentFiles)==1 && is.element(fragmentFiles, colnames(sampleAnnot))){
 		fragmentFiles <- sampleAnnot[,fragmentFiles]
@@ -85,7 +86,7 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 	rownames(cellAnnot) <- cellAnnot[,"cellId"]
 	
 	logger.start("Creating DsATAC object")
-		obj <- DsATACsc(cellAnnot, genome, diskDump=FALSE, diskDump.fragments=keepInsertionInfo, sparseCounts=TRUE)
+		obj <- DsATACsc(cellAnnot, genome, diskDump=FALSE, diskDump.fragments=diskDump.fragments, sparseCounts=TRUE)
 		for (rt in names(regionSets)){
 			logger.info(c("Including region set:", rt))
 			obj <- regionAggregation(obj, regionSets[[rt]], rt, signal=NULL, dropEmpty=FALSE)
@@ -181,10 +182,11 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 #' @param addPeakRegions should a merged set of peaks be created as one of the region sets (merged, non-overlapping peaks of width=500bp from the peaks of individual samples)
 #' @param sampleIdCol  column name or index in the sample annotation table containing unique sample identifiers
 #' @param keepInsertionInfo flag indicating whether to maintain the insertion information in the resulting object.
+#' @param diskDump.fragments Keep fragment coordinates stored on disk rather than in main memory. This saves memory, but increases runtime and I/O.
 #' @return \code{\linkS4class{DsATAC}} object
 #' @author Fabian Mueller
 #' @export
-DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="", regionSets=NULL, addPeakRegions=TRUE, sampleIdCol=sampleDirPrefixCol, keepInsertionInfo=FALSE){
+DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="", regionSets=NULL, addPeakRegions=TRUE, sampleIdCol=sampleDirPrefixCol, keepInsertionInfo=FALSE,  diskDump.fragments=keepInsertionInfo){
 	sampleIds <- as.character(sampleAnnot[,sampleIdCol])
 	rownames(sampleAnnot) <- sampleIds
 
@@ -301,7 +303,7 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 	}
 
 	fragmentFiles <- file.path(sampleDirs, "fragments.tsv.gz")
-	obj <- DsATACsc.fragments(sampleAnnot, fragmentFiles, genome=genome, regionSets=regionSets, sampleIdCol=sampleIdCol, cellAnnot=cellAnnot, keepInsertionInfo=keepInsertionInfo)
+	obj <- DsATACsc.fragments(sampleAnnot, fragmentFiles, genome=genome, regionSets=regionSets, sampleIdCol=sampleIdCol, cellAnnot=cellAnnot, keepInsertionInfo=keepInsertionInfo, diskDump.fragments=diskDump.fragments)
 	
 	return(obj)
 }
