@@ -584,6 +584,12 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 		logger.completed()
 	}
 
+	if (FALSE){
+		logger.start("Removing fragment data (to save space)")
+			dsa <- removeFragmentData(dsa)
+		logger.completed()
+	}
+
 	saveDs_processed <- saveDs && (doNorm || doScUnsupervised) && is.na(wfState$dsAtacPaths["processed"])
 	if (saveDs_processed){
 		wfState$dsAtacPaths["processed"] <- file.path(wfState$dataDir, "dsATAC_processed")
