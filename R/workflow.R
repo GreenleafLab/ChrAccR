@@ -637,6 +637,7 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 		logger.completed()
 	}
 	#---------------------------------------------------------------------------
+	# Bulk: normalize data
 	doNorm <- !isSingleCell && is.element(startStage, c("raw", "filtered"))
 	if (doNorm){
 		logger.start("Running normalization analysis")
@@ -645,8 +646,11 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 		logger.completed()
 	}
 
+	# Single-cell: Perform unsupervised analysis
 	itLsi <- NULL
-	doScUnsupervised <- isSingleCell && is.element(startStage, c("raw", "filtered"))
+	fp <- file.path(wfState$anaDir, wfState$dataDir, "iterativeLSI")
+	itLsiFn <- paste0(fp, ".rds")
+	doScUnsupervised <- isSingleCell && is.element(startStage, c("raw", "filtered")) && !file.exists(itLsiFn)
 	if (doScUnsupervised){
 		logger.start("Running unsupervised single-cell analysis")
 			res <- run_atac_sc_unsupervised(dsa, anaDir)
@@ -654,9 +658,13 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 			itLsi <- res$itLsi
 		logger.completed()
 		logger.start("Saving unsupervised results")
-			fp <- file.path(wfState$anaDir, wfState$dataDir, "iterativeLSI")
-			saveRDS(itLsi, paste0(fp, ".rds"))
+			saveRDS(itLsi, itLsiFn)
 			uwot::save_uwot(itLsi$umapRes, paste0(fp, "_uwot"))
+		logger.completed()
+	} else if (isSingleCell && file.exists(itLsiFn)){
+		logger.start("Loading iterative LSI result from disk")
+			itLsi <- readRDS(itLsiFn)
+			itLsi$umapRes <- uwot::load_uwot(paste0(fp, "_uwot"))
 		logger.completed()
 	}
 
