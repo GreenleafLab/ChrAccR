@@ -414,7 +414,7 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 	doContinue <- prepAnaDir(anaDir)
 	wfState <- getWfState(anaDir)
 	
-	loadConfig(wfState$configPath)
+	loadConfig(file.path(wfState$anaDir, wfState$configPath))
 
 	############################################################################
 	# Prepare DsATAC dataset
