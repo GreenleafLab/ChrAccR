@@ -472,6 +472,8 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 				if (length(inputFns) > 1){
 					if (all(grepl("\\.bam$", inputFns))){
 						inputType <- "bulk_bam"
+					} else if (all(grepl("\\.bed$", inputFns))){
+						inputType <- "bulk_fragBed"
 					} else if (all(grepl("\\.fragments\\.tsv(\\.gz)?$", inputFns))){
 						inputType <- "sc_fragments"
 					}
@@ -501,6 +503,8 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 			logger.start("Preparing DsATAC dataset from input files")
 				if (inputType == "bulk_bam"){
 					dsa <- DsATAC.bam(sampleAnnot, inputFns, genome, regionSets=regionSets, sampleIdCol=sampleIdCol, diskDump=TRUE, keepInsertionInfo=TRUE, pairedEnd=TRUE)
+				} else if (inputType == "bulk_fragBed"){
+					dsa <- DsATAC.fragmentBed(sampleAnnot, inputFns, genome, regionSets=regionSets, sampleIdCol=sampleIdCol, diskDump=TRUE, keepInsertionInfo=TRUE)
 				} else if (inputType == "sc_fragments"){
 					minFrags <- getConfigElement("filteringScMinFragmentsPerCell")
 					maxFrags <- getConfigElement("filteringScMaxFragmentsPerCell")
