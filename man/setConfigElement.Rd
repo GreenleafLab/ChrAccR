@@ -53,6 +53,27 @@ Set a configuration item to a given value
   \item{\bold{\code{annotationMinGroupSize}}}{
       Minimum size of a group to be used in the reports. Influences which annotation columns are selected for reporting.
   }
+  \item{\bold{\code{filteringCovgCount}}\code{ = 1L}}{
+      Minimum insertion count to filter count matrices by. See \code{\link{filterLowCovg,DsATAC-method}} for details. [for bulk data analysis only]
+  }
+  \item{\bold{\code{filteringCovgReqSamples}}\code{ = 0.75}}{
+      Minimum required samples to apply low coverage filtering to. See \code{\link{filterLowCovg,DsATAC-method}} for details. [for bulk data analysis only]
+  }
+  \item{\bold{\code{filteringSexChroms}}\code{ = FALSE}}{
+      Flag indicating whether to remove sex chromosomes.
+  }
+  \item{\bold{\code{filteringScMinFragmentsPerCell}}\code{ = 1000L}}{
+      Minimum number of fragments per cell to retain a cell in the analysis. [for single-cell data analysis only]
+  }
+  \item{\bold{\code{filteringScMaxFragmentsPerCell}}\code{ = Inf}}{
+      Maximum number of fragments allowed per cell to retain a cell in the analysis. [for single-cell data analysis only]
+  }
+  \item{\bold{\code{filteringScMinTssEnrichment}}\code{ = 6}}{
+      Minimum TSS enrichment score per cell to retain a cell in the analysis. [for single-cell data analysis only]
+  }
+  \item{\bold{\code{normalizationMethod}}\code{ = "quantile"}}{
+      Normalization method to use for count normalization. Allowed methods include the ones listed in \code{\link{transformCounts,DsATAC-method}}. [for bulk data analysis only]
+  }
   \item{\bold{\code{exploratoryLogNormCounts}}}{
       Should a log-normalization be applied in the exploratory plot sections of the reports (dimension reduction, heatmaps)
   }

@@ -1494,7 +1494,7 @@ setMethod("transformCounts",
 		if (!all(regionTypes %in% getRegionTypes(.object))){
 			logger.error(c("Unsupported region type:", paste(setdiff(regionTypes, getRegionTypes(.object)), collapse=", ")))
 		}
-		if (!is.element(method, c("quantile", "percentile", "rankPerc", "log2", "RPKM", "vst", "batchCorrect", "tf-idf"))) logger.error(c("Unsupported normalization method type:", method))
+		if (!is.element(method, c("quantile", "percentile", "rankPerc", "log2", "RPKM", "CPM", "vst", "batchCorrect", "tf-idf"))) logger.error(c("Unsupported normalization method type:", method))
 
 		# choose appropriate functions for row and column functions
 		# depending on the matrix type
@@ -1560,14 +1560,16 @@ setMethod("transformCounts",
 					.object@countTransform[[rt]] <- c("percentile", .object@countTransform[[rt]])
 				}
 			logger.completed()
-		} else if (method == "RPKM"){
-			logger.start(c("Performing RPKM normalization"))
+		} else if (is.element(method, c("RPKM", "CPM"))){
+			doRpkm <- method=="RPKM"
+			logger.start(c("Performing", method, "normalization"))
 				for (rt in regionTypes){
 					logger.status(c("Region type:", rt))
 					cnames <- colnames(.object@counts[[rt]])
 					cm <- as.matrix(.object@counts[[rt]])
 					# cm <- .object@counts[[rt]]
-					regLen <- width(getCoord(.object, rt))
+					regLen <- rep(1000L, getNRegions(.object, rt)) # for CPM, treat all regions as length 1000
+					if (doRpkm) regLen <- width(getCoord(.object, rt))
 					sizeFac <- matrix(csFun(cm, na.rm=TRUE), ncol=ncol(cm), nrow=nrow(cm), byrow=TRUE)
 					# .object@counts[[rt]] <- data.table(cm/(regLen * sizeFac) * 1e3 * 1e6)
 					.object@counts[[rt]] <- cm/(regLen * sizeFac) * 1e3 * 1e6
@@ -1576,20 +1578,22 @@ setMethod("transformCounts",
 					.object@countTransform[[rt]] <- c("RPKM", .object@countTransform[[rt]])
 				}
 			logger.completed()
-		} else if (method == "log2"){
+		} else if (is.element(method, c("log2", "log10"))){
 			c0 <- 1
-			logger.start(c("log2 transforming counts"))
-				if (.object@sparseCounts) logger.error("Generating sparse matrix for matrix with possible true zero entries (log2)")
+			logFun <- log10
+			if (method=="log2") logFun <- log2
+			logger.start(c(method, "transforming counts"))
+				if (.object@sparseCounts) logger.error("Generating sparse matrix for matrix with possible true zero entries (", method, ")")
 				for (rt in regionTypes){
 					logger.status(c("Region type:", rt))
 					cm <- as.matrix(.object@counts[[rt]])
 					cnames <- colnames(cm)
 					idx <- !is.na(cm) & cm!=0
-					cm[idx] <- log2(cm[idx] + c0)
+					cm[idx] <- logFun(cm[idx] + c0)
 					.object@counts[[rt]] <- cm
 					if (.object@diskDump) .object@counts[[rt]] <- as(.object@counts[[rt]], "HDF5Array")
 					colnames(.object@counts[[rt]]) <- cnames
-					.object@countTransform[[rt]] <- c("log2", .object@countTransform[[rt]])
+					.object@countTransform[[rt]] <- c(method, .object@countTransform[[rt]])
 				}
 			logger.completed()
 		} else if (method == "vst"){

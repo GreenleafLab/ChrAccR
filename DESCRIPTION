@@ -78,6 +78,7 @@ Collate:
     'report_atac_summary.R'
     'report_atac_exploratory.R'
     'report_atac_differential.R'
+    'workflow.R'
 VignetteBuilder: knitr
 Encoding: UTF-8
 RoxygenNote: 7.0.2
