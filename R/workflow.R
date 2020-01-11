@@ -500,7 +500,7 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 			}
 			logger.start("Preparing DsATAC dataset from input files")
 				if (inputType == "bulk_bam"){
-					dsa <- DsATAC.bam(sampleAnnot, inputFns, genome, regionSets=regionSets, sampleIdCol=NULL, diskDump=FALSE, keepInsertionInfo=TRUE, pairedEnd=TRUE)
+					dsa <- DsATAC.bam(sampleAnnot, inputFns, genome, regionSets=regionSets, sampleIdCol=sampleIdCol, diskDump=FALSE, keepInsertionInfo=TRUE, pairedEnd=TRUE)
 				} else if (inputType == "sc_fragments"){
 					minFrags <- getConfigElement("filteringScMinFragmentsPerCell")
 					maxFrags <- getConfigElement("filteringScMaxFragmentsPerCell")
