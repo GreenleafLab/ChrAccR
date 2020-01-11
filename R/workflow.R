@@ -416,6 +416,9 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 	
 	loadConfig(file.path(wfState$anaDir, wfState$configPath))
 
+	logFn <- file.path(wfState$anaDir, wfState$logDir, paste0(muRtools::getHashString("chraccr"), ".log"))
+	logger.start(fname=c(NA, logFn))
+	logger.start("ChrAccR analysis")
 	############################################################################
 	# Prepare DsATAC dataset
 	############################################################################
@@ -602,6 +605,7 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 			res <- run_atac_differential(dsa, anaDir)
 		logger.completed()
 	}
-			
+	
+	logger.completed()
 	invisible(dsa)
 }
