@@ -9,7 +9,7 @@
 #' @param dataDir      directory where the files are located. If it is the empty character (\code{""}; default) it is assumed that \code{filePrefixCol} specifies the full path to the input files
 #' @param regionSets   a list of GRanges objects which contain region sets over which count data will be aggregated
 #' @param sampleIdCol  column name or index in the sample annotation table containing unique sample identifiers
-#' @param type         input data type. Currently only "insBed" (insertion beds), "insBed" (insertion info inferred from bam files (aligned reads); default) and "bam" (aligned reads) are supported
+#' @param type         input data type. Currently only "insBed" (insertion beds), "insBam" (insertion info inferred from bam files (aligned reads); default) and "bam" (aligned reads) are supported
 #' @param diskDump     should large data objects (count matrices, fragment data, ...) be disk-backed to save main memory
 #' @param keepInsertionInfo flag indicating whether to maintain the insertion information in the resulting object. Only relevant when \code{type=="insBam"}.
 #' @param bySample     process sample-by-sample to save memory (currently only has an effect for \code{type=="insBam"})
@@ -21,7 +21,7 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", reg
 	if (diskDump){
 		if (!requireNamespace("DelayedArray") || !requireNamespace("HDF5Array")) logger.error(c("Could not load dependency: DelayedArray, HDF5Array"))
 	}
-	if (!is.element(type, c("bam", "insBam", "insBed"))){
+	if (!is.element(type, c("bam", "insBam", "insBed", "fragBed"))){
 		logger.error(c("Unsupported import type:", type))
 	}
 
@@ -39,6 +39,13 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", reg
 	} else if (type=="insBed"){
 		if (nchar(dataDir) > 0){
 			inputFns <- file.path(dataDir, paste0(sampleAnnot[,filePrefixCol], ".insertions.bed.gz"))
+		} else {
+			inputFns <- sampleAnnot[,filePrefixCol]
+		}
+		names(inputFns) <- sampleIds
+	} else if (type=="fragBed"){
+		if (nchar(dataDir) > 0){
+			inputFns <- file.path(dataDir, paste0(sampleAnnot[,filePrefixCol], ".fragments.bed.gz"))
 		} else {
 			inputFns <- sampleAnnot[,filePrefixCol]
 		}
@@ -85,7 +92,9 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", reg
 		if (type=="bam"){
 			# print(inputFns)
 			obj <- addCountDataFromBam(obj, inputFns)
-		} else if (type=="insBam"){
+		} else if (is.element(type, c("insBam", "fragBed"))){
+			addInsMode <- "bam"
+			if (type=="fragBed") addInsMode <- "fragBed"
 			if (bySample){
 				if (obj@diskDump && obj@diskDump.fragments){
 					# when disk-dumping, writeHDF5Array can be painfully slow for large DelayedArray objects with many indices/operations that need to be realized before saving.
@@ -94,7 +103,7 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", reg
 						for (i in seq_along(inputFns)){
 							sid <- names(inputFns)[i]
 							logger.status(c("Importing sample", ":", sid, paste0("(", i, " of ", nSamples, ")")))
-							obj <- addInsertionDataFromBam(obj, inputFns[i], pairedEnd=pairedEnd, .diskDump=obj@diskDump.fragments)
+							obj <- addInsertionDataFromBam(obj, inputFns[i], pairedEnd=pairedEnd, .diskDump=obj@diskDump.fragments, mode=addInsMode)
 						}
 					logger.completed()
 					# logger.start("[DEBUG] tmp saving DsATAC object")
@@ -136,7 +145,7 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", reg
 						for (i in seq_along(inputFns)){
 							sid <- names(inputFns)[i]
 							logger.start(c("Importing sample", ":", sid, paste0("(", i, " of ", nSamples, ")")))
-								obj <- addInsertionDataFromBam(obj, inputFns[i], pairedEnd=pairedEnd, .diskDump=obj@diskDump.fragments)
+								obj <- addInsertionDataFromBam(obj, inputFns[i], pairedEnd=pairedEnd, .diskDump=obj@diskDump.fragments, mode=addInsMode)
 								obj <- addCountDataFromGRL(obj, getInsertionSites(obj, samples=sid))
 								# optionally remove insertion information to save space
 								if (!keepInsertionInfo){
@@ -148,7 +157,7 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", reg
 				}
 			} else {
 				logger.start(c("Adding insertion data from bam"))
-					obj <- addInsertionDataFromBam(obj, inputFns, pairedEnd=pairedEnd, .diskDump=obj@diskDump.fragments)
+					obj <- addInsertionDataFromBam(obj, inputFns, pairedEnd=pairedEnd, .diskDump=obj@diskDump.fragments, mode=addInsMode)
 				logger.completed()
 				logger.start(c("Summarizing region counts"))
 					obj <- addCountDataFromGRL(obj, getInsertionSites(obj))
@@ -236,6 +245,39 @@ DsATAC.bam <- function(sampleAnnot, bamFiles, genome, regionSets=NULL, sampleIdC
 		logger.info(c("Automatically determined column '", sampleIdCol, "' as sample identifier column"))
 	}
 	DsATAC.snakeATAC(sampleAnnot, bamFnCol, genome, regionSets=regionSets, sampleIdCol=sampleIdCol, type="insBam", diskDump=diskDump, keepInsertionInfo=keepInsertionInfo, bySample=TRUE, pairedEnd=pairedEnd)
+}
+
+#-------------------------------------------------------------------------------
+#' DsATAC.fragmentBed
+#' 
+#' Create a DsATAC dataset from multiple input fragment bed files
+#' @param sampleAnnot  data.frame specifying the sample annotation table
+#' @param bedFiles     either a character vector of the same length as sampleAnnot has rows, specifying the file paths of the bed files for each
+#'                     sample or a single character string specifying the column name in \code{sampleAnnot} where the file paths can be found
+#' @param genome       genome assembly
+#' @param regionSets   a list of GRanges objects which contain region sets over which count data will be aggregated
+#' @param sampleIdCol  column name in the sample annotation table containing unique sample identifiers. If \code{NULL} (default), the function will look for a column that contains the word "sample"
+#' @param diskDump     should large data objects (count matrices, fragment data, ...) be disk-backed to save main memory
+#' @param keepInsertionInfo flag indicating whether to maintain the insertion information in the resulting object. Only relevant when \code{type=="insBam"}.
+#' @return \code{\linkS4class{DsATAC}} object
+#' @author Fabian Mueller
+#' @export
+DsATAC.fragmentBed <- function(sampleAnnot, bedFiles, genome, regionSets=NULL, sampleIdCol=NULL, diskDump=FALSE, keepInsertionInfo=TRUE, pairedEnd=TRUE){
+	if (!is.character(bedFiles)) logger.error("Invalid value for bedFiles. Expected character")
+	if (length(bedFiles)==1 && is.element(bedFiles, colnames(sampleAnnot))){
+		bedFnCol <- bedFiles
+	} else {
+		if (length(bedFiles)!=nrow(sampleAnnot)) logger.error("Invalid value for bedFiles. must match the number of rows in sampleAnnot")
+		bedFnCol <- ".bedPath"
+		sampleAnnot[,bedFnCol] <- bedFiles
+	}
+	if (!is.null(sampleIdCol) && !(is.character(sampleIdCol) && length(sampleIdCol)==1)) logger.error("Invalid value for sampleIdCol Expected character or NULL")
+	if (is.null(sampleIdCol)){
+		sampleIdCol <- grep("sample", colnames(sampleAnnot), value=TRUE)
+		if (length(sampleIdCol) != 1) logger.error("Could not uniquely determine sample id column from sample annotation column names")
+		logger.info(c("Automatically determined column '", sampleIdCol, "' as sample identifier column"))
+	}
+	DsATAC.snakeATAC(sampleAnnot, bedFnCol, genome, regionSets=regionSets, sampleIdCol=sampleIdCol, type="fragBed", diskDump=diskDump, keepInsertionInfo=keepInsertionInfo, bySample=TRUE)
 }
 
 #-------------------------------------------------------------------------------

@@ -1174,12 +1174,13 @@ if (!isGeneric("addInsertionDataFromBam")) {
 }
 #' addInsertionDataFromBam-methods
 #'
-#' Add insertion data to DsATAC object based on bam files
+#' Add insertion data to DsATAC object based on bam or fragment bed files
 #'
 #' @param .object \code{\linkS4class{DsATAC}} object
-#' @param fns     a named vector of bam file locations. The names must correspond to sample identifiers in the object
+#' @param fns     a named vector of bam or bed file locations. The names must correspond to sample identifiers in the object
 #' @param pairedEnd flag indicating whether the bam files are from paired-end sequencing
 #' @param .diskDump for internal use only (should fragment data be stored as RDS instead of GRanges)
+#' @param mode    either \code{"bam"} (default) for reading bam files or \code{"fragBed"} for fragment bed files
 #' @return a new \code{\linkS4class{DsATAC}} object with fragments/insertions for each sample
 #'
 #' @rdname addInsertionDataFromBam-DsATAC-method
@@ -1196,8 +1197,10 @@ setMethod("addInsertionDataFromBam",
 		.object,
 		fns,
 		pairedEnd=TRUE,
-		.diskDump=.object@diskDump.fragments
+		.diskDump=.object@diskDump.fragments,
+		mode = "bam"
 	) {
+		offsetTn <- TRUE
 		sids <- names(fns)
 		if (length(sids)!=length(fns)){
 			logger.error("The vector specifying filenames (fns) must be named")
@@ -1216,14 +1219,30 @@ setMethod("addInsertionDataFromBam",
 				if (!is.null(.object@fragments[[sid]])){
 					logger.warning(c("Overwriting insertion data for sample:", sid))
 				}
-				ga <- NULL
-				if (pairedEnd){
-					ga <- GenomicAlignments::readGAlignmentPairs(fns[sid], use.names=FALSE, param=Rsamtools::ScanBamParam(flag=Rsamtools::scanBamFlag(isProperPair=TRUE)))
-				} else {
-					ga <- GenomicAlignments::readGAlignments(fns[sid], use.names=FALSE)
+				fragGr <- NULL
+				if (mode=="bam"){
+					ga <- NULL
+					if (pairedEnd){
+						ga <- GenomicAlignments::readGAlignmentPairs(fns[sid], use.names=FALSE, param=Rsamtools::ScanBamParam(flag=Rsamtools::scanBamFlag(isProperPair=TRUE)))
+					} else {
+						ga <- GenomicAlignments::readGAlignments(fns[sid], use.names=FALSE)
+					}
+					ga <- setGenomeProps(ga, .object@genome, onlyMainChrs=TRUE)
+					fragGr <- getATACfragments(ga, offsetTn=TRUE)
+				} else if (mode=="fragBed"){
+					fragGr <- rtracklayer::import(fn, format = "BED")
+					fragGr <- setGenomeProps(fragGr, .object@genome, onlyMainChrs=TRUE)
+
+					if (offsetTn){
+						# shift inserts inward due to the Tn5 dimer offset:
+						# --> +4 bp
+						# -------------------------
+						# -------------------------
+						#                 -4 bp <--
+						fragGr <- GenomicRanges::resize(fragGr, width(fragGr)-4, fix="end", ignore.strand=TRUE)
+						fragGr <- GenomicRanges::resize(fragGr, width(fragGr)-4, fix="start", ignore.strand=TRUE)
+					}
 				}
-				ga <- setGenomeProps(ga, .object@genome, onlyMainChrs=TRUE)
-				fragGr <- getATACfragments(ga, offsetTn=TRUE)
 				if (.diskDump){
 					if (chunkedFragmentFiles){
 						curChunkL[[sid]] <- fragGr

@@ -32,7 +32,7 @@ filenames are assumed to be relative to that directory and  a corresponding file
 
 \item{sampleIdCol}{column name or index in the sample annotation table containing unique sample identifiers}
 
-\item{type}{input data type. Currently only "insBed" (insertion beds), "insBed" (insertion info inferred from bam files (aligned reads); default) and "bam" (aligned reads) are supported}
+\item{type}{input data type. Currently only "insBed" (insertion beds), "insBam" (insertion info inferred from bam files (aligned reads); default) and "bam" (aligned reads) are supported}
 
 \item{diskDump}{should large data objects (count matrices, fragment data, ...) be disk-backed to save main memory}
 
