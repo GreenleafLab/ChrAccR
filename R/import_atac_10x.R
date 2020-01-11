@@ -277,7 +277,7 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 			for (i in seq_along(sampleDirs)){
 				sid <- names(sampleDirs)[i]
 				pGr <- rtracklayer::import(file.path(sampleDirs[i], "peaks.bed"), format="BED")
-				pGr <- setGenomeProps(pGr, genome, onlyMainChrs=TRUE)
+				pGr <- setGenomeProps(pGr, genome, onlyMainChrs=TRUE, silent=TRUE)
 				pGr <- trim(resize(pGr, width=unifWidth, fix="center", ignore.strand=TRUE))
 				pGr <- pGr[width(pGr)==median(width(pGr))] #remove too short regions which might have been trimmed
 				elementMetadata(pGr)[,"dummyScore"] <- 1L # dummy score coloumn. All identical to 1. Results in the first peak of an overlap being selected

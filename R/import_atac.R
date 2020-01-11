@@ -99,7 +99,7 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", reg
 				if (obj@diskDump && obj@diskDump.fragments){
 					# when disk-dumping, writeHDF5Array can be painfully slow for large DelayedArray objects with many indices/operations that need to be realized before saving.
 					# this is a workaround, iterating over each sample and directly writing to disk-based HDF5 matrix
-					logger.start(c("Adding insertion data from fragment files"))
+					logger.start(c("Adding insertion data from files"))
 						for (i in seq_along(inputFns)){
 							sid <- names(inputFns)[i]
 							logger.status(c("Importing sample", ":", sid, paste0("(", i, " of ", nSamples, ")")))
@@ -125,7 +125,7 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", reg
 						for (j in seq_along(sampleIds)){
 							sid <- sampleIds[j]
 							logger.start(c("Summarizing counts for sample", ":", sid, paste0("(", j, " of ", nSamples, ")")))
-								tmpDs <- addCountDataFromGRL(obj, getInsertionSites(obj, samples=sid))
+								tmpDs <- addCountDataFromGRL(obj, getInsertionSites(obj, samples=sid), silent=TRUE)
 								for (rt in rTypes){
 									cm <- getCounts(tmpDs, rt, j=j, asMatrix=TRUE)
 									DelayedArray::write_block(rSinkL[[rt]]$sink, rSinkL[[rt]]$grid[[j]], cm)
@@ -146,7 +146,7 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", reg
 							sid <- names(inputFns)[i]
 							logger.start(c("Importing sample", ":", sid, paste0("(", i, " of ", nSamples, ")")))
 								obj <- addInsertionDataFromBam(obj, inputFns[i], pairedEnd=pairedEnd, .diskDump=obj@diskDump.fragments, mode=addInsMode)
-								obj <- addCountDataFromGRL(obj, getInsertionSites(obj, samples=sid))
+								obj <- addCountDataFromGRL(obj, getInsertionSites(obj, samples=sid), silent=TRUE)
 								# optionally remove insertion information to save space
 								if (!keepInsertionInfo){
 									obj@fragments <- list()
@@ -173,7 +173,7 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", reg
 				logger.status(c("Importing sample", ":", sid, paste0("(", i, " of ", nSamples, ")")))
 				fn <- inputFns[sid]
 				grl <- GRangesList(rtracklayer::import(fn, format = "BED"))
-				grl[[1]] <- setGenomeProps(grl[[1]], genome, onlyMainChrs=TRUE)
+				grl[[1]] <- setGenomeProps(grl[[1]], genome, onlyMainChrs=TRUE, silent=TRUE)
 				names(grl) <- sid
 				obj <- addCountDataFromGRL(obj, grl)
 				rm(grl)
@@ -185,7 +185,7 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", reg
 				logger.status(c("Importing sample", ":", sid, paste0("(", i, " of ", nSamples, ")")))
 				fn <- inputFns[sid]
 				grl <- GRangesList(rtracklayer::import(fn, format = "BigWig"))
-				grl[[1]] <- setGenomeProps(grl[[1]], genome, onlyMainChrs=TRUE)
+				grl[[1]] <- setGenomeProps(grl[[1]], genome, onlyMainChrs=TRUE, silent=TRUE)
 				names(grl) <- sid
 				obj <- addSignalDataFromGRL(obj, grl, aggrFun=function(x){mean(x, na.rm=TRUE)})
 				rm(grl)
@@ -339,7 +339,7 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 	if (type=="summits_no_fw"){
 		peakFun <- function(fn, sid){
 			rr <- rtracklayer::import(fn, format="BED")
-			rr <- setGenomeProps(rr, genome, onlyMainChrs=TRUE)
+			rr <- setGenomeProps(rr, genome, onlyMainChrs=TRUE, silent=TRUE)
 			rr <- rr[isCanonicalChrom(as.character(seqnames(rr)))]
 			# scale scores to their percentiles
 			scs <- elementMetadata(rr)[,"score"]
@@ -353,7 +353,7 @@ getPeakSet.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir, sa
 	} else if (type=="summits_filt_no_fw"){
 		peakFun <- function(fn, sid){
 			rr <- readMACS2peakFile(fn)
-			rr <- setGenomeProps(rr, genome, onlyMainChrs=TRUE)
+			rr <- setGenomeProps(rr, genome, onlyMainChrs=TRUE, silent=TRUE)
 			rr <- rr[isCanonicalChrom(as.character(seqnames(rr)))]
 			elementMetadata(rr)[,"calledPeakStart"] <- start(rr)
 			elementMetadata(rr)[,"calledPeakEnd"] <- end(rr)
