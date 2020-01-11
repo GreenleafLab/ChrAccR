@@ -432,15 +432,15 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 			logger.start("Loading DsATAC dataset")
 				if (!is.na(wfState$dsAtacPaths["processed"])){
 					logger.info("Continuing from processed dataset")
-					dsa <- loadDsAcc(wfState$dsAtacPaths["processed"])
+					dsa <- loadDsAcc(file.path(wfState$anaDir, wfState$dsAtacPaths["processed"]))
 					startStage <- "processed"
 				} else if (!is.na(wfState$dsAtacPaths["filtered"])){
 					logger.info("Continuing from filtered dataset")
-					dsa <- loadDsAcc(wfState$dsAtacPaths["filtered"])
+					dsa <- loadDsAcc(file.path(wfState$anaDir, wfState$dsAtacPaths["filtered"]))
 					startStage <- "filtered"
 				} else if (!is.na(wfState$dsAtacPaths["raw"])){
 					logger.info("Continuing from raw dataset")
-					dsa <- loadDsAcc(wfState$dsAtacPaths["raw"])
+					dsa <- loadDsAcc(file.path(wfState$anaDir, wfState$dsAtacPaths["raw"]))
 					startStage <- "raw"
 				} else {
 					logger.error("Could not find existing dataset in analysis directory")
