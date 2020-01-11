@@ -1007,6 +1007,7 @@ if (!isGeneric("addCountDataFromGRL")) {
 #'
 #' @param .object \code{\linkS4class{DsATAC}} object
 #' @param grl     NAMED \code{GRangesList} or NAMED list of \code{GRanges} objects. Names must correspond to sample ids in the object
+#' @param silent  limit log messages
 #' @return a new \code{\linkS4class{DsATAC}} object with read counts for each sample and region set
 #'
 #' @rdname addCountDataFromGRL-DsATAC-method
@@ -1021,7 +1022,8 @@ setMethod("addCountDataFromGRL",
 	),
 	function(
 		.object,
-		grl
+		grl,
+		silent=FALSE
 	) {
 		sids <- names(grl)
 		if (length(sids)!=length(grl)){
@@ -1044,7 +1046,7 @@ setMethod("addCountDataFromGRL",
 		rts <- getRegionTypes(.object)
 
 		for (rt in rts){
-			logger.status(c("Counting reads in region set:", rt))
+			if (!silent) logger.status(c("Counting reads in region set:", rt))
 			gr.ds <- getCoord(.object, rt)
 			oo <- findOverlaps(gr.ds, gr.c, ignore.strand=TRUE)
 			idxDt <- data.table::as.data.table(cbind(
@@ -1227,11 +1229,11 @@ setMethod("addInsertionDataFromBam",
 					} else {
 						ga <- GenomicAlignments::readGAlignments(fns[sid], use.names=FALSE)
 					}
-					ga <- setGenomeProps(ga, .object@genome, onlyMainChrs=TRUE)
+					ga <- setGenomeProps(ga, .object@genome, onlyMainChrs=TRUE, silent=TRUE)
 					fragGr <- getATACfragments(ga, offsetTn=TRUE)
 				} else if (mode=="fragBed"){
 					fragGr <- rtracklayer::import(fn, format = "BED")
-					fragGr <- setGenomeProps(fragGr, .object@genome, onlyMainChrs=TRUE)
+					fragGr <- setGenomeProps(fragGr, .object@genome, onlyMainChrs=TRUE, silent=TRUE)
 
 					if (offsetTn){
 						# shift inserts inward due to the Tn5 dimer offset:
@@ -2863,7 +2865,7 @@ setMethod("callPeaks",
 				# logger.status(c("[DEBUG:] Reading MACS2 output..."))
 				# peakGr <- rtracklayer::import(peakFn, format="BED")
 				peakGr <- readMACS2peakFile(peakFn)
-				peakGr <- setGenomeProps(peakGr, .object@genome, onlyMainChrs=TRUE)
+				peakGr <- setGenomeProps(peakGr, .object@genome, onlyMainChrs=TRUE, silent=TRUE)
 				peakGr <- peakGr[isCanonicalChrom(as.character(seqnames(peakGr)))]
 				elementMetadata(peakGr)[,"calledPeakStart"] <- start(peakGr)
 				elementMetadata(peakGr)[,"calledPeakEnd"] <- end(peakGr)
