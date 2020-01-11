@@ -2,6 +2,7 @@
 
 export(DsATAC.bam)
 export(DsATAC.cellranger)
+export(DsATAC.fragmentBed)
 export(DsATAC.snakeATAC)
 export(DsATACsc.fragments)
 export(DsNOMe.bisSNP)
