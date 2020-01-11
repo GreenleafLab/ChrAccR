@@ -162,8 +162,8 @@ run_atac_filtering <- function(dsa, anaDir){
 	dsf <- dsa
 
 	# low coverage filtering
-	reqSamples <- getConfigElem("filteringCovgReqSamples")
-	thresh <- getConfigElem("filteringCovgCount")
+	reqSamples <- getConfigElement("filteringCovgReqSamples")
+	thresh <- getConfigElement("filteringCovgCount")
 	if (reqSamples > 0 && thresh > 0 && !isSingleCell){
 		logger.start("Coverage filtering")
 			logger.info(c("filteringCovgReqSamples:", reqSamples))
@@ -175,7 +175,7 @@ run_atac_filtering <- function(dsa, anaDir){
 
 	# low coverage filtering
 	exclChroms <- c("chrM")
-	if (getConfigElem("filteringSexChroms")){
+	if (getConfigElement("filteringSexChroms")){
 		exclChroms <- union(exclChroms, c("chrX", "chrY"))
 	}
 	if (length(exclChroms) > 0){
@@ -201,16 +201,16 @@ run_atac_filtering <- function(dsa, anaDir){
 		cellQcTab <- getScQcStatsTab(dsa)
 		
 		keepCell <- rep(TRUE, length(getSamples(dsa)))
-		fragTmin <- getConfigElem("filteringScMinFragmentsPerCell")
+		fragTmin <- getConfigElement("filteringScMinFragmentsPerCell")
 		if (fragTmin > 0){
 			keepCell <- keepCell & cellQcTab[,"nPass"] >= fragTmin
 		}
-		fragTmax <- getConfigElem("filteringScMinFragmentsPerCell")
+		fragTmax <- getConfigElement("filteringScMinFragmentsPerCell")
 		if (fragTmax < Inf){
 			keepCell <- keepCell & cellQcTab[,"nPass"] <= fragTmax
 		}
 		
-		tssT <- getConfigElem("filteringScMinTssEnrichment")
+		tssT <- getConfigElement("filteringScMinTssEnrichment")
 		if (is.element("tssEnrichment", colnames(cellQcTab)) && tssT > 0){
 			keepCell <- keepCell & cellQcTab[,"tssEnrichment"] > tssT
 		}
@@ -261,7 +261,7 @@ run_atac_normalization <- function(dsa, anaDir){
 	dsn <- dsa
 
 	validNormMethods <- c("quantile", "percentile", "rankPerc", "log2", "RPKM", "CPM", "vst", "tf-idf", "logCPM", "logRPKM", "none")
-	nm <- getConfigElem("normalizationMethod")
+	nm <- getConfigElement("normalizationMethod")
 	if (!is.element(nm, validNormMethods)){
 		logger.error(c("Invalid normalization method:", nm))
 	}
@@ -502,8 +502,8 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 				if (inputType == "bulk_bam"){
 					dsa <- DsATAC.bam(sampleAnnot, inputFns, genome, regionSets=regionSets, sampleIdCol=NULL, diskDump=FALSE, keepInsertionInfo=TRUE, pairedEnd=TRUE)
 				} else if (inputType == "sc_fragments"){
-					minFrags <- getConfigElem("filteringScMinFragmentsPerCell")
-					maxFrags <- getConfigElem("filteringScMaxFragmentsPerCell")
+					minFrags <- getConfigElement("filteringScMinFragmentsPerCell")
+					maxFrags <- getConfigElement("filteringScMaxFragmentsPerCell")
 					dsa <- DsATACsc.fragments(sampleAnnot, inputFns, genome, regionSets=regionSets, sampleIdCol=sampleIdCol, minFragsPerBarcode=minFrags, maxFragsPerBarcode=maxFrags, cellAnnot=NULL, keepInsertionInfo=TRUE, cellQcStats=TRUE)
 				} else if (inputType == "sc_cellranger"){
 					dsa <- DsATAC.cellranger(sampleAnnot, input, genome, dataDir="", regionSets=regionSets, addPeakRegions=TRUE, sampleIdCol=sampleIdCol, keepInsertionInfo=TRUE)
