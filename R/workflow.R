@@ -89,15 +89,15 @@ resetWfToStage <- function(anaDir, resetTo){
 
 	delPaths <- character(0)
 	if (is.element(resetTo, c("processed", "filtered", "raw"))){
-		delPaths <- c(delPaths, file.path(wfState$dataDir, wfState$reportDir, "exploratory*"))
-		delPaths <- c(delPaths, file.path(wfState$dataDir, wfState$reportDir, "differential*"))
+		delPaths <- c(delPaths, file.path(wfState$anaDir, wfState$reportDir, "exploratory*"))
+		delPaths <- c(delPaths, file.path(wfState$anaDir, wfState$reportDir, "differential*"))
 	}
 	if (is.element(resetTo, c("filtered", "raw"))){
-		delPaths <- c(delPaths, file.path(wfState$dataDir, wfState$dsAtacPaths["processed"]))
+		delPaths <- c(delPaths, file.path(wfState$anaDir, wfState$dsAtacPaths["processed"]))
 	}
 	if (is.element(resetTo, c("raw"))){
-		delPaths <- c(delPaths, file.path(wfState$dataDir, wfState$dsAtacPaths["filtered"]))
-		delPaths <- c(delPaths, file.path(wfState$dataDir, wfState$reportDir, "summary*"))
+		delPaths <- c(delPaths, file.path(wfState$anaDir, wfState$dsAtacPaths["filtered"]))
+		delPaths <- c(delPaths, file.path(wfState$anaDir, wfState$reportDir, "summary*"))
 	}
 	
 	unlink(delPaths, recursive=TRUE)
