@@ -137,6 +137,66 @@ run_atac_qc <- function(dsa, anaDir){
 }
 
 #-------------------------------------------------------------------------------
+#' run_atac_peakcalling
+#' 
+#' Run peak calling for ATAC-seq data
+#' @param dsa       \code{\linkS4class{DsATAC}} object
+#' @param anaDir	analysis directory
+#' @return \code{S3} object containing the annotated \code{\linkS4class{DsATAC}} object, per-sample peak calls, a consensus peak set and an analysis report object
+#' @author Fabian Mueller
+#' @export
+run_atac_peakcalling <- function(dsa, anaDir){
+	wfState <- getWfState(anaDir)
+	report <- NULL
+	peakGr <- NULL
+	peakGrl <- NULL
+
+	isSingleCell <- class(dsa)=="DsATACsc"
+	dsn <- dsa
+
+	doPeakCall <- !isSingleCell
+	if (doPeakCall){
+		logger.start("Peak calling")
+			
+			logger.start("Per-sample peak sets")
+				peakGrl <- callPeaks(dsn)
+			logger.completed()
+
+			logger.start("Consensus peak set")
+				ggs <- NULL
+				cn <- getConfigElement("annotationPeakGroupColumn")
+				if (!is.null(cn)){
+					aa <- getSampleAnnot(dsn)
+					if (is.element(cn, colnames(aa))){
+						logger.info(c("Using annotation column '", cn, "' to check for peak consistency in groups"))
+						ggs <- aa[,cn]
+					} else {
+						logger.warning(c("Could not find peak group annotation column:", cn, ". Continuing without group consensus peaks"))
+					}
+				}
+				peakGr <- getConsensusPeakSet(peakGrl, mode="no_by_score", grouping=ggs, groupAgreePerc=getConfigElement("annotationPeakGroupAgreePerc"), groupConsSelect=FALSE, scoreCol="score", keepOvInfo=TRUE)
+				logger.info(c("Identified", length(peakGr), "consensus peaks"))
+				logger.start("Adding peak set to DsATAC")
+					dsn <- regionAggregation(dsn, peakGr, ".peaks.cons", signal="insertions", dropEmpty=FALSE)
+				logger.completed()
+			logger.completed()
+		logger.completed()
+	} else {
+		logger.warning("Peaks will not be called")
+	}
+
+	res <- list(
+		ds_anno=dsn,
+		peakGr=peakGr,
+		peakGrl=peakGrl,
+		report=report
+	)
+	class(res) <- "ChrAccR_runRes_callPeaks"
+
+	return(res)
+}
+
+#-------------------------------------------------------------------------------
 #' run_atac_filtering
 #' 
 #' Run the filtering for ATAC-seq data
@@ -422,7 +482,7 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 	############################################################################
 	# Prepare DsATAC dataset
 	############################################################################
-	saveDs <- FALSE
+	saveDs <- TRUE
 	dsa <- NULL
 	dsStages <- c("raw", "filtered", "processed")
 	if (!is.element(startStage, dsStages)) logger.error(c("Invalid dataset start stage:", startStage))
@@ -434,6 +494,7 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 					logger.info("Continuing from processed dataset")
 					dsa <- loadDsAcc(file.path(wfState$anaDir, wfState$dsAtacPaths["processed"]))
 					startStage <- "processed"
+					saveDs <- FALSE
 				} else if (!is.na(wfState$dsAtacPaths["filtered"])){
 					logger.info("Continuing from filtered dataset")
 					dsa <- loadDsAcc(file.path(wfState$anaDir, wfState$dsAtacPaths["filtered"]))
@@ -456,8 +517,10 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 		validSampleAnnot <- is.data.frame(sampleAnnot)
 		if (is.element(class(input), c("DsATAC", "DsATACsc"))){
 			dsa <- input
+			# if (startStage=="processed"){
+			# 	saveDs <- FALSE
+			# }
 		} else if (validSampleAnnot){
-			saveDs <- TRUE
 			inputType <- as.character(NA)
 			inputFns <- character(0)
 			if (is.character(input)){
@@ -528,6 +591,19 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 	}
 	isSingleCell <- class(dsa)=="DsATACsc"
 
+	# identifying consensus peak set
+	doPeakCalling <- !isSingleCell && getConfigElement("doPeakCalling") && !is.element(".peaks.cons", getRegionTypes(dsa))
+	if (doPeakCalling){
+		logger.start("Running peak calling analysis")
+			res <- run_atac_peakcalling(dsa, anaDir)
+			dsa <- res$ds_anno
+		logger.completed()
+		logger.start("Saving peak data")
+			saveRDS(res$peakGr, file.path(wfState$anaDir, wfState$dataDir, paste0("peakGr_consensus", ".rds")))
+			saveRDS(res$peakGrl, file.path(wfState$anaDir, wfState$dataDir, paste0("peakGrl_perSample", ".rds")))
+		logger.completed()
+	}
+
 	saveDs_raw <- saveDs && is.na(wfState$dsAtacPaths["raw"])
 	if (saveDs_raw){
 		wfState$dsAtacPaths["raw"] <- file.path(wfState$dataDir, "dsATAC_raw")
@@ -551,16 +627,15 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 			res <- run_atac_filtering(dsa, anaDir)
 			dsa <- res$ds_filtered
 		logger.completed()
-		saveDs_filtered <- saveDs && (doFilter) && is.na(wfState$dsAtacPaths["filtered"])
-		if (saveDs_filtered){
-			wfState$dsAtacPaths["filtered"] <- file.path(wfState$dataDir, "dsATAC_filtered")
-			logger.start("Saving filtered DsATAC dataset")
-				saveDsAcc(dsa, file.path(wfState$anaDir, wfState$dsAtacPaths["filtered"]))
-			logger.completed()
-		}
+	}
+	saveDs_filtered <- saveDs && (doFilter) && is.na(wfState$dsAtacPaths["filtered"])
+	if (saveDs_filtered){
+		wfState$dsAtacPaths["filtered"] <- file.path(wfState$dataDir, "dsATAC_filtered")
+		logger.start("Saving filtered DsATAC dataset")
+			saveDsAcc(dsa, file.path(wfState$anaDir, wfState$dsAtacPaths["filtered"]))
+		logger.completed()
 	}
 	#---------------------------------------------------------------------------
-	# TODO: identify consensus peak set?
 	doNorm <- !isSingleCell && is.element(startStage, c("raw", "filtered"))
 	if (doNorm){
 		logger.start("Running normalization analysis")

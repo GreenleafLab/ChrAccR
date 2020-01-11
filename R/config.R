@@ -23,6 +23,9 @@
 .config$chromVarMotifNamesForDimRed <- NULL
 .config$annotationColumns <- NULL
 .config$annotationMinGroupSize <- 2L
+.config$doPeakCalling <- FALSE
+.config$annotationPeakGroupColumn <- NULL
+.config$annotationPeakGroupAgreePerc <- 1
 .config$filteringCovgCount <- 1L
 .config$filteringCovgReqSamples <- 0.75
 .config$filteringSexChroms <- FALSE
@@ -79,6 +82,15 @@
 #'   }
 #'   \item{\bold{\code{annotationMinGroupSize}}}{
 #'       Minimum size of a group to be used in the reports. Influences which annotation columns are selected for reporting.
+#'   }
+#'   \item{\bold{\code{doPeakCalling}}}{
+#'       Perform per-sample peak calling and retrieve consensus peak set. [for bulk data analysis only]
+#'   }
+#'   \item{\bold{\code{annotationPeakGroupColumn}}}{
+#'       Annotation column to base the consensus peak set replication filtering on.
+#'   }
+#'   \item{\bold{\code{annotationPeakGroupAgreePerc}}\code{ = 1.0}}{
+#'       Percent of samples that have to agree to identify consensus peaks. See \code{\link{getConsensusPeakSet}} for details.
 #'   }
 #'   \item{\bold{\code{filteringCovgCount}}\code{ = 1L}}{
 #'       Minimum insertion count to filter count matrices by. See \code{\link{filterLowCovg,DsATAC-method}} for details. [for bulk data analysis only]

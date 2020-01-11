@@ -160,6 +160,7 @@ setMethod("createReport_summary",
 				rr <- muReportR::addReportParagraph(rr, txt)
 
 				cut_x <- getConfigElement("filteringScMinFragmentsPerCell")
+				if (!is.null(cut_x)) cut_x <- log10(cut_x)
 				cut_y <- getConfigElement("filteringScMinTssEnrichment")
 
 				sampleIds <- sampleStatsTab[,"sample"]

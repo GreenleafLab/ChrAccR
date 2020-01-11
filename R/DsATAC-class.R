@@ -1245,6 +1245,7 @@ setMethod("addInsertionDataFromBam",
 						fragGr <- GenomicRanges::resize(fragGr, width(fragGr)-4, fix="start", ignore.strand=TRUE)
 					}
 				}
+				logger.info(c(length(fragGr), "fragments found"))
 				if (.diskDump){
 					if (chunkedFragmentFiles){
 						curChunkL[[sid]] <- fragGr
