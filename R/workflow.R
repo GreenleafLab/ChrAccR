@@ -54,8 +54,8 @@ getWfState <- function(anaDir){
 	if (dir.exists(file.path(anaDir, dd))) res[["dataDir"]] <- dd
 	dd <- "reports"
 	if (dir.exists(file.path(anaDir, dd))) res[["reportDir"]] <- dd
-	fn <- file.path(anaDir, "config", "config.json")
-	if (file.exists(fn)) res[["configPath"]] <- fn
+	fn <- file.path("config", "config.json")
+	if (file.exists(file.path(anaDir, fn))) res[["configPath"]] <- fn
 
 	if (!is.na(res[["reportDir"]])){
 		if (file.exists(file.path(anaDir, res[["reportDir"]], "summary.html"))) res[["existingReports"]]["summary"] <- TRUE
@@ -66,8 +66,8 @@ getWfState <- function(anaDir){
 	if (!is.na(res[["dataDir"]])){
 		stepNames <- c("raw", "filtered", "processed")
 		for (sn in stepNames){
-			fp <- paste0("dsATAC_", sn)
-			if (dir.exists(file.path(anaDir, res[["dataDir"]], fp))) res[["dsAtacPaths"]][sn] <- fp
+			fp <- file.path(res[["dataDir"]], paste0("dsATAC_", sn))
+			if (dir.exists(file.path(anaDir, fp))) res[["dsAtacPaths"]][sn] <- fp
 		}
 	}
 	
