@@ -12,7 +12,7 @@ prepAnaDir <- function(anaDir){
 	} else {
 		dir.create(anaDir)
 	}
-	dds <- c("config", "log", "data")
+	dds <- c("config", "log", "data", "reports")
 	for (dd in dds){
 		if (!dir.exists(file.path(anaDir, dd))) dir.create(file.path(anaDir, dd))
 	}
@@ -205,7 +205,7 @@ run_atac_filtering <- function(dsa, anaDir){
 		if (fragTmin > 0){
 			keepCell <- keepCell & cellQcTab[,"nPass"] >= fragTmin
 		}
-		fragTmax <- getConfigElement("filteringScMinFragmentsPerCell")
+		fragTmax <- getConfigElement("filteringScMaxFragmentsPerCell")
 		if (fragTmax < Inf){
 			keepCell <- keepCell & cellQcTab[,"nPass"] <= fragTmax
 		}

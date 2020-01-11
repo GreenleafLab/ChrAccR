@@ -134,12 +134,11 @@ setMethod("createReport_summary",
 				}
 			}
 			rr <- muReportR::addReportTable(rr, sampleStatsTab, row.names=FALSE, first.col.header=TRUE)
-			
 			plotL <- lapply(cns, FUN=function(cn){
 				pp <- ggplot(summaryDf) + aes_string(x="sample", y=cn) +
 				      geom_violin(adjust=1, fill="#4d4f53") +
 				      geom_boxplot(aes(fill=NULL), outlier.shape=NA, width=0.2) +
-				      coord_flip() +
+				      ylim(quantile(summaryDf[,cn], 0.98)) + coord_flip() +
 				      theme(axis.title.y=element_blank()) + guides(fill=FALSE) 
 				figFn <- paste0("statDistr_", cn)
 				repPlot <- muReportR::createReportGgPlot(pp, figFn, rr, width=10, height=5, create.pdf=TRUE, high.png=0L)
@@ -160,6 +159,9 @@ setMethod("createReport_summary",
 				)
 				rr <- muReportR::addReportParagraph(rr, txt)
 
+				cut_x <- getConfigElement("filteringScMinFragmentsPerCell")
+				cut_y <- getConfigElement("filteringScMinTssEnrichment")
+
 				sampleIds <- sampleStatsTab[,"sample"]
 				plotL <- lapply(1:length(sampleIds), FUN=function(i){
 					subDf <- summaryDf[summaryDf[,"sample"]==sampleIds[i],]
@@ -169,8 +171,11 @@ setMethod("createReport_summary",
 					)
 					df2p[, "pointDens"] <- muRtools::getPointDensity(df2p[, "log_nPass"], df2p[, "tssEnrichment"], n=100)
 
-					pp <- ggplot(df2p) + aes_string(x="log_nPass", y="tssEnrichment", color="pointDens") + geom_point(size=0.5) + 
-					      muRtools::ggAutoColorScale(df2p[, "pointDens"], method="color")
+					pp <- ggplot(df2p) + aes_string(x="log_nPass", y="tssEnrichment", color="pointDens")
+					if (!is.null(cut_x)) pp <- pp + geom_vline(xintercept=cut_x, color="#4d4f53")
+					if (!is.null(cut_y)) pp <- pp + geom_hline(yintercept=cut_y, color="#4d4f53")
+					pp <- pp + geom_point(size=0.5) + muRtools::ggAutoColorScale(df2p[, "pointDens"], method="color")
+
 					# pp <- muRtools::create.densityScatter(df2p, is.special=NULL, sparse.points=0.01)
 					figFn <- paste0("sampleTssEnrich_s", i)
 					repPlot <- muReportR::createReportGgPlot(pp, figFn, rr, width=7, height=7, create.pdf=TRUE, high.png=0L)
