@@ -37,7 +37,7 @@ getWfState <- function(anaDir){
 		dsAtacPaths = c(
 			raw = as.character(NA),
 			filtered = as.character(NA),
-			processed = as.character(NA),
+			processed = as.character(NA)
 		),
 		reportDir = as.character(NA),
 		existingReports = c(
