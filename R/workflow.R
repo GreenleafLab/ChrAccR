@@ -527,7 +527,7 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 
 	saveDs_raw <- saveDs && is.na(wfState$dsAtacPaths["raw"])
 	if (saveDs_raw){
-		wfState$dsAtacPaths["raw"] <- "dsATAC_raw"
+		wfState$dsAtacPaths["raw"] <- file.path(wfState$dataDir, "dsATAC_raw")
 		logger.start("Saving raw DsATAC dataset")
 			saveDsAcc(dsa, file.path(wfState$anaDir, wfState$dsAtacPaths["raw"]))
 		logger.completed()
@@ -550,7 +550,7 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 		logger.completed()
 		saveDs_filtered <- saveDs && (doFilter) && is.na(wfState$dsAtacPaths["filtered"])
 		if (saveDs_filtered){
-			wfState$dsAtacPaths["filtered"] <- "dsATAC_filtered"
+			wfState$dsAtacPaths["filtered"] <- file.path(wfState$dataDir, "dsATAC_filtered")
 			logger.start("Saving filtered DsATAC dataset")
 				saveDsAcc(dsa, file.path(wfState$anaDir, wfState$dsAtacPaths["filtered"]))
 			logger.completed()
@@ -583,7 +583,7 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 
 	saveDs_processed <- saveDs && (doNorm || doScUnsupervised) && is.na(wfState$dsAtacPaths["processed"])
 	if (saveDs_processed){
-		wfState$dsAtacPaths["processed"] <- "dsATAC_processed"
+		wfState$dsAtacPaths["processed"] <- file.path(wfState$dataDir, "dsATAC_processed")
 		logger.start("Saving processed DsATAC dataset")
 			saveDsAcc(dsa, file.path(wfState$anaDir, wfState$dsAtacPaths["processed"]))
 		logger.completed()
