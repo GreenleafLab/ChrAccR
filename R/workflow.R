@@ -592,7 +592,7 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 	isSingleCell <- class(dsa)=="DsATACsc"
 
 	# identifying consensus peak set
-	doPeakCalling <- !isSingleCell && getConfigElement("doPeakCalling") && !is.element(".peaks.cons", getRegionTypes(dsa))
+	doPeakCalling <- !isSingleCell && getConfigElement("doPeakCalling") && !is.element(".peaks.cons", getRegionTypes(dsa)) && length(dsa@fragments) > 0
 	if (doPeakCalling){
 		logger.start("Running peak calling analysis")
 			res <- run_atac_peakcalling(dsa, anaDir)
