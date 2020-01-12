@@ -40,6 +40,7 @@
 .config$lolaDbPaths <- NULL
 .config$scIterativeLsiRegType <- NULL
 .config$scIterativeLsiClusterResolution <- 0.4
+.config$muPipeR_cmdr <- NULL
 
 #' setConfigElement
 #'

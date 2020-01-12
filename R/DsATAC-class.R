@@ -2837,28 +2837,58 @@ setMethod("callPeaks",
 			} else {
 				logger.error(c("Unsupported genome for peak calling:", .object@genome))
 			}
-			callDir <- tempdir()
+
 			nSamples <- length(samples)
-			peakGrl <- lapply(seq_along(samples), FUN=function(i){
+			samplePrefixes <- sapply(samples, FUN=function(x){getHashString(pattern=x)})
+			genomeAss <- .object@genome
+
+			callDir <- tempdir()
+
+			cmdr <- getConfigElement("muPipeR_cmdr")
+			doCmdR <- !is.null(cmdr) && inherits(cmdr, "CommandR")
+			if (doCmdR){
+				callDir <- getConfigElement("tmpDir")
+			}
+
+			logger.start("Preparing insertion files")
+				insFns <- sapply(samples, FUN=function(sid){
+					fp <- samplePrefixes[i]
+					insFn <- file.path(callDir, paste0(fp, "_ins.bed"))
+					# logger.status(c("[DEBUG:] Retrieving insertion sites..."))
+					insGr <- getInsertionSites(.object, sid)[[1]]
+					# logger.status(c("[DEBUG:] Writing to temp file..."))
+					coordOnly <- all(as.character(strand(insGr)) %in% c("*", "."))
+					granges2bed(insGr, insFn, score=NULL, addAnnotCols=FALSE, colNames=FALSE, doSort=TRUE, coordOnly=coordOnly)
+					return(insFn)
+				})
+				names(insFns) <- samples
+			logger.completed()
+
+			# variable environment (for parallel computation using lapplyExec)
+			envList <- list(
+				samples=samples,
+				insFns=insFns,
+				callDir=callDir,
+				samplePrefixes=samplePrefixes,
+				genomeAss=genomeAss,
+				methodOpts=methodOpts,
+				argV=argV,
+				genomeSizeArg=genomeSizeArg
+			)
+			# function to be used for peak calling
+			callPeakFun <- function(i){
 				sid <- samples[i]
 				logger.status(c("Calling peaks for sample:", sid, paste0("(", i, " of ", nSamples,")")))
-				fp <- getHashString(pattern=sid)
-				insFn <- file.path(callDir, paste0(fp, "_ins.bed"))
+				
 				# peakFn <- file.path(callDir, paste0(fp, "_summits.bed"))
-				peakFn <- file.path(callDir, paste0(fp, "_peaks.narrowPeak"))
-
-				# logger.status(c("[DEBUG:] Retrieving insertion sites..."))
-				insGr <- getInsertionSites(.object, sid)[[1]]
-				# logger.status(c("[DEBUG:] Writing to temp file..."))
-				coordOnly <- all(as.character(strand(insGr)) %in% c("*", "."))
-				granges2bed(insGr, insFn, score=NULL, addAnnotCols=FALSE, colNames=FALSE, doSort=TRUE, coordOnly=coordOnly)
+				peakFn <- file.path(callDir, paste0(samplePrefixes[i], "_peaks.narrowPeak"))
 
 				# logger.status(c("[DEBUG:] Calling MACS2..."))
 				aa <- c(
 					"callpeak",
 					"-g", genomeSizeArg,
-					"--name", fp,
-					"--treatment", insFn,
+					"--name", samplePrefixes[i],
+					"--treatment", insFns[sid],
 					"--outdir", callDir,
 					"--format", "BED",
 					argV
@@ -2869,7 +2899,7 @@ setMethod("callPeaks",
 				# logger.status(c("[DEBUG:] Reading MACS2 output..."))
 				# peakGr <- rtracklayer::import(peakFn, format="BED")
 				peakGr <- readMACS2peakFile(peakFn)
-				peakGr <- setGenomeProps(peakGr, .object@genome, onlyMainChrs=TRUE, silent=TRUE)
+				peakGr <- setGenomeProps(peakGr, genomeAss, onlyMainChrs=TRUE, silent=TRUE)
 				peakGr <- peakGr[isCanonicalChrom(as.character(seqnames(peakGr)))]
 				elementMetadata(peakGr)[,"calledPeakStart"] <- start(peakGr)
 				elementMetadata(peakGr)[,"calledPeakEnd"] <- end(peakGr)
@@ -2878,7 +2908,7 @@ setMethod("callPeaks",
 				# scs <- elementMetadata(peakGr)[,"score"]
 				scs <- elementMetadata(peakGr)[,"negLog10qval"]
 				elementMetadata(peakGr)[,"score_norm"] <- ecdf(scs)(scs)
-				elementMetadata(peakGr)[,"name"] <- gsub(paste0("^", fp), sid, elementMetadata(peakGr)[,"name"])#replace the hashstring in the name by just the sample id
+				elementMetadata(peakGr)[,"name"] <- gsub(paste0("^", samplePrefixes[i]), sid, elementMetadata(peakGr)[,"name"])#replace the hashstring in the name by just the sample id
 
 				# logger.status(c("[DEBUG:] Extending summits..."))
 				peakGr <- trim(promoters(peakGr, upstream=methodOpts$fixedWidth, downstream=methodOpts$fixedWidth+1)) #extend each summit
@@ -2888,8 +2918,22 @@ setMethod("callPeaks",
 				# peakGr <- ChrAccR:::getNonOverlappingByScore(peakGr, scoreCol="score_norm")
 				peakGr <- peakGr[order(as.integer(seqnames(peakGr)),start(peakGr), end(peakGr), as.integer(strand(peakGr)))] #sort
 				return(peakGr)
-			})
-			names(peakGrl) <- samples
+			}
+			logger.start("Calling peaks using MACS2")
+				if (doCmdR){
+					peakGrl <- lapplyExec(
+						cmdr,
+						lapply(seq_along(samples), identity),
+						callPeakFun,
+						env=envList,
+						Rexec="Rscript",
+						name=paste0("chraccr_callPeaks")
+					)
+				} else {
+					peakGrl <- lapply(seq_along(samples), callPeakFun)
+				}
+				names(peakGrl) <- samples
+			logger.completed()
 			peakGrl <- GRangesList(peakGrl)
 		}
 		return(peakGrl)
