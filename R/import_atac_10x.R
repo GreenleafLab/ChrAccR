@@ -126,6 +126,9 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 				logger.completed()
 
 				logger.start("Preparing insertion data")
+					# convert GRangesList to regular list
+					fragGrl <- as.list(fragGrl)
+					logger.status("[DEBUG]")
 					insGrl <- lapply(fragGrl, getInsertionSitesFromFragmentGr)
 				logger.completed()
 				logger.start("Summarizing count data")
@@ -148,8 +151,8 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 							}
 						} else {
 							cids <- names(fragGrl)
-							# convert GRangesList to regular list
-							fragGrl <- as.list(fragGrl)
+							# # convert GRangesList to regular list
+							# fragGrl <- as.list(fragGrl)
 							if (obj@diskDump.fragments){
 								obj@fragments[cids] <- lapply(fragGrl, FUN=function(x){
 									fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
