@@ -147,12 +147,9 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 								obj@fragments[cids] <- rep(list(fn), length(iis))
 							}
 						} else {
-							# Currently this branch takes way too long and should not be used, i.e. don't disable the 'diskDump.fragments' option
 							cids <- names(fragGrl)
-							logger.start("[DEBUG] converting GRangesList to regular list")
-								# convert GRangesList to regular list
-								fragGrl <- as.list(fragGrl)
-							logger.completed()
+							# convert GRangesList to regular list
+							fragGrl <- as.list(fragGrl)
 							if (obj@diskDump.fragments){
 								obj@fragments[cids] <- lapply(fragGrl, FUN=function(x){
 									fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
