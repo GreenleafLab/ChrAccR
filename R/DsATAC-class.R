@@ -2850,9 +2850,10 @@ setMethod("callPeaks",
 				callDir <- getConfigElement("tmpDir")
 			}
 
-			logger.start("Preparing insertion files")
+			logger.start("Preparing insertion bed files")
 				insFns <- sapply(seq_along(samples), FUN=function(i){
 					sid <- samples[i]
+					logger.status(c("Sample:", sid, paste0("(", i, " of ", nSamples,")")))
 					fp <- samplePrefixes[i]
 					insFn <- file.path(callDir, paste0(fp, "_ins.bed"))
 					# logger.status(c("[DEBUG:] Retrieving insertion sites..."))
