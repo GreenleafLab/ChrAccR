@@ -120,8 +120,7 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 					colnames(elementMetadata(fragGr)) <- c("barcode", "duplicateCount")
 					fragGr <- fragGr[elementMetadata(fragGr)[,"barcode"] %in% names(barcode2cellId),] # only take into account fragments that can be mapped to cells
 					if (length(fragGr) < 2) logger.error("Too few fragments corresponding to actual cells")
-					fragGr <- setGenomeProps(fragGr, genome, onlyMainChrs=TRUE, silent=TRUE)
-
+					fragGr <- setGenomeProps(fragGr, obj@genome, onlyMainChrs=TRUE, silent=TRUE)
 					fragGrl <- split(fragGr, elementMetadata(fragGr)[,"barcode"])
 					names(fragGrl) <- barcode2cellId[names(fragGrl)]
 				logger.completed()
@@ -136,8 +135,8 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 				if (keepInsertionInfo) {
 					chunkedFragmentFiles <- obj@diskDump.fragments && .hasSlot(obj, "diskDump.fragments.nSamplesPerFile") && obj@diskDump.fragments.nSamplesPerFile > 1
 					logger.start("Adding fragment data to data structure")
+						nCells <- length(fragGrl)
 						if (chunkedFragmentFiles){
-							nCells <- length(fragGrl)
 							chunkL <- split(1:nCells, rep(1:ceiling(nCells/obj@diskDump.fragments.nSamplesPerFile), each=obj@diskDump.fragments.nSamplesPerFile)[1:nCells])
 							names(chunkL) <- NULL
 							for (k in 1:length(chunkL)){
@@ -148,18 +147,15 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 								obj@fragments[cids] <- rep(list(fn), length(iis))
 							}
 						} else {
-							i <- 0
-							N <- length(fragGrl)
-							for (cid in names(fragGrl)){
-								i <- i + 1
-								if (i %% 100 == 0) logger.status(c("[DEBUG] Cell", i, "of", N, "..."))
-								fgr <- fragGrl[[cid]]
-								if (obj@diskDump.fragments){
+							cids <- names(fragGrl)
+							if (obj@diskDump.fragments){
+								obj@fragments[cids] <- lapply(fragGrl, FUN=function(x){
 									fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
-									saveRDS(fgr, fn, compress=TRUE)
-									fgr <- fn
-								}
-								obj@fragments[[cid]] <- fgr
+									saveRDS(x, fn, compress=TRUE)
+									return(fn)
+								})
+							} else {
+								obj@fragments[cids] <- fragGrl
 							}
 						}
 					logger.completed()
