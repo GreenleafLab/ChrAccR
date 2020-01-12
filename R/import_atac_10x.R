@@ -52,9 +52,15 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 			cellAnnot <- do.call("rbind", lapply(1:nSamples, FUN=function(i){
 				sid <- sampleIds[i]
 				logger.status(c("Sample:", sid, paste0("(", i, " of ", nSamples, ")")))
-				fragTab <- readTab(fragmentFiles[i], header=FALSE)
-				colnames(fragTab) <- c("chrom", "chromStart", "chromEnd", "barcode", "duplicateCount")
-				fragCounts <- table(fragTab[,"barcode"])
+				# fragTab <- readTab(fragmentFiles[i], header=FALSE)
+				# colnames(fragTab) <- c("chrom", "chromStart", "chromEnd", "barcode", "duplicateCount")
+				# fragCounts <- table(fragTab[,"barcode"])
+
+				fragGr <- rtracklayer::import(fragmentFiles[i], format="BED")
+				fragGr <- setGenomeProps(fragGr, genome, onlyMainChrs=TRUE, silent=TRUE)
+				colnames(elementMetadata(fragGr)) <- c("barcode", "duplicateCount")
+				fragCounts <- table(elementMetadata(fragGr)[,"barcode"])
+
 				if (minFragsPerBarcode > 0){
 					idx <- fragCounts >= minFragsPerBarcode
 					logger.info(c("Keeping", sum(idx), paste0("[of ", length(idx), "]"), "barcodes with more than", minFragsPerBarcode, "fragments"))
@@ -105,11 +111,17 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 				names(barcode2cellId) <- cellAnnot[sampleIdx,"cellBarcode"]
 
 				logger.start("Preparing fragment data")
-					fragGr <- readTab(fragmentFiles[i], header=FALSE)
-					colnames(fragGr) <- c("chrom", "chromStart", "chromEnd", "barcode", "duplicateCount")
-					fragGr <- fragGr[fragGr[,"barcode"] %in% names(barcode2cellId),] # only take into account fragments that can be mapped to cells
-					if (nrow(fragGr) < 2) logger.error("Too few fragments corresponding to actual cells")
-					fragGr <- df2granges(fragGr, chrom.col=1L, start.col=2L, end.col=3L, strand.col=NULL, coord.format="B1RI", assembly=obj@genome, doSort=TRUE, adjNumChromNames=TRUE)
+					# fragGr <- readTab(fragmentFiles[i], header=FALSE)
+					# colnames(fragGr) <- c("chrom", "chromStart", "chromEnd", "barcode", "duplicateCount")
+					# fragGr <- fragGr[fragGr[,"barcode"] %in% names(barcode2cellId),] # only take into account fragments that can be mapped to cells
+					# if (nrow(fragGr) < 2) logger.error("Too few fragments corresponding to actual cells")
+					# fragGr <- df2granges(fragGr, chrom.col=1L, start.col=2L, end.col=3L, strand.col=NULL, coord.format="B0RE", assembly=obj@genome, doSort=TRUE, adjNumChromNames=TRUE)
+					fragGr <- rtracklayer::import(fragmentFiles[i], format="BED")
+					colnames(elementMetadata(fragGr)) <- c("barcode", "duplicateCount")
+					fragGr <- fragGr[elementMetadata(fragGr)[,"barcode"] %in% names(barcode2cellId),] # only take into account fragments that can be mapped to cells
+					if (length(fragGr) < 2) logger.error("Too few fragments corresponding to actual cells")
+					fragGr <- setGenomeProps(fragGr, genome, onlyMainChrs=TRUE, silent=TRUE)
+
 					fragGrl <- split(fragGr, elementMetadata(fragGr)[,"barcode"])
 					names(fragGrl) <- barcode2cellId[names(fragGrl)]
 				logger.completed()
