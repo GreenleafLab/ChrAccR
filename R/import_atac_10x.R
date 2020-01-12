@@ -148,6 +148,10 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 							}
 						} else {
 							cids <- names(fragGrl)
+							logger.start("[DEBUG] converting GRangesList to regular list")
+							# convert GRangesList to regular list
+							fragGrl <- as.list(fragGrl)
+							logger.completed()
 							if (obj@diskDump.fragments){
 								obj@fragments[cids] <- lapply(fragGrl, FUN=function(x){
 									fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
