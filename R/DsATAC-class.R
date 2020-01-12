@@ -2935,6 +2935,10 @@ setMethod("callPeaks",
 					peakGrl <- lapply(seq_along(samples), callPeakFun)
 				}
 				names(peakGrl) <- samples
+
+				# cleanup
+				fns <- file.path(callDir, paste0(samplePrefixes, "*"))
+				unlink(fns)
 			logger.completed()
 			peakGrl <- GRangesList(peakGrl)
 		}
