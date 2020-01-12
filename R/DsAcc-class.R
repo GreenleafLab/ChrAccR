@@ -105,6 +105,15 @@ setMethod("getSamples",
 	}
 )
 #-------------------------------------------------------------------------------
+#' Retrieve the number of samples contained in a DsAcc object
+#'
+#' @param x DsAcc object
+setMethod("length", "DsAcc",
+	function(x){
+		return(length(getSamples(x)))
+	}
+)
+#-------------------------------------------------------------------------------
 if (!isGeneric("getSampleAnnot")) {
 	setGeneric(
 		"getSampleAnnot",

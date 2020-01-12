@@ -2838,8 +2838,10 @@ setMethod("callPeaks",
 				logger.error(c("Unsupported genome for peak calling:", .object@genome))
 			}
 			callDir <- tempdir()
-			peakGrl <- lapply(samples, FUN=function(sid){
-				logger.status(c("Calling peaks for sample:", sid))
+			nSamples <- length(samples)
+			peakGrl <- lapply(seq_along(samples), FUN=function(i){
+				sid <- samples[i]
+				logger.status(c("Calling peaks for sample:", sid, paste0("(", i, " of ", nSamples,")")))
 				fp <- getHashString(pattern=sid)
 				insFn <- file.path(callDir, paste0(fp, "_ins.bed"))
 				# peakFn <- file.path(callDir, paste0(fp, "_summits.bed"))

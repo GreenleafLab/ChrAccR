@@ -106,6 +106,8 @@ dsa
 
 Here are some utility functions that summarize the samples contained in the dataset:
 ```{r, message = FALSE, warning = FALSE}
+# get the number of samples
+length(dsa)
 # get the sample names
 head(getSamples(dsa))
 # sample annotation table

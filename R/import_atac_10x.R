@@ -136,11 +136,7 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 								obj@fragments[cids] <- rep(list(fn), length(iis))
 							}
 						} else {
-							i <- 0
-							N <- length(fragGrl)
 							for (cid in names(fragGrl)){
-								i <- i + 1
-								logger.status(c("[DEBUG] Cell", i, "of", N, "..."))
 								fgr <- fragGrl[[cid]]
 								if (obj@diskDump.fragments){
 									fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
