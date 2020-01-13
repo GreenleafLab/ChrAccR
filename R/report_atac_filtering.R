@@ -101,8 +101,7 @@ setMethod("createReport_filtering",
 				stringsAsFactors=FALSE
 			)
 		}))
-
-		# ft <- data.frame(regionType=c("region A", "rB", "regC"), nBefore=c(100,30,1000), nAfter=c(70,10,900), stringsAsFactors=FALSE)
+		
 		filtTabL <- list(
 			overall=ft
 		)
