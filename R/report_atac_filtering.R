@@ -89,7 +89,7 @@ setMethod("createReport_filtering",
 				"The following filtering steps were applied to the dataset:"
 			)
 			rr <- muReportR::addReportSection(rr, "Filtering steps", txt, level=1L, collapsed=FALSE)
-			rr <- addReportList(rr, stepDesc[filterStats$steps], type="u")
+			rr <- muReportR::addReportList(rr, stepDesc[filterStats$steps], type="u")
 		}
 		
 
