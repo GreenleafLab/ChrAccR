@@ -162,12 +162,12 @@ getConfigElement <- function(name){
 	.config[[name]]
 }
 
-# convert a vector to list, if x is already a list, apply it recursively to all elements of x
+# convert a named vector to list. If x is already a list, apply it recursively to all elements of x
 v2l <- function(x){
 	if (is.list(x)){
 		return(lapply(x, v2l))
 	} else {
-		if (length(x) > 1){
+		if (length(x) > 1 && !is.null(names(x))){
 			return(as.list(x))
 		} else {
 			return(x)
