@@ -2880,7 +2880,7 @@ setMethod("callPeaks",
 			# function to be used for peak calling
 			callPeakFun <- function(i){
 				sid <- samples[i]
-				logger.status(c("Calling peaks for sample:", sid, paste0("(", i, " of ", nSamples,")")))
+				logger.status(c("Calling peaks for sample:", sid, paste0("(", i, " of ", length(samples),")")))
 				
 				# peakFn <- file.path(callDir, paste0(fp, "_summits.bed"))
 				peakFn <- file.path(callDir, paste0(samplePrefixes[i], "_peaks.narrowPeak"))
