@@ -171,7 +171,13 @@ getConfigElement <- function(name){
 #' @author Fabian Mueller
 #' @export
 saveConfig <- function(dest){
-	cat(jsonlite::toJSON(as.list(.config), pretty=TRUE, null="null",na="string"), file=dest)
+	cfgL <- as.list(.config)
+	# toJSON does not allow for named vectors (https://github.com/jeroen/jsonlite/issues/76). Here's a workaround
+	namedVectors <- intersect(names(cfgL), c("geneModelVersions"))
+	for (nn in namedVectors){
+		cfgL[[nn]] <- as.list(cfgL[[nn]])
+	}
+	cat(jsonlite::toJSON(cfgL, pretty=TRUE, null="null",na="string"), file=dest)
 }
 
 #' loadConfig
@@ -184,8 +190,14 @@ saveConfig <- function(dest){
 #' @author Fabian Mueller
 #' @export
 loadConfig <- function(cfgFile){
+	# toJSON does not allow for named vectors (https://github.com/jeroen/jsonlite/issues/76). Here's a workaround
+	namedVectors <- c("geneModelVersions")
+
 	cfgList <- jsonlite::fromJSON(cfgFile)
 	for (nn in names(cfgList)){
+		if (is.element(nn, namedVectors)){
+			cfgList[[nn]] <- unlist(cfgList[[nn]])
+		}
 		if (is.element(nn,ls(.config))){
 			.config[[nn]] <- cfgList[[nn]]
 		} else {

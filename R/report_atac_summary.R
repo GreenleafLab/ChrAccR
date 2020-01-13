@@ -11,6 +11,7 @@ if (!isGeneric("createReport_summary")) {
 #'
 #' @param .object    \code{\linkS4class{DsATAC}} object
 #' @param reportDir  directory in which the report will be created
+#' @param reportFilename filename used for the report
 #' @return (invisible) \code{muReportR::Report} object containing the report
 #' 
 #' @rdname createReport_summary-DsATAC-method
@@ -32,11 +33,12 @@ setMethod("createReport_summary",
 	),
 	function(
 		.object,
-		reportDir
+		reportDir,
+		reportFilename="summary"
 	) {
 		if (!requireNamespace("muReportR")) logger.error(c("Could not load dependency: muReportR"))
 		initConfigDir <- !dir.exists(file.path(reportDir, "_config"))
-		rr <- muReportR::createReport(file.path(reportDir, "summary.html"), "Accessibility Summary", page.title = "Summary", init.configuration=initConfigDir, theme="stanford")
+		rr <- muReportR::createReport(file.path(reportDir, paste0(reportFilename, ".html")), "Accessibility Summary", page.title = "Summary", init.configuration=initConfigDir, theme="stanford")
 		rDir.data <- muReportR::getReportDir(rr, dir="data", absolute=FALSE)
 		rDir.data.abs <- muReportR::getReportDir(rr, dir="data", absolute=TRUE)
 
