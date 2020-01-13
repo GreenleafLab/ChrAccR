@@ -82,7 +82,7 @@ setMethod("createReport_filtering",
 				"chromosomes" = paste("Regions and fragments on chromosomes", paste(getParam("exclChroms"), collapse=", "), "have been removed."),
 				"sc_minFrags" = paste("Cells with less than", getParam("scMinFragmentsPerCell"), "unique fragments have been removed"),
 				"sc_maxFrags" = paste("Cells with more than", getParam("scMaxFragmentsPerCell"), "unique fragments have been removed (they might be doublets)"),
-				"sc_tssEnrichment" = paste("Cells with a low TSS enrichment score (lower than", getParam("scMinTssEnrichment"), ") have been removed"),
+				"sc_tssEnrichment" = paste("Cells with a low TSS enrichment score (lower than", getParam("scMinTssEnrichment"), ") have been removed")
 			)
 
 			txt <- c(
