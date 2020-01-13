@@ -1232,7 +1232,7 @@ setMethod("addInsertionDataFromBam",
 					ga <- setGenomeProps(ga, .object@genome, onlyMainChrs=TRUE, silent=TRUE)
 					fragGr <- getATACfragments(ga, offsetTn=TRUE)
 				} else if (mode=="fragBed"){
-					fragGr <- rtracklayer::import(fn, format = "BED")
+					fragGr <- rtracklayer::import(fns[sid], format = "BED")
 					fragGr <- setGenomeProps(fragGr, .object@genome, onlyMainChrs=TRUE, silent=TRUE)
 
 					if (offsetTn){
