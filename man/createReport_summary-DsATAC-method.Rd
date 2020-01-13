@@ -6,14 +6,12 @@
 \alias{createReport_summary}
 \title{createReport_summary-methods}
 \usage{
-\S4method{createReport_summary}{DsATAC}(.object, reportDir, reportFilename = "summary")
+\S4method{createReport_summary}{DsATAC}(.object, reportDir)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}
 
 \item{reportDir}{directory in which the report will be created}
-
-\item{reportFilename}{filename used for the report}
 }
 \value{
 (invisible) \code{muReportR::Report} object containing the report

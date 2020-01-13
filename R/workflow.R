@@ -42,7 +42,7 @@ getWfState <- function(anaDir){
 		reportDir = as.character(NA),
 		existingReports = c(
 			summary = FALSE,
-			summary_filtered = FALSE,
+			filtering = FALSE,
 			exploratory = FALSE,
 			differential = FALSE
 		)
@@ -60,7 +60,7 @@ getWfState <- function(anaDir){
 
 	if (!is.na(res[["reportDir"]])){
 		if (file.exists(file.path(anaDir, res[["reportDir"]], "summary.html"))) res[["existingReports"]]["summary"] <- TRUE
-		if (file.exists(file.path(anaDir, res[["reportDir"]], "summary_filtered.html"))) res[["existingReports"]]["summary_filtered"] <- TRUE
+		if (file.exists(file.path(anaDir, res[["reportDir"]], "filtering.html"))) res[["existingReports"]]["filtering"] <- TRUE
 		if (file.exists(file.path(anaDir, res[["reportDir"]], "exploratory.html"))) res[["existingReports"]]["exploratory"] <- TRUE
 		if (file.exists(file.path(anaDir, res[["reportDir"]], "differential.html"))) res[["existingReports"]]["differential"] <- TRUE
 	}
@@ -211,7 +211,9 @@ run_atac_filtering <- function(dsa, anaDir){
 	wfState <- getWfState(anaDir)
 	report <- NULL
 	filterStats <- list(
-		regionStats=NULL
+		regionStats=NULL,
+		params=list(),
+		steps=character(0)
 	)
 
 	regTypes <- getRegionTypes(dsa)
@@ -227,11 +229,14 @@ run_atac_filtering <- function(dsa, anaDir){
 	reqSamples <- getConfigElement("filteringCovgReqSamples")
 	thresh <- getConfigElement("filteringCovgCount")
 	if (reqSamples > 0 && thresh > 0 && !isSingleCell){
+		filterStats$params[["covgReqSamples"]] <- reqSamples
+		filterStats$params[["covgCount"]] <- thresh
+		filterStats$steps <- c(filterStats$steps, "region_covg")
 		logger.start("Coverage filtering")
 			logger.info(c("filteringCovgReqSamples:", reqSamples))
 			logger.info(c("filteringCovgCount:", thresh))
 			dsf <- filterLowCovg(dsa, thresh=thresh, reqSamples=reqSamples)
-			filterStats$regionStats[,"after_covg"] <- sapply(regTypes, FUN=function(rt){getNRegions(dsf, rt)})
+			filterStats$regionStats[,"after_region_covg"] <- sapply(regTypes, FUN=function(rt){getNRegions(dsf, rt)})
 		logger.completed()
 	}
 
@@ -241,10 +246,12 @@ run_atac_filtering <- function(dsa, anaDir){
 		exclChroms <- union(exclChroms, c("chrX", "chrY"))
 	}
 	if (length(exclChroms) > 0){
+		filterStats$steps <- c(filterStats$steps, "chromosomes")
+		filterStats$params[["exclChroms"]] <- exclChroms
 		logger.start("Chromosome filtering")
 			logger.info(c("Excluding chromosomes:", paste(exclChroms, collapse=",")))
 			dsf <- filterChroms(dsf, exclChrom=exclChroms)
-			filterStats$regionStats[,"after_chrom"] <- sapply(regTypes, FUN=function(rt){getNRegions(dsf, rt)})
+			filterStats$regionStats[,"after_chromosomes"] <- sapply(regTypes, FUN=function(rt){getNRegions(dsf, rt)})
 		logger.completed()
 	}
 	
@@ -266,16 +273,28 @@ run_atac_filtering <- function(dsa, anaDir){
 		keepCell <- rep(TRUE, length(getSamples(dsa)))
 		fragTmin <- getConfigElement("filteringScMinFragmentsPerCell")
 		if (fragTmin > 0){
+			if (any(keepCell & cellQcTab[,"nPass"] < fragTmin)){
+				filterStats$steps <- c(filterStats$steps, "sc_minFrags")
+				filterStats$params[["scMinFragmentsPerCell"]] <- fragTmin
+			}
 			keepCell <- keepCell & cellQcTab[,"nPass"] >= fragTmin
 		}
 		fragTmax <- getConfigElement("filteringScMaxFragmentsPerCell")
 		if (fragTmax < Inf){
+			if (any(keepCell & cellQcTab[,"nPass"] > fragTmax)){
+				filterStats$steps <- c(filterStats$steps, "sc_maxFrags")
+				filterStats$params[["scMaxFragmentsPerCell"]] <- fragTmax
+			}
 			keepCell <- keepCell & cellQcTab[,"nPass"] <= fragTmax
 		}
 		
 		tssT <- getConfigElement("filteringScMinTssEnrichment")
 		if (is.element("tssEnrichment", colnames(cellQcTab)) && tssT > 0){
-			keepCell <- keepCell & cellQcTab[,"tssEnrichment"] > tssT
+			if (any(keepCell & cellQcTab[,"tssEnrichment"] < tssT)){
+				filterStats$steps <- c(filterStats$steps, "sc_tssEnrichment")
+				filterStats$params[["scMinTssEnrichment"]] <- tssT
+			}
+			keepCell <- keepCell & cellQcTab[,"tssEnrichment"] >= tssT
 		}
 		if (!all(keepCell)){
 			logger.start("Single-cell filtering")
@@ -298,15 +317,10 @@ run_atac_filtering <- function(dsa, anaDir){
 
 	filterStats$regionStats[,"after"] <- sapply(regTypes, FUN=function(rt){getNRegions(dsf, rt)})
 
-	# generate a summary report (without fragment stats in case of bulk data)
-	if (!isSingleCell){
-		dsa <- removeFragmentData(dsa)
-	}
-
-	doReport <- !wfState$existingReports["summary_filtered"]
+	doReport <- !wfState$existingReports["filtering"]
 	if (doReport){
-		logger.start("Creating summary report")
-			report <- createReport_summary(dsa, file.path(wfState$anaDir, wfState$reportDir), reportFilename="summary_filtered")
+		logger.start("Creating filtering report")
+			report <- createReport_filtering(dsf, file.path(wfState$anaDir, wfState$reportDir), unfilteredObj=dsa, filterStats=filterStats)
 		logger.completed()
 	}
 

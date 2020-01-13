@@ -76,6 +76,7 @@ Collate:
     'differential_nome.R'
     'differential.R'
     'report_atac_summary.R'
+    'report_atac_filtering.R'
     'report_atac_exploratory.R'
     'report_atac_differential.R'
     'workflow.R'
