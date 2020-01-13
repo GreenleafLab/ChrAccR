@@ -42,6 +42,7 @@ getWfState <- function(anaDir){
 		reportDir = as.character(NA),
 		existingReports = c(
 			summary = FALSE,
+			summary_filtered = FALSE,
 			exploratory = FALSE,
 			differential = FALSE
 		)
@@ -59,6 +60,7 @@ getWfState <- function(anaDir){
 
 	if (!is.na(res[["reportDir"]])){
 		if (file.exists(file.path(anaDir, res[["reportDir"]], "summary.html"))) res[["existingReports"]]["summary"] <- TRUE
+		if (file.exists(file.path(anaDir, res[["reportDir"]], "summary_filtered.html"))) res[["existingReports"]]["summary_filtered"] <- TRUE
 		if (file.exists(file.path(anaDir, res[["reportDir"]], "exploratory.html"))) res[["existingReports"]]["exploratory"] <- TRUE
 		if (file.exists(file.path(anaDir, res[["reportDir"]], "differential.html"))) res[["existingReports"]]["differential"] <- TRUE
 	}
@@ -295,6 +297,18 @@ run_atac_filtering <- function(dsa, anaDir){
 	}
 
 	filterStats$regionStats[,"after"] <- sapply(regTypes, FUN=function(rt){getNRegions(dsf, rt)})
+
+	# generate a summary report (without fragment stats in case of bulk data)
+	if (!isSingleCell){
+		dsa <- removeFragmentData(dsa)
+	}
+
+	doReport <- !wfState$existingReports["summary_filtered"]
+	if (doReport){
+		logger.start("Creating summary report")
+			report <- createReport_summary(dsa, file.path(wfState$anaDir, wfState$reportDir), reportFilename="summary_filtered")
+		logger.completed()
+	}
 
 	res <- list(
 		ds_filtered=dsf,
