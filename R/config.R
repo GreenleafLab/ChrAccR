@@ -176,7 +176,7 @@ v2l <- function(x){
 }
 # convert a list with one-element entries into a vector. If not all elements of x have length 1, apply it recursively to all of them
 l2v <- function(x, ...){
-	if (!is.list(x)) stop("x must be a list")
+	if (!is.list(x)) return(x)
 	lls <- sapply(x, length)
 	if (all(lls<2)){
 		return(unlist(x, recursive=FALSE))
