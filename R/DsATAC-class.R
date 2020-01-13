@@ -2919,6 +2919,7 @@ setMethod("callPeaks",
 				peakGr <- getNonOverlappingByScore(peakGr, scoreCol="score_norm")
 				# peakGr <- ChrAccR:::getNonOverlappingByScore(peakGr, scoreCol="score_norm")
 				peakGr <- peakGr[order(as.integer(seqnames(peakGr)),start(peakGr), end(peakGr), as.integer(strand(peakGr)))] #sort
+				logger.info(c("Identified", length(peakGr), "peaks"))
 				return(peakGr)
 			}
 			logger.start("Calling peaks using MACS2")
@@ -3128,21 +3129,23 @@ setMethod("getTssEnrichmentBatch",
 		nSamples <- length(sampleIds)
 		logger.status("Retrieving fragment data ...")
 		fGr <- getFragmentGrl(.object, sampleIds, asGRangesList=FALSE)
-		logger.status("[DEBUG] ...(1)...") # TODO: remove DEBUG messages
+		# logger.status("[DEBUG] ...(1)...")
 		nFrags <- sapply(fGr, length)
-		logger.status("[DEBUG] ...(2)...") # TODO: remove DEBUG messages
+		# logger.status("[DEBUG] ...(2)...")
 		fGr <- do.call("c", unname(fGr))
-		logger.status("[DEBUG] ...(3)...") # TODO: remove DEBUG messages
+		# logger.status("[DEBUG] ...(3)...")
 		# fGr <- unlist(fGr, use.names=FALSE)
 		elementMetadata(fGr)[,".sampleIdx"] <- rep(seq_along(nFrags), nFrags)
 		logger.status("Retrieving joined insertion sites ...")
 		igr <- getInsertionSitesFromFragmentGr(fGr)
 		rm(fGr) # clean-up
+		cleanMem() # TODO: can this be removed?
 		logger.status("computing overlaps with TSS regions ...")
 		oo <- findOverlaps(tsswGr, igr, ignore.strand=TRUE)
 		tssGro <- tssGr[queryHits(oo)]
 		iGro <- igr[subjectHits(oo)]
 		rm(igr) # clean-up
+		cleanMem() # TODO: can this be removed?
 		# dd <- -grSignedDistance(tssGro, iGro)
 		dd <- start(iGro) - start(tssGro)
 		negIdx <- as.logical(strand(tssGro)=="-")

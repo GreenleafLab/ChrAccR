@@ -171,7 +171,7 @@ getConfigElement <- function(name){
 #' @author Fabian Mueller
 #' @export
 saveConfig <- function(dest){
-	cat(jsonlite::toJSON(as.list(.config), pretty=TRUE), file=dest)
+	cat(jsonlite::toJSON(as.list(.config), pretty=TRUE, null="null",na="string"), file=dest)
 }
 
 #' loadConfig

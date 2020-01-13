@@ -514,7 +514,7 @@ setMethod("iterativeLSI",
 				logger.start("Calling peaks")
 					clustPeakGrl <- callPeaks(dsrClust)
 					if (!is.null(it0nTopPeaksPerCluster)){
-						logger.info(paste0("Selecting the", it0nTopPeaksPerCluster, " peaks with highest score for each cluster"))
+						logger.info(paste0("Selecting the ", it0nTopPeaksPerCluster, " peaks with highest score for each cluster"))
 						clustPeakGrl <- GRangesList(lapply(clustPeakGrl, FUN=function(x){
 							idx <- rank(-elementMetadata(x)[,"score_norm"], na.last="keep", ties.method="min") <= it0nTopPeaksPerCluster
 							x[idx]
