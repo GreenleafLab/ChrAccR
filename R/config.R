@@ -161,6 +161,31 @@ getConfigElement <- function(name){
 	}
 	.config[[name]]
 }
+
+# convert a vector to list, if x is already a list, apply it recursively to all elements of x
+v2l <- function(x){
+	if (is.list(x)){
+		return(lapply(x, v2l))
+	} else {
+		if (length(x) > 1){
+			return(as.list(x))
+		} else {
+			return(x)
+		}
+	}
+}
+# convert a list with one-element entries into a vector. If not all elements of x have length 1, apply it recursively to all of them
+l2v <- function(x, ...){
+	if (!is.list(x)) stop("x must be a list")
+	lls <- sapply(x, length)
+	if (all(lls<2)){
+		return(unlist(x, recursive=FALSE))
+	} else {
+		idx <- lls > 1
+		x[idx] <- lapply(x[idx], l2v)
+		return(x)
+	}
+}
 #' saveConfig
 #'
 #' Save the current configuration to a configuration file (JSON)
@@ -173,9 +198,9 @@ getConfigElement <- function(name){
 saveConfig <- function(dest){
 	cfgL <- as.list(.config)
 	# toJSON does not allow for named vectors (https://github.com/jeroen/jsonlite/issues/76). Here's a workaround
-	namedVectors <- intersect(names(cfgL), c("geneModelVersions"))
+	namedVectors <- intersect(names(cfgL), c("geneModelVersions", "colorSchemes"))
 	for (nn in namedVectors){
-		cfgL[[nn]] <- as.list(cfgL[[nn]])
+		cfgL[[nn]] <- v2l(cfgL[[nn]])
 	}
 	cat(jsonlite::toJSON(cfgL, pretty=TRUE, null="null",na="string"), file=dest)
 }
@@ -191,12 +216,12 @@ saveConfig <- function(dest){
 #' @export
 loadConfig <- function(cfgFile){
 	# toJSON does not allow for named vectors (https://github.com/jeroen/jsonlite/issues/76). Here's a workaround
-	namedVectors <- c("geneModelVersions")
+	namedVectors <- c("geneModelVersions", "colorSchemes")
 
 	cfgList <- jsonlite::fromJSON(cfgFile)
 	for (nn in names(cfgList)){
 		if (is.element(nn, namedVectors)){
-			cfgList[[nn]] <- unlist(cfgList[[nn]])
+			cfgList[[nn]] <- l2v(cfgList[[nn]])
 		}
 		if (is.element(nn,ls(.config))){
 			.config[[nn]] <- cfgList[[nn]]
