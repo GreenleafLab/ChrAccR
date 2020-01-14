@@ -78,7 +78,7 @@ setMethod("createReport_filtering",
 				}
 			}
 			stepDesc <- list(
-				"region_covg" = paste("Regions with a coverage of less than", getParam("covgCount"), "in more than", round(getParam("covgReqSamples")*100,2), "% of samples have been removed."),
+				"region_covg" = paste("Regions with a coverage of less than", getParam("covgCount"), "in more than", round(1-getParam("covgReqSamples")*100,2), "% of samples have been removed."),
 				"chromosomes" = paste("Regions and fragments on chromosomes", paste(getParam("exclChroms"), collapse=", "), "have been removed."),
 				"sc_minFrags" = paste("Cells with less than", getParam("scMinFragmentsPerCell"), "unique fragments have been removed"),
 				"sc_maxFrags" = paste("Cells with more than", getParam("scMaxFragmentsPerCell"), "unique fragments have been removed (they might be doublets)"),
