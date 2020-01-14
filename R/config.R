@@ -23,6 +23,16 @@
 .config$chromVarMotifNamesForDimRed <- NULL
 .config$annotationColumns <- NULL
 .config$annotationMinGroupSize <- 2L
+.config$doPeakCalling <- FALSE
+.config$annotationPeakGroupColumn <- NULL
+.config$annotationPeakGroupAgreePerc <- 1
+.config$filteringCovgCount <- 1L
+.config$filteringCovgReqSamples <- 0.75
+.config$filteringSexChroms <- FALSE
+.config$filteringScMinFragmentsPerCell <- 1000L
+.config$filteringScMaxFragmentsPerCell <- Inf
+.config$filteringScMinTssEnrichment <- 6
+.config$normalizationMethod <- "quantile"
 .config$exploratoryLogNormCounts <- TRUE
 .config$differentialColumns <- NULL
 .config$differentialCompNames <- NULL
@@ -30,6 +40,7 @@
 .config$lolaDbPaths <- NULL
 .config$scIterativeLsiRegType <- NULL
 .config$scIterativeLsiClusterResolution <- 0.4
+.config$muPipeR_cmdr <- NULL
 
 #' setConfigElement
 #'
@@ -58,14 +69,14 @@
 #'   \item{\bold{\code{regionTypes}}}{
 #'       Region types to be used in the analysis
 #'   }
-#'   \item{\bold{\code{chromVarRegionTypes}}}{
+#'   \item{\bold{\code{chromVarRegionTypes}}\code{ = NULL}}{
 #'       Region types to be used for chromVar analysis. If \code{NULL} (default), ChrAccR will automatically look for region types with the keyword \code{"peak"} in their name.
 #'   }
-#' 	 \item{\bold{\code{chromVarMotifs}}}{
-#'       Character vector of names of TF motif sets to be used in ChromVAR analyses
+#' 	 \item{\bold{\code{chromVarMotifs}}\code{ = "jaspar_vert"}}{
+#'       Character vector of names of TF motif sets to be used in ChromVAR analyses. By default the vertebrate set of the JASPAR database will be used.
 #'   }
 #'   \item{\bold{\code{chromVarMotifNamesForDimRed}}}{
-#'       Names of motifs to be used for dimension reduction plots in the reports.
+#'       Names of motifs to be used for dimension reduction plots in the reports. [only relevant for single-cell data]
 #'   }
 #'   \item{\bold{\code{annotationColumns}}}{
 #'       Sample annotation columns to be used for reporting
@@ -73,14 +84,44 @@
 #'   \item{\bold{\code{annotationMinGroupSize}}}{
 #'       Minimum size of a group to be used in the reports. Influences which annotation columns are selected for reporting.
 #'   }
-#'   \item{\bold{\code{exploratoryLogNormCounts}}}{
+#'   \item{\bold{\code{doPeakCalling}}\code{ = FALSE}}{
+#'       Perform per-sample peak calling and retrieve consensus peak set. Requires that \code{macs2} is installed and can be called from the command line. [for bulk data analysis only]
+#'   }
+#'   \item{\bold{\code{annotationPeakGroupColumn}}}{
+#'       Annotation column to base the consensus peak set replication filtering on.
+#'   }
+#'   \item{\bold{\code{annotationPeakGroupAgreePerc}}\code{ = 1.0}}{
+#'       Percent of samples that have to agree to identify consensus peaks. See \code{\link{getConsensusPeakSet}} for details.
+#'   }
+#'   \item{\bold{\code{filteringCovgCount}}\code{ = 1L}}{
+#'       Minimum insertion count to filter count matrices by. See \code{\link{filterLowCovg,DsATAC-method}} for details. [for bulk data analysis only]
+#'   }
+#'   \item{\bold{\code{filteringCovgReqSamples}}\code{ = 0.75}}{
+#'       Minimum required samples to apply low coverage filtering to. See \code{\link{filterLowCovg,DsATAC-method}} for details. [for bulk data analysis only]
+#'   }
+#'   \item{\bold{\code{filteringSexChroms}}\code{ = FALSE}}{
+#'       Flag indicating whether to remove sex chromosomes.
+#'   }
+#'   \item{\bold{\code{filteringScMinFragmentsPerCell}}\code{ = 1000L}}{
+#'       Minimum number of fragments per cell to retain a cell in the analysis. [for single-cell data analysis only]
+#'   }
+#'   \item{\bold{\code{filteringScMaxFragmentsPerCell}}\code{ = Inf}}{
+#'       Maximum number of fragments allowed per cell to retain a cell in the analysis. [for single-cell data analysis only]
+#'   }
+#'   \item{\bold{\code{filteringScMinTssEnrichment}}\code{ = 6}}{
+#'       Minimum TSS enrichment score per cell to retain a cell in the analysis. [for single-cell data analysis only]
+#'   }
+#'   \item{\bold{\code{normalizationMethod}}\code{ = "quantile"}}{
+#'       Normalization method to use for count normalization. Allowed methods include the ones listed in \code{\link{transformCounts,DsATAC-method}}. [for bulk data analysis only]
+#'   }
+#'   \item{\bold{\code{exploratoryLogNormCounts}}\code{ = TRUE}}{
 #'       Should a log-normalization be applied in the exploratory plot sections of the reports (dimension reduction, heatmaps)
 #'   }
 #'   \item{\bold{\code{differentialColumns}}}{
 #'       Sample annotation columns to be used for differential testing and reporting
 #'   }
 #'   \item{\bold{\code{differentialCompNames}}}{
-#'       Comparison names from which comparison information is derived. Must be in the format of "$GRP1_NAME vs $GRP1_NAME [$ANNOTATION_COLUMN]".
+#'       Comparison names from which comparison information is derived. Must be in the format of "$GRP1_NAME vs $GRP2_NAME [$ANNOTATION_COLUMN]".
 #'   }
 #'   \item{\bold{\code{differentialAdjColumns}}}{
 #'       Sample annotation columns to be adjusted for in differential testing
@@ -92,8 +133,8 @@
 #'       For single-cell analysis only: region type to be used for clustering and dimension reduction using iterative LSI. By default (\code{NULL}),
 #'       ChrAccR will look for a region type named \code{"tiling"}.
 #'   }
-#'   \item{\bold{\code{scIterativeLsiClusterResolution}}}{
-#'       For single-cell analysis only: Cluster resolution to use for iterative LSI (default: \code{0.4}).
+#'   \item{\bold{\code{scIterativeLsiClusterResolution}}\code{ = 0.4}}{
+#'       For single-cell analysis only: Cluster resolution to use for iterative LSI.
 #'   }
 #' }
 #' @author Fabian Mueller
@@ -120,6 +161,31 @@ getConfigElement <- function(name){
 	}
 	.config[[name]]
 }
+
+# convert a named vector to list. If x is already a list, apply it recursively to all elements of x
+v2l <- function(x){
+	if (is.list(x)){
+		return(lapply(x, v2l))
+	} else {
+		if (length(x) > 1 && !is.null(names(x))){
+			return(as.list(x))
+		} else {
+			return(x)
+		}
+	}
+}
+# convert a list with one-element entries into a vector. If not all elements of x have length 1, apply it recursively to all of them
+l2v <- function(x, ...){
+	if (!is.list(x)) return(x)
+	lls <- sapply(x, length)
+	if (all(lls<2)){
+		return(unlist(x, recursive=FALSE))
+	} else {
+		idx <- lls > 1
+		x[idx] <- lapply(x[idx], l2v)
+		return(x)
+	}
+}
 #' saveConfig
 #'
 #' Save the current configuration to a configuration file (JSON)
@@ -130,7 +196,13 @@ getConfigElement <- function(name){
 #' @author Fabian Mueller
 #' @export
 saveConfig <- function(dest){
-	cat(jsonlite::toJSON(as.list(.config), pretty=TRUE), file=dest)
+	cfgL <- as.list(.config)
+	# toJSON does not allow for named vectors (https://github.com/jeroen/jsonlite/issues/76). Here's a workaround
+	namedVectors <- intersect(names(cfgL), c("geneModelVersions", "colorSchemes"))
+	for (nn in namedVectors){
+		cfgL[[nn]] <- v2l(cfgL[[nn]])
+	}
+	cat(jsonlite::toJSON(cfgL, pretty=TRUE, null="null",na="string"), file=dest)
 }
 
 #' loadConfig
@@ -143,8 +215,14 @@ saveConfig <- function(dest){
 #' @author Fabian Mueller
 #' @export
 loadConfig <- function(cfgFile){
+	# toJSON does not allow for named vectors (https://github.com/jeroen/jsonlite/issues/76). Here's a workaround
+	namedVectors <- c("geneModelVersions", "colorSchemes")
+
 	cfgList <- jsonlite::fromJSON(cfgFile)
 	for (nn in names(cfgList)){
+		if (is.element(nn, namedVectors)){
+			cfgList[[nn]] <- l2v(cfgList[[nn]])
+		}
 		if (is.element(nn,ls(.config))){
 			.config[[nn]] <- cfgList[[nn]]
 		} else {

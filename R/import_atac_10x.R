@@ -13,11 +13,12 @@
 #' @param maxFragsPerBarcode maximum number of fragments per barcode. Only barcodes with fewer fragments will be kept. [Only relevant if \code{cellAnnot==NULL}]
 #' @param cellAnnot    (optional) annotation table of all cells in the dataset. Must contain a \code{'cellId'} and \code{'cellBarcode'} columns.
 #' @param keepInsertionInfo flag indicating whether to maintain the insertion information in the resulting object.
+#' @param diskDump.fragments Keep fragment coordinates stored on disk rather than in main memory. This saves memory, but increases runtime and I/O.
 #' @param cellQcStats  flag indicating whether to compute additional cell QC statistics (TSS enrichment, etc.).
 #' @return \code{\linkS4class{DsATACsc}} object
 #' @author Fabian Mueller
 #' @export
-DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NULL, sampleIdCol=NULL, minFragsPerBarcode=500L, maxFragsPerBarcode=Inf, cellAnnot=NULL, keepInsertionInfo=FALSE, cellQcStats=TRUE){
+DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NULL, sampleIdCol=NULL, minFragsPerBarcode=500L, maxFragsPerBarcode=Inf, cellAnnot=NULL, keepInsertionInfo=FALSE, diskDump.fragments=keepInsertionInfo, cellQcStats=TRUE){
 	if (!is.character(fragmentFiles)) logger.error("Invalid value for fragmentFiles. Expected character")
 	if (length(fragmentFiles)==1 && is.element(fragmentFiles, colnames(sampleAnnot))){
 		fragmentFiles <- sampleAnnot[,fragmentFiles]
@@ -51,9 +52,15 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 			cellAnnot <- do.call("rbind", lapply(1:nSamples, FUN=function(i){
 				sid <- sampleIds[i]
 				logger.status(c("Sample:", sid, paste0("(", i, " of ", nSamples, ")")))
-				fragTab <- readTab(fragmentFiles[i], header=FALSE)
-				colnames(fragTab) <- c("chrom", "chromStart", "chromEnd", "barcode", "duplicateCount")
-				fragCounts <- table(fragTab[,"barcode"])
+				# fragTab <- readTab(fragmentFiles[i], header=FALSE)
+				# colnames(fragTab) <- c("chrom", "chromStart", "chromEnd", "barcode", "duplicateCount")
+				# fragCounts <- table(fragTab[,"barcode"])
+
+				fragGr <- rtracklayer::import(fragmentFiles[i], format="BED")
+				fragGr <- setGenomeProps(fragGr, genome, onlyMainChrs=TRUE, silent=TRUE)
+				colnames(elementMetadata(fragGr)) <- c("barcode", "duplicateCount")
+				fragCounts <- table(elementMetadata(fragGr)[,"barcode"])
+
 				if (minFragsPerBarcode > 0){
 					idx <- fragCounts >= minFragsPerBarcode
 					logger.info(c("Keeping", sum(idx), paste0("[of ", length(idx), "]"), "barcodes with more than", minFragsPerBarcode, "fragments"))
@@ -85,7 +92,7 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 	rownames(cellAnnot) <- cellAnnot[,"cellId"]
 	
 	logger.start("Creating DsATAC object")
-		obj <- DsATACsc(cellAnnot, genome, diskDump=FALSE, diskDump.fragments=keepInsertionInfo, sparseCounts=TRUE)
+		obj <- DsATACsc(cellAnnot, genome, diskDump=FALSE, diskDump.fragments=diskDump.fragments, sparseCounts=TRUE)
 		for (rt in names(regionSets)){
 			logger.info(c("Including region set:", rt))
 			obj <- regionAggregation(obj, regionSets[[rt]], rt, signal=NULL, dropEmpty=FALSE)
@@ -104,16 +111,24 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 				names(barcode2cellId) <- cellAnnot[sampleIdx,"cellBarcode"]
 
 				logger.start("Preparing fragment data")
-					fragGr <- readTab(fragmentFiles[i], header=FALSE)
-					colnames(fragGr) <- c("chrom", "chromStart", "chromEnd", "barcode", "duplicateCount")
-					fragGr <- fragGr[fragGr[,"barcode"] %in% names(barcode2cellId),] # only take into account fragments that can be mapped to cells
-					if (nrow(fragGr) < 2) logger.error("Too few fragments corresponding to actual cells")
-					fragGr <- df2granges(fragGr, chrom.col=1L, start.col=2L, end.col=3L, strand.col=NULL, coord.format="B1RI", assembly=obj@genome, doSort=TRUE, adjNumChromNames=TRUE)
+					# fragGr <- readTab(fragmentFiles[i], header=FALSE)
+					# colnames(fragGr) <- c("chrom", "chromStart", "chromEnd", "barcode", "duplicateCount")
+					# fragGr <- fragGr[fragGr[,"barcode"] %in% names(barcode2cellId),] # only take into account fragments that can be mapped to cells
+					# if (nrow(fragGr) < 2) logger.error("Too few fragments corresponding to actual cells")
+					# fragGr <- df2granges(fragGr, chrom.col=1L, start.col=2L, end.col=3L, strand.col=NULL, coord.format="B0RE", assembly=obj@genome, doSort=TRUE, adjNumChromNames=TRUE)
+					fragGr <- rtracklayer::import(fragmentFiles[i], format="BED")
+					colnames(elementMetadata(fragGr)) <- c("barcode", "duplicateCount")
+					fragGr <- fragGr[elementMetadata(fragGr)[,"barcode"] %in% names(barcode2cellId),] # only take into account fragments that can be mapped to cells
+					if (length(fragGr) < 2) logger.error("Too few fragments corresponding to actual cells")
+					fragGr <- setGenomeProps(fragGr, obj@genome, onlyMainChrs=TRUE, silent=TRUE)
 					fragGrl <- split(fragGr, elementMetadata(fragGr)[,"barcode"])
 					names(fragGrl) <- barcode2cellId[names(fragGrl)]
 				logger.completed()
 
 				logger.start("Preparing insertion data")
+					# convert GRangesList to regular list
+					fragGrl <- as.list(fragGrl)
+					logger.status("[DEBUG]")
 					insGrl <- lapply(fragGrl, getInsertionSitesFromFragmentGr)
 				logger.completed()
 				logger.start("Summarizing count data")
@@ -123,8 +138,8 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 				if (keepInsertionInfo) {
 					chunkedFragmentFiles <- obj@diskDump.fragments && .hasSlot(obj, "diskDump.fragments.nSamplesPerFile") && obj@diskDump.fragments.nSamplesPerFile > 1
 					logger.start("Adding fragment data to data structure")
+						nCells <- length(fragGrl)
 						if (chunkedFragmentFiles){
-							nCells <- length(fragGrl)
 							chunkL <- split(1:nCells, rep(1:ceiling(nCells/obj@diskDump.fragments.nSamplesPerFile), each=obj@diskDump.fragments.nSamplesPerFile)[1:nCells])
 							names(chunkL) <- NULL
 							for (k in 1:length(chunkL)){
@@ -135,14 +150,17 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 								obj@fragments[cids] <- rep(list(fn), length(iis))
 							}
 						} else {
-							for (cid in names(fragGrl)){
-								fgr <- fragGrl[[cid]]
-								if (obj@diskDump.fragments){
+							cids <- names(fragGrl)
+							# # convert GRangesList to regular list
+							# fragGrl <- as.list(fragGrl)
+							if (obj@diskDump.fragments){
+								obj@fragments[cids] <- lapply(fragGrl, FUN=function(x){
 									fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
-									saveRDS(fgr, fn, compress=TRUE)
-									fgr <- fn
-								}
-								obj@fragments[[cid]] <- fgr
+									saveRDS(x, fn, compress=TRUE)
+									return(fn)
+								})
+							} else {
+								obj@fragments[cids] <- fragGrl
 							}
 						}
 					logger.completed()
@@ -156,6 +174,10 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 		}
 	logger.completed()
 
+	logger.start("Removing uncovered regions from annotation")
+		obj <- filterLowCovg(obj, thresh=1L, reqSamples=1)
+	logger.completed()
+	
 	annoPkg <- getChrAccRAnnotationPackage(obj@genome)
 	if (keepInsertionInfo && cellQcStats) {
 		if (!is.null(annoPkg)){
@@ -181,10 +203,11 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 #' @param addPeakRegions should a merged set of peaks be created as one of the region sets (merged, non-overlapping peaks of width=500bp from the peaks of individual samples)
 #' @param sampleIdCol  column name or index in the sample annotation table containing unique sample identifiers
 #' @param keepInsertionInfo flag indicating whether to maintain the insertion information in the resulting object.
+#' @param diskDump.fragments Keep fragment coordinates stored on disk rather than in main memory. This saves memory, but increases runtime and I/O.
 #' @return \code{\linkS4class{DsATAC}} object
 #' @author Fabian Mueller
 #' @export
-DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="", regionSets=NULL, addPeakRegions=TRUE, sampleIdCol=sampleDirPrefixCol, keepInsertionInfo=FALSE){
+DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="", regionSets=NULL, addPeakRegions=TRUE, sampleIdCol=sampleDirPrefixCol, keepInsertionInfo=FALSE,  diskDump.fragments=keepInsertionInfo){
 	sampleIds <- as.character(sampleAnnot[,sampleIdCol])
 	rownames(sampleAnnot) <- sampleIds
 
@@ -301,7 +324,7 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 	}
 
 	fragmentFiles <- file.path(sampleDirs, "fragments.tsv.gz")
-	obj <- DsATACsc.fragments(sampleAnnot, fragmentFiles, genome=genome, regionSets=regionSets, sampleIdCol=sampleIdCol, cellAnnot=cellAnnot, keepInsertionInfo=keepInsertionInfo)
+	obj <- DsATACsc.fragments(sampleAnnot, fragmentFiles, genome=genome, regionSets=regionSets, sampleIdCol=sampleIdCol, cellAnnot=cellAnnot, keepInsertionInfo=keepInsertionInfo, diskDump.fragments=diskDump.fragments)
 	
 	return(obj)
 }

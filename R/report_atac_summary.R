@@ -36,7 +36,7 @@ setMethod("createReport_summary",
 	) {
 		if (!requireNamespace("muReportR")) logger.error(c("Could not load dependency: muReportR"))
 		initConfigDir <- !dir.exists(file.path(reportDir, "_config"))
-		rr <- muReportR::createReport(file.path(reportDir, "summary.html"), "Accessibility Summary", page.title = "Summary", init.configuration=initConfigDir, theme="stanford")
+		rr <- muReportR::createReport(file.path(reportDir, paste0("summary", ".html")), "Accessibility Summary", page.title = "Summary", init.configuration=initConfigDir, theme="stanford")
 		rDir.data <- muReportR::getReportDir(rr, dir="data", absolute=FALSE)
 		rDir.data.abs <- muReportR::getReportDir(rr, dir="data", absolute=TRUE)
 
@@ -134,12 +134,11 @@ setMethod("createReport_summary",
 				}
 			}
 			rr <- muReportR::addReportTable(rr, sampleStatsTab, row.names=FALSE, first.col.header=TRUE)
-			
 			plotL <- lapply(cns, FUN=function(cn){
 				pp <- ggplot(summaryDf) + aes_string(x="sample", y=cn) +
 				      geom_violin(adjust=1, fill="#4d4f53") +
 				      geom_boxplot(aes(fill=NULL), outlier.shape=NA, width=0.2) +
-				      coord_flip() +
+				      ylim(c(0,quantile(summaryDf[,cn], 0.98))) + coord_flip() +
 				      theme(axis.title.y=element_blank()) + guides(fill=FALSE) 
 				figFn <- paste0("statDistr_", cn)
 				repPlot <- muReportR::createReportGgPlot(pp, figFn, rr, width=10, height=5, create.pdf=TRUE, high.png=0L)
@@ -160,6 +159,10 @@ setMethod("createReport_summary",
 				)
 				rr <- muReportR::addReportParagraph(rr, txt)
 
+				cut_x <- getConfigElement("filteringScMinFragmentsPerCell")
+				if (!is.null(cut_x)) cut_x <- log10(cut_x)
+				cut_y <- getConfigElement("filteringScMinTssEnrichment")
+
 				sampleIds <- sampleStatsTab[,"sample"]
 				plotL <- lapply(1:length(sampleIds), FUN=function(i){
 					subDf <- summaryDf[summaryDf[,"sample"]==sampleIds[i],]
@@ -169,8 +172,11 @@ setMethod("createReport_summary",
 					)
 					df2p[, "pointDens"] <- muRtools::getPointDensity(df2p[, "log_nPass"], df2p[, "tssEnrichment"], n=100)
 
-					pp <- ggplot(df2p) + aes_string(x="log_nPass", y="tssEnrichment", color="pointDens") + geom_point(size=0.5) + 
-					      muRtools::ggAutoColorScale(df2p[, "pointDens"], method="color")
+					pp <- ggplot(df2p) + aes_string(x="log_nPass", y="tssEnrichment", color="pointDens")
+					if (!is.null(cut_x)) pp <- pp + geom_vline(xintercept=cut_x, color="#A0A0A0")
+					if (!is.null(cut_y)) pp <- pp + geom_hline(yintercept=cut_y, color="#A0A0A0")
+					pp <- pp + geom_point(size=0.5) + muRtools::ggAutoColorScale(df2p[, "pointDens"], method="color")
+
 					# pp <- muRtools::create.densityScatter(df2p, is.special=NULL, sparse.points=0.01)
 					figFn <- paste0("sampleTssEnrich_s", i)
 					repPlot <- muReportR::createReportGgPlot(pp, figFn, rr, width=7, height=7, create.pdf=TRUE, high.png=0L)
@@ -289,7 +295,7 @@ setMethod("createReport_summary",
 						repPlot <- muReportR::off(repPlot, handle.errors=TRUE)
 						plotL <- c(plotL, list(repPlot))
 
-						qcTab[sampleIds[i], "tssEnrichment"] <- tsse$tssEnrichment
+						qcTab[sampleIds[i], "tssEnrichment"] <- tsse$tssEnrichment.smoothed
 					}
 					figSettings.sampleId <- sampleIds
 					names(figSettings.sampleId) <- paste0("s", 1:length(sampleIds))

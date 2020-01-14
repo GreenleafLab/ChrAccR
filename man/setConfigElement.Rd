@@ -38,14 +38,14 @@ Set a configuration item to a given value
   \item{\bold{\code{regionTypes}}}{
       Region types to be used in the analysis
   }
-  \item{\bold{\code{chromVarRegionTypes}}}{
+  \item{\bold{\code{chromVarRegionTypes}}\code{ = NULL}}{
       Region types to be used for chromVar analysis. If \code{NULL} (default), ChrAccR will automatically look for region types with the keyword \code{"peak"} in their name.
   }
-	 \item{\bold{\code{chromVarMotifs}}}{
-      Character vector of names of TF motif sets to be used in ChromVAR analyses
+	 \item{\bold{\code{chromVarMotifs}}\code{ = "jaspar_vert"}}{
+      Character vector of names of TF motif sets to be used in ChromVAR analyses. By default the vertebrate set of the JASPAR database will be used.
   }
   \item{\bold{\code{chromVarMotifNamesForDimRed}}}{
-      Names of motifs to be used for dimension reduction plots in the reports.
+      Names of motifs to be used for dimension reduction plots in the reports. [only relevant for single-cell data]
   }
   \item{\bold{\code{annotationColumns}}}{
       Sample annotation columns to be used for reporting
@@ -53,14 +53,44 @@ Set a configuration item to a given value
   \item{\bold{\code{annotationMinGroupSize}}}{
       Minimum size of a group to be used in the reports. Influences which annotation columns are selected for reporting.
   }
-  \item{\bold{\code{exploratoryLogNormCounts}}}{
+  \item{\bold{\code{doPeakCalling}}\code{ = FALSE}}{
+      Perform per-sample peak calling and retrieve consensus peak set. Requires that \code{macs2} is installed and can be called from the command line. [for bulk data analysis only]
+  }
+  \item{\bold{\code{annotationPeakGroupColumn}}}{
+      Annotation column to base the consensus peak set replication filtering on.
+  }
+  \item{\bold{\code{annotationPeakGroupAgreePerc}}\code{ = 1.0}}{
+      Percent of samples that have to agree to identify consensus peaks. See \code{\link{getConsensusPeakSet}} for details.
+  }
+  \item{\bold{\code{filteringCovgCount}}\code{ = 1L}}{
+      Minimum insertion count to filter count matrices by. See \code{\link{filterLowCovg,DsATAC-method}} for details. [for bulk data analysis only]
+  }
+  \item{\bold{\code{filteringCovgReqSamples}}\code{ = 0.75}}{
+      Minimum required samples to apply low coverage filtering to. See \code{\link{filterLowCovg,DsATAC-method}} for details. [for bulk data analysis only]
+  }
+  \item{\bold{\code{filteringSexChroms}}\code{ = FALSE}}{
+      Flag indicating whether to remove sex chromosomes.
+  }
+  \item{\bold{\code{filteringScMinFragmentsPerCell}}\code{ = 1000L}}{
+      Minimum number of fragments per cell to retain a cell in the analysis. [for single-cell data analysis only]
+  }
+  \item{\bold{\code{filteringScMaxFragmentsPerCell}}\code{ = Inf}}{
+      Maximum number of fragments allowed per cell to retain a cell in the analysis. [for single-cell data analysis only]
+  }
+  \item{\bold{\code{filteringScMinTssEnrichment}}\code{ = 6}}{
+      Minimum TSS enrichment score per cell to retain a cell in the analysis. [for single-cell data analysis only]
+  }
+  \item{\bold{\code{normalizationMethod}}\code{ = "quantile"}}{
+      Normalization method to use for count normalization. Allowed methods include the ones listed in \code{\link{transformCounts,DsATAC-method}}. [for bulk data analysis only]
+  }
+  \item{\bold{\code{exploratoryLogNormCounts}}\code{ = TRUE}}{
       Should a log-normalization be applied in the exploratory plot sections of the reports (dimension reduction, heatmaps)
   }
   \item{\bold{\code{differentialColumns}}}{
       Sample annotation columns to be used for differential testing and reporting
   }
   \item{\bold{\code{differentialCompNames}}}{
-      Comparison names from which comparison information is derived. Must be in the format of "$GRP1_NAME vs $GRP1_NAME [$ANNOTATION_COLUMN]".
+      Comparison names from which comparison information is derived. Must be in the format of "$GRP1_NAME vs $GRP2_NAME [$ANNOTATION_COLUMN]".
   }
   \item{\bold{\code{differentialAdjColumns}}}{
       Sample annotation columns to be adjusted for in differential testing
@@ -72,8 +102,8 @@ Set a configuration item to a given value
       For single-cell analysis only: region type to be used for clustering and dimension reduction using iterative LSI. By default (\code{NULL}),
       ChrAccR will look for a region type named \code{"tiling"}.
   }
-  \item{\bold{\code{scIterativeLsiClusterResolution}}}{
-      For single-cell analysis only: Cluster resolution to use for iterative LSI (default: \code{0.4}).
+  \item{\bold{\code{scIterativeLsiClusterResolution}}\code{ = 0.4}}{
+      For single-cell analysis only: Cluster resolution to use for iterative LSI.
   }
 }
 }

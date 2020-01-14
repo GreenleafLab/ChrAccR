@@ -1245,6 +1245,7 @@ setMethod("addInsertionDataFromBam",
 						fragGr <- GenomicRanges::resize(fragGr, width(fragGr)-4, fix="start", ignore.strand=TRUE)
 					}
 				}
+				logger.info(c(length(fragGr), "fragments found"))
 				if (.diskDump){
 					if (chunkedFragmentFiles){
 						curChunkL[[sid]] <- fragGr
@@ -1515,7 +1516,7 @@ setMethod("transformCounts",
 		if (!all(regionTypes %in% getRegionTypes(.object))){
 			logger.error(c("Unsupported region type:", paste(setdiff(regionTypes, getRegionTypes(.object)), collapse=", ")))
 		}
-		if (!is.element(method, c("quantile", "percentile", "rankPerc", "log2", "RPKM", "vst", "batchCorrect", "tf-idf"))) logger.error(c("Unsupported normalization method type:", method))
+		if (!is.element(method, c("quantile", "percentile", "rankPerc", "log2", "RPKM", "CPM", "vst", "batchCorrect", "tf-idf"))) logger.error(c("Unsupported normalization method type:", method))
 
 		# choose appropriate functions for row and column functions
 		# depending on the matrix type
@@ -1581,14 +1582,16 @@ setMethod("transformCounts",
 					.object@countTransform[[rt]] <- c("percentile", .object@countTransform[[rt]])
 				}
 			logger.completed()
-		} else if (method == "RPKM"){
-			logger.start(c("Performing RPKM normalization"))
+		} else if (is.element(method, c("RPKM", "CPM"))){
+			doRpkm <- method=="RPKM"
+			logger.start(c("Performing", method, "normalization"))
 				for (rt in regionTypes){
 					logger.status(c("Region type:", rt))
 					cnames <- colnames(.object@counts[[rt]])
 					cm <- as.matrix(.object@counts[[rt]])
 					# cm <- .object@counts[[rt]]
-					regLen <- width(getCoord(.object, rt))
+					regLen <- rep(1000L, getNRegions(.object, rt)) # for CPM, treat all regions as length 1000
+					if (doRpkm) regLen <- width(getCoord(.object, rt))
 					sizeFac <- matrix(csFun(cm, na.rm=TRUE), ncol=ncol(cm), nrow=nrow(cm), byrow=TRUE)
 					# .object@counts[[rt]] <- data.table(cm/(regLen * sizeFac) * 1e3 * 1e6)
 					.object@counts[[rt]] <- cm/(regLen * sizeFac) * 1e3 * 1e6
@@ -1597,20 +1600,22 @@ setMethod("transformCounts",
 					.object@countTransform[[rt]] <- c("RPKM", .object@countTransform[[rt]])
 				}
 			logger.completed()
-		} else if (method == "log2"){
+		} else if (is.element(method, c("log2", "log10"))){
 			c0 <- 1
-			logger.start(c("log2 transforming counts"))
-				if (.object@sparseCounts) logger.error("Generating sparse matrix for matrix with possible true zero entries (log2)")
+			logFun <- log10
+			if (method=="log2") logFun <- log2
+			logger.start(c(method, "transforming counts"))
+				if (.object@sparseCounts) logger.error("Generating sparse matrix for matrix with possible true zero entries (", method, ")")
 				for (rt in regionTypes){
 					logger.status(c("Region type:", rt))
 					cm <- as.matrix(.object@counts[[rt]])
 					cnames <- colnames(cm)
 					idx <- !is.na(cm) & cm!=0
-					cm[idx] <- log2(cm[idx] + c0)
+					cm[idx] <- logFun(cm[idx] + c0)
 					.object@counts[[rt]] <- cm
 					if (.object@diskDump) .object@counts[[rt]] <- as(.object@counts[[rt]], "HDF5Array")
 					colnames(.object@counts[[rt]]) <- cnames
-					.object@countTransform[[rt]] <- c("log2", .object@countTransform[[rt]])
+					.object@countTransform[[rt]] <- c(method, .object@countTransform[[rt]])
 				}
 			logger.completed()
 		} else if (method == "vst"){
@@ -2832,36 +2837,71 @@ setMethod("callPeaks",
 			} else {
 				logger.error(c("Unsupported genome for peak calling:", .object@genome))
 			}
-			callDir <- tempdir()
-			peakGrl <- lapply(samples, FUN=function(sid){
-				logger.status(c("Calling peaks for sample:", sid))
-				fp <- getHashString(pattern=sid)
-				insFn <- file.path(callDir, paste0(fp, "_ins.bed"))
-				# peakFn <- file.path(callDir, paste0(fp, "_summits.bed"))
-				peakFn <- file.path(callDir, paste0(fp, "_peaks.narrowPeak"))
 
-				# logger.status(c("[DEBUG:] Retrieving insertion sites..."))
-				insGr <- getInsertionSites(.object, sid)[[1]]
-				# logger.status(c("[DEBUG:] Writing to temp file..."))
-				coordOnly <- all(as.character(strand(insGr)) %in% c("*", "."))
-				granges2bed(insGr, insFn, score=NULL, addAnnotCols=FALSE, colNames=FALSE, doSort=TRUE, coordOnly=coordOnly)
+			nSamples <- length(samples)
+			samplePrefixes <- sapply(samples, FUN=function(x){getHashString(pattern=x)})
+			genomeAss <- .object@genome
+
+			callDir <- tempdir()
+
+			cmdr <- getConfigElement("muPipeR_cmdr")
+			doCmdR <- !is.null(cmdr) && inherits(cmdr, "CommandR")
+			if (doCmdR){
+				callDir <- getConfigElement("tmpDir")
+			}
+
+			logger.start("Preparing insertion bed files")
+				insFns <- sapply(seq_along(samples), FUN=function(i){
+					sid <- samples[i]
+					logger.status(c("Sample:", sid, paste0("(", i, " of ", nSamples,")")))
+					fp <- samplePrefixes[i]
+					insFn <- file.path(callDir, paste0(fp, "_ins.bed"))
+					# logger.status(c("[DEBUG:] Retrieving insertion sites..."))
+					insGr <- getInsertionSites(.object, sid)[[1]]
+					# logger.status(c("[DEBUG:] Writing to temp file..."))
+					coordOnly <- all(as.character(strand(insGr)) %in% c("*", "."))
+					granges2bed(insGr, insFn, score=NULL, addAnnotCols=FALSE, colNames=FALSE, doSort=TRUE, coordOnly=coordOnly)
+					return(insFn)
+				})
+				names(insFns) <- samples
+			logger.completed()
+
+			# variable environment (for parallel computation using lapplyExec)
+			envList <- list(
+				samples=samples,
+				insFns=insFns,
+				callDir=callDir,
+				samplePrefixes=samplePrefixes,
+				genomeAss=genomeAss,
+				methodOpts=methodOpts,
+				argV=argV,
+				genomeSizeArg=genomeSizeArg
+			)
+			# function to be used for peak calling
+			callPeakFun <- function(i){
+				sid <- samples[i]
+				logger.status(c("Calling peaks for sample:", sid, paste0("(", i, " of ", length(samples),")")))
+				
+				# peakFn <- file.path(callDir, paste0(fp, "_summits.bed"))
+				peakFn <- file.path(callDir, paste0(samplePrefixes[i], "_peaks.narrowPeak"))
 
 				# logger.status(c("[DEBUG:] Calling MACS2..."))
 				aa <- c(
 					"callpeak",
 					"-g", genomeSizeArg,
-					"--name", fp,
-					"--treatment", insFn,
+					"--name", samplePrefixes[i],
+					"--treatment", insFns[sid],
 					"--outdir", callDir,
 					"--format", "BED",
 					argV
 				)
-				system2(methodOpts$macs2.exec, aa, wait=TRUE, stdout="", stderr="")
+				system2(methodOpts$macs2.exec, aa, wait=TRUE, stdout="", stderr="") # MACS2 log messages to console
+				# system2(methodOpts$macs2.exec, aa, wait=TRUE, stdout=FALSE, stderr=FALSE) # suppress MACS2 log messages
 
 				# logger.status(c("[DEBUG:] Reading MACS2 output..."))
 				# peakGr <- rtracklayer::import(peakFn, format="BED")
 				peakGr <- readMACS2peakFile(peakFn)
-				peakGr <- setGenomeProps(peakGr, .object@genome, onlyMainChrs=TRUE, silent=TRUE)
+				peakGr <- setGenomeProps(peakGr, genomeAss, onlyMainChrs=TRUE, silent=TRUE)
 				peakGr <- peakGr[isCanonicalChrom(as.character(seqnames(peakGr)))]
 				elementMetadata(peakGr)[,"calledPeakStart"] <- start(peakGr)
 				elementMetadata(peakGr)[,"calledPeakEnd"] <- end(peakGr)
@@ -2870,7 +2910,7 @@ setMethod("callPeaks",
 				# scs <- elementMetadata(peakGr)[,"score"]
 				scs <- elementMetadata(peakGr)[,"negLog10qval"]
 				elementMetadata(peakGr)[,"score_norm"] <- ecdf(scs)(scs)
-				elementMetadata(peakGr)[,"name"] <- gsub(paste0("^", fp), sid, elementMetadata(peakGr)[,"name"])#replace the hashstring in the name by just the sample id
+				elementMetadata(peakGr)[,"name"] <- gsub(paste0("^", samplePrefixes[i]), sid, elementMetadata(peakGr)[,"name"])#replace the hashstring in the name by just the sample id
 
 				# logger.status(c("[DEBUG:] Extending summits..."))
 				peakGr <- trim(promoters(peakGr, upstream=methodOpts$fixedWidth, downstream=methodOpts$fixedWidth+1)) #extend each summit
@@ -2879,9 +2919,28 @@ setMethod("callPeaks",
 				peakGr <- getNonOverlappingByScore(peakGr, scoreCol="score_norm")
 				# peakGr <- ChrAccR:::getNonOverlappingByScore(peakGr, scoreCol="score_norm")
 				peakGr <- peakGr[order(as.integer(seqnames(peakGr)),start(peakGr), end(peakGr), as.integer(strand(peakGr)))] #sort
+				logger.info(c("Identified", length(peakGr), "peaks"))
 				return(peakGr)
-			})
-			names(peakGrl) <- samples
+			}
+			logger.start("Calling peaks using MACS2")
+				if (doCmdR){
+					peakGrl <- lapplyExec(
+						cmdr,
+						lapply(seq_along(samples), identity),
+						callPeakFun,
+						env=envList,
+						Rexec="Rscript",
+						name=paste0("chraccr_callPeaks")
+					)
+				} else {
+					peakGrl <- lapply(seq_along(samples), callPeakFun)
+				}
+				names(peakGrl) <- samples
+
+				# cleanup
+				fns <- file.path(callDir, paste0(samplePrefixes, "*"))
+				unlink(fns)
+			logger.completed()
 			peakGrl <- GRangesList(peakGrl)
 		}
 		return(peakGrl)
@@ -3070,21 +3129,23 @@ setMethod("getTssEnrichmentBatch",
 		nSamples <- length(sampleIds)
 		logger.status("Retrieving fragment data ...")
 		fGr <- getFragmentGrl(.object, sampleIds, asGRangesList=FALSE)
-		logger.status("[DEBUG] ...(1)...") # TODO: remove DEBUG messages
+		# logger.status("[DEBUG] ...(1)...")
 		nFrags <- sapply(fGr, length)
-		logger.status("[DEBUG] ...(2)...") # TODO: remove DEBUG messages
+		# logger.status("[DEBUG] ...(2)...")
 		fGr <- do.call("c", unname(fGr))
-		logger.status("[DEBUG] ...(3)...") # TODO: remove DEBUG messages
+		# logger.status("[DEBUG] ...(3)...")
 		# fGr <- unlist(fGr, use.names=FALSE)
 		elementMetadata(fGr)[,".sampleIdx"] <- rep(seq_along(nFrags), nFrags)
 		logger.status("Retrieving joined insertion sites ...")
 		igr <- getInsertionSitesFromFragmentGr(fGr)
 		rm(fGr) # clean-up
+		cleanMem() # TODO: can this be removed?
 		logger.status("computing overlaps with TSS regions ...")
 		oo <- findOverlaps(tsswGr, igr, ignore.strand=TRUE)
 		tssGro <- tssGr[queryHits(oo)]
 		iGro <- igr[subjectHits(oo)]
 		rm(igr) # clean-up
+		cleanMem() # TODO: can this be removed?
 		# dd <- -grSignedDistance(tssGro, iGro)
 		dd <- start(iGro) - start(tssGro)
 		negIdx <- as.logical(strand(tssGro)=="-")

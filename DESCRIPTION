@@ -31,6 +31,9 @@ Suggests:
     TFBSTools,
     seqLogo,
     pheatmap,
+    grid,
+    circlize,
+    ComplexHeatmap,
     grDevices,
     BSgenome.Hsapiens.NCBI.GRCh38,
     BSgenome.Hsapiens.UCSC.hg38,
@@ -76,8 +79,11 @@ Collate:
     'differential_nome.R'
     'differential.R'
     'report_atac_summary.R'
+    'report_atac_filtering.R'
+    'report_atac_normalization.R'
     'report_atac_exploratory.R'
     'report_atac_differential.R'
+    'workflow.R'
 VignetteBuilder: knitr
 Encoding: UTF-8
 RoxygenNote: 7.0.2

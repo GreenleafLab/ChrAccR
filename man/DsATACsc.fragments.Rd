@@ -14,6 +14,7 @@ DsATACsc.fragments(
   maxFragsPerBarcode = Inf,
   cellAnnot = NULL,
   keepInsertionInfo = FALSE,
+  diskDump.fragments = keepInsertionInfo,
   cellQcStats = TRUE
 )
 }
@@ -37,6 +38,8 @@ and must not contain a header line}
 \item{cellAnnot}{(optional) annotation table of all cells in the dataset. Must contain a \code{'cellId'} and \code{'cellBarcode'} columns.}
 
 \item{keepInsertionInfo}{flag indicating whether to maintain the insertion information in the resulting object.}
+
+\item{diskDump.fragments}{Keep fragment coordinates stored on disk rather than in main memory. This saves memory, but increases runtime and I/O.}
 
 \item{cellQcStats}{flag indicating whether to compute additional cell QC statistics (TSS enrichment, etc.).}
 }
