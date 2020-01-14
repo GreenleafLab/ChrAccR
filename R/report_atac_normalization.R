@@ -125,7 +125,7 @@ setMethod("createReport_normalization",
 				i <- i + 1
 			}
 
-			print("blubb")
+			print("blubb2")
 
 			# Side-by-side quantile heatmaps
 			cs <- getConfigElement("colorSchemesCont")[[".default"]]
@@ -137,8 +137,8 @@ setMethod("createReport_normalization",
 				row_title = "quantile",
 				cluster_rows=FALSE,
 				cluster_columns=FALSE,
-				row_names_gp = gpar(fontsize=6),
-				column_names_gp = gpar(fontsize=6),
+				row_names_gp = grid::gpar(fontsize=6),
+				column_names_gp = grid::gpar(fontsize=6),
 				show_row_names = TRUE, show_column_names = TRUE
 			)
 			hmn <- ComplexHeatmap::Heatmap(qmN, name=paste("Normalized", countLabel),
@@ -147,8 +147,8 @@ setMethod("createReport_normalization",
 				row_title = "quantile",
 				cluster_rows=FALSE,
 				cluster_columns=FALSE,
-				row_names_gp = gpar(fontsize=6),
-				column_names_gp = gpar(fontsize=6),
+				row_names_gp = grid::gpar(fontsize=6),
+				column_names_gp = grid::gpar(fontsize=6),
 				show_row_names = TRUE, show_column_names = TRUE
 			)
 			repPlot <- muReportR::createReportPlot(paste0("quantileHeatmaps_", rtString), rr, width=10, height=7, create.pdf=TRUE, high.png=300L)
