@@ -174,6 +174,10 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 		}
 	logger.completed()
 
+	logger.start("Removing uncovered regions from annotation")
+		obj <- filterLowCovg(obj, thresh=1L, reqSamples=1)
+	logger.completed()
+	
 	annoPkg <- getChrAccRAnnotationPackage(obj@genome)
 	if (keepInsertionInfo && cellQcStats) {
 		if (!is.null(annoPkg)){
