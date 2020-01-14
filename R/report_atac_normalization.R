@@ -116,7 +116,7 @@ setMethod("createReport_normalization",
 			i <- 0
 			for (sid in sampleIds.ext){
 				pp <- ggplot(df2p[df2p[,"sampleId"]==sid,]) + aes_string(x=paste(countLabel, "unnormalized", sep="_"), y=paste(countLabel, "normalized", sep="_")) +
-					  coord_cartesian(xlim=c(0, 1), ylim=c(0, 1)) + coord_fixed() +
+					  coord_fixed() +
 					  geom_abline(intercept=0, slope=1, color="#A0A0A0") + geom_path(lineend="round", size=2) +
 					  theme(aspect.ratio=1)
 				repPlot <- muReportR::createReportGgPlot(pp, paste0("qqPlot_", rtString, "_s", i), rr, width=7, height=7, create.pdf=TRUE, high.png=0L)
@@ -129,7 +129,7 @@ setMethod("createReport_normalization",
 			cs <- getConfigElement("colorSchemesCont")[[".default"]]
 			colScheme <- circlize::colorRamp2(seq(0, maxCount, length.out=length(cs)), cs)
 
-			hmu <- Heatmap(qmU, name=paste("Unnormalized", countLabel),
+			hmu <- ComplexHeatmap::Heatmap(qmU, name=paste("Unnormalized", countLabel),
 				col = colScheme,
 				column_title = "Unnormalized",
 				row_title = "quantile",
@@ -138,7 +138,7 @@ setMethod("createReport_normalization",
 				row_names_gp = gpar(fontsize=6),
 				show_row_names = TRUE, show_column_names = TRUE
 			)
-			hmn <- Heatmap(qmN, name=paste("Normalized", countLabel),
+			hmn <- ComplexHeatmap::Heatmap(qmN, name=paste("Normalized", countLabel),
 				col = colScheme,
 				column_title = "Normalized",
 				row_title = "quantile",
@@ -149,7 +149,7 @@ setMethod("createReport_normalization",
 			)
 			repPlot <- muReportR::createReportPlot(paste0("quantileHeatmaps_", rtString), rr, width=10, height=5, create.pdf=TRUE, high.png=300L)
 			# pdf(fn, width=10, height=10, onefile=FALSE)
-				draw(hmu + hmn)
+				ComplexHeatmap::draw(hmu + hmn)
 			repPlot <- muReportR::off(repPlot)
 			plotL.hm <- c(plotL.hm, list(repPlot))
 		}
