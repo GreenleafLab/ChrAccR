@@ -43,6 +43,8 @@ in bulk and single-cell scenarios.
 
 This vignette focuses on the analysis of ATAC-seq data. This data can be directly imported from aligned sequencing reads into a `DsATAC` object, the main data structure for working with ATAC-seq data. Using a small example dataset of chromatin accessibility in human immune cells, this vignette covers filtering, normalizing and aggregating count data across genomic regions of interest and introduces convenient utility functions for quality control (QC), data exploration and differential analysis. Additionally, `ChrAccR` facilitates the automatic generation of analysis reports using several preconfigured workflows.
 
+We first provide instructions for running the entire analysis in a ''vanilla'' workflow and then dive a little deeper into the underlying data structures and custom analysis methods that `ChrAccR` provides for highly individualized analyses.
+
 # Installation
 
 To install `ChrAccR` and its dependencies, use the `devtools` installation routine:
@@ -60,7 +62,14 @@ devtools::install_github("demuellae/muReportR")
 devtools::install_github("GreenleafLab/ChrAccR")
 ```
 
-# Loading the package and example data
+We also provide complementary packages that contain genome-specific annotations. We highly recommend installing these annotation packages in order to speed up certain steps of the analysis:
+
+```{r, message = FALSE, warning = FALSE, eval = FALSE}
+# hg38 annotation package
+install.packages("https://muellerf.s3.amazonaws.com/data/ChrAccR/data/annotation/ChrAccRAnnotationHg38_0.0.1.tar.gz")
+```
+
+# Preparing the workspace
 
 Loading `ChrAccR` works just like loading any other R package
 ```{r, message = FALSE, warning = FALSE}
@@ -81,9 +90,76 @@ library(ggplot2)
 theme_set(muRtools::theme_nogrid())
 ```
 
-The example data used in this vignette was designed for illustrating the functionality of `ChrAccR` rather than a full analysis. It contains ATAC-seq data for a subset of different T cell samples from the immune atlas dataset [@Calderon:2019cb] and it focuses on only a subset of the human genome (approximately 1%). It can be loaded using:
-```{r, message = FALSE, warning = FALSE}
-dsa <- ChrAccRex::loadExample("dsAtac_ia_example")
+# Vanilla analysis
+
+We start by running the entire analysis pipeline on an example dataset. After annotating the samples to be used in the analysis and specifying a couple of analysis parameters, this can essentially be done using just one command (`run_atac(...)`). 
+
+## Example dataset
+
+We provide an example dataset of ATAC-seq profiles of a subset of 33 human T cell samples taken from [@Calderon:2019cb]. This dataset contains BAM files as well as a sample annotation table. If you have not already done so, please download and unzip the dataset:
+```{r, message = FALSE, warning = FALSE, eval = FALSE}
+# download and unzip the dataset
+datasetUrl <- "https://s3.amazonaws.com/muellerf/data/ChrAccR/data/tutorial/tcells.zip"
+downFn <- "tcells.zip"
+download.file(datasetUrl, downFn)
+unzip(downFn, exdir=".")
+```
+
+## Configuring the analysis
+
+A properly curated sample annotation table is essential for the entire analysis. Such an annotation at the minimum should contain sample identifiers, but ideally contains all sorts of available information for each sample, such as phenotypical and technical metadata. This especially includes information relevant for sample gouping and differential analysis. In the example dataset, we provide such an annotation table:
+
+```{r, message = FALSE, warning = FALSE, eval = FALSE}
+# prepare the sample annotation table
+sampleAnnotFn <- file.path("tcells", "samples.tsv")
+bamDir <- file.path("tcells", "bam")
+sampleAnnot <- read.table(sampleAnnotFn, sep="\t", header=TRUE, stringsAsFactors=FALSE)
+# add a column that ChrAccR can use to find the correct bam file for each sample
+sampleAnnot[,"bamFilenameFull"] <- file.path(bamDir, sampleAnnot[,"bamFilename"])
+```
+
+Let us now also set a couple of analysis parameters and reporting preferences. These options can be set using the `setConfigElement` function and can be queried using `getConfigElement`. A list of all available options is contained in the documentation of `setConfigElement` (e.g. use `?setConfigElement`). Here, we tell ChrAccR which annotation columns to focus on, which color schemes to use for some of these annotation, set filtering thresholds for low-coverage regions, the normalization method to be used and specify what comparisons to use for differential analysis:
+
+```{r, message = FALSE, warning = FALSE, eval = FALSE}
+setConfigElement("annotationColumns", c("cellType", "stimulus", "donor"))
+setConfigElement("colorSchemes", c(
+  getConfigElement("colorSchemes"), 
+  list(
+    "stimulus"=c("U"="royalblue", "S"="tomato"),
+    "cellType"=c("TCD8naive"="purple3", "TCD8EM"="purple4", "TeffNaive"="seagreen3", "TeffMem"="seagreen4")
+  )
+))
+setConfigElement("filteringCovgCount", 1L)
+setConfigElement("filteringCovgReqSamples", 0.25)
+setConfigElement("filteringSexChroms", TRUE)
+setConfigElement("normalizationMethod", "quantile")
+diffCompNames <- c(
+  "TeffNaive_U vs TeffMem_U [sampleGroup]",
+  "TCD8naive_U vs TCD8EM_U [sampleGroup]"
+)
+setConfigElement("differentialCompNames", diffCompNames)
+```
+
+`ChrAccR` uses sets of predefined genomic regions to summarize count data. By default, this includes 200bp-tiling windows. The following code generates a list of custom region sets that we can optionally use in the analysis. Here, we use 500-bp tiling regions a consensus set of ATAC-seq peaks that were identified in a large cancer dataset.
+
+```{r, message = FALSE, warning = FALSE, eval = FALSE}
+# Download an ATAC peak set from a Pan-cancer dataset [doi:10.1126/science.aav1898]
+cancerPeaks <- read.table("https://api.gdc.cancer.gov/data/116ebba2-d284-485b-9121-faf73ce0a4ec", sep="\t", header=TRUE, comment.char="", quote="", stringsAsFactors=FALSE)
+cancerPeaks <- GenomicRanges::GRanges(cancerPeaks[,"seqnames"], IRanges::IRanges(start=cancerPeaks[,"start"], end=cancerPeaks[,"end"], names=cancerPeaks[,"name"]))
+cancerPeaks <- sort(cancerPeaks) # sort
+# a list of custom region sets
+regionSetList <- list(
+  tiling500bp = muRtools::getTilingRegions("hg38", width=500L, onlyMainChrs=TRUE),
+  cancerPeaks = cancerPeaks
+)
+```
+
+## Running the analysis
+
+After these preparatory steps, we can run through the default `ChrAccR` workflow with a single command using the `run_atac` function. Supplied with the sample annotation table and a reference to BAM files (or BED files containing fragments), it will automatically run the entire pipeline including importing the dataset, quality control analysis, filtering, count normalization, exploratory analysis and (optionally) differential accessibility analysis.
+
+```{r, message = FALSE, warning = FALSE, eval = FALSE}
+run_atac("ChrAccR_analysis", "bamFilenameFull", sampleAnnot, genome="hg38", sampleIdCol="sampleId", regionSets=regionSetList)
 ```
 
 # Overview of `ChrAccR` data structures
@@ -96,6 +172,11 @@ Each `DsATAC` object contains
 * Genomic coordinates for one ore more region sets, such as promoters, enhancers, acessibility peaks or genomic tiling windows
 * Aggregate counts for each genomic region as quantification of accessibility
 * Optionally, the coordinates of sequencing fragments/reads
+
+For playing around with the `ChrAccR` datastructures, we use a reduced version of the [@Calderon:2019cb] dataset which focuses on only a subset of the human genome (approximately 1%). It is provided in the `ChrAccRex` package and can be loaded using:
+```{r, message = FALSE, warning = FALSE}
+dsa <- ChrAccRex::loadExample("dsAtac_ia_example")
+```
 
 To get an overview of what information is stored in the example dataset, you can just type the object name:
 ```{r, message = FALSE, warning = FALSE}
@@ -227,37 +308,22 @@ dsa_reloaded <- loadDsAcc(dest)
 dsa_reloaded
 ```
 
-# Importing ATAC-seq data
+If you ran the vanilla analysis using `` as described above, you automatically generated and saved `DsATAC` datasets. They are stored in the `data` subdirectory of your analysis directory (`ChrAccR_analysis`):
 
-We provide a reduced version of the example dataset that you have already seen as raw files. This dataset contains BAM files for one technical replicate of the example dataset as well as a sample annotation table. If you have not already done so, please download and unzip the dataset:
 ```{r, message = FALSE, warning = FALSE, eval = FALSE}
-# download and unzip the dataset
-datasetUrl <- "https://s3.amazonaws.com/muellerf/data/ChrAccR/data/tutorial/tcells.zip"
-downFn <- "tcells.zip"
-download.file(datasetUrl, downFn)
-unzip(downFn, exdir=".")
+dsa_vanilla <- loadDsAcc(file.path("ChrAccR_analysis", "data", "dsATAC_processed"))
+dsa_vanilla
 ```
+
+
+# Importing ATAC-seq data
 
 ## Importing data from `bam` files
 
-ATAC-seq data can be read from BAM files that contain aligned reads. These reads originate from fragments whose endpoints resemble Tn5 insertion sites. All `ChrAccR` needs to read the input files is a sample annotation table and pointers to the BAM files. The following code reads the sample annotation table from the supplied text file and adds a column that contains the BAM file locations on your disk for each sample. Additionally, we prepare a list of region sets (genome-wide tiling regions with window sizes of 500bp and 5kb) that we want to aggregate the insertion counts over.
-```{r, message = FALSE, warning = FALSE, eval = FALSE}
-# prepare the sample annotation table
-sampleAnnotFn <- file.path("tcells", "samples.tsv")
-bamDir <- file.path("tcells", "bam")
-sampleAnnot <- read.table(sampleAnnotFn, sep="\t", header=TRUE, stringsAsFactors=FALSE)
-# add a column that ChrAccR can use to find the correct bam file for each sample
-sampleAnnot[,"bamFilenameFull"] <- file.path(bamDir, sampleAnnot[,"bamFilename"])
-# prepare a list of GRanges object. Each element corresponds to a region set
-rsl <- list(
-  "tiling500bp" = muRtools::getTilingRegions("hg38", width=500L, onlyMainChrs=TRUE),
-  "tiling5kb" = muRtools::getTilingRegions("hg38", width=5000L, onlyMainChrs=TRUE)
-)
-```
+ATAC-seq data can be read from BAM files that contain aligned reads. These reads originate from fragments whose endpoints resemble Tn5 insertion sites. All `ChrAccR` needs to read the input files is a sample annotation table and pointers to the BAM files. The following code reads the sample annotation table from the supplied text file and adds a column that contains the BAM file locations on your disk for each sample. Additionally, we prepare a list of region sets (genome-wide tiling regions with window sizes of 500bp and 5kb) that we want to aggregate the insertion counts over. Using the dataset downloaded and prepared in the 'Vanilla analysis' section of this vignette, we can easily create a `DsATAC` dataset using the `DsATAC.bam` function. Supplied with the sample annotation table and a reference to the BAM files, it will automatically determine Tn5 insertion sites from the BAM files and aggregate counts over the optionally supplied list of region sets (if no such list is provided, 200bp-tiling windows will be used as the default):
 
-After these preparatory steps, we can easily create a `DsATAC` dataset using the `DsATAC.bam` function. Supplied with the sample annotation table and a reference to the BAM files, it will automatically determine Tn5 insertion sites from the BAM files and aggregate counts over the optionally supplied list of region sets (if no such list is provided, 200bp-tiling windows will be used as the default).
 ```{r, message = FALSE, warning = FALSE, eval = FALSE}
-dsa_fromBam <- DsATAC.bam(sampleAnnot, "bamFilenameFull", "hg38", regionSets=rsl, sampleIdCol="sampleId")
+dsa_fromBam <- DsATAC.bam(sampleAnnot, "bamFilenameFull", "hg38", regionSets=regionSetList, sampleIdCol="sampleId")
 ```
 
 # Analysis reports
