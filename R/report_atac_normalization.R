@@ -125,6 +125,8 @@ setMethod("createReport_normalization",
 				i <- i + 1
 			}
 
+			print("blubb")
+
 			# Side-by-side quantile heatmaps
 			cs <- getConfigElement("colorSchemesCont")[[".default"]]
 			colScheme <- circlize::colorRamp2(seq(0, maxCount, length.out=length(cs)), cs)
