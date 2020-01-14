@@ -99,6 +99,7 @@ resetWfToStage <- function(anaDir, resetTo){
 	}
 	if (is.element(resetTo, c("raw"))){
 		delPaths <- c(delPaths, file.path(wfState$anaDir, wfState$dsAtacPaths["filtered"]))
+		delPaths <- c(delPaths, file.path(wfState$anaDir, wfState$reportDir, "filtering*"))
 		delPaths <- c(delPaths, file.path(wfState$anaDir, wfState$reportDir, "summary*"))
 	}
 	

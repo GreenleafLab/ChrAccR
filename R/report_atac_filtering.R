@@ -179,13 +179,14 @@ setMethod("createReport_filtering",
 			getNcellsPerSample <- function(dsa){
 				sampleIds <- unique(getSampleAnnot(dsa)[,".sampleId"])
 				sids <- getSampleAnnot(dsa)[,".sampleId"]
-				res <- table(sids)[sampleIds]
+				res <- as.vector(table(sids)[sampleIds])
+				names(res) <- sampleIds
 				return(res)
 			}
 
 			cps_before <- getNcellsPerSample(unfilteredObj)
 			cps_after <- getNcellsPerSample(.object)
-			sampleIds <- intersect(rownames(cps_after), rownames(cps_before))
+			sampleIds <- intersect(names(cps_after), names(cps_before))
 
 			if (length(sampleIds) > 0){
 				ft <- data.frame(
@@ -202,6 +203,7 @@ setMethod("createReport_filtering",
 						stringsAsFactors=FALSE
 					))
 				}
+				rownames(ft) <- ft[,"group"]
 				ft <- addStatFun(ft)
 
 				txt <- character(0)

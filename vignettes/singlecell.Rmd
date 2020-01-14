@@ -169,7 +169,7 @@ gene_act <- getCiceroGeneActivities(
 The full dataset of the single-cell human hematopoiesis study [@Granja:nbt:2019] is publicly available. Here, we show how `ChrAccR` can be applied to create a dataset from scratch using the aligned fragment files as input. Downstream steps can be run as shown above for the example subset of the data.
 Since the full dataset comprises high-quality profiles for a large number of cells, the analysis of such high-dimensional data has considerable resource requirements. We recommend to run it on a machine with a large amount of memory. The runtime for some of the folowing steps can exceed multiple hours.
 
-## Preparing the dataset from fragment data
+## Preparing the input
 
 The main input for creating a single-cell dataset in `ChrAccR` are files containing the coordinates of sequenced fragments. Such fragment files can be obtained from the output of the CellRanger software (10x Genomics). For the hematopoiesis dataset analyzed here [@Granja:nbt:2019], these files are available from GEO ([GEO accession: GSE139369)](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE139369)). First, download the `GSE139369_RAW.tar` file and unpack it (in the following, we assume that you unpacked the files to a directory called `fragment_data`).
 In addition to the fragment data, a sample annotation table that contains information on the samples' phenotypes and technical parameters is needed. Here, we create one from the filenames:
@@ -185,14 +185,27 @@ sampleAnnotation <- data.frame(
 sampleAnnotation[,"source"] <- gsub("^(MPAL|CD34|BMMC|PBMC).+", "\\1", sampleAnnotation[,"sampleId"])
 # only samples from healthy donors
 sampleAnnotation <- sampleAnnotation[sampleAnnotation[,"source"]!="MPAL",]
+inputFiles <- file.path('fragment_data', sampleAnnotation[,"fragmentFilename"])
 ```
 
-Then we can create a `DsATACsc` dataset from the fragment files:
+## Vanilla analysis
+
+As demonstrated in the overview vignette, `ChrAccR` can run a default analysis workflow by using the `run_atac` function. For single-cell datasets, this requires you to supply a reference to the fragment files or the output of the CellRanger software, as well a sample annotation table:
+
+```{r, message = FALSE, warning = FALSE, eval = FALSE}
+dsa_full <- run_atac(config$.anaDir, input=inputFiles, sampleAnnot=sampleAnnotation, genome="hg19", sampleIdCol="sampleId")
+```
+
+## Analysis steps in detail
+
+### Preparing the `DsATAC` data structure from fragment files
+
+Then we can directly create a `DsATACsc` dataset from the fragment files:
 
 ```{r, message = FALSE, warning = FALSE, eval = FALSE}
 dsa_full_raw <- DsATACsc.fragments(
   sampleAnnotation,
-  file.path('fragment_data', sampleAnnotation[,"fragmentFilename"]),
+  inputFiles,
   "hg19",
   regionSets=NULL,
   sampleIdCol="sampleId",
@@ -202,7 +215,7 @@ dsa_full_raw <- DsATACsc.fragments(
 )
 ```
 
-## Filtering low quality cells
+### Filtering low quality cells
 
 It is recommended to filter low quality cells from the datasets. In the code above, we already set a threshold for the minimum and maximum number of fragments for each cell in order for it to be included in the dataset. The following code also limits the dataset to cells that exhibit a sufficiently high signal-to-noise ratio, as defined by the enrichment of Tn5 insertions at transcription start sites (TSS) relative to background.
 
@@ -211,7 +224,7 @@ tsse_cutoff <- 8
 dsa_full <- filterCellsTssEnrichment(dsa_full_raw, tsse_cutoff)
 ```
 
-## Dimension reduction and clustering using iterative LSI
+### Dimension reduction and clustering using iterative LSI
 
 We recommend to use the iterative LSI approach outlined above to obtain a relatively robust dimensionality reduction and clustering of cells. We compute the reduced components and coordinates in the code below. We also add the assigned cluster for each cell to the dataset annotation and aggregate the Tn5 insertion counts for the computed consensus peak set.
 
@@ -226,7 +239,7 @@ dsa_full <- regionAggregation(dsa_full, itlsi$clusterPeaks_unfiltered, "peaks_it
 ```
 
 
-# Analysis reports
+### Analysis reports
 
 `ChrAccR` also provides methods to automatically generate analysis reports that summarize most of the above analysis steps. The reports for the full single-cell dataset described here can also be found in the ['Resource' section](https://greenleaflab.github.io/ChrAccR/articles/articles/resource.html) of the ChrAccR website.
 Provided with a `DsATAC` dataset these reports can be generated with a call to the corresponding `createReport_*` function. For instance, the `createReport_summary` generates a report containing an overview of sample and cell statistics:
