@@ -173,8 +173,8 @@ setMethod("createReport_summary",
 					df2p[, "pointDens"] <- muRtools::getPointDensity(df2p[, "log_nPass"], df2p[, "tssEnrichment"], n=100)
 
 					pp <- ggplot(df2p) + aes_string(x="log_nPass", y="tssEnrichment", color="pointDens")
-					if (!is.null(cut_x)) pp <- pp + geom_vline(xintercept=cut_x, color="#4d4f53")
-					if (!is.null(cut_y)) pp <- pp + geom_hline(yintercept=cut_y, color="#4d4f53")
+					if (!is.null(cut_x)) pp <- pp + geom_vline(xintercept=cut_x, color="#A0A0A0")
+					if (!is.null(cut_y)) pp <- pp + geom_hline(yintercept=cut_y, color="#A0A0A0")
 					pp <- pp + geom_point(size=0.5) + muRtools::ggAutoColorScale(df2p[, "pointDens"], method="color")
 
 					# pp <- muRtools::create.densityScatter(df2p, is.special=NULL, sparse.points=0.01)

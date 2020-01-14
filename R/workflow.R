@@ -61,6 +61,7 @@ getWfState <- function(anaDir){
 	if (!is.na(res[["reportDir"]])){
 		if (file.exists(file.path(anaDir, res[["reportDir"]], "summary.html"))) res[["existingReports"]]["summary"] <- TRUE
 		if (file.exists(file.path(anaDir, res[["reportDir"]], "filtering.html"))) res[["existingReports"]]["filtering"] <- TRUE
+		if (file.exists(file.path(anaDir, res[["reportDir"]], "normalization.html"))) res[["existingReports"]]["normalization"] <- TRUE
 		if (file.exists(file.path(anaDir, res[["reportDir"]], "exploratory.html"))) res[["existingReports"]]["exploratory"] <- TRUE
 		if (file.exists(file.path(anaDir, res[["reportDir"]], "differential.html"))) res[["existingReports"]]["differential"] <- TRUE
 	}
@@ -95,6 +96,7 @@ resetWfToStage <- function(anaDir, resetTo){
 		delPaths <- c(delPaths, file.path(wfState$anaDir, wfState$reportDir, "differential*"))
 	}
 	if (is.element(resetTo, c("filtered", "raw"))){
+		delPaths <- c(delPaths, file.path(wfState$anaDir, wfState$reportDir, "normalization*"))
 		delPaths <- c(delPaths, file.path(wfState$anaDir, wfState$dsAtacPaths["processed"]))
 	}
 	if (is.element(resetTo, c("raw"))){
@@ -368,6 +370,13 @@ run_atac_normalization <- function(dsa, anaDir){
 		logger.completed()
 	} else {
 		logger.warning("Count data will not be normalized")
+	}
+
+	doReport <- doNorm && !wfState$existingReports["normalization"]
+	if (doReport){
+		logger.start("Creating normalization report")
+			report <- createReport_normalization(dsn, file.path(wfState$anaDir, wfState$reportDir), unnormObj=dsa)
+		logger.completed()
 	}
 
 	res <- list(
