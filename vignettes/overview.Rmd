@@ -34,10 +34,9 @@ htmltools::img(src = knitr::image_uri(system.file(file.path("extdata", "chraccr_
 
 # Introduction
 
-`ChrAccR` is an R package for the analysis of chromatin accessibility data.
-It supports popular protocols like the Assay for Transposase-Accessible Chromatin
-(ATAC-seq) and Nucleosome Occupancy and Methylome Sequencing (NOMe-seq; beta-stage)
-in bulk and single-cell scenarios.
+`ChrAccR` is an R package that provides tools for the comprehensive analysis chromatin accessibility data. The package implements methods for data quality control, exploratory analyses (including unsupervised methods for dimension reduction, clustering and quantifying transcription factor activities) and the identification and characterization of differentially accessible regions. It can be used for the analysis of large bulk datasets comprising hundreds of samples as well as for single-cell datasets with 10s to 100s of thousands of cells. 
+
+Requiring only a limited set of R commands, `ChrAccR` generates analysis reports that can be interactively explored, facilitate a comprehensive analysis overview of a given dataset and are easily shared with collaborators. The package is therefore particularly useful for users with limited bioinformatic expertise, researchers new to chromatin analysis or institutional core facilities providing ATAC-seq as a service. Additionally, the package provides numerous utility functions for custom R scripting that allow more in-depth analyses of chromatin accessibility datasets.
 
 ![Overview of ATAC-seq data analysis in `ChrAccR`](figures/ChrAccR_overview.png)
 
@@ -140,7 +139,7 @@ diffCompNames <- c(
 setConfigElement("differentialCompNames", diffCompNames)
 ```
 
-`ChrAccR` uses sets of predefined genomic regions to summarize count data. By default, this includes 200bp-tiling windows. The following code generates a list of custom region sets that we can optionally use in the analysis. Here, we use 500-bp tiling regions a consensus set of ATAC-seq peaks that were identified in a large cancer dataset.
+`ChrAccR` uses sets of predefined genomic regions to summarize count data. By default, this includes 200bp-tiling windows. The following code generates a list of custom region sets that we can optionally use in the analysis. Here, we use 500-bp tiling regions a consensus set of ATAC-seq peaks that were identified in a large cancer dataset [@Corces:2018cp].
 
 ```{r, message = FALSE, warning = FALSE, eval = FALSE}
 # Download an ATAC peak set from a Pan-cancer dataset [doi:10.1126/science.aav1898]
@@ -555,6 +554,42 @@ references:
     page: 1494-1505
     issued:
       year: 2019
+    type: article-journal
+  - id: Corces:2018cp
+    title: The chromatin accessibility landscape of primary human cancers
+    author: 
+    - family: Corces
+    - family: Granja
+    - family: Shams
+    - family: Louie
+    - family: Seoane
+    - family: Zhou
+    - family: Silva
+    - family: Groeneveld
+    - family: Wong
+    - family: Cho
+    - family: Satpathy
+    - family: Mumbach
+    - family: Hoadley
+    - family: Robertson
+    - family: Sheffield
+    - family: Felau
+    - family: Castro
+    - family: Berman
+    - family: Staudt
+    - family: Zenklusen
+    - family: Laird
+    - family: Curtis
+    - family: Cancer Genome Atlas Network
+    - family: Greenleaf
+    - family: Chang
+    container-title: Science
+    DOI: 10.1126/science.aav1898
+    volume: 362
+    number: 6413
+    page: eaav1898
+    issued:
+      year: 2018
     type: article-journal
 ---
 

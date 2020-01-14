@@ -193,6 +193,7 @@ inputFiles <- file.path('fragment_data', sampleAnnotation[,"fragmentFilename"])
 As demonstrated in the overview vignette, `ChrAccR` can run a default analysis workflow by using the `run_atac` function. For single-cell datasets, this requires you to supply a reference to the fragment files or the output of the CellRanger software, as well a sample annotation table:
 
 ```{r, message = FALSE, warning = FALSE, eval = FALSE}
+setConfigElement("annotationColumns", c(".sampleId", "cellType", "nFrags", "tssEnrichment"))
 dsa_full <- run_atac(config$.anaDir, input=inputFiles, sampleAnnot=sampleAnnotation, genome="hg19", sampleIdCol="sampleId")
 ```
 
