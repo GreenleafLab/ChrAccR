@@ -45,7 +45,7 @@ setMethod("createReport_normalization",
 
 		regTypes <- intersect(getRegionTypes(.object), getRegionTypes(unnormObj))
 		if (length(regTypes) < 1) logger.error("Not enough region sets contained in both the normalized and unnormalized objects")
-		if (all(getSamples(.object)==getSamples(unnormObj))) logger.error("The normalized and unnormalized objects should have the same samples")
+		if (!all(getSamples(.object)==getSamples(unnormObj))) logger.error("The normalized and unnormalized objects should have the same samples")
 
 		logger.start("Dataset overview section")
 			txt <- c(
