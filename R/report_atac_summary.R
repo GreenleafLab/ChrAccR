@@ -295,7 +295,7 @@ setMethod("createReport_summary",
 						repPlot <- muReportR::off(repPlot, handle.errors=TRUE)
 						plotL <- c(plotL, list(repPlot))
 
-						qcTab[sampleIds[i], "tssEnrichment"] <- tsse$tssEnrichment
+						qcTab[sampleIds[i], "tssEnrichment"] <- tsse$tssEnrichment.smoothed
 					}
 					figSettings.sampleId <- sampleIds
 					names(figSettings.sampleId) <- paste0("s", 1:length(sampleIds))
