@@ -45,7 +45,7 @@ Set a configuration item to a given value
       Character vector of names of TF motif sets to be used in ChromVAR analyses
   }
   \item{\bold{\code{chromVarMotifNamesForDimRed}}}{
-      Names of motifs to be used for dimension reduction plots in the reports.
+      Names of motifs to be used for dimension reduction plots in the reports. [only relevant for single-cell data]
   }
   \item{\bold{\code{annotationColumns}}}{
       Sample annotation columns to be used for reporting
