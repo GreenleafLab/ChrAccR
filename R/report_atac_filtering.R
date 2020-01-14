@@ -74,7 +74,7 @@ setMethod("createReport_filtering",
 				if (is.element(name, names(filterStats$params))){
 					return(filterStats$params[[name]])
 				} else {
-					return("X")
+					return(NA)
 				}
 			}
 			stepDesc <- list(
