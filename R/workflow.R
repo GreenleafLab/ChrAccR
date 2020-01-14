@@ -490,7 +490,7 @@ run_atac_differential <- function(dsa, anaDir){
 #' 
 #' Run the complete ChrAccR analysis for ATAC-seq data
 #' @param anaDir	analysis directory
-#' @param input		Input object. Can be either \code{NULL}, a character sting, a \code{DsATAC}
+#' @param input		Input object. Can be either \code{NULL}, a character string, a \code{DsATAC}
 #' @param sampleAnnot sample annotation table (\code{data.frame}) or \code{NULL} if continuing existing analysis or input is a \code{DsATAC} object
 #' @param genome    genome assembly. Only relevant if not continuing existing analysis and input is not a \code{DsATAC} object
 #' @param sampleIdCol column name in the sample annotation table containing unique sample Only relevant if not continuing existing analysis and input is not a \code{DsATAC} object
@@ -556,21 +556,23 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 				inputFns <- input
 				if (length(input) == 1 && is.element(input, colnames(sampleAnnot))){
 					inputFns <- sampleAnnot[,input]
-					# check if input is cellranger output
-					validCellRanger <- sapply(inputFns, FUN=function(x){
-						dir.exists(x) && dir.exists(file.path(x, "outs"))
-					})
-					if (all(validCellRanger)){
-						inputType <- "sc_cellranger"
-					}
 				}
-				if (length(inputFns) > 1){
+
+				# check if input is cellranger output
+				validCellRanger <- sapply(inputFns, FUN=function(x){
+					dir.exists(x) && dir.exists(file.path(x, "outs"))
+				})
+
+				if (all(validCellRanger)){
+					inputType <- "sc_cellranger"
+				} else if (all(grepl("\\.fragments\\.tsv(\\.gz)?$", inputFns))){
+					inputType <- "sc_fragments"
+				} else if (length(inputFns) > 1){
+					# assuming bulk
 					if (all(grepl("\\.bam$", inputFns))){
 						inputType <- "bulk_bam"
 					} else if (all(grepl("\\.bed$", inputFns))){
 						inputType <- "bulk_fragBed"
-					} else if (all(grepl("\\.fragments\\.tsv(\\.gz)?$", inputFns))){
-						inputType <- "sc_fragments"
 					}
 				}
 			}

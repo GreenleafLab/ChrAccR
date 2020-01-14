@@ -17,7 +17,7 @@ run_atac(
 \arguments{
 \item{anaDir}{analysis directory}
 
-\item{input}{Input object. Can be either \code{NULL}, a character sting, a \code{DsATAC}}
+\item{input}{Input object. Can be either \code{NULL}, a character string, a \code{DsATAC}}
 
 \item{sampleAnnot}{sample annotation table (\code{data.frame}) or \code{NULL} if continuing existing analysis or input is a \code{DsATAC} object}
 
