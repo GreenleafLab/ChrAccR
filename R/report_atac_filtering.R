@@ -95,7 +95,7 @@ setMethod("createReport_filtering",
 
 		ft <- do.call("rbind", lapply(regTypes, FUN=function(rt){
 			data.frame(
-				regionType=rt,
+				group=rt,
 				nBefore=getNRegions(unfilteredObj, rt),
 				nAfter=getNRegions(.object, rt),
 				stringsAsFactors=FALSE
@@ -112,7 +112,7 @@ setMethod("createReport_filtering",
 				i <- which(colnames(filterStats$regionStats)==sn)
 				sn <- gsub("^after_", "", sn)
 				filtTabL[[sn]] <- data.frame(
-					regionType=regTypes,
+					group=regTypes,
 					nBefore=filterStats$regionStats[,i-1],
 					nAfter=filterStats$regionStats[,i],
 					stringsAsFactors=FALSE
@@ -120,25 +120,24 @@ setMethod("createReport_filtering",
 			}
 		}
 
-		filtTabL <- lapply(filtTabL, FUN=function(ft){
+		addStatFun <- function(ft){
 			ft[,"filtered"] <- ft[,"nBefore"] - ft[,"nAfter"]
 			ft[,"filtered_perc"] <- ft[,"filtered"]/ft[,"nBefore"] * 100
 			ft[,"retained"] <- ft[,"nAfter"]
 			ft[,"retained_perc"] <- ft[,"retained"]/ft[,"nBefore"] * 100
 			return(ft)
-		})
-
-
+		}
+		filtTabL <- lapply(filtTabL, addStatFun)
 		
 		plotPies <- function(ft){
-			rts <- ft[,"regionType"]
-			rownames(ft) <- rts
+			grps <- ft[,"group"]
+			rownames(ft) <- grps
 			ft[,"label_filtered"] <- paste0(ft[,"filtered"], "\nfiltered\n(", round(ft[,"filtered_perc"], 2), "%)")
 			ft[,"label_retained"] <- paste0(ft[,"retained"], "\nretained\n(", round(ft[,"retained_perc"], 2), "%)")
-			nTypes <- length(rts)
+			nTypes <- length(grps)
 			par(mfrow=c(ceiling(sqrt(nTypes)), ceiling(sqrt(nTypes))))
-			for (rt in rts){
-				pie(c(ft[rt,"filtered"], ft[rt,"retained"]), labels=c(ft[rt,"label_filtered"], ft[rt,"label_retained"]), col=c("#8d3c1e", "#175e54"), clockwise=TRUE, main=rt)
+			for (gg in grps){
+				pie(c(ft[gg,"filtered"], ft[gg,"retained"]), labels=c(ft[gg,"label_filtered"], ft[gg,"label_retained"]), col=c("#8d3c1e", "#175e54"), clockwise=TRUE, main=gg)
 			}
 		}
 
@@ -148,7 +147,7 @@ setMethod("createReport_filtering",
 		rr <- muReportR::addReportSection(rr, "Region filtering", txt, level=1L, collapsed=FALSE)
 
 		plotFn <- paste0("regionFilterPieOverall")
-		repPlot <- muReportR::createReportPlot(plotFn, rr, width=10, height=10, create.pdf=TRUE, high.png=300L)
+		repPlot <- muReportR::createReportPlot(plotFn, rr, width=7, height=7, create.pdf=TRUE, high.png=300L)
 			plotPies(filtTabL[["overall"]])
 		repPlot <- muReportR::off(repPlot)
 		rr <- muReportR::addReportFigure(rr, "Overall retained and removed regions per region type", repPlot)
@@ -156,13 +155,13 @@ setMethod("createReport_filtering",
 		stepNames <- setdiff(names(filtTabL), c("overall"))
 		if (validFilterStats && length(stepNames) > 0){
 			txt <- c(
-				"The plot summarizes the number of retained and removed regions per filtering step."
+				"The plot below summarizes the number of retained and removed regions per filtering step."
 			)
 			rr <- muReportR::addReportParagraph(rr, txt)
 
 			repPlotL <- lapply(stepNames, FUN=function(sn){
 				plotFn <- paste0("regionFilterPie_", normalize.str(sn, return.camel=TRUE))
-				repPlot <- muReportR::createReportPlot(plotFn, rr, width=10, height=10, create.pdf=TRUE, high.png=300L)
+				repPlot <- muReportR::createReportPlot(plotFn, rr, width=7, height=7, create.pdf=TRUE, high.png=300L)
 					plotPies(filtTabL[[sn]])
 				repPlot <- muReportR::off(repPlot)
 				return(repPlot)
@@ -174,6 +173,48 @@ setMethod("createReport_filtering",
 				"Filtering step" = figSettings.step
 			)
 			rr <- muReportR::addReportFigure(rr, "Retained and removed regions per region type and filtering step", repPlotL, figSettings)
+		}
+
+		if (isSingleCell){
+			getNcellsPerSample <- function(dsa){
+				sampleIds <- unique(getSampleAnnot(dsa)[,".sampleId"])
+				sids <- getSampleAnnot(dsa)[,".sampleId"]
+				res <- table(sids)[sampleIds]
+				return(res)
+			}
+
+			cps_before <- getNcellsPerSample(unfilteredObj)
+			cps_after <- getNcellsPerSample(.object)
+			sampleIds <- intersect(rownames(cps_after), rownames(cps_before))
+
+			if (length(sampleIds) > 0){
+				ft <- data.frame(
+					group=sampleIds,
+					nBefore=cps_before[sampleIds],
+					nAfter=cps_after[sampleIds],
+					stringsAsFactors=FALSE
+				)
+				if (length(sampleIds) > 1){
+					ft <- rbind(ft, data.frame(
+						group=".ALL",
+						nBefore=sum(cps_before),
+						nAfter=sum(cps_after),
+						stringsAsFactors=FALSE
+					))
+				}
+				ft <- addStatFun(ft)
+
+				txt <- character(0)
+				if (validFilterStats) txt <- c(txt, "Cells in the datasets were filtered according to the above criteria. ")
+				c(txt, "The following plot shows the number of retained and removed cells per sample in the dataset.")
+				rr <- muReportR::addReportSection(rr, "Cell filtering", txt, level=1L, collapsed=FALSE)
+
+				plotFn <- paste0("cellFilterPieOverall")
+				repPlot <- muReportR::createReportPlot(plotFn, rr, width=7, height=7, create.pdf=TRUE, high.png=300L)
+					plotPies(ft)
+				repPlot <- muReportR::off(repPlot)
+				rr <- muReportR::addReportFigure(rr, "Retained and removed cells", repPlot)
+			}
 		}
 
 		muReportR::off(rr)
