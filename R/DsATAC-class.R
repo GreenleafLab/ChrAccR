@@ -234,7 +234,7 @@ if (!isGeneric("getFragmentGr")) {
 }
 #' getFragmentGr-methods
 #'
-#' Return a a \code{GRanges} object of fragment data} for a given sample
+#' Return a \code{GRanges} object of fragment data for a given sample
 #'
 #' @param .object \code{\linkS4class{DsATAC}} object
 #' @param sampleId sample identifier

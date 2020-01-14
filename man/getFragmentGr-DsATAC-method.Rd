@@ -17,7 +17,7 @@
 \code{GRanges} object containing fragment data
 }
 \description{
-
+Return a \code{GRanges} object of fragment data for a given sample
 }
 \author{
 Fabian Mueller
