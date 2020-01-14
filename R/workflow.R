@@ -43,6 +43,7 @@ getWfState <- function(anaDir){
 		existingReports = c(
 			summary = FALSE,
 			filtering = FALSE,
+			normalization = FALSE,
 			exploratory = FALSE,
 			differential = FALSE
 		)
