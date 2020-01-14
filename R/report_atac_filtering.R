@@ -48,7 +48,7 @@ setMethod("createReport_filtering",
 			txt <- c(
 				"The filtered ATAC-seq dataset contains accessibility profiles for ", length(getSamples(.object)), ifelse(isSingleCell, " cells.", " samples.")
 			)
-			rr <- muReportR::addReportSection(rr, "Overview", txt, level=1L, collapsed=FALSE)
+			rr <- muReportR::addReportSection(rr, "Dataset summary", txt, level=1L, collapsed=FALSE)
 
 			txt <- c("Signal has been summarized for the following region sets:")
 			rr <- muReportR::addReportParagraph(rr, txt)
