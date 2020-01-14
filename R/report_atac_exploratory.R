@@ -231,7 +231,7 @@ setMethod("createReport_exploratory",
 				)
 				if (doLogNorm) {
 					txt <- c(txt,
-						" Counts have been log-normalized (log2(count+1))."
+						" Counts have been log-normalized (log10(count+1))."
 					)
 				}
 				rr <- muReportR::addReportSection(rr, "Dimension reduction", txt, level=1L, collapsed=FALSE)
@@ -255,7 +255,7 @@ setMethod("createReport_exploratory",
 					logger.start(c("Region type:", rt))
 						rtString <- normalize.str(rt, return.camel=TRUE)
 						cm <- getCounts(.object, rt, asMatrix=TRUE)
-						if (doLogNorm) cm <- log2(cm + 1)
+						if (doLogNorm) cm <- log10(cm + 1)
 						tcm <- t(cm)
 						coords <- list(
 							"pca"  = muRtools::getDimRedCoords.pca(tcm),

@@ -86,9 +86,9 @@ setMethod("createReport_normalization",
 			cmN <- getCounts(.object, rt, asMatrix=TRUE)
 			countLabel <- "count"
 			if (doLog) {
-				cmU <- log2(cmU + 1)
-				cmN <- log2(cmN + 1)
-				countLabel <- paste("log2", countLabel,sep="_")
+				cmU <- log10(cmU + 1)
+				cmN <- log10(cmN + 1)
+				countLabel <- paste("log10", countLabel,sep="_")
 			}
 
 			qmU <- t(matrixStats::colQuantiles(cmU, probs=quantProbs, na.rm=TRUE))

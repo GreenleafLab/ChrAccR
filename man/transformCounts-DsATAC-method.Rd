@@ -16,7 +16,7 @@
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}
 
-\item{method}{transformation method to be applied. Currently only 'log2', 'quantile' (quantile normalization), 'percentile' (percentile normalization),'rankPerc' (rank percentile), 'vst' (DESeq2 Variance Stabilizing Transformation), 'batchCorrect' (limma batch effect removal), tf-idf' and 'RPKM' (RPKM normalization) are supported}
+\item{method}{transformation method to be applied. Currently only 'log2', 'log10', 'quantile' (quantile normalization), 'percentile' (percentile normalization),'rankPerc' (rank percentile), 'vst' (DESeq2 Variance Stabilizing Transformation), 'batchCorrect' (limma batch effect removal), tf-idf', 'CPM' (counts per million), and 'RPKM' (RPKM normalization) are supported}
 
 \item{regionTypes}{character vector specifying a name for the region type in which count data should be normalized(default: all region types)}
 

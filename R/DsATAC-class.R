@@ -1492,7 +1492,7 @@ if (!isGeneric("transformCounts")) {
 #' transform count data for an ATAC seq dataset
 #'
 #' @param .object \code{\linkS4class{DsATAC}} object
-#' @param method  transformation method to be applied. Currently only 'log2', 'quantile' (quantile normalization), 'percentile' (percentile normalization),'rankPerc' (rank percentile), 'vst' (DESeq2 Variance Stabilizing Transformation), 'batchCorrect' (limma batch effect removal), tf-idf' and 'RPKM' (RPKM normalization) are supported
+#' @param method  transformation method to be applied. Currently only 'log2', 'log10', 'quantile' (quantile normalization), 'percentile' (percentile normalization),'rankPerc' (rank percentile), 'vst' (DESeq2 Variance Stabilizing Transformation), 'batchCorrect' (limma batch effect removal), tf-idf', 'CPM' (counts per million), and 'RPKM' (RPKM normalization) are supported
 #' @param regionTypes character vector specifying a name for the region type in which count data should be normalized(default: all region types)
 #' @param ...    other arguments depending on the \code{method} used. For \code{'batchCorrect'} it should be arguments passed on to \code{limma::removeBatchEffect} (most importantly, the \code{batch} argument).
 #' @return a new \code{\linkS4class{DsATAC}} object with normalized count data
@@ -1516,7 +1516,7 @@ setMethod("transformCounts",
 		if (!all(regionTypes %in% getRegionTypes(.object))){
 			logger.error(c("Unsupported region type:", paste(setdiff(regionTypes, getRegionTypes(.object)), collapse=", ")))
 		}
-		if (!is.element(method, c("quantile", "percentile", "rankPerc", "log2", "RPKM", "CPM", "vst", "batchCorrect", "tf-idf"))) logger.error(c("Unsupported normalization method type:", method))
+		if (!is.element(method, c("quantile", "percentile", "rankPerc", "log2", "log10", "RPKM", "CPM", "vst", "batchCorrect", "tf-idf"))) logger.error(c("Unsupported normalization method type:", method))
 
 		# choose appropriate functions for row and column functions
 		# depending on the matrix type
@@ -2662,23 +2662,23 @@ setMethod("getDiffAcc",
 			dm[!is.finite(dm[,"cRank"]),"cRank"] <- NA
 			dm[,"cRank_rerank"] <- rank(dm[,"cRank"], na.last="keep", ties.method="min")
 
-			l2fpkm <- log2(DESeq2::fpkm(dds, robust=TRUE)+1)
-			grp1.m.l2fpkm <- rowMeans(l2fpkm[, sidx.grp1, drop=FALSE], na.rm=TRUE)
-			grp2.m.l2fpkm <- rowMeans(l2fpkm[, sidx.grp2, drop=FALSE], na.rm=TRUE)
+			l10fpkm <- log10(DESeq2::fpkm(dds, robust=TRUE)+1)
+			grp1.m.l10fpkm <- rowMeans(l10fpkm[, sidx.grp1, drop=FALSE], na.rm=TRUE)
+			grp2.m.l10fpkm <- rowMeans(l10fpkm[, sidx.grp2, drop=FALSE], na.rm=TRUE)
 			vstCounts <- assay(DESeq2::vst(dds, blind=FALSE))
 			grp1.m.vst <- rowMeans(vstCounts[, sidx.grp1, drop=FALSE], na.rm=TRUE)
 			grp2.m.vst <- rowMeans(vstCounts[, sidx.grp2, drop=FALSE], na.rm=TRUE)
 
 			res <- data.frame(
 				log2BaseMean=log2(dm[,"baseMean"]),
-				meanLog2FpkmGrp1=grp1.m.l2fpkm,
-				meanLog2FpkmGrp2=grp2.m.l2fpkm,
+				meanLog10FpkmGrp1=grp1.m.l10fpkm,
+				meanLog10FpkmGrp2=grp2.m.l10fpkm,
 				meanVstCountGrp1=grp1.m.vst,
 				meanVstCountGrp2=grp2.m.vst,
 				dm
 			)
 			# add group names to column names
-			for (cn in c("meanLog2FpkmGrp", "meanVstCountGrp")){
+			for (cn in c("meanLog10FpkmGrp", "meanVstCountGrp")){
 				colnames(res)[colnames(res)==paste0(cn,"1")] <- paste0(cn, "1_", grp1Name)
 				colnames(res)[colnames(res)==paste0(cn,"2")] <- paste0(cn, "2_", grp2Name)
 			}
