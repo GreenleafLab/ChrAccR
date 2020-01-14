@@ -69,11 +69,11 @@
 #'   \item{\bold{\code{regionTypes}}}{
 #'       Region types to be used in the analysis
 #'   }
-#'   \item{\bold{\code{chromVarRegionTypes}}}{
+#'   \item{\bold{\code{chromVarRegionTypes}}\code{ = NULL}}{
 #'       Region types to be used for chromVar analysis. If \code{NULL} (default), ChrAccR will automatically look for region types with the keyword \code{"peak"} in their name.
 #'   }
-#' 	 \item{\bold{\code{chromVarMotifs}}}{
-#'       Character vector of names of TF motif sets to be used in ChromVAR analyses
+#' 	 \item{\bold{\code{chromVarMotifs}}\code{ = "jaspar_vert"}}{
+#'       Character vector of names of TF motif sets to be used in ChromVAR analyses. By default the vertebrate set of the JASPAR database will be used.
 #'   }
 #'   \item{\bold{\code{chromVarMotifNamesForDimRed}}}{
 #'       Names of motifs to be used for dimension reduction plots in the reports. [only relevant for single-cell data]
@@ -84,8 +84,8 @@
 #'   \item{\bold{\code{annotationMinGroupSize}}}{
 #'       Minimum size of a group to be used in the reports. Influences which annotation columns are selected for reporting.
 #'   }
-#'   \item{\bold{\code{doPeakCalling}}}{
-#'       Perform per-sample peak calling and retrieve consensus peak set. [for bulk data analysis only]
+#'   \item{\bold{\code{doPeakCalling}}\code{ = FALSE}}{
+#'       Perform per-sample peak calling and retrieve consensus peak set. Requires that \code{macs2} is installed and can be called from the command line. [for bulk data analysis only]
 #'   }
 #'   \item{\bold{\code{annotationPeakGroupColumn}}}{
 #'       Annotation column to base the consensus peak set replication filtering on.
@@ -114,7 +114,7 @@
 #'   \item{\bold{\code{normalizationMethod}}\code{ = "quantile"}}{
 #'       Normalization method to use for count normalization. Allowed methods include the ones listed in \code{\link{transformCounts,DsATAC-method}}. [for bulk data analysis only]
 #'   }
-#'   \item{\bold{\code{exploratoryLogNormCounts}}}{
+#'   \item{\bold{\code{exploratoryLogNormCounts}}\code{ = TRUE}}{
 #'       Should a log-normalization be applied in the exploratory plot sections of the reports (dimension reduction, heatmaps)
 #'   }
 #'   \item{\bold{\code{differentialColumns}}}{
