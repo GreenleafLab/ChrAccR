@@ -90,7 +90,7 @@ Set a configuration item to a given value
       Sample annotation columns to be used for differential testing and reporting
   }
   \item{\bold{\code{differentialCompNames}}}{
-      Comparison names from which comparison information is derived. Must be in the format of "$GRP1_NAME vs $GRP1_NAME [$ANNOTATION_COLUMN]".
+      Comparison names from which comparison information is derived. Must be in the format of "$GRP1_NAME vs $GRP2_NAME [$ANNOTATION_COLUMN]".
   }
   \item{\bold{\code{differentialAdjColumns}}}{
       Sample annotation columns to be adjusted for in differential testing
@@ -102,8 +102,8 @@ Set a configuration item to a given value
       For single-cell analysis only: region type to be used for clustering and dimension reduction using iterative LSI. By default (\code{NULL}),
       ChrAccR will look for a region type named \code{"tiling"}.
   }
-  \item{\bold{\code{scIterativeLsiClusterResolution}}}{
-      For single-cell analysis only: Cluster resolution to use for iterative LSI (default: \code{0.4}).
+  \item{\bold{\code{scIterativeLsiClusterResolution}}\code{ = 0.4}}{
+      For single-cell analysis only: Cluster resolution to use for iterative LSI.
   }
 }
 }
