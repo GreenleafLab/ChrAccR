@@ -45,8 +45,6 @@ setMethod("createReport_normalization",
 
 		regTypes <- intersect(getRegionTypes(.object), getRegionTypes(unnormObj))
 		if (length(regTypes) < 1) logger.error("Not enough region sets contained in both the normalized and unnormalized objects")
-		print(getSamples(.object))
-		print(getSamples(unnormObj))
 		if (!all(getSamples(.object)==getSamples(unnormObj))) logger.error("The normalized and unnormalized objects should have the same samples")
 
 		logger.start("Dataset overview section")
@@ -128,9 +126,6 @@ setMethod("createReport_normalization",
 			}
 
 			# Side-by-side quantile heatmaps
-			mostVarIdx <- rank(-matrixStats::rowVars(mm, na.rm=TRUE), na.last="keep", ties.method="min") <= 5000
-			mm <- mm[mostVarIdx,]
-
 			cs <- getConfigElement("colorSchemesCont")[[".default"]]
 			colScheme <- circlize::colorRamp2(seq(0, maxCount, length.out=length(cs)), cs)
 
