@@ -55,6 +55,11 @@ setMethod("createReport_differential",
 		if (length(rts) > 0) regionTypes <- intersect(rts, regionTypes)
 		if (length(regionTypes) < 1) logger.error("Not enough region types specified")
 
+		wasTransformed <- sapply(regionTypes, FUN=function(rt){length(.object@countTransform[[rt]])>0})
+		if (any(wasTransformed)){
+			logger.warning(c("Detected tranformed count data. It is not recommended to compute differential accessibility from normalized counts"))
+		}
+
 		logger.start("Computing differential accessibility")
 			designCols <- c(getConfigElement("differentialAdjColumns"), unique(compTab[,"compCol"]))
 			logger.start("Differential accessibility objects")
