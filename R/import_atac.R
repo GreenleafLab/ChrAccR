@@ -124,14 +124,13 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", reg
 						
 						for (j in seq_along(sampleIds)){
 							sid <- sampleIds[j]
-							logger.start(c("Summarizing counts for sample", ":", sid, paste0("(", j, " of ", nSamples, ")")))
-								tmpDs <- addCountDataFromGRL(obj, getInsertionSites(obj, samples=sid), silent=TRUE)
-								for (rt in rTypes){
-									cm <- getCounts(tmpDs, rt, j=j, asMatrix=TRUE)
-									DelayedArray::write_block(rSinkL[[rt]]$sink, rSinkL[[rt]]$grid[[j]], cm)
-								}
-								rm(tmpDs)
-							logger.completed()
+							logger.status(c("Summarizing counts for sample", ":", sid, paste0("(", j, " of ", nSamples, ")")))
+							tmpDs <- addCountDataFromGRL(obj, getInsertionSites(obj, samples=sid), silent=TRUE)
+							for (rt in rTypes){
+								cm <- getCounts(tmpDs, rt, j=j, asMatrix=TRUE)
+								DelayedArray::write_block(rSinkL[[rt]]$sink, rSinkL[[rt]]$grid[[j]], cm)
+							}
+							rm(tmpDs)
 						}
 						for (rt in rTypes){
 							DelayedArray::close(rSinkL[[rt]]$sink)
