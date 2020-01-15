@@ -45,7 +45,8 @@ getWfState <- function(anaDir){
 			filtering = FALSE,
 			normalization = FALSE,
 			exploratory = FALSE,
-			differential = FALSE
+			differential = FALSE,
+			index = FALSE
 		)
 	)
 	if (!dir.exists(anaDir)) logger.error(c("Analysis directory does not exist:", anaDir))
@@ -60,6 +61,7 @@ getWfState <- function(anaDir){
 	if (file.exists(file.path(anaDir, fn))) res[["configPath"]] <- fn
 
 	if (!is.na(res[["reportDir"]])){
+		if (file.exists(file.path(anaDir, res[["reportDir"]], "index.html"))) res[["existingReports"]]["index"] <- TRUE
 		if (file.exists(file.path(anaDir, res[["reportDir"]], "summary.html"))) res[["existingReports"]]["summary"] <- TRUE
 		if (file.exists(file.path(anaDir, res[["reportDir"]], "filtering.html"))) res[["existingReports"]]["filtering"] <- TRUE
 		if (file.exists(file.path(anaDir, res[["reportDir"]], "normalization.html"))) res[["existingReports"]]["normalization"] <- TRUE
@@ -105,6 +107,8 @@ resetWfToStage <- function(anaDir, resetTo){
 		delPaths <- c(delPaths, file.path(wfState$anaDir, wfState$reportDir, "filtering*"))
 		delPaths <- c(delPaths, file.path(wfState$anaDir, wfState$reportDir, "summary*"))
 	}
+
+	delPaths <- c(delPaths, file.path(wfState$anaDir, wfState$reportDir, "index*"))
 	
 	unlink(delPaths, recursive=TRUE)
 
@@ -112,6 +116,75 @@ resetWfToStage <- function(anaDir, resetTo){
 	invisible(wfState)
 }
 
+#' makeReportIndex
+#' 
+#' Make a report index based on a report directory
+#' @param reportDir	report directory
+#' @param anaName	Title of the Index report
+#' @param reportIds Identifiers of reports to look for
+#' @return (invisible) \code{muReportR::Report} object containing the report
+#' @author Fabian Mueller
+#' @noRd
+makeReportIndex <- function(reportDir, anaName="ChrAccR analysis", reportIds=character(0)){
+	reportDesc <- data.frame(
+		id = c("summary", "filtering", "normalization", "exploratory", "differential"),
+		htmlName = c("summary", "filtering", "normalization", "exploratory", "differential"),
+		title = c("Summary", "Filtering", "Normalization", "Exploratory analysis", "Differential analysis"),
+		desc = c(
+			"A summary and quality control (QC) of the loaded dataset",
+			"A summary of the filtering steps applied to the datset",
+			"A summary of the normalization procedure applied to count dat.",
+			"Exploratory analyses including unsupervised methods for clustering and dimension reduction and transcription factor motif activities",
+			"Analysis of differential accessibility between groups of samples and characterization of identified differences"
+		),
+		stringsAsFactors = FALSE
+	)
+	rownames(reportDesc) <- reportDesc[,"id"]
+
+	if (length(reportIds) < 1 || !all(reportIds %in% rownames(reportDesc))){
+		logger.warning("Could not create report summary: invalid report ids")
+		invisible(NULL)
+	}
+
+	htmlFns <- file.path(reportDir, paste0(reportDesc[reportIds,"htmlName"], ".html"))
+	if (!all(file.exists(htmlFns))){
+		logger.warning("Could not create report summary: Not all requested reports exist")
+		invisible(NULL)
+	}
+
+	if (!requireNamespace("muReportR")) logger.error(c("Could not load dependency: muReportR"))
+	initConfigDir <- !dir.exists(file.path(reportDir, "_config"))
+	rr <- muReportR::createReport(file.path(reportDir, paste0("index", ".html")), anaName, page.title=anaName, init.configuration=initConfigDir, theme="stanford")
+
+	imgDir <- muReportR::getReportDir(rr, dir="images", absolute=TRUE)
+	file.copy(system.file("extdata/dna.png", package="ChrAccR", mustWork=TRUE), imgDir)
+
+	txt <- c(
+		"Here are the resultes of your ChrAccR ATAC-seq analysis. The following reports have been generated:"
+	)
+	rr <- muReportR::addReportSection(rr, "Table of contents", txt, collapsed="never")
+
+	## Build table of contents
+	stext <- c("<table class=\"pipeline\" style=\"background-image:url(index_images/dna.png);\">", "<colgroup>",
+		"\t<col width=\"650\" />", "</colgroup>")
+	for (rid in reportIds) {
+		rfile <- file.path(paste0(reportDesc[rid,"htmlName"], ".html"))
+		mod.open <- paste("<a href=", rfile, "><div class=", "completed", ">", sep = "\"")
+		mod.close <- "</div></a>"
+		stext <- c(stext, "<tr>")
+		stext <- c(stext, paste0("\t<td>", mod.open))
+		stext <- c(stext, paste0("\t\t<h3>", reportDesc[rid, "title"], "</h3>"))
+		stext <- c(stext, paste0("\t\t<p>", reportDesc[rid, "desc"], "</p>"))
+		stext <- c(stext, paste0("\t", mod.close, "</td>"))
+		stext <- c(stext, "</tr>")
+	}
+	stext <- c(stext, "</table>")
+
+	cat(paste(stext, collapse = "\n"), "\n", file=rr@fname, sep="", append=TRUE)
+
+	muReportR::off(rr)
+	invisible(rr)
+}
 
 #-------------------------------------------------------------------------------
 #' run_atac_qc
@@ -740,6 +813,16 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 			res <- run_atac_differential(dsa_unnorm, anaDir)
 		logger.completed()
 	}
+
+	# Make report index
+	# delete existing index
+	reportDir <- file.path(wfState$anaDir, wfState$reportDir)
+	if (wfState$existingReports[["index"]]){
+		unlink(file.path(reportDir, "index*"), recursive=TRUE)
+	}
+	repIds <- c("summary", "filtering", "normalization", "exploratory", "differential")
+	repIds <- intersect(repIds, names(wfState$existingReports)[wfState$existingReports])
+	makeReportIndex(reportDir, anaName="ChrAccR analysis", reportIds=repIds)
 	
 	logger.completed()
 	invisible(dsa)
