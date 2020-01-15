@@ -12,7 +12,8 @@
   tssGr = NULL,
   flank = 2000L,
   normTailW = 100L,
-  smoothW = 25L
+  smoothW = 25L,
+  silent = FALSE
 )
 }
 \arguments{
@@ -28,6 +29,8 @@
 
 \item{smoothW}{radius of the window (in bp) that will be used to smooth the data, i.e. the total width of the
 smoothing window will be twice that number}
+
+\item{silent}{limit log messages}
 }
 \value{
 a list containing TSS enrichment data and a \code{ggplot} object containing TSS enrichment plot

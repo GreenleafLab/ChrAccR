@@ -17,7 +17,8 @@
   k = 6,
   sampleCovg = NULL,
   sampleKmerFreqM = NULL,
-  regionKmerFreqM = NULL
+  regionKmerFreqM = NULL,
+  silent = FALSE
 )
 }
 \arguments{
@@ -47,6 +48,8 @@ If not, it will be computed on the fly. Only relevant if \code{kmerBiasAdj==TRUE
 Must have the same number of rows as the specified (or computed) \code{sampleKmerFreqM} (kmers)
 and the same number of columns as the window width (median width of \code{regionGr}).
 Only relevant if \code{kmerBiasAdj==TRUE}.}
+
+\item{silent}{limit log messages}
 }
 \value{
 a \code{data.frame} containing position-wise counts (raw, normalized and optionally Tn5-bias-corrected) for each sample

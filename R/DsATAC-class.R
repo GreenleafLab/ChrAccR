@@ -2041,6 +2041,7 @@ if (!isGeneric("aggregateRegionCounts")) {
 #'                   Must have the same number of rows as the specified (or computed) \code{sampleKmerFreqM} (kmers)
 #'                   and the same number of columns as the window width (median width of \code{regionGr}).
 #'                   Only relevant if \code{kmerBiasAdj==TRUE}.
+#' @param silent     limit log messages
 #' @return a \code{data.frame} containing position-wise counts (raw, normalized and optionally Tn5-bias-corrected) for each sample
 #' 
 #' @rdname aggregateRegionCounts-DsATAC-method
@@ -2064,7 +2065,8 @@ setMethod("aggregateRegionCounts",
 		k=6,
 		sampleCovg=NULL,
 		sampleKmerFreqM=NULL,
-		regionKmerFreqM=NULL
+		regionKmerFreqM=NULL,
+		silent=FALSE
 	) {
 		if (!all(samples %in% getSamples(.object))) logger.error(c("Invalid samples:", paste(setdiff(samples, getSamples(.object)), collapse=", ")))
 		if (!is.element(countAggrFun, c("sum", "mean", "median"))) logger.error(c("Invalid value for countAggrFun:", countAggrFun))
@@ -2073,7 +2075,7 @@ setMethod("aggregateRegionCounts",
 		wm <- as.integer(median(ww))
 		idx <- ww==wm
 		if (!all(idx)){
-			logger.warning(c("not all elements in GRanges have the same width. --> discarding", sum(!idx), "of", length(idx), "regions that do not."))
+			if (!silent) logger.warning(c("not all elements in GRanges have the same width. --> discarding", sum(!idx), "of", length(idx), "regions that do not."))
 			regionGr <- regionGr[idx]
 		}
 
@@ -2091,9 +2093,9 @@ setMethod("aggregateRegionCounts",
 			logger.error("Invalid value for tail-normalization window")
 		}
 		if (is.null(sampleCovg)){
-			logger.start("Computing sample coverage")
+			if (!silent) logger.start("Computing sample coverage")
 				sampleCovg <- getCoverage(.object, samples=samples)
-			logger.completed()
+			if (!silent) logger.completed()
 		} else {
 			if (!all(samples %in% names(sampleCovg))) logger.error("'sampleCovg' does not cover all samples")
 		}
@@ -2156,13 +2158,13 @@ setMethod("aggregateRegionCounts",
 			}
 			return(res)
 		}
-		logger.start("Aggregating counts")
+		if (!silent) logger.start("Aggregating counts")
 			countL <- lapply(samples, FUN=function(sid){
-				logger.status(c("Sample:", sid))
+				if (!silent) logger.status(c("Sample:", sid))
 				return(fastFootprint(sampleCovg[[sid]], regionGr, aggrFun=countAggrFun))
 			})
 			names(countL) <- samples
-		logger.completed()
+		if (!silent) logger.completed()
 		res <- do.call("rbind", lapply(samples, FUN=function(sid){
 			cs <- countL[[sid]]
 			tn5Bias <- c()
@@ -3008,6 +3010,7 @@ if (!isGeneric("getTssEnrichment")) {
 #' @param normTailW  number of bases on each side whose counts will be used to normalize the data
 #' @param smoothW    radius of the window (in bp) that will be used to smooth the data, i.e. the total width of the
 #'                   smoothing window will be twice that number
+#' @param silent     limit log messages
 #' @return a list containing TSS enrichment data and a \code{ggplot} object containing TSS enrichment plot
 #' 
 #' @rdname getTssEnrichment-DsATAC-method
@@ -3026,7 +3029,8 @@ setMethod("getTssEnrichment",
 		tssGr=NULL,
 		flank=2000L,
 		normTailW=100L,
-		smoothW=25L
+		smoothW=25L,
+		silent=FALSE
 	) {
 		if (is.null(tssGr)){
 			annoPkg <- getChrAccRAnnotationPackage(.object@genome)
@@ -3038,7 +3042,7 @@ setMethod("getTssEnrichment",
 		#extend the window by the flanking and smoothing lengths
 		tssGr <- unique(trim(resize(tssGr, width=2*(flank+smoothW)+1, fix="center", ignore.strand=TRUE)))
 		# get (normalized) count data
-		tssCountDf <- aggregateRegionCounts(.object, tssGr, samples=sampleId, countAggrFun="mean", kmerBiasAdj=FALSE, normTailW=normTailW+smoothW)
+		tssCountDf <- aggregateRegionCounts(.object, tssGr, samples=sampleId, countAggrFun="mean", kmerBiasAdj=FALSE, normTailW=normTailW+smoothW, silent=silent)
 		# offset the position: aggregateRegionCounts returns positions in [0,regionWidth]
 		tssCountDf$pos <- tssCountDf$pos - (flank+smoothW+1)
 

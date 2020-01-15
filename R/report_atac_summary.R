@@ -289,7 +289,7 @@ setMethod("createReport_summary",
 					plotL <- list()
 					for (i in 1:length(sampleIds)){
 						logger.status(c("Sample", i, "of", length(sampleIds), "..."))
-						tsse <- getTssEnrichment(.object, sampleIds[i], tssGr)
+						tsse <- getTssEnrichment(.object, sampleIds[i], tssGr, silent=TRUE)
 						figFn <- paste0("tssProfile_s", i)
 						repPlot <- muReportR::createReportGgPlot(tsse$plot, figFn, rr, width=10, height=5, create.pdf=TRUE, high.png=0L)
 						repPlot <- muReportR::off(repPlot, handle.errors=TRUE)
