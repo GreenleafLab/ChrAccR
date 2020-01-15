@@ -44,29 +44,28 @@ setMethod("createReport_filtering",
 		regTypes <- intersect(getRegionTypes(.object), getRegionTypes(unfilteredObj))
 		if (length(regTypes) < 1) logger.error("Not enough region sets contained in both the filtered and unfiltered object")
 
-		logger.start("Dataset overview section")
-			txt <- c(
-				"The filtered ATAC-seq dataset contains accessibility profiles for ", length(getSamples(.object)), ifelse(isSingleCell, " cells.", " samples.")
-			)
-			rr <- muReportR::addReportSection(rr, "Dataset summary", txt, level=1L, collapsed=FALSE)
+		logger.status("Dataset overview section")
+		txt <- c(
+			"The filtered ATAC-seq dataset contains accessibility profiles for ", length(getSamples(.object)), ifelse(isSingleCell, " cells.", " samples.")
+		)
+		rr <- muReportR::addReportSection(rr, "Dataset summary", txt, level=1L, collapsed=FALSE)
 
-			txt <- c("Signal has been summarized for the following region sets:")
-			rr <- muReportR::addReportParagraph(rr, txt)
+		txt <- c("Signal has been summarized for the following region sets:")
+		rr <- muReportR::addReportParagraph(rr, txt)
 
-			regCountTab <- data.frame(
-				"#regions" = sapply(getRegionTypes(.object), FUN=function(rt){getNRegions(.object, rt)}),
-				"transformations" =  sapply(getRegionTypes(.object), FUN=function(rt){paste(rev(.object@countTransform[[rt]]), collapse=" -> ")}),
-				check.names=FALSE
-			)
-			rownames(regCountTab) <- getRegionTypes(.object)
+		regCountTab <- data.frame(
+			"#regions" = sapply(getRegionTypes(.object), FUN=function(rt){getNRegions(.object, rt)}),
+			"transformations" =  sapply(getRegionTypes(.object), FUN=function(rt){paste(rev(.object@countTransform[[rt]]), collapse=" -> ")}),
+			check.names=FALSE
+		)
+		rownames(regCountTab) <- getRegionTypes(.object)
 
-			rr <- muReportR::addReportTable(rr, regCountTab, row.names=TRUE, first.col.header=FALSE)
+		rr <- muReportR::addReportTable(rr, regCountTab, row.names=TRUE, first.col.header=FALSE)
 
-			hasFragments <- length(.object@fragments) > 0
-			txt <- c("Fragment data IS NOT available.")
-			if (hasFragments) txt <- c("Fragment data IS available.")
-			rr <- muReportR::addReportParagraph(rr, txt)
-		logger.completed()
+		hasFragments <- length(.object@fragments) > 0
+		txt <- c("Fragment data IS NOT available.")
+		if (hasFragments) txt <- c("Fragment data IS available.")
+		rr <- muReportR::addReportParagraph(rr, txt)
 
 		stepDesc <- list()
 		if (validFilterStats){
