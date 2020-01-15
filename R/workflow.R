@@ -814,6 +814,9 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 		logger.completed()
 	}
 
+	# update workflow state
+	wfState <- getWfState(anaDir)
+	
 	# Make report index
 	# delete existing index
 	reportDir <- file.path(wfState$anaDir, wfState$reportDir)
