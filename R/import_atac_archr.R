@@ -22,6 +22,7 @@ DsATACsc.archr <- function(ap, keepInsertionInfo=FALSE, diskDump.fragments=keepI
 	} else {
 		logger.error(c("unsupported genome:", gg))
 	}
+	
 
 	# check genome compatibility
 	logger.status("Checking genome compatibility")
