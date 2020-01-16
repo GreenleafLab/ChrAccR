@@ -14,8 +14,6 @@
 \item{reportDir}{directory in which the report will be created}
 
 \item{unnormObj}{unnormalized \code{\linkS4class{DsATAC}} object}
-
-\item{filterStats}{filtering statistics as output by \code{\link{run_atac_filtering}}}
 }
 \value{
 (invisible) \code{muReportR::Report} object containing the report

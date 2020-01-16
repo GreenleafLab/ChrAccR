@@ -11,8 +11,7 @@ DsATAC.fragmentBed(
   regionSets = NULL,
   sampleIdCol = NULL,
   diskDump = FALSE,
-  keepInsertionInfo = TRUE,
-  pairedEnd = TRUE
+  keepInsertionInfo = TRUE
 )
 }
 \arguments{

@@ -12,7 +12,6 @@ if (!isGeneric("createReport_normalization")) {
 #' @param .object    normalized \code{\linkS4class{DsATAC}} object
 #' @param reportDir  directory in which the report will be created
 #' @param unnormObj  unnormalized \code{\linkS4class{DsATAC}} object
-#' @param filterStats filtering statistics as output by \code{\link{run_atac_filtering}}
 #' @return (invisible) \code{muReportR::Report} object containing the report
 #' 
 #' @rdname createReport_normalization-DsATAC-method

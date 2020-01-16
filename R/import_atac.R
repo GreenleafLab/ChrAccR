@@ -264,7 +264,7 @@ DsATAC.bam <- function(sampleAnnot, bamFiles, genome, regionSets=NULL, sampleIdC
 #' @return \code{\linkS4class{DsATAC}} object
 #' @author Fabian Mueller
 #' @export
-DsATAC.fragmentBed <- function(sampleAnnot, bedFiles, genome, regionSets=NULL, sampleIdCol=NULL, diskDump=FALSE, keepInsertionInfo=TRUE, pairedEnd=TRUE){
+DsATAC.fragmentBed <- function(sampleAnnot, bedFiles, genome, regionSets=NULL, sampleIdCol=NULL, diskDump=FALSE, keepInsertionInfo=TRUE){
 	if (!is.character(bedFiles)) logger.error("Invalid value for bedFiles. Expected character")
 	if (length(bedFiles)==1 && is.element(bedFiles, colnames(sampleAnnot))){
 		bedFnCol <- bedFiles
