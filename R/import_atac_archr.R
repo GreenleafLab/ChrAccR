@@ -67,7 +67,9 @@ DsATACsc.archr <- function(ap, keepInsertionInfo=FALSE, diskDump.fragments=keepI
 		sampleIds <- ArchR::getSampleNames(ap)
 	logger.completed()
 
-	blacklistGr <- ga$blacklist
+	# TODO: add gene activity scores to cell annotation, if desired
+
+	# blacklistGr <- ga$blacklist
 	getTileGr <- function(tileSize){
 		# tGr <- muRtools::getTilingRegions(genomeAss, width=tileSize, onlyMainChrs=TRUE, adjChrNames=TRUE)
 		# the above line is of by one basepair. 
@@ -92,7 +94,7 @@ DsATACsc.archr <- function(ap, keepInsertionInfo=FALSE, diskDump.fragments=keepI
 		tileGr <- NULL
 		tileDf <- ArchR::.getFeatureDF(afs, "TileMatrix")
 		if (!is.null(tileDf) && class(tileDf)=="DataFrame"){
-			logger.status("Preparing tiling regions")
+			logger.status("Preparing tiling regions ...")
 			x <- tileDf[,"start"]
 			tileW <- median(x[2:length(x)]-x[1:(length(x)-1)])
 			logger.info(c("Determined tiling width as", tileW, "bp"))
@@ -101,19 +103,18 @@ DsATACsc.archr <- function(ap, keepInsertionInfo=FALSE, diskDump.fragments=keepI
 		}
 		geneAnnot <- ArchR::getGeneAnnotation(ap)
 		if (!is.null(geneAnnot) && all(c("TSS", "genes") %in% names(geneAnnot))){
-			print("Hi")
-			logger.status("Preparing gene regions")
+			logger.status("Preparing gene regions ...")
 			regionSets[["tssWindow"]] <- promoters(geneAnnot$TSS, upstream=100, downstream=100)
 			regionSets[["promoter"]] <- promoters(geneAnnot$genes, upstream=1500, downstream=500)
 		}
 		peakGr <- ArchR::getPeakSet(ap)
 		if (!is.null(peakGr) && class(peakGr) == "GRanges"){
-			logger.status("Preparing peak regions")
+			logger.status("Preparing peak regions ...")
 			regionSets[["archr.peaks"]] <- peakGr
 		}
 		redDim <- ArchR::getReducedDims(ap, reducedDims="IterativeLSI", returnMatrix=FALSE)
 		if (is.element("LSIFeatures", names(redDim))){
-			logger.status("Preparing iterativeLSI feature regions")
+			logger.status("Preparing iterativeLSI feature regions ...")
 			featDf <- redDim$LSIFeatures
 			if (class(featDf)=="DataFrame" && !is.null(tileGr)){
 				logger.info("Assuming iterativeLSI has been applied to tiling windows")
@@ -143,59 +144,67 @@ DsATACsc.archr <- function(ap, keepInsertionInfo=FALSE, diskDump.fragments=keepI
 		}
 	logger.completed()
 
-	logger.start("Preparing fragments")
-		fragGrl <- lapply(sampleIds, FUN=function(sid){
-			logger.status(c("Reading fragments for sample:", sid))
-			gr <- ArchR::getFragmentsFromArrow(afs[sid], cellNames=ArchR::getCellNames(ap), verbose=FALSE)
-			gr <- muRtools::setGenomeProps(gr, genomeAss, dropUnknownChrs=TRUE, onlyMainChrs=TRUE, adjChrNames=TRUE)
-			cids <- elementMetadata(gr)[,"RG"]
-			cids <- gsub("#", "_", cids)
-			elementMetadata(gr) <- NULL
-			elementMetadata(gr)[,"sampleId"] <- sid
-			elementMetadata(gr)[,"cellId"] <- cids
-			return(split(gr, elementMetadata(gr)[,"cellId"]))
-		})
-		logger.status("Combining samples ...")
-		fragGrl <- do.call("c", fragGrl)
-		if (!all(cellIds %in% names(fragGrl))) logger.error("Could not find all cells in fragment files")
-		fragGrl <- fragGrl[cellIds]
+	logger.start("Preparing fragment data")
+		for (i in seq_along(sampleIds)){
+			sid <- sampleIds[i]
+			logger.start(c("Importing arrow file for sample", ":", sid, paste0("(", i, " of ", length(sampleIds), ")")))
+				fragGrl <- ArchR::getFragmentsFromArrow(afs[sid], cellNames=ArchR::getCellNames(ap), verbose=FALSE)
+				fragGrl <- muRtools::setGenomeProps(fragGrl, genomeAss, dropUnknownChrs=TRUE, onlyMainChrs=TRUE, adjChrNames=TRUE)
+				cids <- elementMetadata(fragGrl)[,"RG"]
+				cids <- gsub("#", "_", cids)
+				elementMetadata(fragGrl) <- NULL
+				elementMetadata(fragGrl)[,"sampleId"] <- sid
+				elementMetadata(fragGrl)[,"cellId"] <- cids
+				fragGrl <- split(fragGrl, elementMetadata(fragGrl)[,"cellId"])
 
-		logger.start("Preparing insertion data")
-			insGrl <- lapply(fragGrl, getInsertionSitesFromFragmentGr)
-		logger.completed()
-		logger.start("Summarizing count data")
-			obj <- addCountDataFromGRL(obj, insGrl)
-		logger.completed()
-		
-		if (keepInsertionInfo) {
-			chunkedFragmentFiles <- obj@diskDump.fragments && .hasSlot(obj, "diskDump.fragments.nSamplesPerFile") && obj@diskDump.fragments.nSamplesPerFile > 1
-			logger.start("Adding fragment data to data structure")
-				nCells <- length(fragGrl)
-				if (chunkedFragmentFiles){
-					chunkL <- split(1:nCells, rep(1:ceiling(nCells/obj@diskDump.fragments.nSamplesPerFile), each=obj@diskDump.fragments.nSamplesPerFile)[1:nCells])
-					names(chunkL) <- NULL
-					for (k in 1:length(chunkL)){
-						iis <- chunkL[[k]]
-						cids <- names(fragGrl)[iis]
-						fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
-						saveRDS(fragGrl[iis], fn, compress=TRUE)
-						obj@fragments[cids] <- rep(list(fn), length(iis))
-					}
-				} else {
-					cids <- names(fragGrl)
-					if (obj@diskDump.fragments){
-						obj@fragments[cids] <- lapply(fragGrl, FUN=function(x){
-							fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
-							saveRDS(x, fn, compress=TRUE)
-							return(fn)
-						})
-					} else {
-						obj@fragments[cids] <- fragGrl
-					}
-				}
+				if (!all(cids %in% names(fragGrl))) logger.error("Could not find all cells in fragment files")
+				fragGrl <- fragGrl[cids]
+
+				logger.start("Preparing insertion data")
+					insGrl <- lapply(fragGrl, getInsertionSitesFromFragmentGr)
+				logger.completed()
+				logger.start("Summarizing count data")
+					obj <- addCountDataFromGRL(obj, insGrl)
+				logger.completed()
 			logger.completed()
+			if (keepInsertionInfo) {
+				chunkedFragmentFiles <- obj@diskDump.fragments && .hasSlot(obj, "diskDump.fragments.nSamplesPerFile") && obj@diskDump.fragments.nSamplesPerFile > 1
+				logger.start("Adding fragment data to data structure")
+					nCells <- length(fragGrl)
+					if (chunkedFragmentFiles){
+						chunkL <- split(1:nCells, rep(1:ceiling(nCells/obj@diskDump.fragments.nSamplesPerFile), each=obj@diskDump.fragments.nSamplesPerFile)[1:nCells])
+						names(chunkL) <- NULL
+						for (k in 1:length(chunkL)){
+							iis <- chunkL[[k]]
+							cids <- names(fragGrl)[iis]
+							fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
+							saveRDS(fragGrl[iis], fn, compress=TRUE)
+							obj@fragments[cids] <- rep(list(fn), length(iis))
+						}
+					} else {
+						cids <- names(fragGrl)
+						if (obj@diskDump.fragments){
+							obj@fragments[cids] <- lapply(fragGrl, FUN=function(x){
+								fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
+								saveRDS(x, fn, compress=TRUE)
+								return(fn)
+							})
+						} else {
+							obj@fragments[cids] <- fragGrl
+						}
+					}
+				logger.completed()
+			}
+		}
+		# just to make sure: reorder fragment list
+		if (keepInsertionInfo) {
+			obj@fragments <- obj@fragments[getSamples(obj)]
 		}
 	logger.completed()
+	
+	# logger.start("Removing uncovered regions from annotation")
+	# 	obj <- filterLowCovg(obj, thresh=1L, reqSamples=1)
+	# logger.completed()
 
 	return(obj)
 }
