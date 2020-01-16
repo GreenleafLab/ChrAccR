@@ -22,7 +22,6 @@ DsATACsc.archr <- function(ap, keepInsertionInfo=FALSE, diskDump.fragments=keepI
 	} else {
 		logger.error(c("unsupported genome:", gg))
 	}
-	
 
 	# check genome compatibility
 	logger.status("Checking genome compatibility")
@@ -102,6 +101,7 @@ DsATACsc.archr <- function(ap, keepInsertionInfo=FALSE, diskDump.fragments=keepI
 		}
 		geneAnnot <- ArchR::getGeneAnnotation(ap)
 		if (!is.null(geneAnnot) && all(c("TSS", "genes") %in% names(geneAnnot))){
+			print("Hi")
 			logger.status("Preparing gene regions")
 			regionSets[["tssWindow"]] <- promoters(geneAnnot$TSS, upstream=100, downstream=100)
 			regionSets[["promoter"]] <- promoters(geneAnnot$genes, upstream=1500, downstream=500)
