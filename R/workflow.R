@@ -133,7 +133,7 @@ makeReportIndex <- function(reportDir, anaName="ChrAccR analysis", reportIds=cha
 		desc = c(
 			"A summary and quality control (QC) of the loaded dataset",
 			"A summary of the filtering steps applied to the datset",
-			"A summary of the normalization procedure applied to count dat.",
+			"A summary of the normalization procedure applied to count data",
 			"Exploratory analyses including unsupervised methods for clustering and dimension reduction and transcription factor motif activities",
 			"Analysis of differential accessibility between groups of samples and characterization of identified differences"
 		),
