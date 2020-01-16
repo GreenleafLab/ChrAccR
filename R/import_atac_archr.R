@@ -156,7 +156,7 @@ DsATACsc.archr <- function(ap, keepInsertionInfo=FALSE, diskDump.fragments=keepI
 				elementMetadata(fragGrl)[,"sampleId"] <- sid
 				elementMetadata(fragGrl)[,"cellId"] <- cids
 				fragGrl <- split(fragGrl, elementMetadata(fragGrl)[,"cellId"])
-
+				logger.info(c("Found", length(fragGrl), "cells"))
 				fragGrl <- as.list(fragGrl)
 				logger.status("[DEBUG]")
 
