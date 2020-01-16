@@ -157,15 +157,16 @@ DsATACsc.archr <- function(ap, keepInsertionInfo=FALSE, diskDump.fragments=keepI
 				elementMetadata(fragGrl)[,"cellId"] <- cids
 				fragGrl <- split(fragGrl, elementMetadata(fragGrl)[,"cellId"])
 
+				fragGrl <- as.list(fragGrl)
+				logger.status("[DEBUG]")
+
 				if (!all(cids %in% names(fragGrl))) logger.error("Could not find all cells in fragment files")
 				fragGrl <- fragGrl[cids]
 
-				logger.start("Preparing insertion data")
-					insGrl <- lapply(fragGrl, getInsertionSitesFromFragmentGr)
-				logger.completed()
-				logger.start("Summarizing count data")
-					obj <- addCountDataFromGRL(obj, insGrl)
-				logger.completed()
+				logger.status("Preparing insertion data ...")
+				insGrl <- lapply(fragGrl, getInsertionSitesFromFragmentGr)
+				logger.status("Summarizing count data ...")
+				obj <- addCountDataFromGRL(obj, insGrl)
 			logger.completed()
 			if (keepInsertionInfo) {
 				chunkedFragmentFiles <- obj@diskDump.fragments && .hasSlot(obj, "diskDump.fragments.nSamplesPerFile") && obj@diskDump.fragments.nSamplesPerFile > 1
