@@ -27,10 +27,10 @@ DsATACsc.archr <- function(ap, keepInsertionInfo=FALSE, diskDump.fragments=keepI
 	logger.status("Checking genome compatibility")
 	sls <- muRtools::getSeqlengths4assembly(genomeAss, onlyMainChrs=TRUE, adjChrNames=TRUE)
 	chromSizes_archr <- ga$chromSizes
-	chromNames_archr <- seqnames(chromSizes_archr)
+	chromNames_archr <- as.character(seqnames(chromSizes_archr))
 
 	chromSizes_archr <- muRtools::setGenomeProps(chromSizes_archr, genomeAss, dropUnknownChrs=TRUE, onlyMainChrs=TRUE, adjChrNames=TRUE, silent=FALSE)
-	chromNames <- seqnames(chromSizes_archr)
+	chromNames <- as.character(seqnames(chromSizes_archr))
 	if (!all(chromNames_archr %in% chromNames)){
 		logger.error(c("Could not find the following chromosomes in the annotation:", paste(chromNames_archr[!(chromNames_archr %in% chromNames)], collapse=",")))
 	}
