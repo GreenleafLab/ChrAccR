@@ -100,7 +100,7 @@ DsATACsc.archr <- function(ap, keepInsertionInfo=FALSE, diskDump.fragments=keepI
 			regionSets[[paste0("tiling", tileW, "bp")]] <- tileGr
 		}
 		geneAnnot <- ArchR::getGeneAnnotation(ap)
-		if (!is.null(geneAnnot) && all(c("TSS", "genes"), names(geneAnnot))){
+		if (!is.null(geneAnnot) && all(c("TSS", "genes") %in% names(geneAnnot))){
 			logger.status("Preparing gene regions")
 			regionSets[["tssWindow"]] <- promoters(geneAnnot$TSS, upstream=100, downstream=100)
 			regionSets[["promoter"]] <- promoters(geneAnnot$genes, upstream=1500, downstream=500)
