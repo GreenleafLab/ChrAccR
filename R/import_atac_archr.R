@@ -155,12 +155,10 @@ DsATACsc.archr <- function(ap, keepInsertionInfo=FALSE, diskDump.fragments=keepI
 				elementMetadata(fragGrl) <- NULL
 				elementMetadata(fragGrl)[,"sampleId"] <- sid
 				elementMetadata(fragGrl)[,"cellId"] <- cids
+				if (!all(cids %in% cellIds)) logger.error("Fragment files contain unknown cells")
 				fragGrl <- split(fragGrl, elementMetadata(fragGrl)[,"cellId"])
 				fragGrl <- as.list(fragGrl)
-
-				if (!all(cids %in% names(fragGrl))) logger.error("Could not find all cells in fragment files")
 				logger.info(c("Found", length(fragGrl), "cells"))
-				fragGrl <- fragGrl[cids]
 
 				logger.status("Preparing insertion data ...")
 				insGrl <- lapply(fragGrl, getInsertionSitesFromFragmentGr)
