@@ -375,6 +375,7 @@ projectMatrix_UMAP <- function(X, umapObj, binarize=TRUE){
 	umapCoord_proj <- uwot::umap_transform(pcaCoord_proj, umapObj$umapRes)
 	rownames(umapCoord_proj) <- rownames(pcaCoord_proj)
 	colnames(umapCoord_proj) <- colnames(umapObj$umapCoord)
+	print("Hi")
 	return(umapCoord_proj)
 }
 
