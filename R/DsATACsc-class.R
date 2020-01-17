@@ -396,7 +396,106 @@ setMethod("unsupervisedAnalysisSc",
 	}
 )
 #-------------------------------------------------------------------------------
+if (!isGeneric("dimRed_UMAP")) {
+	setGeneric(
+		"dimRed_UMAP",
+		function(.object, ...) standardGeneric("dimRed_UMAP"),
+		signature=c(".object")
+	)
+}
+#' dimRed_UMAP-methods
+#'
+#' Retrieve dimension reduction embedding and object using UMAP
+#'
+#' @param .object    \code{\linkS4class{DsATACsc}} object
+#' @param regions    character string specifying the region type to retrieve the UMAP coordinates from. Alternatively, a \code{GRanges} object specifying coordinates that fragment counts will be aggregated over
+#' @param tfidf      normalize the counts using TF-IDF transformation
+#' @param pcs        components to use to compute the SVD
+#' @param umapParams  parameters to compute UMAP coordinates (passed on to \code{muRtools::getDimRedCoords.umap} and further to \code{uwot::umap})
+#' @return an \code{S3} object containing dimensionality reduction results
+#' 
+#' @details
+#' The output object includes the final singular values/principal components (\code{result$pcaCoord}), the low-dimensional coordinates (\code{result$umapCoord}) as well as region set that provided the basis for the dimension reduction (\code{result$regionGr}).
+#' 
+#' @rdname dimRed_UMAP-DsATACsc-method
+#' @docType methods
+#' @aliases dimRed_UMAP
+#' @aliases dimRed_UMAP,DsATACsc-method
+#' @author Fabian Mueller
+#' @export
+setMethod("dimRed_UMAP",
+	signature(
+		.object="DsATACsc"
+	),
+	function(
+		.object,
+		regions,
+		tfidf=TRUE,
+		pcs=1:50,
+		umapParams=list(
+			distMethod="euclidean",
+			min_dist=0.5,
+			n_neighbors=25
+		)
+	) {
+		rt <- regions
+		gr <- NULL
+		if (is.character(rt)){
+			if (!is.element(rt, getRegionTypes(.object))){
+				logger.error(c("Invalid region type:", rt))
+			}
+		}
+		if (is.element(class(rt), c("GRanges"))){
+			logger.start("Aggregating fragment counts")
+				gr <- rt
+				rt <- ".regionsForDimRed"
+				.object <- regionAggregation(.object, gr, rt, signal="insertions", dropEmpty=FALSE, bySample=FALSE)
+			logger.completed()
+		}
 
+		dsn <- .object
+		idfBase <- NULL
+		if (tfidf){
+			logger.start("Transforming counts using TF-IDF")
+				bcm_unnorm <- ChrAccR::getCounts(dsn, rt, allowSparseMatrix=TRUE) > 0 # unnormalized binary count matrix
+				idfBase <- log(1 + ncol(bcm_unnorm) / safeMatrixStats(bcm_unnorm, "rowSums", na.rm=TRUE))
+				dsn <- transformCounts(dsn, method="tf-idf", regionTypes=rt) #TODO: renormalize based on sequencing depth rather than aggregated counts across peaks only?
+			logger.completed()
+		}
+
+		gr <- getCoord(dsn, rt)
+		cm <- ChrAccR::getCounts(dsn, rt, allowSparseMatrix=TRUE)
+
+		mat <- cm
+		pcaCoord <- NULL
+		if (length(pcs) > 1){
+			logger.start("SVD")
+				pcaCoord <- muRtools::getDimRedCoords.pca(safeMatrixStats(cm, "t"), components=1:max(pcs), method="irlba_svd")
+				mat <- pcaCoord[, pcs, drop=FALSE]
+			logger.completed()
+		}
+		
+		logger.start(c("UMAP dimension reduction"))
+			paramL <- c(list(X=mat), umapParams)
+			umapCoord <- do.call(muRtools::getDimRedCoords.umap, paramL)
+			umapRes <- attr(umapCoord, "umapRes")
+			attr(umapCoord, "umapRes") <- NULL
+		logger.completed()
+
+		res <- list(
+			pcaCoord=pcaCoord,
+			pcs = pcs,
+			idfBase=idfBase,
+			umapCoord=umapCoord,
+			umapRes=umapRes,
+			regionGr=gr
+		)
+		class(res) <- "DimRed_UMAP_sc"
+		return(res)
+	}
+)
+
+#-------------------------------------------------------------------------------
 if (!isGeneric("iterativeLSI")) {
 	setGeneric(
 		"iterativeLSI",
@@ -573,14 +672,10 @@ setMethod("iterativeLSI",
 
 		logger.start("Iteration 2")
 			it2regionType <- it1regionType
-			logger.start(c("Performing TF-IDF-based dimension reduction"))
-				bcm_unnorm <- ChrAccR::getCounts(dsr, it2regionType, allowSparseMatrix=TRUE) > 0 # unnormalized binary count matrix
-				idfBase <- log(1 + ncol(bcm_unnorm) / safeMatrixStats(bcm_unnorm, "rowSums", na.rm=TRUE))
-				dsn <- transformCounts(dsr, method="tf-idf", regionTypes=it2regionType) #TODO: renormalize based on sequencing depth rather than aggregated counts across peaks only?
-				cm <- ChrAccR::getCounts(dsn, it2regionType, allowSparseMatrix=TRUE)
-				pcaCoord <- muRtools::getDimRedCoords.pca(safeMatrixStats(cm, "t"), components=1:max(it2pcs), method="irlba_svd")
-				pcaCoord_sel <- pcaCoord[, it2pcs, drop=FALSE]
-			logger.completed()
+			
+			umapRes <- dimRed_UMAP(dsr,	it2regionType, tfidf=TRUE, pcs=it2pcs, umapParams=umapParams)
+			pcaCoord_sel <- umapRes$pcaCoord[, umapRes$pcs, drop=FALSE]
+
 			logger.start(c("Clustering"))
 				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.features=0, assay="ATAC")
 				sObj[["pca"]] <- Seurat::CreateDimReducObject(embeddings=pcaCoord_sel, key="PC_", assay="ATAC")
@@ -592,20 +687,14 @@ setMethod("iterativeLSI",
 
 				dsr <- addSampleAnnotCol(dsr, "clustAss_it2", as.character(clustAss[cellIds]))
 			logger.completed()
-			logger.start(c("UMAP coordinates"))
-				paramL <- c(list(X=pcaCoord_sel), umapParams)
-				umapCoord <- do.call(muRtools::getDimRedCoords.umap, paramL)
-				umapRes <- attr(umapCoord, "umapRes")
-				attr(umapCoord, "umapRes") <- NULL
-			logger.completed()
 		logger.completed()
 
 		res <- list(
 			pcaCoord=pcaCoord,
-			pcs = it2pcs,
-			idfBase=idfBase,
-			umapCoord=umapCoord,
-			umapRes=umapRes,
+			pcs = umapRes$pcs,
+			idfBase=umapRes$idfBase,
+			umapCoord=umapRes$umapCoord,
+			umapRes=umapRes$umapRes,
 			clustAss=clustAss,
 			regionGr=peakCoords,
 			clusterPeaks_unfiltered=peakUnionGr,
@@ -625,4 +714,3 @@ setMethod("iterativeLSI",
 		return(res)
 	}
 )
-

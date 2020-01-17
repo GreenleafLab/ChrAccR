@@ -196,7 +196,6 @@ DsATACsc.archr <- function(ap, keepInsertionInfo=FALSE, diskDump.fragments=keepI
 				logger.completed()
 			}
 		}
-		print("Hi")
 		# just to make sure: reorder fragment list
 		if (keepInsertionInfo) {
 			obj@fragments <- obj@fragments[getSamples(obj)]
