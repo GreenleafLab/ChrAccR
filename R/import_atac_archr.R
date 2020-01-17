@@ -199,6 +199,7 @@ DsATACsc.archr <- function(ap, keepInsertionInfo=FALSE, diskDump.fragments=keepI
 			obj@fragments <- obj@fragments[getSamples(obj)]
 		}
 	logger.completed()
+	print("2020-01-16")
 	
 	# logger.start("Removing uncovered regions from annotation")
 	# 	obj <- filterLowCovg(obj, thresh=1L, reqSamples=1)
