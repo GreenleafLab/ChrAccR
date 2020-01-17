@@ -129,40 +129,40 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 				fragGrl <- as.list(fragGrl)
 				logger.info(c("Found", length(fragGrl), "cells"))
 
-				logger.status("Preparing insertion data")
+				logger.status("Preparing insertion data ...")
 				insGrl <- lapply(fragGrl, getInsertionSitesFromFragmentGr)
-				logger.status("Summarizing count data")
-				obj <- addCountDataFromGRL(obj, insGrl)
+				logger.start("Summarizing count data")
+					obj <- addCountDataFromGRL(obj, insGrl)
+				logger.completed()
 				
 				if (keepInsertionInfo) {
 					chunkedFragmentFiles <- obj@diskDump.fragments && .hasSlot(obj, "diskDump.fragments.nSamplesPerFile") && obj@diskDump.fragments.nSamplesPerFile > 1
-					logger.start("Adding fragment data to data structure")
-						nCells <- length(fragGrl)
-						if (chunkedFragmentFiles){
-							chunkL <- split(1:nCells, rep(1:ceiling(nCells/obj@diskDump.fragments.nSamplesPerFile), each=obj@diskDump.fragments.nSamplesPerFile)[1:nCells])
-							names(chunkL) <- NULL
-							for (k in 1:length(chunkL)){
-								iis <- chunkL[[k]]
-								cids <- names(fragGrl)[iis]
-								fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
-								saveRDS(fragGrl[iis], fn, compress=TRUE)
-								obj@fragments[cids] <- rep(list(fn), length(iis))
-							}
-						} else {
-							cids <- names(fragGrl)
-							# # convert GRangesList to regular list
-							# fragGrl <- as.list(fragGrl)
-							if (obj@diskDump.fragments){
-								obj@fragments[cids] <- lapply(fragGrl, FUN=function(x){
-									fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
-									saveRDS(x, fn, compress=TRUE)
-									return(fn)
-								})
-							} else {
-								obj@fragments[cids] <- fragGrl
-							}
+					logger.status("Adding fragment data to data structure ...")
+					nCells <- length(fragGrl)
+					if (chunkedFragmentFiles){
+						chunkL <- split(1:nCells, rep(1:ceiling(nCells/obj@diskDump.fragments.nSamplesPerFile), each=obj@diskDump.fragments.nSamplesPerFile)[1:nCells])
+						names(chunkL) <- NULL
+						for (k in 1:length(chunkL)){
+							iis <- chunkL[[k]]
+							cids <- names(fragGrl)[iis]
+							fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
+							saveRDS(fragGrl[iis], fn, compress=TRUE)
+							obj@fragments[cids] <- rep(list(fn), length(iis))
 						}
-					logger.completed()
+					} else {
+						cids <- names(fragGrl)
+						# # convert GRangesList to regular list
+						# fragGrl <- as.list(fragGrl)
+						if (obj@diskDump.fragments){
+							obj@fragments[cids] <- lapply(fragGrl, FUN=function(x){
+								fn <- tempfile(pattern="fragments_", tmpdir=tempdir(), fileext = ".rds")
+								saveRDS(x, fn, compress=TRUE)
+								return(fn)
+							})
+						} else {
+							obj@fragments[cids] <- fragGrl
+						}
+					}
 				}
 				
 			logger.completed()
