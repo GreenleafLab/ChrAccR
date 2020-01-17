@@ -50,6 +50,7 @@ setMethod("createReport_exploratory",
 
 		regionTypes <- getRegionTypes(.object)
 		specAnnotCols <- getConfigElement("annotationColumns")
+		specAnnotCols0 <- specAnnotCols
 		rts <- getConfigElement("regionTypes")
 		if (length(rts) > 0) regionTypes <- intersect(rts, regionTypes)
 		if (length(regionTypes) < 1) logger.error("Not enough region types specified")
@@ -123,7 +124,13 @@ setMethod("createReport_exploratory",
 			specAnnotCols <- c(specAnnotCols, qcAnnotCols, "clusterAssignment")
 		}
 
-		sampleGrps <- getGroupsFromTable(sannot, cols=specAnnotCols, minGrpSize=getConfigElement("annotationMinGroupSize"))
+		mgc <- min(getConfigElement("annotationMaxGroupCount"), nrow(sannot)-1)
+		if (is.null(specAnnotCols0)) {
+			# add automatically found columns to group set
+			defaultGrps <- getGroupsFromTable(sannot, cols=NULL, minGrpSize=getConfigElement("annotationMinGroupSize"), maxGrpCount=mgc)
+			specAnnotCols <- union(names(defaultGrps), specAnnotCols)
+		}
+		sampleGrps <- getGroupsFromTable(sannot, cols=specAnnotCols, minGrpSize=getConfigElement("annotationMinGroupSize"), maxGrpCount=mgc)
 		sampleGrps <- c(list(".ALL"=list("all"=c(1:nrow(sannot)))), sampleGrps)
 		grpNames <- names(sampleGrps)
 

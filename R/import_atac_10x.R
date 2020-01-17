@@ -125,15 +125,14 @@ DsATACsc.fragments <- function(sampleAnnot, fragmentFiles, genome, regionSets=NU
 					names(fragGrl) <- barcode2cellId[names(fragGrl)]
 				logger.completed()
 
-				logger.start("Preparing insertion data")
-					# convert GRangesList to regular list
-					fragGrl <- as.list(fragGrl)
-					logger.status("[DEBUG]")
-					insGrl <- lapply(fragGrl, getInsertionSitesFromFragmentGr)
-				logger.completed()
-				logger.start("Summarizing count data")
-					obj <- addCountDataFromGRL(obj, insGrl)
-				logger.completed()
+				# convert GRangesList to regular list
+				fragGrl <- as.list(fragGrl)
+				logger.info(c("Found", length(fragGrl), "cells"))
+
+				logger.status("Preparing insertion data")
+				insGrl <- lapply(fragGrl, getInsertionSitesFromFragmentGr)
+				logger.status("Summarizing count data")
+				obj <- addCountDataFromGRL(obj, insGrl)
 				
 				if (keepInsertionInfo) {
 					chunkedFragmentFiles <- obj@diskDump.fragments && .hasSlot(obj, "diskDump.fragments.nSamplesPerFile") && obj@diskDump.fragments.nSamplesPerFile > 1
@@ -224,7 +223,6 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 		logger.error(c("Missing input files for samples:", paste(missingSamples, collapse=", ")))
 	}
 	if (is.null(regionSets)){
-		logger.info(c("Using default region sets:", paste("tiling200bp", collapse=", ")))
 		regionSets <- list(
 			tiling5kb=getTilingRegions(genome, width=200L, onlyMainChrs=TRUE),
 			tiling200bp=getTilingRegions(genome, width=200L, onlyMainChrs=TRUE)
@@ -233,6 +231,7 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 		if (!is.null(annoPkg)){
 			regionSets[["promoter"]] <- get("getGeneAnnotation", asNamespace(annoPkg))(anno="gencode_coding", type="promoterGr")
 		}
+		logger.info(c("Using default region sets:", paste(names(regionSets), collapse=", ")))
 	}
 	if (length(names(regionSets)) < 1){
 		logger.error("Region sets must be named")
@@ -295,7 +294,7 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 	# optionally merge peak sets and add to region sets (peaks.bed)
 	if (addPeakRegions){
 		unifWidth=501L
-		logger.start("Retrieving (consensus) non-ovelapping, fixed-width peak set")
+		logger.start("Retrieving (consensus) non-ovelapping, fixed-width peak set from CellRanger peaks")
 			peakSet <- NULL
 			for (i in seq_along(sampleDirs)){
 				sid <- names(sampleDirs)[i]
@@ -319,7 +318,7 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 			}
 			peakSet <- sortSeqlevels(peakSet)
 			peakSet <- sort(peakSet)
-			regionSets <- c(regionSets, list(.peaks=peakSet))
+			regionSets <- c(regionSets, list(.CR.peaks=peakSet))
 		logger.completed()
 	}
 
