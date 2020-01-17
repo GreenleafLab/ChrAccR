@@ -344,3 +344,38 @@ custom_cicero_cds <- function(
 	# return(list(ciceroCDS = cicero_cds, knnMap = cell_sample_map))
 	return(cicero_cds)
 }
+
+
+#' projectMatrix_UMAP
+#' 
+#' given a (count) matrix and dimension reduction result, return the projected UMAP coordinates
+#' in the embedding space
+#'
+#' @param X       matrix to be projected
+#' @param umapObj dimension reduction result as returned by \code{\link{dimRed_UMAP}}
+#' @param binarize binarize the counts before projecting
+#' @return Projected UMAP coordinates
+#' @author Fabian Mueller
+#' @export
+projectMatrix_UMAP <- function(X, umapObj, binarize=TRUE){
+	if (!is.element(class(umapObj), c("DimRed_UMAP_sc", "iterativeLSIResultSc"))){
+		logger.error("Invalid dimension reduction object")
+	}
+	if (nrow(X) != length(umapObj$regionGr)){
+		logger.error("Incompatible number of regions [nrow(X)]")
+	}
+	if (binarize) X <- X > 0
+
+	tf <- Matrix::t(Matrix::t(X) / Matrix::colSums(X)) #term frequency
+	tfidf <- tf * umapObj$idfBase # inverse document frequency
+	tfidf <- as.matrix(tfidf)
+
+	pcaCoord_proj <- (t(tfidf) %*% attr(umapObj$pcaCoord, "SVD_U"))[, umapObj$pcs]
+	colnames(pcaCoord_proj) <- paste0('PC', 1:ncol(pcaCoord_proj))
+	umapCoord_proj <- uwot::umap_transform(pcaCoord_proj, umapObj$umapRes)
+	rownames(umapCoord_proj) <- rownames(pcaCoord_proj)
+	colnames(umapCoord_proj) <- colnames(umapObj$umapCoord)
+	return(umapCoord_proj)
+}
+
+	
