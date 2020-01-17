@@ -674,7 +674,7 @@ setMethod("iterativeLSI",
 		logger.start("Iteration 2")
 			it2regionType <- it1regionType
 
-			umapRes <- dimRed_UMAP(dsr,	it2regionType, tfidf=TRUE, pcs=it2pcs, umapParams=umapParams)
+			umapRes <- dimRed_UMAP(dsr, it2regionType, tfidf=TRUE, pcs=it2pcs, umapParams=umapParams)
 			pcaCoord_sel <- umapRes$pcaCoord[, umapRes$pcs, drop=FALSE]
 
 			logger.start(c("Clustering"))
@@ -702,11 +702,18 @@ setMethod("iterativeLSI",
 			iterationData = list(
 				iteration0 = list(
 					pcaCoord=pcaCoord_it0,
-					clustAss=clustAss_it0
+					clustAss=clustAss_it0,
+					pcs=it0pcs,
+					nMostAcc=it0nMostAcc,
+					clusterResolution=it0clusterResolution,
+					nTopPeaksPerCluster=it0nTopPeaksPerCluster
 				),
 				iteration1 = list(
 					pcaCoord=pcaCoord_it1,
-					clustAss=clustAss_it1
+					clustAss=clustAss_it1,
+					pcs=it1pcs,
+					clusterResolution=it1clusterResolution,
+					mostVarPeaks=it1mostVarPeaks
 				)
 			),
 			.params=callParams
