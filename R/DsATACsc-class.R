@@ -672,7 +672,7 @@ setMethod("iterativeLSI",
 
 		logger.start("Iteration 2")
 			it2regionType <- it1regionType
-			
+
 			umapRes <- dimRed_UMAP(dsr,	it2regionType, tfidf=TRUE, pcs=it2pcs, umapParams=umapParams)
 			pcaCoord_sel <- umapRes$pcaCoord[, umapRes$pcs, drop=FALSE]
 
@@ -690,7 +690,7 @@ setMethod("iterativeLSI",
 		logger.completed()
 
 		res <- list(
-			pcaCoord=pcaCoord,
+			pcaCoord=umapRes$pcaCoord,
 			pcs = umapRes$pcs,
 			idfBase=umapRes$idfBase,
 			umapCoord=umapRes$umapCoord,
