@@ -622,6 +622,7 @@ setMethod("iterativeLSI",
 					
 					peakUnionGr <- getNonOverlappingByScore(unlist(clustPeakGrl), scoreCol="score_norm")
 					peakUnionGr <- sortGr(peakUnionGr)
+					names(peakUnionGr) <- NULL
 				logger.completed()
 				logger.start("Aggregating counts for union peak set")
 					# dsrClust <- regionAggregation(dsrClust, peakUnionGr, "clusterPeaks", signal="insertions", dropEmpty=FALSE)

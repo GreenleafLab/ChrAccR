@@ -200,9 +200,9 @@ DsATACsc.archr <- function(ap, keepInsertionInfo=FALSE, diskDump.fragments=keepI
 		}
 	logger.completed()
 	
-	# logger.start("Removing uncovered regions from annotation")
-	# 	obj <- filterLowCovg(obj, thresh=1L, reqSamples=1)
-	# logger.completed()
+	logger.start("Removing uncovered regions from annotation")
+		obj <- filterLowCovg(obj, thresh=1L, reqSamples=1)
+	logger.completed()
 
 	return(obj)
 }

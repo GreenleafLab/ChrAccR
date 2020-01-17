@@ -495,8 +495,11 @@ run_atac_sc_unsupervised <- function(dsa, anaDir){
 			logger.info(c("Using cluster resolution:", clustRes))
 			itLsi <- iterativeLSI(dsan, it0regionType=itLsiRt, it0clusterResolution=clustRes, it1clusterResolution=clustRes, it2clusterResolution=clustRes)
 		logger.completed()
-		logger.start("Aggregating counts across cluster peaks")
-			dsan <- regionAggregation(dsan, itLsi$clusterPeaks_unfiltered, ".peaks.itlsi", signal="insertions", dropEmpty=FALSE, bySample=FALSE)
+		logger.start("Aggregating counts across initial cluster peaks")
+			dsan <- regionAggregation(dsan, itLsi$clusterPeaks_unfiltered, ".peaks.itlsi0", signal="insertions", dropEmpty=FALSE, bySample=FALSE)
+		logger.completed()
+		logger.start("Aggregating counts across final iterative LSI features (peaks)")
+			dsan <- regionAggregation(dsan, itLsi$regionGr, ".itlsi.features", signal="insertions", dropEmpty=FALSE, bySample=FALSE)
 		logger.completed()
 	} else {
 		logger.warning("Unsupervised analysis will not be performed")
