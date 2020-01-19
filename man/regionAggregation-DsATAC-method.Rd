@@ -13,7 +13,7 @@
   aggrFun = "median",
   dropEmpty = TRUE,
   bySample = TRUE,
-  chunkSize = 10000L
+  chunkSize = 5000L
 )
 }
 \arguments{

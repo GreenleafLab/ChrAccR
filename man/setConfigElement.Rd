@@ -35,6 +35,9 @@ Set a configuration item to a given value
   \item{\bold{\code{geneModelVersions}}}{
       Gene model versions to be used for various genomes
   }
+  \item{\bold{\code{analysisName}}\code{ = "ChrAccR analysis"}}{
+      A title for the analysis (a string).
+  }
   \item{\bold{\code{regionTypes}}}{
       Region types to be used in the analysis
   }
