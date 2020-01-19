@@ -96,13 +96,16 @@ setMethod("createReport_exploratory",
 				saveRDS(dre, file.path(rDir.data.abs, "dimRed_iterativeLSI_res.rds"))
 				uwot::save_uwot(dre$umapRes, file.path(rDir.data.abs, "dimRed_iterativeLSI_res_uwot"))
 			logger.completed()
-			itLsiPeakRt <- ".peaks.itlsi"
+			itLsiPeakRt <- ".peaks.itlsi0"
 			regionTypes <- c(regionTypes, itLsiPeakRt)
 			doAggr <- TRUE
 			if (is.element(itLsiPeakRt, getRegionTypes(.object))){
 				doAggr <- length(dre$clusterPeaks_unfiltered) != getNRegions(.object, itLsiPeakRt)
 			}
 			if (doAggr){
+				if (!runItLsi) {
+					logger.warning("Cluster peaks annotated in the DsATACsc object seem to be incompatible with specified iterative LSI result. --> reaggregating using itLsi result.")
+				}
 				logger.start("Aggregating counts across initial cluster peaks")
 					.object <- regionAggregation(.object, dre$clusterPeaks_unfiltered, itLsiPeakRt, signal="insertions", dropEmpty=FALSE, bySample=FALSE)
 				logger.completed()

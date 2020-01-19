@@ -584,7 +584,7 @@ setMethod("regionAggregation",
 		aggrFun="median",
 		dropEmpty=TRUE,
 		bySample=TRUE,
-		chunkSize=10000L
+		chunkSize=5000L
 	) {
 		if (!is.element(aggrFun, c("sum", "mean", "median"))){
 			logger.error(c("Unknown signal count aggregation function:", aggrFun))
@@ -688,7 +688,7 @@ setMethod("regionAggregation",
 						# fGr <- unlist(fGrl, use.names=FALSE)
 						elementMetadata(fGr)[,".sampleIdx"] <- rep(seq_along(nFrags), nFrags)
 						igr <- getInsertionSitesFromFragmentGr(fGr)
-						logger.status("computing overlaps with regions ...")
+						logger.status("computing overlaps with regions ...") #TODO: this step can take a lot of memory (reduce chunksize?)
 						oo <- findOverlaps(regGr, igr, ignore.strand=TRUE)
 						# convenient: when constructing sparse matrices, if (i,j) indices are repeated, the x-values are summed up
 						scm_cur <- Matrix::sparseMatrix(
