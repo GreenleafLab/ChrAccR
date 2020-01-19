@@ -831,7 +831,7 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 	}
 	repIds <- c("summary", "filtering", "normalization", "exploratory", "differential")
 	repIds <- intersect(repIds, names(wfState$existingReports)[wfState$existingReports])
-	makeReportIndex(reportDir, anaName="ChrAccR analysis", reportIds=repIds)
+	makeReportIndex(reportDir, anaName=getConfigElement("analysisName"), reportIds=repIds)
 	
 	logger.completed()
 	invisible(dsa)
