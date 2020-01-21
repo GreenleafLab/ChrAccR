@@ -11,13 +11,14 @@ run_atac(
   genome = NULL,
   sampleIdCol = NULL,
   regionSets = NULL,
-  startStage = "raw"
+  startStage = "raw",
+  resetStage = NULL
 )
 }
 \arguments{
 \item{anaDir}{analysis directory}
 
-\item{input}{Input object. Can be either \code{NULL}, a character string, a \code{DsATAC}}
+\item{input}{Input object. Can be either \code{NULL}, a character string, a \code{DsATAC}. Set to \code{NULL} when you want to continue a previous analysis}
 
 \item{sampleAnnot}{sample annotation table (\code{data.frame}) or \code{NULL} if continuing existing analysis or input is a \code{DsATAC} object}
 
@@ -28,6 +29,8 @@ run_atac(
 \item{regionSets}{a list of GRanges objects which contain region sets over which count data will be aggregated. Only relevant if not continuing existing analysis and input is not a \code{DsATAC} object}
 
 \item{startStage}{stage where to start the analysis from. can be one of \code{"raw"}, \code{"filtered"}, \code{"processed"}. Only relevant if not continuing existing analysis.}
+
+\item{resetStage}{flag indicating whether to reset the analysis directory (i.e. deleting previously generated reports and datasets), when continuing previous analyses (\code{input} argument is \code{NULL}).}
 }
 \value{
 \code{\linkS4class{DsATAC}} object (invisible)

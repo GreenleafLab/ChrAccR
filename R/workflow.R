@@ -577,16 +577,17 @@ run_atac_differential <- function(dsa, anaDir){
 #' 
 #' Run the complete ChrAccR analysis for ATAC-seq data
 #' @param anaDir	analysis directory
-#' @param input		Input object. Can be either \code{NULL}, a character string, a \code{DsATAC}
+#' @param input		Input object. Can be either \code{NULL}, a character string, a \code{DsATAC}. Set to \code{NULL} when you want to continue a previous analysis
 #' @param sampleAnnot sample annotation table (\code{data.frame}) or \code{NULL} if continuing existing analysis or input is a \code{DsATAC} object
 #' @param genome    genome assembly. Only relevant if not continuing existing analysis and input is not a \code{DsATAC} object
 #' @param sampleIdCol column name in the sample annotation table containing unique sample Only relevant if not continuing existing analysis and input is not a \code{DsATAC} object
 #' @param regionSets a list of GRanges objects which contain region sets over which count data will be aggregated. Only relevant if not continuing existing analysis and input is not a \code{DsATAC} object
 #' @param startStage stage where to start the analysis from. can be one of \code{"raw"}, \code{"filtered"}, \code{"processed"}. Only relevant if not continuing existing analysis.
+#' @param resetStage flag indicating whether to reset the analysis directory (i.e. deleting previously generated reports and datasets), when continuing previous analyses (\code{input} argument is \code{NULL}).
 #' @return \code{\linkS4class{DsATAC}} object (invisible)
 #' @author Fabian Mueller
 #' @export
-run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleIdCol=NULL, regionSets=NULL, startStage="raw"){
+run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleIdCol=NULL, regionSets=NULL, startStage="raw", resetStage=NULL){
 	doContinue <- prepAnaDir(anaDir)
 	wfState <- getWfState(anaDir)
 	
@@ -600,12 +601,18 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 	############################################################################
 	saveDs <- TRUE
 	dsa <- NULL
+	dsa_unnorm <- NULL
 	dsStages <- c("raw", "filtered", "processed")
 	if (!is.element(startStage, dsStages)) logger.error(c("Invalid dataset start stage:", startStage))
+
 	if (is.null(input)){
 		if (doContinue) {
 			logger.info("Continuing ChrAccR analysis")
 			logger.start("Loading DsATAC dataset")
+				if (!is.na(wfState$dsAtacPaths["filtered"])){
+					logger.status("Loading filtered, unnormalized dataset")
+					dsa_unnorm <- loadDsAcc(file.path(wfState$anaDir, wfState$dsAtacPaths["filtered"]))
+				}
 				if (!is.na(wfState$dsAtacPaths["processed"])){
 					logger.info("Continuing from processed dataset")
 					dsa <- loadDsAcc(file.path(wfState$anaDir, wfState$dsAtacPaths["processed"]))
@@ -613,7 +620,7 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 					saveDs <- FALSE
 				} else if (!is.na(wfState$dsAtacPaths["filtered"])){
 					logger.info("Continuing from filtered dataset")
-					dsa <- loadDsAcc(file.path(wfState$anaDir, wfState$dsAtacPaths["filtered"]))
+					dsa <- dsa_unnorm
 					startStage <- "filtered"
 				} else if (!is.na(wfState$dsAtacPaths["raw"])){
 					logger.info("Continuing from raw dataset")
@@ -640,6 +647,7 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 			# 	saveDs <- FALSE
 			# }
 		} else if (validSampleAnnot){
+			startStage <- "raw"
 			inputType <- as.character(NA)
 			inputFns <- character(0)
 			if (is.character(input)){
@@ -712,6 +720,17 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 	}
 	isSingleCell <- class(dsa)=="DsATACsc"
 
+	if (is.null(resetStage)){
+		resetStage <- FALSE
+		if (is.null(input) && doContinue){
+			resetStage <- TRUE
+		}
+	}
+	if (resetStage){
+		logger.warning(c("Resetting analysis directory to", startStage, "state"))
+		wfState <- resetWfToStage(anaDir, startStage)
+	}
+
 	# identifying consensus peak set
 	doPeakCalling <- !isSingleCell && getConfigElement("doPeakCalling") && !is.element(".peaks.cons", getRegionTypes(dsa)) && length(dsa@fragments) > 0
 	if (doPeakCalling){
@@ -758,7 +777,9 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 	}
 	#---------------------------------------------------------------------------
 	# Bulk: normalize data
-	dsa_unnorm <- dsa
+	if (is.null(dsa_unnorm)) {
+		dsa_unnorm <- dsa
+	}
 	doNorm <- !isSingleCell && is.element(startStage, c("raw", "filtered"))
 	if (doNorm){
 		logger.start("Running normalization analysis")
