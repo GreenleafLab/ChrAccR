@@ -855,6 +855,5 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 	makeReportIndex(reportDir, anaName=getConfigElement("analysisName"), reportIds=repIds)
 	
 	logger.completed()
-	print("done")
 	invisible(dsa)
 }
