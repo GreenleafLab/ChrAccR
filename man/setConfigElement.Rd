@@ -56,7 +56,7 @@ Set a configuration item to a given value
   \item{\bold{\code{annotationMinGroupSize}}\code{ = 2}}{
       Minimum size of a group to be used in the reports. Influences which annotation columns are automatically selected for reporting.
   }
-  \item{\bold{\code{annotationMaxGroupCount}}\code{ = 10}}{
+  \item{\bold{\code{annotationMaxGroupCount}}\code{ = 20}}{
       Maximum number of groups to be used in the reports. Influences which annotation columns are automatically selected for reporting.
   }
   \item{\bold{\code{doPeakCalling}}\code{ = FALSE}}{

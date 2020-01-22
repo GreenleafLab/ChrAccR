@@ -24,7 +24,7 @@
 .config$chromVarMotifNamesForDimRed <- NULL
 .config$annotationColumns <- NULL
 .config$annotationMinGroupSize <- 2L
-.config$annotationMaxGroupCount <- 10L
+.config$annotationMaxGroupCount <- 20L
 .config$doPeakCalling <- FALSE
 .config$annotationPeakGroupColumn <- NULL
 .config$annotationPeakGroupAgreePerc <- 1
@@ -89,7 +89,7 @@
 #'   \item{\bold{\code{annotationMinGroupSize}}\code{ = 2}}{
 #'       Minimum size of a group to be used in the reports. Influences which annotation columns are automatically selected for reporting.
 #'   }
-#'   \item{\bold{\code{annotationMaxGroupCount}}\code{ = 10}}{
+#'   \item{\bold{\code{annotationMaxGroupCount}}\code{ = 20}}{
 #'       Maximum number of groups to be used in the reports. Influences which annotation columns are automatically selected for reporting.
 #'   }
 #'   \item{\bold{\code{doPeakCalling}}\code{ = FALSE}}{
