@@ -502,6 +502,8 @@ run_atac_sc_unsupervised <- function(dsa, anaDir){
 		logger.start("Aggregating counts across final iterative LSI features (peaks)")
 			dsan <- regionAggregation(dsan, itLsi$regionGr, ".itlsi.features", signal="insertions", dropEmpty=FALSE, bySample=FALSE)
 		logger.completed()
+		dsan <- addSampleAnnotCol(dsan, ".itlsi.clustering", itLsi$clustAss[getSamples(dsan)])
+		logger.info("Added clustering info to DsATAC object")
 	} else {
 		logger.warning("Unsupervised analysis will not be performed")
 	}
