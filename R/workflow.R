@@ -101,6 +101,7 @@ resetWfToStage <- function(anaDir, resetTo){
 	if (is.element(resetTo, c("filtered", "raw"))){
 		delPaths <- c(delPaths, file.path(wfState$anaDir, wfState$reportDir, "normalization*"))
 		delPaths <- c(delPaths, file.path(wfState$anaDir, wfState$dsAtacPaths["processed"]))
+		delPaths <- c(delPaths, file.path(wfState$anaDir, wfState$dataDir, "iterativeLSI*"))
 	}
 	if (is.element(resetTo, c("raw"))){
 		delPaths <- c(delPaths, file.path(wfState$anaDir, wfState$dsAtacPaths["filtered"]))
