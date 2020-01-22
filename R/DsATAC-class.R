@@ -715,11 +715,12 @@ setMethod("regionAggregation",
 		if (doAggr){
 			logger.info(c("Aggregated signal counts across", nrow(.object@counts[[type]]), "regions"))
 			if (.object@sparseCounts) {
-				if (prod(dim(.object@counts[[type]])) < .Machine$integer.max) {
-					hasValM <- !is.na(.object@counts[[type]])
+				hasNas <- anyNA(.object@counts[[type]]) # this should not be TRUE
+				if (prod(dim(.object@counts[[type]])) < .Machine$integer.max && hasNas) {
+					hasValM <- !is.na(.object@counts[[type]]) # TODO: this can take a lot of memory. Use a more efficient method to detect NAs in sparse matrices
 					hasValM <- hasValM & .object@counts[[type]] != 0
 				} else {
-					logger.warning("Sparse matrix too large to check for NAs --> assuming no NAs")
+					if (hasNas) logger.warning("Sparse matrix with NAs detected --> assuming NAs are 0")
 					# avoid this error: "Cholmod error 'problem too large'"
 					hasValM <- .object@counts[[type]] != 0
 				}
