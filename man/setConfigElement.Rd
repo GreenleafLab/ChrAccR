@@ -111,6 +111,9 @@ Set a configuration item to a given value
   \item{\bold{\code{scIterativeLsiClusterResolution}}\code{ = 0.4}}{
       For single-cell analysis only: Cluster resolution to use for iterative LSI.
   }
+  \item{\bold{\code{scIterativeLsiUmapParams}}\code{ = list(distMethod="euclidean", min_dist=0.5, n_neighbors=25)}}{
+      For single-cell analysis only: UMAP parameters to use for iterative LSI (final embedding).
+  }
 }
 }
 
