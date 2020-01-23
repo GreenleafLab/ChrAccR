@@ -434,7 +434,7 @@ daTab <- getDiffAcc(dsa, "IA_prog_peaks", "stimulus", grp1Name="S", grp2Name="U"
 Genome-wide aggregates across potential binding sites for transcription factors can be extremely useful in the interpretation of chromatin accessibility. The `chromVAR` package is designed to quantify the overall TF motif accessibility for each sample in a dataset [@Schep:2017je]. Using the `getChromVarDev` function, we can obtain these deviation scores from `DsATAC` datasets:
 ```{r, message = FALSE, warning = FALSE, eval = TRUE}
 cvRes <- getChromVarDev(dsa, "IA_prog_peaks", motifs="jaspar")
-devZ <- chromVAR::deviations(cvRes)
+devZ <- chromVAR::deviationScores(cvRes)
 str(devZ)
 # plot a clustered heatmap of the first 20 motifs
 pheatmap::pheatmap(devZ[1:20,])
