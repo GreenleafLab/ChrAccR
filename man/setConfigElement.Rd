@@ -114,6 +114,9 @@ Set a configuration item to a given value
   \item{\bold{\code{scIterativeLsiUmapParams}}\code{ = list(distMethod="euclidean", min_dist=0.5, n_neighbors=25)}}{
       For single-cell analysis only: UMAP parameters to use for iterative LSI (final embedding).
   }
+  \item{\bold{\code{scDoGeneActivity}}\code{ = TRUE}}{
+      For single-cell analysis only: Compute gene activity from accessibility (using Cicero)
+  }
 }
 }
 

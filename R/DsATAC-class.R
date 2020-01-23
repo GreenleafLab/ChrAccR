@@ -3417,7 +3417,14 @@ setMethod("getCiceroGeneActivities",
 			if (is.null(annoPkg)) logger.error("Annotation package needed")
 			promoterGr <- get("getGeneAnnotation", asNamespace(annoPkg))(type="promoterGr")
 		}
-		if (is.null(names(promoterGr))) logger.error("promoterGr must have names")
+		if (is.null(names(promoterGr))){
+			emd <- elementMetadata(promoterGr)
+			if (is.element("gene_name", colnames(emd))){
+				names(promoterGr) <- emd[,"gene_name"]
+			} else {
+				logger.error("promoterGr must have names")
+			}
+		}
 
 		logger.start("Creating Cicero object")
 			cdsObj <- getMonocleCellDataSet(.object, regionType, binarize=TRUE)

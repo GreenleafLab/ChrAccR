@@ -478,6 +478,7 @@ run_atac_sc_unsupervised <- function(dsa, anaDir){
 
 	isSingleCell <- class(dsa)=="DsATACsc"
 	dsan <- dsa
+	geneAct <- NULL
 	doUnsupervised <- isSingleCell
 	if (doUnsupervised){
 		findItLsiRt <- function(ds){
@@ -506,6 +507,14 @@ run_atac_sc_unsupervised <- function(dsa, anaDir){
 		logger.completed()
 		dsan <- addSampleAnnotCol(dsan, ".itlsi.clustering", itLsi$clustAss[getSamples(dsan)])
 		logger.info("Added clustering info to DsATAC object")
+
+		# gene activity scores
+		doGeneAct <- getConfigElement("scDoGeneActivity")
+		if (doGeneAct){
+			logger.start("Computing gene activity scores")
+				geneAct <- ChrAccR::getCiceroGeneActivities(dsan, ".peaks.itlsi0", promoterGr=NULL, dimRedCoord=itLsi$pcaCoord[,itLsi$pcs])
+			logger.completed()
+		}
 	} else {
 		logger.warning("Unsupervised analysis will not be performed")
 	}
@@ -513,6 +522,7 @@ run_atac_sc_unsupervised <- function(dsa, anaDir){
 	res <- list(
 		ds_anno=dsan,
 		itLsi=itLsi,
+		geneActivity = geneAct,
 		report=report
 	)
 	class(res) <- "ChrAccR_runRes_sc_unsupervised"
@@ -797,6 +807,7 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 	itLsi <- NULL
 	itLsiFp <- file.path(wfState$anaDir, wfState$dataDir, "iterativeLSI")
 	itLsiFn <- paste0(itLsiFp, ".rds")
+	gaFn <- file.path(wfState$anaDir, wfState$dataDir, "geneActivitySE.rds")
 	doScUnsupervised <- isSingleCell && is.element(startStage, c("raw", "filtered")) && !file.exists(itLsiFn)
 	if (doScUnsupervised){
 		logger.start("Running unsupervised single-cell analysis")
@@ -808,6 +819,11 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 			saveRDS(itLsi, itLsiFn)
 			uwot::save_uwot(itLsi$umapRes, paste0(itLsiFp, "_uwot"))
 		logger.completed()
+		if (!is.null(res$geneActivity)){
+			logger.start("Saving gene activity scores")
+				saveRDS(res$geneActivity, gaFn)
+			logger.completed()
+		}
 	} else if (isSingleCell && file.exists(itLsiFn)){
 		logger.start("Loading iterative LSI result from disk")
 			itLsi <- readRDS(itLsiFn)
