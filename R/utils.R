@@ -195,14 +195,15 @@ custom_cicero_cds <- function(
 		silent = FALSE
 ) {
 	require(dplyr)
+	require(monocle3)
 	assertthat::assert_that(is(cds, "cell_data_set"))
 	assertthat::assert_that(is.data.frame(reduced_coordinates) | is.matrix(reduced_coordinates))
-	assertthat::assert_that(assertthat::are_equal(nrow(reduced_coordinates), nrow(pData(cds))))
+	assertthat::assert_that(assertthat::are_equal(nrow(reduced_coordinates), nrow(monocle3::pData(cds))))
 	assertthat::assert_that(setequal(row.names(reduced_coordinates), colnames(cds)))
 	assertthat::assert_that(assertthat::is.count(k) & k > 1)
 	assertthat::assert_that(is.character(summary_stats) | is.null(summary_stats))
 	if(!is.null(summary_stats)) {
-		assertthat::assert_that(all(summary_stats %in% names(pData(cds))),
+		assertthat::assert_that(all(summary_stats %in% names(monocle3::pData(cds))),
 		                        msg = paste("One of your summary_stats is missing",
 		                                    "from your pData table. Either add a",
 		                                    "column with the name in",
@@ -210,7 +211,7 @@ custom_cicero_cds <- function(
 		                                    "from the summary_stats parameter.",
 		                                    collapse = " "))
 		assertthat::assert_that(sum(vapply(summary_stats, function(x) {
-		  !(is(pData(cds)[,x], "numeric") | is(pData(cds)[,x], "integer"))}, 1)) == 0,
+		  !(is(monocle3::pData(cds)[,x], "numeric") | is(monocle3::pData(cds)[,x], "integer"))}, 1)) == 0,
 		                        msg = paste("All columns in summary_stats must be",
 		                                    "of class numeric or integer.",
 		                                    collapse = " "))
@@ -287,7 +288,7 @@ custom_cicero_cds <- function(
 	remove(exprs_old)
 	if (!silent) message(sprintf("%s minutes since start", round(difftime(Sys.time(),start,units="mins"),1)))
 	message("\nMaking aggregated CDS...")
-	pdata <- pData(cds)
+	pdata <- monocle3::pData(cds)
 	new_pcols <- "agg_cell"
 	if(!is.null(summary_stats)) { 
 		new_pcols <- c(new_pcols, paste0("mean_",summary_stats)) 
