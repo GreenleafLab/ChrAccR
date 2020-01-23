@@ -43,7 +43,7 @@
 .config$scIterativeLsiRegType <- NULL
 .config$scIterativeLsiClusterResolution <- 0.4
 .config$scIterativeLsiUmapParams <- list(distMethod="euclidean", min_dist=0.5, n_neighbors=25)
-.config$scDoGeneActivity <- TRUE
+.config$scDoGeneActivity <- FALSE
 .config$muPipeR_cmdr <- NULL
 
 #' setConfigElement
@@ -149,7 +149,7 @@
 #'   \item{\bold{\code{scIterativeLsiUmapParams}}\code{ = list(distMethod="euclidean", min_dist=0.5, n_neighbors=25)}}{
 #'       For single-cell analysis only: UMAP parameters to use for iterative LSI (final embedding).
 #'   }
-#'   \item{\bold{\code{scDoGeneActivity}}\code{ = TRUE}}{
+#'   \item{\bold{\code{scDoGeneActivity}}\code{ = FALSE}}{
 #'       For single-cell analysis only: Compute gene activity from accessibility (using Cicero)
 #'   }
 #' }
