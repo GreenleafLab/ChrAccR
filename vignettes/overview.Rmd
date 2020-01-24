@@ -58,7 +58,7 @@ devtools::install_github("demuellae/muRtools")
 devtools::install_github("demuellae/muReportR")
 
 # install ChrAccR
-devtools::install_github("GreenleafLab/ChrAccR")
+devtools::install_github("GreenleafLab/ChrAccR", dependencies=TRUE)
 ```
 
 We also provide complementary packages that contain genome-specific annotations. We highly recommend installing these annotation packages in order to speed up certain steps of the analysis:
