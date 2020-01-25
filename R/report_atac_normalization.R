@@ -29,6 +29,7 @@ setMethod("createReport_normalization",
 		reportDir,
 		unnormObj
 	) {
+		require(ComplexHeatmap)
 		if (!requireNamespace("muReportR")) logger.error(c("Could not load dependency: muReportR"))
 		initConfigDir <- !dir.exists(file.path(reportDir, "_config"))
 		rr <- muReportR::createReport(file.path(reportDir, paste0("normalization", ".html")), "Normalization summary", page.title = "Normalization", init.configuration=initConfigDir, theme="stanford")
