@@ -379,4 +379,59 @@ projectMatrix_UMAP <- function(X, umapObj, binarize=TRUE){
 	return(umapCoord_proj)
 }
 
+#' smoothMagic
+#' 
+#' smooth a matrix using an adaptation of the MAGIC algorithm (doi:10.1016/j.cell.2018.05.061)
+#'
+#' @param X       matrix to be smoothed (data points [cells] represent rows and features [genes] represent columns)
+#' @param X_knn   matrix to be used for finding nearest neighbors. Must have the same rows (cells) as X
+#' @param k       number of nearest neighbors to compute
+#' @param ka      The adaptive kernel width (sigma) will be set to the distance to the \code{ka}th nearest neighbor for each cell. Thus the kernel is wider in sparse areas and smaller in dense areas.
+#' @param td      diffusion time (number of exponentiations of the kernel matrix)
+#' @return list containing the smoothed matrix and the kernel matrix
+#' @author Jeff Granja, Fabian Mueller
+#' @export
+smoothMagic <- function(X, X_knn=NULL, k=15, ka=ceiling(k/4), td=3){
+	# X <- t(SummarizedExperiment::assay(geneAct))
+	# X_knn <- dro$pcaCoord[,dro$pcs]
+	require(Matrix)
+	require(FNN)
+	if (is.null(X_knn)) X_knn <- X
+	if (nrow(X_knn) != nrow(X)) logger.error("Incompatible row numbers of X and X_knn")
+
+	Ncells <- nrow(X)
+	logger.status(c("Computing", k, "- nearest neighbors ..."))
+	knnRes <- FNN::get.knnx(X_knn, X_knn, k=k)
+	dd <- knnRes$nn.dist
+	idx <- knnRes$nn.index
+
+	if (ka > 0){
+		logger.info(paste0("Normalizing distances to the ", ka, "-th nearest neighbor for each data point"))
+		dd <- dd / dd[,ka]
+	}
+	logger.status("Computing affinity/kernel matrix ...")
+	A <- Matrix::sparseMatrix(rep(seq_len(Ncells), k), c(idx), x=c(dd), dims=c(Ncells, Ncells))
+	# make the matrix symmetric
+	A <- A + Matrix::t(A)
+	# compute kernel from (normalized) distances
+	A@x <- exp(-A@x)
+	# normalize the kernel to represent probabilities
+	M <- A / Matrix::rowSums(A)
+	logger.status("Diffusing kernel ...")
+	Mt <- M
+	for(i in seq_len(td)){
+		Mt <- Mt %*% M
+	}
+
+	logger.status("Smoothing ...")
+	Xs <- Mt %*% X
+	rownames(Xs) <- rownames(X)
+	# logger.status("Rescaling ...")
+	res <- list(
+		Xs=Xs,
+		kernelM=Mt
+	)
+
+	return(res)
+}
 	
