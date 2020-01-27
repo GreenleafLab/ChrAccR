@@ -795,7 +795,9 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 	}
 	#---------------------------------------------------------------------------
 	# Bulk: normalize data
+	diffWarn <- FALSE
 	if (is.null(dsa_unnorm)) {
+		diffWarn <- TRUE
 		dsa_unnorm <- dsa
 	}
 	doNorm <- !isSingleCell && is.element(startStage, c("raw", "filtered"))
@@ -857,7 +859,7 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 	#---------------------------------------------------------------------------
 	doDifferential <- !isSingleCell && (!is.null(getConfigElement("differentialColumns")) || !is.null(getConfigElement("differentialCompNames")))
 	if (doDifferential){
-		if (startStage=="processed"){
+		if (startStage=="processed" && diffWarn){
 			logger.warning(c("You are starting the analysis from a processed dataset. It is not recommended to compute differential accessibility from normalized counts"))
 		}
 		logger.start("Running differential analysis")
