@@ -624,10 +624,7 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 		if (doContinue) {
 			logger.info("Continuing ChrAccR analysis")
 			logger.start("Loading DsATAC dataset")
-				if (!is.na(wfState$dsAtacPaths["filtered"])){
-					logger.status("Loading filtered, unnormalized dataset")
-					dsa_unnorm <- loadDsAcc(file.path(wfState$anaDir, wfState$dsAtacPaths["filtered"]))
-				}
+				dsfPath <- file.path(wfState$anaDir, wfState$dsAtacPaths["filtered"])
 				if (!is.na(wfState$dsAtacPaths["processed"])){
 					logger.info("Continuing from processed dataset")
 					dsa <- loadDsAcc(file.path(wfState$anaDir, wfState$dsAtacPaths["processed"]))
@@ -635,7 +632,7 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 					saveDs <- FALSE
 				} else if (!is.na(wfState$dsAtacPaths["filtered"])){
 					logger.info("Continuing from filtered dataset")
-					dsa <- dsa_unnorm
+					dsa <- dsa_unnorm <- loadDsAcc(dsfPath)
 					startStage <- "filtered"
 				} else if (!is.na(wfState$dsAtacPaths["raw"])){
 					logger.info("Continuing from raw dataset")
@@ -643,6 +640,12 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 					startStage <- "raw"
 				} else {
 					logger.error("Could not find existing dataset in analysis directory")
+				}
+				isSingleCell <- class(dsa)=="DsATACsc"
+
+				if (is.element(startStage, c("processed")) && !is.na(wfState$dsAtacPaths["filtered"]) && !isSingleCell){
+					logger.status("Loading filtered, unnormalized dataset")
+					dsa_unnorm <- loadDsAcc(dsfPath)
 				}
 			logger.completed()
 		} else {
