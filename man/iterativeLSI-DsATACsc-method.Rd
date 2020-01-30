@@ -12,6 +12,7 @@
   it0nMostAcc = 20000L,
   it0pcs = 2:25,
   it0clusterResolution = 0.8,
+  it0clusterMinCells = 100L,
   it0nTopPeaksPerCluster = 2e+05,
   it1pcs = 1:50,
   it1clusterResolution = 0.8,
@@ -31,6 +32,8 @@
 \item{it0pcs}{the principal components to consider in iteration 0}
 
 \item{it0clusterResolution}{resolution paramter for Seurat's  clustering (\code{Seurat::FindClusters}) in iteration 0}
+
+\item{it0clusterMinCells}{the minimum number of cells in a cluster in order for it to be considered in peak calling (iteration 0)}
 
 \item{it0nTopPeaksPerCluster}{the number of best peaks to be considered for each cluster in the merged peak set (iteration 0)}
 

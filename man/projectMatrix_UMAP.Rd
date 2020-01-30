@@ -7,7 +7,7 @@
 projectMatrix_UMAP(X, umapObj, binarize = TRUE)
 }
 \arguments{
-\item{X}{matrix to be projected}
+\item{X}{matrix to be projected (features X samples)}
 
 \item{umapObj}{dimension reduction result as returned by \code{\link{dimRed_UMAP}}}
 

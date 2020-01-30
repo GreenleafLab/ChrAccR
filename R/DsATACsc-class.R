@@ -512,6 +512,7 @@ if (!isGeneric("iterativeLSI")) {
 #' @param it0nMostAcc the number of the most accessible regions to consider in iteration 0
 #' @param it0pcs      the principal components to consider in iteration 0
 #' @param it0clusterResolution resolution paramter for Seurat's  clustering (\code{Seurat::FindClusters}) in iteration 0
+#' @param it0clusterMinCells the minimum number of cells in a cluster in order for it to be considered in peak calling (iteration 0)
 #' @param it0nTopPeaksPerCluster the number of best peaks to be considered for each cluster in the merged peak set (iteration 0)
 #' @param it1pcs      the principal components to consider in iteration 0
 #' @param it1clusterResolution resolution paramter for Seurat's  clustering (\code{Seurat::FindClusters}) in iteration 1
@@ -542,6 +543,7 @@ setMethod("iterativeLSI",
 		it0nMostAcc=20000L,
 		it0pcs=2:25,
 		it0clusterResolution=0.8,
+		it0clusterMinCells=100L,
 		it0nTopPeaksPerCluster=2e5,
 		it1pcs=1:50,
 		it1clusterResolution=0.8,
@@ -604,11 +606,22 @@ setMethod("iterativeLSI",
 				clustAss_it0 <- factor(paste0("c", clustRes@active.ident), levels=paste0("c", levels(clustRes@active.ident)))
 				names(clustAss_it0) <- names(clustRes@active.ident)
 				logger.info(c("Number of clusters found:", nlevels(clustAss_it0)))
+				ct <- table(clustAss_it0)
+				peakCallClusters <- names(ct)[ct > it0clusterMinCells]
+				doExcludeClusters <- !all(levels(clustAss_it0) %in% peakCallClusters)
+				if (doExcludeClusters){
+					logger.info(c("Considering the following clusters for peak calling:", paste(peakCallClusters, collapse=",")))
+				}
 			logger.completed()
 			logger.start(c("Peak calling"))
 				logger.start("Creating cluster pseudo-bulk samples")
-					dsr <- addSampleAnnotCol(dsr, "clustAss_it0", as.character(clustAss_it0[cellIds]))
-					dsrClust <- mergeSamples(dsr, "clustAss_it0", countAggrFun="sum")
+					ca <- as.character(clustAss_it0[cellIds])
+					dsr <- addSampleAnnotCol(dsr, "clustAss_it0", ca)
+					dsm <- dsr
+					if (doExcludeClusters){
+						dsm <- dsm[ca %in% peakCallClusters]
+					}
+					dsrClust <- mergeSamples(dsm, "clustAss_it0", countAggrFun="sum")
 				logger.completed()
 				logger.start("Calling peaks")
 					clustPeakGrl <- callPeaks(dsrClust)
@@ -706,6 +719,7 @@ setMethod("iterativeLSI",
 					pcs=it0pcs,
 					nMostAcc=it0nMostAcc,
 					clusterResolution=it0clusterResolution,
+					clusterMinCells=it0clusterMinCells,
 					nTopPeaksPerCluster=it0nTopPeaksPerCluster
 				),
 				iteration1 = list(
