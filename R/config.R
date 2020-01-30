@@ -36,6 +36,7 @@
 .config$filteringScMinTssEnrichment <- 6
 .config$normalizationMethod <- "quantile"
 .config$exploratoryLogNormCounts <- TRUE
+.config$exploratoryNSubsample <- 2e6
 .config$differentialColumns <- NULL
 .config$differentialCompNames <- NULL
 .config$differentialAdjColumns <- NULL
@@ -126,6 +127,9 @@
 #'   }
 #'   \item{\bold{\code{exploratoryLogNormCounts}}\code{ = TRUE}}{
 #'       Should a log-normalization be applied in the exploratory plot sections of the reports (dimension reduction, heatmaps)
+#'   }
+#'   \item{\bold{\code{exploratoryNSubsample}}\code{ = 2e6}}{
+#'       Number of regions to subsample in exploratory analysis in order to increase computational performance.
 #'   }
 #'   \item{\bold{\code{differentialColumns}}}{
 #'       Sample annotation columns to be used for differential testing and reporting

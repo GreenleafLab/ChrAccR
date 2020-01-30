@@ -251,7 +251,14 @@ setMethod("createReport_exploratory",
 		} else {
 			logger.start("Dimension reduction and heatmap generation")
 				doLogNorm <- getConfigElement("exploratoryLogNormCounts")
-
+				doSubsample <- rep(FALSE, length(regionTypes))
+				names(doSubsample) <- regionTypes
+				nSub <- getConfigElement("exploratoryNSubsample")
+				if (!is.null(nSub) && nSub > 0 && nSub < Inf){
+					for (rt in regionTypes){
+						doSubsample[rt] <- nSub < getNRegions(.object, rt)
+					}
+				}
 				txt <- c(
 					"Read counts are summarized for various region types and the corresponding ",
 					"aggregate count matrices are used for dimension reduction."
@@ -259,6 +266,11 @@ setMethod("createReport_exploratory",
 				if (doLogNorm) {
 					txt <- c(txt,
 						" Counts have been log-normalized (log10(count+1))."
+					)
+				}
+				if (any(doSubsample)){
+					txt <- c(txt, " The following region types have been subsampled to ", nSub, " features: ",
+						paste(names(doSubsample)[doSubsample], collapse=", ")
 					)
 				}
 				rr <- muReportR::addReportSection(rr, "Dimension reduction", txt, level=1L, collapsed=FALSE)
@@ -284,10 +296,20 @@ setMethod("createReport_exploratory",
 						cm <- getCounts(.object, rt, asMatrix=TRUE)
 						if (doLogNorm) cm <- log10(cm + 1)
 						tcm <- t(cm)
-						coords <- list(
-							"pca"  = muRtools::getDimRedCoords.pca(tcm),
-							"umap" = muRtools::getDimRedCoords.umap(tcm)
-						)
+						coords <- list()
+						subIdx <- NULL
+						if (doSubsample[rt]){
+							subIdx <- sort(sample.int(ncol(tcm), nSub))
+							coords <- list(
+								"pca"  = muRtools::getDimRedCoords.pca(tcm[,subIdx]),
+								"umap" = muRtools::getDimRedCoords.umap(tcm[,subIdx])
+							)
+						} else {
+							coords <- list(
+								"pca"  = muRtools::getDimRedCoords.pca(tcm),
+								"umap" = muRtools::getDimRedCoords.umap(tcm)
+							)
+						}
 						for (gn in plotAnnotCols){
 							logger.status(c("Annotation:", gn))
 							for (mn in mnames){

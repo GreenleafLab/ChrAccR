@@ -3415,7 +3415,7 @@ setMethod("getCiceroGeneActivities",
 		if (is.null(promoterGr)){
 			annoPkg <- getChrAccRAnnotationPackage(.object@genome)
 			if (is.null(annoPkg)) logger.error("Annotation package needed")
-			promoterGr <- get("getGeneAnnotation", asNamespace(annoPkg))(type="promoterGr")
+			promoterGr <- get("getGeneAnnotation", asNamespace(annoPkg))(anno="gencode_coding", type="promoterGr")
 		}
 		if (is.null(names(promoterGr))){
 			emd <- elementMetadata(promoterGr)
