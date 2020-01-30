@@ -299,6 +299,7 @@ setMethod("createReport_exploratory",
 						coords <- list()
 						subIdx <- NULL
 						if (doSubsample[rt]){
+							logger.info(c("Subsampling to", nSub, "(of", ncol(tcm), ") regions"))
 							subIdx <- sort(sample.int(ncol(tcm), nSub))
 							coords <- list(
 								"pca"  = muRtools::getDimRedCoords.pca(tcm[,subIdx]),
