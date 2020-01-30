@@ -21,7 +21,7 @@ smoothMagic(X, X_knn = NULL, k = 15, ka = ceiling(k/4), td = 3)
 list containing the smoothed matrix and the kernel matrix
 }
 \description{
-smooth a matrix using an adaptation of the MAGIC algorithm (doi:10.1016/j.cell.2018.05.061)
+[!EXPERIMENTAL!] smooth a matrix using an adaptation of the MAGIC algorithm (doi:10.1016/j.cell.2018.05.061)
 }
 \author{
 Jeff Granja, Fabian Mueller

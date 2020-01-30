@@ -352,7 +352,7 @@ custom_cicero_cds <- function(
 #' given a (count) matrix and dimension reduction result, return the projected UMAP coordinates
 #' in the embedding space
 #'
-#' @param X       matrix to be projected
+#' @param X       matrix to be projected (features X samples)
 #' @param umapObj dimension reduction result as returned by \code{\link{dimRed_UMAP}}
 #' @param binarize binarize the counts before projecting
 #' @return Projected UMAP coordinates
@@ -381,7 +381,7 @@ projectMatrix_UMAP <- function(X, umapObj, binarize=TRUE){
 
 #' smoothMagic
 #' 
-#' smooth a matrix using an adaptation of the MAGIC algorithm (doi:10.1016/j.cell.2018.05.061)
+#' [!EXPERIMENTAL!] smooth a matrix using an adaptation of the MAGIC algorithm (doi:10.1016/j.cell.2018.05.061)
 #'
 #' @param X       matrix to be smoothed (data points [cells] represent rows and features [genes] represent columns)
 #' @param X_knn   matrix to be used for finding nearest neighbors. Must have the same rows (cells) as X
@@ -434,4 +434,131 @@ smoothMagic <- function(X, X_knn=NULL, k=15, ka=ceiling(k/4), td=3){
 
 	return(res)
 }
-	
+
+#' findGroupMarkers
+#' 
+#' Detect group markers by testing distribution of values corresponding to a group (foreground) to the corresponding values from a background set.
+#' The background set can be matched by finding nearest neighbors to the foreground.
+#'
+#' @param X       matrix with values to be differentially tested for each group (features X samples)
+#' @param grouping Group assignments. Ideally a factor vector. The length must match the number of samples (columns of X)
+#' @param bgRatio For each group the number of samples that will be drawn as background set. This should be a factor, i.e. a value of 2 means that the background set for each group will be twice the size of the foreground set
+#' @param matchFrac fraction of samples from the background set that are drawn from the pool of nearest neighbors of the foreground. This way the degree of matching between background and foreground can be adjusted.
+#' @param testMethod test to be used. Currently valid options are \code{"wilcoxon"} and \code{"ttest"}
+#' @return list containing test statistics for each group and details on the foreground/background samples drawn for each group
+#' @author Fabian Mueller
+#' @export
+findGroupMarkers <- function(X, grouping, bgRatio=1.0, matchFrac=1.0, testMethod="wilcoxon"){
+	require(FNN)
+	if (!is.factor(grouping)){
+		grouping <- factor(grouping)
+	}
+	if (length(grouping) != ncol(X)){
+		logger.error("Dimensions of grouping and matrix do not match")
+	}
+	diffFun <- NULL
+	if (testMethod=="ttest"){
+		require(matrixTests)
+		diffFun <- function(X, idx1, idx2){
+			X1 <- X[,idx1]
+			X2 <- X[,idx2]
+			testRes <- matrixTests::row_t_welch(X1, X2)
+			rr <- data.frame(
+				pval  = testRes$pvalue,
+				pval_fdr = p.adjust(testRes$pvalue, method="fdr"),
+				stat  = testRes$statistic,
+				mean1 = testRes$mean.x,
+				mean2 = testRes$mean.y,
+				var1  = testRes$var.x,
+				var2  = testRes$var.y,
+				n1    = testRes$obs.x,
+				n2    = testRes$obs.y,
+				df    = testRes$df,
+				conf.low = testRes$conf.low,
+				conf.high = testRes$conf.high
+			)
+			if (!is.null(rownames(X))) rr[,"name"] <- rownames(X)
+			return(rr)
+		}
+	} else if (testMethod=="wilcoxon"){
+		require(matrixTests)
+		require(matrixStats)
+		diffFun <- function(X, idx1, idx2){
+			X1 <- X[,idx1]
+			X2 <- X[,idx2]
+			testRes <- matrixTests::row_wilcoxon_twosample(X1, X2)
+			rr <- data.frame(
+				pval  = testRes$pvalue,
+				pval_fdr = p.adjust(testRes$pvalue, method="fdr"),
+				stat  = testRes$statistic,
+				mean1 = rowMeans(X1, na.rm=TRUE),
+				mean2 = rowMeans(X2, na.rm=TRUE),
+				var1  = rowVars(X1, na.rm=TRUE),
+				var2  = rowVars(X2, na.rm=TRUE),
+				n1    = testRes$obs.x,
+				n2    = testRes$obs.y
+			)
+			if (!is.null(rownames(X))) rr[,"name"] <- rownames(X)
+			return(rr)
+		}
+	} else {
+		logger.error(c("Unknown differential test method:", testMethod))
+	}
+	gIdxL <- tapply(seq_along(grouping), grouping, c)
+	gN <- table(grouping)
+	nGrps <- nlevels(grouping)
+	logger.start("Sampling background")
+		# sample background using nearest neighbors and random drawing
+		bgIdxL <- lapply(1:nGrps, FUN=function(i){
+			g <- levels(grouping)[i]
+			logger.status(c("Group:", g, paste0("(", i, " of ", nGrps, ")")))
+			oogIdx <- (1:ncol(X))[-gIdxL[[g]]] # out-of-group indices
+			bgIdx <- c()
+			bgN <- min(length(oogIdx), ceiling(bgRatio * gN[g]))
+			# background samples from nearest neighbor matches
+			knn_k <- 0
+			if (matchFrac > 0) knn_k <- max(0, min(bgN, ceiling(matchFrac * bgRatio * gN[g])))
+			if (knn_k > 0){
+				knnRes <- FNN::get.knnx(t(X[,oogIdx]), t(X[,gIdxL[[g]]]), k=knn_k)
+				matchIdx <- oogIdx[unique(sort(as.vector(knnRes$nn.index)))]
+				if (length(matchIdx) > knn_k) matchIdx <- sort(sample(matchIdx,knn_k))
+				bgIdx <- sort(union(bgIdx, matchIdx))
+			}
+			# fill remaining samples with random matches
+			rand_k <- max(0, bgN - knn_k)
+			if (rand_k > 0){
+				ss <- setdiff(oogIdx, bgIdx)
+				rand_k <- min(rand_k, length(ss))
+				rIdx <- sort(sample(ss, rand_k))
+				bgIdx <- sort(union(bgIdx, rIdx))
+			}
+			return(bgIdx)
+		})
+		names(bgIdxL) <- levels(grouping)
+	logger.completed()
+
+	logger.start("Differential test")
+		eps <- 1e-6
+		testL <- lapply(1:nGrps, FUN=function(i){
+			g <- levels(grouping)[i]
+			logger.status(c("Group:", g, paste0("(", i, " of ", nGrps, ")")))
+			rr <- diffFun(X, gIdxL[[g]], bgIdxL[[g]])
+			rr[,"group"] <- factor(g, levels=levels(grouping))
+			rr[,"log2FC"] <- log2((rr[,"mean1"] + eps)/(rr[,"mean2"] + eps))
+			return(rr)
+		})
+		names(testL) <- levels(grouping)
+
+	logger.completed()
+
+	res <- list(
+		testRes = testL,
+		grouping = list(
+			grouping = grouping,
+			groupIdx = gIdxL,
+			backgroundIdx = bgIdxL
+		)
+	)
+	class(res) <- "groupMarkers"
+	return(res)
+}
