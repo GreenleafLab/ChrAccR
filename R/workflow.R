@@ -656,7 +656,7 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 			logger.error("Starting new analysis although the analysis directory already exists. Did you mean to continue your analysis?")
 		}
 		if (is.element(class(input), c("DsATAC", "DsATACsc"))){
-			sampleAnnot <- getSampleAnnot(dsa)
+			sampleAnnot <- getSampleAnnot(input)
 		}
 		validSampleAnnot <- is.data.frame(sampleAnnot)
 		if (is.element(class(input), c("DsATAC", "DsATACsc"))){
