@@ -660,6 +660,8 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 		}
 		validSampleAnnot <- is.data.frame(sampleAnnot)
 		if (is.element(class(input), c("DsATAC", "DsATACsc"))){
+			logger.info(c("Detected input type:", class(input)))
+			logger.info(c("Start stage:", startStage))
 			dsa <- input
 			# if (startStage=="processed"){
 			# 	saveDs <- FALSE
