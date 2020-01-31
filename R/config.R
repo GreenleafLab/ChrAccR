@@ -38,6 +38,7 @@
 .config$exploratoryLogNormCounts <- TRUE
 .config$exploratoryNSubsample <- 2e6
 .config$differentialColumns <- NULL
+.config$differentialColumns1vsAll <- NULL
 .config$differentialCompNames <- NULL
 .config$differentialAdjColumns <- NULL
 .config$lolaDbPaths <- NULL
@@ -133,6 +134,9 @@
 #'   }
 #'   \item{\bold{\code{differentialColumns}}}{
 #'       Sample annotation columns to be used for differential testing and reporting
+#'   }
+#'   \item{\bold{\code{differentialColumns1vsAll}}}{
+#'       Sample annotation columns to be used for differential testing and reporting in a 1-vs-all group setting. Should be a subset of \code{differentialColumns}.
 #'   }
 #'   \item{\bold{\code{differentialCompNames}}}{
 #'       Comparison names from which comparison information is derived. Must be in the format of "$GRP1_NAME vs $GRP2_NAME [$ANNOTATION_COLUMN]".

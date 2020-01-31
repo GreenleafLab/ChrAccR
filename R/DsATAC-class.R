@@ -2523,6 +2523,7 @@ if (!isGeneric("getDESeq2Dataset")) {
 #' @param .object    \code{\linkS4class{DsATAC}} object
 #' @param regionType character string specifying the region type
 #' @param designCols column names in the sample annotation potentially used to create the design matrix
+#' @param compTab    if design columns are not specified, you can specify a comparison table directly. These comparison tables can be obtained by \code{getComparisonTable(...)}
 #' @param ...        parameters passed on to \code{DESeq2::DESeq}
 #' @return \code{DESeqDataSet} as returned by \code{DESeq2::DESeq}
 #' 
@@ -2546,13 +2547,31 @@ setMethod("getDESeq2Dataset",
 	function(
 		.object,
 		regionType,
-		designCols,
+		designCols=NULL,
+		compTab=NULL,
 		...
 	) {
 		if (!requireNamespace("DESeq2")) logger.error(c("Could not load dependency: DESeq2"))
 		if (!is.element(regionType, getRegionTypes(.object))) logger.error(c("Unsupported region type:", regionType))
 		# annotation data
 		ph <- getSampleAnnot(.object)
+
+		if (!is.null(compTab) && nrow(compTab) > 0){
+			vsAllIdx <- compTab[,"grp1Name"]==".ALL" | compTab[,"grp2Name"]==".ALL"
+			vsAllCols <- unique(compTab[vsAllIdx, "compCol"])
+			designCols <- union(designCols, unique(compTab[!vsAllIdx,"compCol"]))
+			if (length(vsAllCols) > 0){
+				logger.status(c("Adding 1-vs-all comparisons"))
+				for (i in which(vsAllIdx)){
+					gn <- setdiff(c(compTab[i, "grp1Name"], compTab[i, "grp2Name"]), ".ALL")
+					if (length(gn)!=1) logger.error(c("Invalid comparison:", compTab[i,"compName"]))
+					cn <- compTab[i,"compCol"]
+					addCn <- paste0(".", cn, ".", gn, ".vsAll")
+					ph[, addCn] <- ifelse(as.character(ph[,cn])==gn, gn, ".ALL")
+					designCols <- union(designCols, addCn)
+				}
+			}
+		}
 
 		if (!all(designCols %in% colnames(ph))){
 			logger.error(c("Invalid design columns. The following column names are not contained in the sample annotation:", paste(setdiff(designCols, colnames(ph)), collapse=",")))
@@ -2566,6 +2585,14 @@ setMethod("getDESeq2Dataset",
 		})
 		if (sum(idx) < length(designCols)){
 			logger.warning(c("The following design columns will not be considered because they do not have multiple levels:", paste(designCols[!idx], collapse=",")))
+			designCols <- designCols[idx]
+		}
+		#remove columns from the design that do not have replicates
+		idx <- sapply(designCols, FUN=function(cc){
+			is.numeric(ph[,cc]) || all(table(ph[,cc]) > 1)
+		})
+		if (sum(idx) < length(designCols)){
+			logger.warning(c("The following design columns will not be considered because they do not have replicates:", paste(designCols[!idx], collapse=",")))
 			designCols <- designCols[idx]
 		}
 		designF <- as.formula(paste0("~", paste(designCols,collapse="+")))
@@ -2629,18 +2656,28 @@ setMethod("getDiffAcc",
 	) {
 		if (!is.element(method, c("DESeq2"))) logger.error(c("Invalid method for calling differential accessibility:", method))
 		if (!is.element(comparisonCol, colnames(getSampleAnnot(.object)))) logger.error(c("Comparison column not found in sample annotation:", comparisonCol))
+		comparisonCol0 <- comparisonCol
 		contrastF <- factor(getSampleAnnot(.object)[,comparisonCol])
 		if (length(levels(contrastF)) < 2)  logger.error(c("Invalid comparison column. There should be at least 2 groups."))
 
 		if (is.null(grp1Name)) grp1Name <- levels(contrastF)[1]
 		if (is.null(grp2Name)) grp2Name <- levels(contrastF)[2]
-		if (!is.element(grp1Name, levels(contrastF))) logger.error(c("Invalid group name (1). Sample annotation has no samples associated with that group:", grp1Name))
-		if (!is.element(grp2Name, levels(contrastF))) logger.error(c("Invalid group name (2). Sample annotation has no samples associated with that group:", grp2Name))
+		if (!is.element(grp1Name, c(levels(contrastF), ".ALL"))) logger.error(c("Invalid group name (1). Sample annotation has no samples associated with that group:", grp1Name))
+		if (!is.element(grp2Name, c(levels(contrastF), ".ALL"))) logger.error(c("Invalid group name (2). Sample annotation has no samples associated with that group:", grp2Name))
 		sidx.grp1 <- which(contrastF==grp1Name)
+		if (grp1Name==".ALL") sidx.grp1 <- which(contrastF!=grp2Name)
 		sidx.grp2 <- which(contrastF==grp2Name)
+		if (grp2Name==".ALL") sidx.grp2 <- which(contrastF!=grp1Name)
 
 
 		if (method=="DESeq2"){
+			is1vsAll <- grp1Name==".ALL" || grp2Name==".ALL"
+			if (is1vsAll){
+				if (grp1Name==grp2Name) logger.error(".ALL vs .ALL is not legal")
+				gn <- setdiff(c(grp1Name, grp2Name), ".ALL")
+				comparisonCol <- paste0(".", comparisonCol, ".", gn, ".vsAll")
+			}
+
 			if (!is.null(diffObj)){
 				if (!is.element("DESeqDataSet", class(diffObj))) logger.error(c("Invalid 'diffObj' for method", method))
 				#check if the elements match
@@ -2649,10 +2686,16 @@ setMethod("getDiffAcc",
 				if (!all(colnames(diffObj)==getSamples(.object))) logger.error("Invalid 'diffObj'. Sample names must match the DsATAC object.")
 				dds <- diffObj
 			} else {
-				designCs <- c(adjustCols, comparisonCol)
-				dds <- getDESeq2Dataset(.object, regionType, designCs)
-				
+				compTab <- NULL
+				designCs <- adjustCols
+				if (is1vsAll){
+					compTab <- getComparisonTable(.object, compNames=paste0(grp1Name, " vs ", grp2Name,  " [", comparisonCol0, "]"))
+				} else {
+					designCs <- unique(c(designCs, comparisonCol))
+				}
+				dds <- getDESeq2Dataset(.object, regionType, designCs, compTab=compTab)				
 			}
+
 			diffRes <- DESeq2::results(dds, contrast=c(comparisonCol, grp1Name, grp2Name))
 			dm <- data.frame(diffRes)
 			rankMat <- cbind(

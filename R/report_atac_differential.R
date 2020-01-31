@@ -45,7 +45,12 @@ setMethod("createReport_differential",
 		rDir.data <- muReportR::getReportDir(rr, dir="data", absolute=FALSE)
 		rDir.data.abs <- muReportR::getReportDir(rr, dir="data", absolute=TRUE)
 		
-		compTab <- getComparisonTable(.object, cols=getConfigElement("differentialColumns"), compNames=getConfigElement("differentialCompNames"), minGroupSize=getConfigElement("annotationMinGroupSize"))
+		compTab <- getComparisonTable(.object,
+			cols=getConfigElement("differentialColumns"),
+			compNames=getConfigElement("differentialCompNames"),
+			cols1vAll=getConfigElement("differentialColumns1vsAll"),
+			minGroupSize=getConfigElement("annotationMinGroupSize")
+		)
 
 		if (is.null(compTab)) logger.error("No valid comparisons found")
 		if (nrow(compTab) > 10) logger.warning("An extensive amount of comparisons will be performed. Consider being more specific in the differentialColumns and differentialCompNames options.")
@@ -61,12 +66,12 @@ setMethod("createReport_differential",
 		}
 
 		logger.start("Computing differential accessibility")
-			designCols <- c(getConfigElement("differentialAdjColumns"), unique(compTab[,"compCol"]))
+			adjCols <- getConfigElement("differentialAdjColumns")
 			logger.start("Differential accessibility objects")
 				diffObjL <- lapply(regionTypes, FUN=function(rt){
 					logger.status(c("Region type:", rt))
 					# do <- ChrAccR:::getDESeq2Dataset(.object, rt, designCols)
-					do <- getDESeq2Dataset(.object, rt, designCols)
+					do <- getDESeq2Dataset(.object, rt, adjCols, compTab=compTab)
 					fn <- file.path(rDir.data.abs, paste0("diffObj_", normalize.str(rt, return.camel=TRUE), ".rds"))
 					saveRDS(do, fn)
 					return(do)
@@ -86,7 +91,7 @@ setMethod("createReport_differential",
 					ll <- lapply(1:nrow(compTab), FUN=function(i){
 						dat <- getDiffAcc(
 							.object, rt, compTab[i,"compCol"], grp1Name=compTab[i,"grp1Name"], grp2Name=compTab[i,"grp2Name"],
-							adjustCols=setdiff(designCols, compTab[i,"compCol"]), # does not matter, the adjustment columns are already in the diffObj
+							adjustCols=setdiff(adjCols, compTab[i,"compCol"]), # does not matter, the adjustment columns are already in the diffObj
 							method='DESeq2',
 							diffObj=diffObjL[[rt]]
 						)

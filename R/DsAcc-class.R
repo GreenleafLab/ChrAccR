@@ -590,6 +590,7 @@ if (!isGeneric("getComparisonTable")) {
 #'
 #' @param .object \code{\linkS4class{DsAcc}} object
 #' @param cols    column names in the sample annotation table to consider for pairwise comparisons
+#' @param cols1vAll  column names in the sample annotation table to consider for 1-vs-all comparisons
 #' @param compNames  vector of character strings specifying a fixed comparison names to be parsed (format "$GRP1_NAME vs $GRP1_NAME [$ANNOTATION_COLUMN]")
 #' @param minGroupSize Minimum size of a group to be used in comparison. Affects the annotation columns that will be used for comparisons.
 #' @return a \code{data.frame} with comparison inforamtion containing columns for the comparison name (\code{compName}), 
@@ -609,10 +610,12 @@ setMethod("getComparisonTable",
 	function(
 		.object,
 		cols=NULL,
+		cols1vAll=NULL,
 		compNames=NULL,
 		minGroupSize=2L
 	) {
 		colsAdd <- NULL
+		fixedCompInfo <- NULL
 		# parse fixed comparison names
 		if (!is.null(compNames)){
 			re <- "^(.+) vs (.+) \\[(.+)\\]$"
@@ -628,11 +631,16 @@ setMethod("getComparisonTable",
 				stringsAsFactors=FALSE
 			)
 			colsAdd <- unique(fixedCompInfo[,"compCol"])
+			# check for 1-vs-all comparisons
+			is1vsAll <- grepl("^\\.ALL", compNames) | grepl(" vs \\.ALL", compNames)
+			if (any(is1vsAll)){
+				cols1vAll <- union(cols1vAll, unique(fixedCompInfo[is1vsAll,"compCol"]))
+			}
 		}
 
 		# get comparison info
 		sannot <- getSampleAnnot(.object)
-		sampleGrps <- getGroupsFromTable(sannot, cols=unique(c(colsAdd, cols)), minGrpSize=minGroupSize)
+		sampleGrps <- getGroupsFromTable(sannot, cols=unique(c(colsAdd, cols, cols1vAll)), minGrpSize=minGroupSize)
 		if (length(sampleGrps) < 1) logger.error("No valid comparisons found (to begin with)")
 		compTab <- do.call("rbind", lapply(1:length(sampleGrps), FUN=function(i){
 			tt <- NULL
@@ -647,17 +655,35 @@ setMethod("getComparisonTable",
 					stringsAsFactors=FALSE
 				)
 			} else if (length(sampleGrps[[i]]) > 2) {
-				grpNames <- t(combn(names(sampleGrps[[i]]), 2))
-				tt <- data.frame(
-					compName=paste0(grpNames[,1], " vs ", grpNames[,2],  " [", names(sampleGrps)[i], "]"),
-					compCol=names(sampleGrps)[i],
-					grp1Name=grpNames[,1],
-					grp2Name=grpNames[,2],
-					stringsAsFactors=FALSE
-				)
+				if (is.element(names(sampleGrps)[i], cols1vAll)){
+					gns <- names(sampleGrps[[i]])
+					tt <- data.frame(
+						compName=paste0(gns, " vs ", ".ALL",  " [", names(sampleGrps)[i], "]"),
+						compCol=names(sampleGrps)[i],
+						grp1Name=gns,
+						grp2Name=".ALL",
+						stringsAsFactors=FALSE
+					)
+				} else {
+					grpNames <- t(combn(names(sampleGrps[[i]]), 2))
+					tt <- data.frame(
+						compName=paste0(grpNames[,1], " vs ", grpNames[,2],  " [", names(sampleGrps)[i], "]"),
+						compCol=names(sampleGrps)[i],
+						grp1Name=grpNames[,1],
+						grp2Name=grpNames[,2],
+						stringsAsFactors=FALSE
+					)
+				}
 			}
 			tt[,"nGrp1"] <- grpNs[tt[,"grp1Name"]]
-			tt[,"nGrp2"] <- grpNs[tt[,"grp2Name"]]
+			tt[,"nGrp2"] <- sapply(1:nrow(tt), FUN=function(i){
+				if (tt[i,"grp2Name"] == ".ALL"){
+					return(sum(grpNs[names(grpNs)!=tt[i,"grp2Name"]]))
+				} else {
+					return(grpNs[tt[i,"grp2Name"]])
+				}
+			})
+			
 			return(tt)
 		}))
 		if (is.null(compTab)) logger.error("No valid comparisons found")

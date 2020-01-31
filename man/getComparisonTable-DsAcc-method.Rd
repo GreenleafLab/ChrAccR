@@ -6,12 +6,20 @@
 \alias{getComparisonTable}
 \title{getComparisonTable-methods}
 \usage{
-\S4method{getComparisonTable}{DsAcc}(.object, cols = NULL, compNames = NULL, minGroupSize = 2L)
+\S4method{getComparisonTable}{DsAcc}(
+  .object,
+  cols = NULL,
+  cols1vAll = NULL,
+  compNames = NULL,
+  minGroupSize = 2L
+)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsAcc}} object}
 
 \item{cols}{column names in the sample annotation table to consider for pairwise comparisons}
+
+\item{cols1vAll}{column names in the sample annotation table to consider for 1-vs-all comparisons}
 
 \item{compNames}{vector of character strings specifying a fixed comparison names to be parsed (format "$GRP1_NAME vs $GRP1_NAME [$ANNOTATION_COLUMN]")}
 

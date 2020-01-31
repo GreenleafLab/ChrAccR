@@ -6,7 +6,7 @@
 \alias{getDESeq2Dataset}
 \title{getDESeq2Dataset-methods}
 \usage{
-\S4method{getDESeq2Dataset}{DsATAC}(.object, regionType, designCols, ...)
+\S4method{getDESeq2Dataset}{DsATAC}(.object, regionType, designCols = NULL, compTab = NULL, ...)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}
@@ -14,6 +14,8 @@
 \item{regionType}{character string specifying the region type}
 
 \item{designCols}{column names in the sample annotation potentially used to create the design matrix}
+
+\item{compTab}{if design columns are not specified, you can specify a comparison table directly. These comparison tables can be obtained by \code{getComparisonTable(...)}}
 
 \item{...}{parameters passed on to \code{DESeq2::DESeq}}
 }

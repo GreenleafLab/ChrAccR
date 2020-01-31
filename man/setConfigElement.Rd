@@ -98,6 +98,9 @@ Set a configuration item to a given value
   \item{\bold{\code{differentialColumns}}}{
       Sample annotation columns to be used for differential testing and reporting
   }
+  \item{\bold{\code{differentialColumns1vsAll}}}{
+      Sample annotation columns to be used for differential testing and reporting in a 1-vs-all group setting. Should be a subset of \code{differentialColumns}.
+  }
   \item{\bold{\code{differentialCompNames}}}{
       Comparison names from which comparison information is derived. Must be in the format of "$GRP1_NAME vs $GRP2_NAME [$ANNOTATION_COLUMN]".
   }
