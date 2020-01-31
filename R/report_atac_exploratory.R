@@ -129,7 +129,9 @@ setMethod("createReport_exploratory",
 			specAnnotCols <- c(specAnnotCols, qcAnnotCols, "clusterAssignment")
 		}
 
-		mgc <- min(getConfigElement("annotationMaxGroupCount"), nrow(sannot)-1)
+		mgc <- nrow(sannot)
+		if (is.null(specAnnotCols0)) mgc <- nrow(sannot)-1 # exclude all-unique columns if no columns are explicitely specified
+		mgc <- min(getConfigElement("annotationMaxGroupCount"), mgc)
 		if (is.null(specAnnotCols0)) {
 			# add automatically found columns to group set
 			defaultGrps <- getGroupsFromTable(sannot, cols=NULL, minGrpSize=getConfigElement("annotationMinGroupSize"), maxGrpCount=mgc)
