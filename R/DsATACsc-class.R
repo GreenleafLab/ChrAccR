@@ -607,7 +607,7 @@ setMethod("iterativeLSI",
 				names(clustAss_it0) <- names(clustRes@active.ident)
 				logger.info(c("Number of clusters found:", nlevels(clustAss_it0)))
 				ct <- table(clustAss_it0)
-				peakCallClusters <- names(ct)[ct > it0clusterMinCells]
+				peakCallClusters <- names(ct)[ct >= it0clusterMinCells]
 				doExcludeClusters <- !all(levels(clustAss_it0) %in% peakCallClusters)
 				if (doExcludeClusters){
 					logger.info(c("Considering the following clusters for peak calling:", paste(peakCallClusters, collapse=",")))

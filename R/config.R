@@ -22,6 +22,7 @@
 .config$chromVarMotifs <- c("jaspar_vert")
 .config$chromVarRegionTypes <- NULL
 .config$chromVarMotifNamesForDimRed <- NULL
+.config$genesOfInterest <- NULL
 .config$annotationColumns <- NULL
 .config$annotationMinGroupSize <- 2L
 .config$annotationMaxGroupCount <- 20L
@@ -86,6 +87,10 @@
 #'   }
 #'   \item{\bold{\code{chromVarMotifNamesForDimRed}}}{
 #'       Names of motifs to be used for dimension reduction plots in the reports. [only relevant for single-cell data]
+#'   }
+#'   \item{\bold{\code{genesOfInterest}}}{
+#'       Names of genes of interest to be highlighted in the reports (e.g. dimension reduction) in the reports.
+#'       [currently only relevant for single-cell data and only when \code{scDoGeneActivity} is activated]
 #'   }
 #'   \item{\bold{\code{annotationColumns}}}{
 #'       Sample annotation columns to be used for reporting

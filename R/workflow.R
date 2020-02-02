@@ -522,7 +522,7 @@ run_atac_sc_unsupervised <- function(dsa, anaDir){
 	res <- list(
 		ds_anno=dsan,
 		itLsi=itLsi,
-		geneActivity = geneAct,
+		geneActivity=geneAct,
 		report=report
 	)
 	class(res) <- "ChrAccR_runRes_sc_unsupervised"
@@ -764,7 +764,7 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 		logger.completed()
 	}
 
-	saveDs_raw <- saveDs && is.na(wfState$dsAtacPaths["raw"])
+	saveDs_raw <- saveDs && is.na(wfState$dsAtacPaths["raw"]) && is.element(startStage, c("raw"))
 	if (saveDs_raw){
 		wfState$dsAtacPaths["raw"] <- file.path(wfState$dataDir, "dsATAC_raw")
 		logger.start("Saving raw DsATAC dataset")
@@ -812,6 +812,7 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 
 	# Single-cell: Perform unsupervised analysis
 	itLsi <- NULL
+	geneActSe <- NULL
 	itLsiFp <- file.path(wfState$anaDir, wfState$dataDir, "iterativeLSI")
 	itLsiFn <- paste0(itLsiFp, ".rds")
 	gaFn <- file.path(wfState$anaDir, wfState$dataDir, "geneActivitySE.rds")
@@ -827,8 +828,9 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 			uwot::save_uwot(itLsi$umapRes, paste0(itLsiFp, "_uwot"))
 		logger.completed()
 		if (!is.null(res$geneActivity)){
+			geneActSe <- res$geneActivity
 			logger.start("Saving gene activity scores")
-				saveRDS(res$geneActivity, gaFn)
+				saveRDS(geneActSe, gaFn)
 			logger.completed()
 		}
 	} else if (isSingleCell && file.exists(itLsiFn)){
@@ -836,6 +838,11 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 			itLsi <- readRDS(itLsiFn)
 			itLsi$umapRes <- uwot::load_uwot(paste0(itLsiFp, "_uwot"))
 		logger.completed()
+		if (file.exists(gaFn)){
+			logger.start("Loading gene activity result from disk")
+				geneActSe <- readRDS(gaFn)
+			logger.completed()
+		}
 	}
 
 	if (FALSE){
@@ -855,7 +862,7 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 	doExploratory <- TRUE
 	if (doExploratory){
 		logger.start("Running exploratory analysis")
-			res <- run_atac_exploratory(dsa, anaDir, itLsiObj=itLsi)
+			res <- run_atac_exploratory(dsa, anaDir, itLsiObj=itLsi, geneActSe=geneActSe)
 		logger.completed()
 	}
 	#---------------------------------------------------------------------------

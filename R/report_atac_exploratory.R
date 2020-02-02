@@ -12,6 +12,7 @@ if (!isGeneric("createReport_exploratory")) {
 #' @param .object    \code{\linkS4class{DsATAC}} object
 #' @param reportDir  directory in which the report will be created
 #' @param itLsiObj   [for single-cell only; optional] pre-computed result of a call to \code{iterativeLSI(.object, ...)}
+#' @param geneActSe  [for single-cell only; optional] pre-computed result of a call to \code{getCiceroGeneActivities(.object, ...)}
 #' @return (invisible) \code{muReportR::Report} object containing the report
 #' 
 #' @rdname createReport_exploratory-DsATAC-method
@@ -37,7 +38,8 @@ setMethod("createReport_exploratory",
 	function(
 		.object,
 		reportDir,
-		itLsiObj=NULL
+		itLsiObj=NULL,
+		geneActSe=NULL
 	) {
 		# reportDir <- file.path("~/myscratch/temp", getHashString("report"))
 		if (!requireNamespace("muReportR")) logger.error(c("Could not load dependency: muReportR"))
@@ -54,6 +56,18 @@ setMethod("createReport_exploratory",
 		rts <- getConfigElement("regionTypes")
 		if (length(rts) > 0) regionTypes <- intersect(rts, regionTypes)
 		if (length(regionTypes) < 1) logger.error("Not enough region types specified")
+
+		doGeneAct <- FALSE
+		if (isSingleCell && !is.null(geneActSe)){
+			if (is.element(class(geneActSe), c("SummarizedExperiment", "RangedSummarizedExperiment"))){
+				if (ncol(geneActSe)==length(.object) && all(colnames(geneActSe) == getSamples(.object))){
+					doGeneAct <- TRUE
+				}
+			}
+			if (!doGeneAct) {
+				logger.warning("Detected invalid gene activity object. --> skipping gene activity section")
+			}
+		}
 
 		sannot <- getSampleAnnot(.object)
 		sannot[,".ALL"] <- "all"
@@ -509,6 +523,73 @@ setMethod("createReport_exploratory",
 				}
 			logger.completed()
 
+		}
+
+		if (doGeneAct){
+			logger.start("Gene activity")
+				gaM <- SummarizedExperiment::assay(geneActSe)
+				geneNameUniv <- names(geneActSe)
+				if (!is.null(SummarizedExperiment::rowRanges(geneActSe))){
+					geneAnnot <- elementMetadata(SummarizedExperiment::rowRanges(geneActSe))
+					cn <- match("gene_name", colnames(geneAnnot))
+					if (!is.na(cn)){
+						geneNameUniv <- geneAnnot[,cn]
+					}
+				}
+				# gaM <- t(smoothMagic(t(SummarizedExperiment::assay(geneAct)[,cellIds]), X_knn=dro$pcaCoord[cellIds,dro$pcs], k=15, ka=4, td=3)$Xs)
+				gaM <- log2(gaM*1e6+1) # normalize to better dynamic range
+				idx <- sample(cellIds) # random cell order for plotting
+
+				geneNames <- getConfigElement("genesOfInterest")
+				if (length(geneNames) > 0){
+					midx <- match(towlower(geneNames), tolower(geneNameUniv))
+					if (any(is.na(midx))){
+						logger.warning(c("The following gene names could not be found and will be omitted:", paste(geneNames[is.na(midx)], collapse=",")))
+						midx <- na.omit(midx)
+					}
+					geneNames <- geneNameUniv[midx]
+				}
+
+				if (length(geneNames) < 1) {
+					logger.info("Picking the 10 most variable genes for gene activity reporting")
+					# pick the most variable genes
+					vv <- rowVars(gaM, na.rm=TRUE)
+					selIdx <- which(rank(-vv, na.last="keep",ties.method="min") <= 10)
+					geneNames <- geneNameUniv[selIdx]
+				}
+
+				gaAnnot <- t(as.matrix(gaM[geneNames, idx]))
+				# truncate quantiles
+				gaAnnot <- apply(gaAnnot, 2, FUN=function(x){
+					qq <- quantile(x, probs=0.99)
+					x[x>qq] <- qq
+					return(x)
+				})
+
+				txt <- c(
+					"Gene activities have been computed as the aggregated accessibility at the TSS and correlated peaks using Cicero.",
+					" The resulting scores for single-cells have been rescaled to one million counts and have been log-normalized."
+				)
+				rr <- muReportR::addReportSection(rr, "Gene activity", txt, level=1L, collapsed=FALSE)
+
+				umapC <- dre$umapCoord[cellIds,]
+				
+				figSettings.gene <- geneNames
+				names(figSettings.gene) <- gsub("_", "", normalize.str(geneNames, return.camel=TRUE))
+
+				pL <- lapply(seq_along(geneNames), FUN=function(i){
+					gn <- colnames(gaAnnot)[i]
+					pp <- getDimRedPlot(umapC, annot=gaAnnot, colorCol=gn, shapeCol=FALSE, colScheme=c("#e0f3db", "#a8ddb5", "#4eb3d3", "#08589e"), ptSize=0.25, addLabels=FALSE, addDensity=FALSE, annot.text=NULL) + coord_fixed()
+					figFn <- paste0("geneActUmap_", names(figSettings.gene)[i])
+					repPlot <- muReportR::createReportGgPlot(pp, figFn, rr, width=7, height=7, create.pdf=TRUE, high.png=0L)
+					repPlot <- muReportR::off(repPlot, handle.errors=TRUE)
+				})
+
+				figSettings <- list(
+					"Gene" = figSettings.gene
+				)
+				rr <- muReportR::addReportFigure(rr, "Dimension reduction annotated with gene activity scores", pL, figSettings)
+			logger.completed()
 		}
 
 		muReportR::off(rr)

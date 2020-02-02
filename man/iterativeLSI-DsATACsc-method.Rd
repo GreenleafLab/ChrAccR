@@ -12,7 +12,7 @@
   it0nMostAcc = 20000L,
   it0pcs = 2:25,
   it0clusterResolution = 0.8,
-  it0clusterMinCells = 100L,
+  it0clusterMinCells = 200L,
   it0nTopPeaksPerCluster = 2e+05,
   it1pcs = 1:50,
   it1clusterResolution = 0.8,
