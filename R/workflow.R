@@ -537,10 +537,11 @@ run_atac_sc_unsupervised <- function(dsa, anaDir){
 #' @param dsa       \code{\linkS4class{DsATAC}} object
 #' @param anaDir	analysis directory
 #' @param itLsiObj  [for single-cell only; optional] pre-computed result of a call to \code{iterativeLSI(.object, ...)}
+#' @param geneActSe [for single-cell only; optional] pre-computed result of a call to \code{getCiceroGeneActivities(.object, ...)}
 #' @return \code{S3} object containing exploratory metrics and an analysis report object
 #' @author Fabian Mueller
 #' @export
-run_atac_exploratory <- function(dsa, anaDir, itLsiObj=NULL){
+run_atac_exploratory <- function(dsa, anaDir, itLsiObj=NULL, geneActSe=NULL){
 	wfState <- getWfState(anaDir)
 	doReport <- !wfState$existingReports["exploratory"]
 
@@ -548,7 +549,7 @@ run_atac_exploratory <- function(dsa, anaDir, itLsiObj=NULL){
 
 	if (doReport){
 		logger.start("Creating exploratory report")
-			report <- createReport_exploratory(dsa, file.path(wfState$anaDir, wfState$reportDir), itLsiObj=itLsiObj)
+			report <- createReport_exploratory(dsa, file.path(wfState$anaDir, wfState$reportDir), itLsiObj=itLsiObj, geneActSe=geneActSe)
 		logger.completed()
 	}
 	res <- list(

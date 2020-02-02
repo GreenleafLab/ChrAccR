@@ -4,7 +4,7 @@
 \alias{run_atac_exploratory}
 \title{run_atac_exploratory}
 \usage{
-run_atac_exploratory(dsa, anaDir, itLsiObj = NULL)
+run_atac_exploratory(dsa, anaDir, itLsiObj = NULL, geneActSe = NULL)
 }
 \arguments{
 \item{dsa}{\code{\linkS4class{DsATAC}} object}
@@ -12,6 +12,8 @@ run_atac_exploratory(dsa, anaDir, itLsiObj = NULL)
 \item{anaDir}{analysis directory}
 
 \item{itLsiObj}{[for single-cell only; optional] pre-computed result of a call to \code{iterativeLSI(.object, ...)}}
+
+\item{geneActSe}{[for single-cell only; optional] pre-computed result of a call to \code{getCiceroGeneActivities(.object, ...)}}
 }
 \value{
 \code{S3} object containing exploratory metrics and an analysis report object
