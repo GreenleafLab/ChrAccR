@@ -474,7 +474,10 @@ setMethod("dimRed_UMAP",
 			logger.start("SVD")
 				pcaCoord <- muRtools::getDimRedCoords.pca(safeMatrixStats(cm, "t"), components=1:max(pcs), method="irlba_svd")
 				mat <- pcaCoord
-				if (normPcs) mat <- rowZscores(mat, na.rm=TRUE)
+				if (normPcs) {
+					logger.info("Scaling SVDs")
+					mat <- rowZscores(mat, na.rm=TRUE)
+				}
 				mat <- mat[, pcs, drop=FALSE]
 			logger.completed()
 		}
@@ -597,7 +600,10 @@ setMethod("iterativeLSI",
 				cm <- ChrAccR::getCounts(dsn, it0regionType, allowSparseMatrix=TRUE)
 				pcaCoord_it0 <- muRtools::getDimRedCoords.pca(safeMatrixStats(cm, "t"), components=1:max(it0pcs), method="irlba_svd")
 				pcs <- pcaCoord_it0
-				if (normPcs) pcs <- rowZscores(pcs, na.rm=TRUE) # z-score normalize PCs for each cell
+				if (normPcs) {
+					logger.info("Scaling SVDs")
+					pcs <- rowZscores(pcs, na.rm=TRUE) # z-score normalize PCs for each cell
+				}
 				if (!is.null(depthV) && rmDepthCor > 0 && rmDepthCor < 1){
 					ccs <- apply(pcs, 2, FUN=function(x){
 						cor(x, depthV, method="spearman")
@@ -671,7 +677,10 @@ setMethod("iterativeLSI",
 				cm <- ChrAccR::getCounts(dsn, it1regionType, allowSparseMatrix=TRUE)
 				pcaCoord_it1 <- muRtools::getDimRedCoords.pca(safeMatrixStats(cm, "t"), components=1:max(it1pcs), method="irlba_svd")
 				pcs <- pcaCoord_it1
-				if (normPcs) pcs <- rowZscores(pcs, na.rm=TRUE)
+				if (normPcs) {
+					logger.info("Scaling SVDs")
+					pcs <- rowZscores(pcs, na.rm=TRUE)
+				}
 				pcs <- pcs[, it1pcs, drop=FALSE]
 			logger.completed()
 
@@ -708,10 +717,11 @@ setMethod("iterativeLSI",
 
 		logger.start("Iteration 2")
 			it2regionType <- it1regionType
-
-			umapRes <- dimRed_UMAP(dsr, it2regionType, tfidf=TRUE, pcs=it2pcs, normPcs=normPcs, umapParams=umapParams)
-			pcaCoord_sel <- umapRes$pcaCoord[, umapRes$pcs, drop=FALSE]
-			if (normPcs) pcaCoord_sel <- rowZscores(pcaCoord_sel, na.rm=TRUE)
+			logger.start(c("Performing TF-IDF-based dimension reduction"))
+				umapRes <- dimRed_UMAP(dsr, it2regionType, tfidf=TRUE, pcs=it2pcs, normPcs=normPcs, umapParams=umapParams)
+				pcaCoord_sel <- umapRes$pcaCoord[, umapRes$pcs, drop=FALSE]
+				if (normPcs) pcaCoord_sel <- rowZscores(pcaCoord_sel, na.rm=TRUE)
+			logger.completed()
 
 			logger.start(c("Clustering"))
 				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.features=0, assay="ATAC")
