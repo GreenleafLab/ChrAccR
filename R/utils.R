@@ -50,6 +50,27 @@ isCanonicalChrom <- function(ss){
 	return(grepl(re, ss))
 }
 
+#' rowZscores
+#' 
+#' Performs z-score normalization on the rows of a matrix. (Basically a wrapper around \code{matrixStats})
+#' @param X input matrix
+#' @return z-score normalized matrix
+#' @author Fabian Mueller
+#' @export
+rowZscores <- function(X, na.rm=FALSE){
+	(X - rowMeans(X, na.rm=na.rm)) / matrixStats::rowSds(X, na.rm=na.rm)
+}
+#' colZscores
+#' 
+#' Performs z-score normalization on the columns of a matrix. (Basically a wrapper around \code{matrixStats})
+#' @param X input matrix
+#' @return z-score normalized matrix
+#' @author Fabian Mueller
+#' @export
+colZscores <- function(X, na.rm=FALSE){
+	t((t(X) - colMeans(X, na.rm=na.rm)) / matrixStats::colSds(X, na.rm=na.rm))
+}
+
 #' fastDelayedArrayToMatrix
 #' 
 #' [not needed anymore according to the DelayedArray developers]

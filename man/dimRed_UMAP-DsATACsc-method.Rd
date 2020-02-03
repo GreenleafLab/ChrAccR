@@ -11,6 +11,7 @@
   regions,
   tfidf = TRUE,
   pcs = 1:50,
+  normPcs = FALSE,
   umapParams = list(distMethod = "euclidean", min_dist = 0.5, n_neighbors = 25)
 )
 }
@@ -22,6 +23,8 @@
 \item{tfidf}{normalize the counts using TF-IDF transformation}
 
 \item{pcs}{components to use to compute the SVD}
+
+\item{normPcs}{flag indicating whether to apply z-score normalization to PCs for each cell}
 
 \item{umapParams}{parameters to compute UMAP coordinates (passed on to \code{muRtools::getDimRedCoords.umap} and further to \code{uwot::umap})}
 }

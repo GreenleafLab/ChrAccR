@@ -411,6 +411,7 @@ if (!isGeneric("dimRed_UMAP")) {
 #' @param regions    character string specifying the region type to retrieve the UMAP coordinates from. Alternatively, a \code{GRanges} object specifying coordinates that fragment counts will be aggregated over
 #' @param tfidf      normalize the counts using TF-IDF transformation
 #' @param pcs        components to use to compute the SVD
+#' @param normPcs    flag indicating whether to apply z-score normalization to PCs for each cell
 #' @param umapParams  parameters to compute UMAP coordinates (passed on to \code{muRtools::getDimRedCoords.umap} and further to \code{uwot::umap})
 #' @return an \code{S3} object containing dimensionality reduction results
 #' 
@@ -432,6 +433,7 @@ setMethod("dimRed_UMAP",
 		regions,
 		tfidf=TRUE,
 		pcs=1:50,
+		normPcs=FALSE,
 		umapParams=list(
 			distMethod="euclidean",
 			min_dist=0.5,
@@ -471,7 +473,9 @@ setMethod("dimRed_UMAP",
 		if (length(pcs) > 1){
 			logger.start("SVD")
 				pcaCoord <- muRtools::getDimRedCoords.pca(safeMatrixStats(cm, "t"), components=1:max(pcs), method="irlba_svd")
-				mat <- pcaCoord[, pcs, drop=FALSE]
+				mat <- pcaCoord
+				if (normPcs) mat <- rowZscores(mat, na.rm=TRUE)
+				mat <- mat[, pcs, drop=FALSE]
 			logger.completed()
 		}
 		
@@ -488,7 +492,8 @@ setMethod("dimRed_UMAP",
 			idfBase=idfBase,
 			umapCoord=umapCoord,
 			umapRes=umapRes,
-			regionGr=gr
+			regionGr=gr,
+			.params=list(normPcs=normPcs)
 		)
 		class(res) <- "DimRed_UMAP_sc"
 		return(res)
@@ -519,6 +524,8 @@ if (!isGeneric("iterativeLSI")) {
 #' @param it1mostVarPeaks the number of the most variable peaks to consider after iteration 1
 #' @param it2pcs      the principal components to consider in the final iteration (2)
 #' @param it2clusterResolution resolution paramter for Seurat's  clustering (\code{Seurat::FindClusters}) in the final iteration (2)
+#' @param rmDepthCor  coreelation cutoff to be used to discard principal components associated with fragment depth (iteration 0)
+#' @param normPcs     flag indicating whether to apply z-score normalization to PCs for each cell (all iterations)
 #' @param umapParams  parameters to compute UMAP coordinates (passed on to \code{muRtools::getDimRedCoords.umap} and further to \code{uwot::umap})
 #' @return an \code{S3} object containing dimensionality reduction results, peak sets and clustering
 #' 
@@ -541,7 +548,7 @@ setMethod("iterativeLSI",
 		.object,
 		it0regionType="t5k",
 		it0nMostAcc=20000L,
-		it0pcs=2:25,
+		it0pcs=1:25,
 		it0clusterResolution=0.8,
 		it0clusterMinCells=200L,
 		it0nTopPeaksPerCluster=2e5,
@@ -550,6 +557,8 @@ setMethod("iterativeLSI",
 		it1mostVarPeaks=50000L,
 		it2pcs=1:50,
 		it2clusterResolution=0.8,
+		rmDepthCor=0.5,
+		normPcs=FALSE,
 		umapParams=list(
 			distMethod="euclidean",
 			min_dist=0.5,
@@ -587,11 +596,21 @@ setMethod("iterativeLSI",
 
 				cm <- ChrAccR::getCounts(dsn, it0regionType, allowSparseMatrix=TRUE)
 				pcaCoord_it0 <- muRtools::getDimRedCoords.pca(safeMatrixStats(cm, "t"), components=1:max(it0pcs), method="irlba_svd")
-				if (!is.null(depthV)){
-					cc <- cor(pcaCoord_it0[,1], depthV, method="spearman")
-					logger.info(c("Correlation (Spearman) of PC1 with cell fragment counts:", round(cc, 4)))
+				pcs <- pcaCoord_it0
+				if (normPcs) pcs <- rowZscores(pcs, na.rm=TRUE) # z-score normalize PCs for each cell
+				if (!is.null(depthV) && rmDepthCor > 0 && rmDepthCor < 1){
+					ccs <- apply(pcs, 2, FUN=function(x){
+						cor(x, depthV, method="spearman")
+					})
+					idx <- which(ccs > rmDepthCor)
+					if (length(idx) > 0){
+						rmStr <- paste(paste0("PC", idx, " (r=", round(ccs[idx], 4), ")"), collapse=", ")
+						logger.info(c("The following PCs are correlated (Spearman) with cell fragment counts and will be removed:", rmStr))
+						it0pcs <- setdiff(it0pcs, idx)
+					}
 				}
-				pcaCoord_it0 <- pcaCoord_it0[, it0pcs, drop=FALSE]
+				pcs <- pcs[, it0pcs, drop=FALSE]
+				
 			logger.completed()
 			logger.start(c("Clustering"))	
 				if (!requireNamespace("Seurat")) logger.error(c("Could not load dependency: Seurat"))
@@ -599,9 +618,9 @@ setMethod("iterativeLSI",
 				dummyMat <- matrix(11.0, ncol=length(cellIds), nrow=11)
 				colnames(dummyMat) <- cellIds
 				rownames(dummyMat) <- paste0("df", 1:nrow(dummyMat))
-				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.features=0, assay="ATAC")
-				sObj[["pca"]] <- Seurat::CreateDimReducObject(embeddings=pcaCoord_it0, key="PC_", assay="ATAC")
-				sObj <- Seurat::FindNeighbors(sObj, reduction="pca", assay="ATAC", dims=1:ncol(pcaCoord_it0), k.param=30)
+				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.features=0, assay="ATAC")				
+				sObj[["pca"]] <- Seurat::CreateDimReducObject(embeddings=pcs, key="PC_", assay="ATAC")
+				sObj <- Seurat::FindNeighbors(sObj, reduction="pca", assay="ATAC", dims=1:ncol(pcs), k.param=30)
 				clustRes <- Seurat::FindClusters(sObj, k.param=30, algorithm=1, n.start=100, n.iter=10, resolution=it0clusterResolution)
 				clustAss_it0 <- factor(paste0("c", clustRes@active.ident), levels=paste0("c", levels(clustRes@active.ident)))
 				names(clustAss_it0) <- names(clustRes@active.ident)
@@ -650,13 +669,16 @@ setMethod("iterativeLSI",
 				dsr <- removeRegionType(dsr, it0regionType)
 				dsn <- transformCounts(dsr, method="tf-idf", regionTypes=it1regionType) #TODO: renormalize based on sequencing depth rather than aggregated counts across peaks only?
 				cm <- ChrAccR::getCounts(dsn, it1regionType, allowSparseMatrix=TRUE)
-				pcaCoord_it1 <- muRtools::getDimRedCoords.pca(safeMatrixStats(cm, "t"), components=1:max(it1pcs), method="irlba_svd")[, it1pcs, drop=FALSE]
+				pcaCoord_it1 <- muRtools::getDimRedCoords.pca(safeMatrixStats(cm, "t"), components=1:max(it1pcs), method="irlba_svd")
+				pcs <- pcaCoord_it1
+				if (normPcs) pcs <- rowZscores(pcs, na.rm=TRUE)
+				pcs <- pcs[, it1pcs, drop=FALSE]
 			logger.completed()
 
 			logger.start(c("Clustering"))	
 				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.features=0, assay="ATAC")
-				sObj[["pca"]] <- Seurat::CreateDimReducObject(embeddings=pcaCoord_it1, key="PC_", assay="ATAC")
-				sObj <- Seurat::FindNeighbors(sObj, reduction="pca", assay="ATAC", dims=1:ncol(pcaCoord_it1), k.param=30)
+				sObj[["pca"]] <- Seurat::CreateDimReducObject(embeddings=pcs, key="PC_", assay="ATAC")
+				sObj <- Seurat::FindNeighbors(sObj, reduction="pca", assay="ATAC", dims=1:ncol(pcs), k.param=30)
 				clustRes <- Seurat::FindClusters(sObj, k.param=30, algorithm=1, n.start=100, n.iter=10, resolution=it1clusterResolution)
 				clustAss_it1 <- factor(paste0("c", clustRes@active.ident), levels=paste0("c", levels(clustRes@active.ident)))
 				names(clustAss_it1) <- names(clustRes@active.ident)
@@ -687,8 +709,9 @@ setMethod("iterativeLSI",
 		logger.start("Iteration 2")
 			it2regionType <- it1regionType
 
-			umapRes <- dimRed_UMAP(dsr, it2regionType, tfidf=TRUE, pcs=it2pcs, umapParams=umapParams)
+			umapRes <- dimRed_UMAP(dsr, it2regionType, tfidf=TRUE, pcs=it2pcs, normPcs=normPcs, umapParams=umapParams)
 			pcaCoord_sel <- umapRes$pcaCoord[, umapRes$pcs, drop=FALSE]
+			if (normPcs) pcaCoord_sel <- rowZscores(pcaCoord_sel, na.rm=TRUE)
 
 			logger.start(c("Clustering"))
 				sObj <- Seurat::CreateSeuratObject(dummyMat, project='scATAC', min.cells=0, min.features=0, assay="ATAC")
@@ -730,7 +753,7 @@ setMethod("iterativeLSI",
 					mostVarPeaks=it1mostVarPeaks
 				)
 			),
-			.params=callParams
+			.params=c(list(normPcs=normPcs), callParams)
 		)
 		class(res) <- "iterativeLSIResultSc"
 		return(res)

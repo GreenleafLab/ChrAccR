@@ -10,7 +10,7 @@
   .object,
   it0regionType = "t5k",
   it0nMostAcc = 20000L,
-  it0pcs = 2:25,
+  it0pcs = 1:25,
   it0clusterResolution = 0.8,
   it0clusterMinCells = 200L,
   it0nTopPeaksPerCluster = 2e+05,
@@ -19,6 +19,8 @@
   it1mostVarPeaks = 50000L,
   it2pcs = 1:50,
   it2clusterResolution = 0.8,
+  rmDepthCor = 0.5,
+  normPcs = FALSE,
   umapParams = list(distMethod = "euclidean", min_dist = 0.5, n_neighbors = 25)
 )
 }
@@ -46,6 +48,10 @@
 \item{it2pcs}{the principal components to consider in the final iteration (2)}
 
 \item{it2clusterResolution}{resolution paramter for Seurat's  clustering (\code{Seurat::FindClusters}) in the final iteration (2)}
+
+\item{rmDepthCor}{coreelation cutoff to be used to discard principal components associated with fragment depth (iteration 0)}
+
+\item{normPcs}{flag indicating whether to apply z-score normalization to PCs for each cell (all iterations)}
 
 \item{umapParams}{parameters to compute UMAP coordinates (passed on to \code{muRtools::getDimRedCoords.umap} and further to \code{uwot::umap})}
 }
