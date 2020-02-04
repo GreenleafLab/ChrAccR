@@ -11,7 +11,7 @@
   regions,
   tfidf = TRUE,
   pcs = 1:50,
-  normPcs = FALSE,
+  normPcs = TRUE,
   umapParams = list(distMethod = "euclidean", min_dist = 0.5, n_neighbors = 25)
 )
 }

@@ -20,7 +20,7 @@
   it2pcs = 1:50,
   it2clusterResolution = 0.8,
   rmDepthCor = 0.5,
-  normPcs = FALSE,
+  normPcs = TRUE,
   umapParams = list(distMethod = "euclidean", min_dist = 0.5, n_neighbors = 25)
 )
 }
