@@ -412,6 +412,7 @@ projectMatrix_UMAP <- function(X, umapObj, binarize=TRUE){
 #' @return list containing the smoothed matrix and the kernel matrix
 #' @author Jeff Granja, Fabian Mueller
 #' @export
+#' @noRd
 smoothMagic <- function(X, X_knn=NULL, k=15, ka=ceiling(k/4), td=3){
 	# X <- t(SummarizedExperiment::assay(geneAct))
 	# X_knn <- dro$pcaCoord[,dro$pcs]

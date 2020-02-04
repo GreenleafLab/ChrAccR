@@ -83,6 +83,7 @@ if (!isGeneric("simulateDoublets")) {
 #' @aliases simulateDoublets,DsATACsc-method
 #' @author Fabian Mueller
 #' @export
+#' @noRd
 setMethod("simulateDoublets",
 	signature(
 		.object="DsATAC"
@@ -796,6 +797,7 @@ setMethod("iterativeLSI",
 #' @aliases getDiffAcc,DsATAC-method
 #' @author Fabian Mueller
 #' @export
+#' @noRd
 setMethod("getDiffAcc",
 	signature(
 		.object="DsATACsc"
