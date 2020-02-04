@@ -413,12 +413,13 @@ projectMatrix_UMAP <- function(X, umapObj, binarize=TRUE){
 #' @author Jeff Granja, Fabian Mueller
 #' @export
 #' @noRd
-smoothMagic <- function(X, X_knn=NULL, k=15, ka=ceiling(k/4), td=3){
+smoothMagic <- function(X=NULL, X_knn=NULL, k=15, ka=ceiling(k/4), td=3){
 	# X <- t(SummarizedExperiment::assay(geneAct))
 	# X_knn <- dro$pcaCoord[,dro$pcs]
 	require(Matrix)
 	require(FNN)
 	if (is.null(X_knn)) X_knn <- X
+	if (is.null(X_knn)) logger.error("Expected matrix to compute nearest neighbors")
 	if (nrow(X_knn) != nrow(X)) logger.error("Incompatible row numbers of X and X_knn")
 
 	Ncells <- nrow(X)
@@ -441,19 +442,24 @@ smoothMagic <- function(X, X_knn=NULL, k=15, ka=ceiling(k/4), td=3){
 	M <- A / Matrix::rowSums(A)
 	logger.status("Diffusing kernel ...")
 	Mt <- M
-	for(i in seq_len(td)){
-		Mt <- Mt %*% M
+	if (td > 1){
+		for(i in seq_len(td-1)) Mt <- Mt %*% M
 	}
 
-	logger.status("Smoothing ...")
-	Xs <- Mt %*% X
-	rownames(Xs) <- rownames(X)
-	# logger.status("Rescaling ...")
+	if (is.null(X)){
+		Xs <- NULL
+	} else {
+		logger.status("Smoothing ...")
+		Xs <- Mt %*% X
+		rownames(Xs) <- rownames(X)
+		# logger.status("Rescaling ...")
+	}
+	
 	res <- list(
 		Xs=Xs,
 		kernelM=Mt
 	)
-
+	class(res) <- "SmoothMagicMatrix"
 	return(res)
 }
 
