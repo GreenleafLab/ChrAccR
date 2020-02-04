@@ -835,73 +835,82 @@ setMethod("getDiffAcc",
 
 
 		if (method=="DESeq2"){
+			logger.info(c("Using method:", method))
 			cm <- ChrAccR::getCounts(.object, regionType, allowSparseMatrix=TRUE)
 
-			nCells <- min(c(length(cidx.grp1), length(cidx.grp2)))
-			doBoostrap <- FALSE
-			if (nCells < nCellsPerBulk){
-				logger.warning(c("Few cells detected per group", "--> selecting only", nCells, "cells for sampling"))
-				doBoostrap <- TRUE
-			} else {
-				nCells <- nCellsPerBulk
-			}
+			logger.start("Creating pseudo-bulk samples")
+				nCells <- min(c(length(cidx.grp1), length(cidx.grp2)))
+				doBoostrap <- FALSE
+				if (nCells < nCellsPerBulk){
+					logger.warning(c("Few cells detected per group", "--> selecting only", nCells, "cells for sampling"))
+					doBoostrap <- TRUE
+				} else {
+					nCells <- nCellsPerBulk
+				}
+				logger.info(c("Using", nCells, "per sample"))
+				logger.info(c("Using", nBulkPerGroup, "samples per group"))
 
-			cidxL.grp1 <- lapply(1:nBulkPerGroup, FUN=function(i){
-				sample(cidx.grp1, nCells, replace=doBoostrap)
-			})
-			cidxL.grp2 <- lapply(1:nBulkPerGroup, FUN=function(i){
-				sample(cidx.grp2, nCells, replace=doBoostrap)
-			})
-			cm.grp1 <- do.call("cbind", lapply(cidxL.grp1, FUN=function(cids){
-				safeMatrixStats(cm[,cids,drop=FALSE], statFun="rowSums", na.rm=TRUE)
-			}))
-			colnames(cm.grp1) <- paste(grp1Name, "sample", 1:nBulkPerGroup, sep="_")
-			cm.grp2 <- do.call("cbind", lapply(cidxL.grp2, FUN=function(cids){
-				safeMatrixStats(cm[,cids,drop=FALSE], statFun="rowSums", na.rm=TRUE)
-			}))
-			colnames(cm.grp2) <- paste(grp2Name, "sample", 1:nBulkPerGroup, sep="_")
+				cidxL.grp1 <- lapply(1:nBulkPerGroup, FUN=function(i){
+					sample(cidx.grp1, nCells, replace=doBoostrap)
+				})
+				cidxL.grp2 <- lapply(1:nBulkPerGroup, FUN=function(i){
+					sample(cidx.grp2, nCells, replace=doBoostrap)
+				})
+				cm.grp1 <- do.call("cbind", lapply(cidxL.grp1, FUN=function(cids){
+					safeMatrixStats(cm[,cids,drop=FALSE], statFun="rowSums", na.rm=TRUE)
+				}))
+				colnames(cm.grp1) <- paste(grp1Name, "sample", 1:nBulkPerGroup, sep="_")
+				cm.grp2 <- do.call("cbind", lapply(cidxL.grp2, FUN=function(cids){
+					safeMatrixStats(cm[,cids,drop=FALSE], statFun="rowSums", na.rm=TRUE)
+				}))
+				colnames(cm.grp2) <- paste(grp2Name, "sample", 1:nBulkPerGroup, sep="_")
+			logger.completed()
 
-			designF <- as.formula(paste0("~", paste("group", collapse="+")))
-			dds <- DESeq2::DESeqDataSetFromMatrix(
-				countData=cbind(cm.grp1, cm.grp2),
-				colData=data.frame(sampleId=c(colnames(cm.grp1), colnames(cm.grp2)), group=rep(c(grp1Name, grp2Name), times=rep(nBulkPerGroup, 2))),
-				design=designF
-			)
-			rowRanges(dds) <- getCoord(.object, regionType)
-			dds <- DESeq2::DESeq(dds)
+			logger.start("Creating DESeq2 dataset")
+				designF <- as.formula(paste0("~", paste("group", collapse="+")))
+				dds <- DESeq2::DESeqDataSetFromMatrix(
+					countData=cbind(cm.grp1, cm.grp2),
+					colData=data.frame(sampleId=c(colnames(cm.grp1), colnames(cm.grp2)), group=rep(c(grp1Name, grp2Name), times=rep(nBulkPerGroup, 2))),
+					design=designF
+				)
+				rowRanges(dds) <- getCoord(.object, regionType)
+				dds <- DESeq2::DESeq(dds)
+			logger.completed()
 
-			diffRes <- DESeq2::results(dds, contrast=c("group", grp1Name, grp2Name))
-			dm <- data.frame(diffRes)
-			rankMat <- cbind(
-				# rank(-dm[,"baseMean"]), na.last="keep", ties.method="min"),
-				rank(-abs(dm[,"log2FoldChange"]), na.last="keep", ties.method="min"),
-				rank(dm[,"pvalue"], na.last="keep", ties.method="min")
-			)
-			dm[,"cRank"] <- matrixStats::rowMaxs(rankMat, na.rm=FALSE)
-			# dm[,"cRank"] <- rowMaxs(rankMat, na.rm=TRUE)
-			dm[!is.finite(dm[,"cRank"]),"cRank"] <- NA
-			dm[,"cRank_rerank"] <- rank(dm[,"cRank"], na.last="keep", ties.method="min")
+			logger.start("Differential table")
+				diffRes <- DESeq2::results(dds, contrast=c("group", grp1Name, grp2Name))
+				dm <- data.frame(diffRes)
+				rankMat <- cbind(
+					# rank(-dm[,"baseMean"]), na.last="keep", ties.method="min"),
+					rank(-abs(dm[,"log2FoldChange"]), na.last="keep", ties.method="min"),
+					rank(dm[,"pvalue"], na.last="keep", ties.method="min")
+				)
+				dm[,"cRank"] <- matrixStats::rowMaxs(rankMat, na.rm=FALSE)
+				# dm[,"cRank"] <- rowMaxs(rankMat, na.rm=TRUE)
+				dm[!is.finite(dm[,"cRank"]),"cRank"] <- NA
+				dm[,"cRank_rerank"] <- rank(dm[,"cRank"], na.last="keep", ties.method="min")
 
-			l10fpkm <- log10(DESeq2::fpkm(dds, robust=TRUE)+1)
-			grp1.m.l10fpkm <- rowMeans(l10fpkm[, cidx.grp1, drop=FALSE], na.rm=TRUE)
-			grp2.m.l10fpkm <- rowMeans(l10fpkm[, cidx.grp2, drop=FALSE], na.rm=TRUE)
-			vstCounts <- assay(DESeq2::vst(dds, blind=FALSE))
-			grp1.m.vst <- rowMeans(vstCounts[, cidx.grp1, drop=FALSE], na.rm=TRUE)
-			grp2.m.vst <- rowMeans(vstCounts[, cidx.grp2, drop=FALSE], na.rm=TRUE)
+				l10fpkm <- log10(DESeq2::fpkm(dds, robust=TRUE)+1)
+				grp1.m.l10fpkm <- rowMeans(l10fpkm[, cidx.grp1, drop=FALSE], na.rm=TRUE)
+				grp2.m.l10fpkm <- rowMeans(l10fpkm[, cidx.grp2, drop=FALSE], na.rm=TRUE)
+				vstCounts <- assay(DESeq2::vst(dds, blind=FALSE))
+				grp1.m.vst <- rowMeans(vstCounts[, cidx.grp1, drop=FALSE], na.rm=TRUE)
+				grp2.m.vst <- rowMeans(vstCounts[, cidx.grp2, drop=FALSE], na.rm=TRUE)
 
-			res <- data.frame(
-				log2BaseMean=log2(dm[,"baseMean"]),
-				meanLog10FpkmGrp1=grp1.m.l10fpkm,
-				meanLog10FpkmGrp2=grp2.m.l10fpkm,
-				meanVstCountGrp1=grp1.m.vst,
-				meanVstCountGrp2=grp2.m.vst,
-				dm
-			)
-			# add group names to column names
-			for (cn in c("meanLog10FpkmGrp", "meanVstCountGrp")){
-				colnames(res)[colnames(res)==paste0(cn,"1")] <- paste0(cn, "1_", grp1Name)
-				colnames(res)[colnames(res)==paste0(cn,"2")] <- paste0(cn, "2_", grp2Name)
-			}
+				res <- data.frame(
+					log2BaseMean=log2(dm[,"baseMean"]),
+					meanLog10FpkmGrp1=grp1.m.l10fpkm,
+					meanLog10FpkmGrp2=grp2.m.l10fpkm,
+					meanVstCountGrp1=grp1.m.vst,
+					meanVstCountGrp2=grp2.m.vst,
+					dm
+				)
+				# add group names to column names
+				for (cn in c("meanLog10FpkmGrp", "meanVstCountGrp")){
+					colnames(res)[colnames(res)==paste0(cn,"1")] <- paste0(cn, "1_", grp1Name)
+					colnames(res)[colnames(res)==paste0(cn,"2")] <- paste0(cn, "2_", grp2Name)
+				}
+			logger.completed()
 		}
 		return(res)
 	}
