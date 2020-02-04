@@ -434,7 +434,7 @@ setMethod("dimRed_UMAP",
 		regions,
 		tfidf=TRUE,
 		pcs=1:50,
-		normPcs=FALSE,
+		normPcs=TRUE,
 		umapParams=list(
 			distMethod="euclidean",
 			min_dist=0.5,
@@ -562,7 +562,7 @@ setMethod("iterativeLSI",
 		it2pcs=1:50,
 		it2clusterResolution=0.8,
 		rmDepthCor=0.5,
-		normPcs=FALSE,
+		normPcs=TRUE,
 		umapParams=list(
 			distMethod="euclidean",
 			min_dist=0.5,
@@ -605,13 +605,14 @@ setMethod("iterativeLSI",
 					logger.info("Scaling SVDs")
 					pcs <- rowZscores(pcs, na.rm=TRUE) # z-score normalize PCs for each cell
 				}
+				it0fragCountCor <- NULL
 				if (!is.null(depthV) && rmDepthCor > 0 && rmDepthCor < 1){
-					ccs <- apply(pcs, 2, FUN=function(x){
+					it0fragCountCor <- apply(pcs, 2, FUN=function(x){
 						cor(x, depthV, method="spearman")
 					})
-					idx <- which(ccs > rmDepthCor)
+					idx <- which(it0fragCountCor > rmDepthCor)
 					if (length(idx) > 0){
-						rmStr <- paste(paste0("PC", idx, " (r=", round(ccs[idx], 4), ")"), collapse=", ")
+						rmStr <- paste(paste0("PC", idx, " (r=", round(it0fragCountCor[idx], 4), ")"), collapse=", ")
 						logger.info(c("The following PCs are correlated (Spearman) with cell fragment counts and will be removed:", rmStr))
 						it0pcs <- setdiff(it0pcs, idx)
 					}
@@ -751,6 +752,7 @@ setMethod("iterativeLSI",
 					pcaCoord=pcaCoord_it0,
 					clustAss=clustAss_it0,
 					pcs=it0pcs,
+					pcCorFragmentCount=it0fragCountCor,
 					nMostAcc=it0nMostAcc,
 					clusterResolution=it0clusterResolution,
 					clusterMinCells=it0clusterMinCells,
