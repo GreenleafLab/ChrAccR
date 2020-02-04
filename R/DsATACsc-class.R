@@ -769,3 +769,138 @@ setMethod("iterativeLSI",
 		return(res)
 	}
 )
+
+#-------------------------------------------------------------------------------
+
+#' getDiffAcc-methods
+#'
+#' Compute differential accessibility for single-cell datasets by randomly drawing cells from each group and aggregating them into pseudo-bulk samples
+#' which are then compared using bulk differential methods
+#'
+#' @param .object    \code{\linkS4class{DsATACsc}} object
+#' @param regionType character string specifying the region type
+#' @param comparisonCol column name in the cell annotation table to base the comparison on. Alternatively, a vector with one element for each
+#'                   cell in the dataset that can be coerced to a factor
+#' @param grp1Name   name of the first group in the comparison. if not specified, it will be taken as the first factor level specified in the 
+#'                   cell annotation (see \code{'comparisonCol'}).
+#' @param grp2Name   name of the second group (reference) in the comparison. if not specified, it will be taken as the first factor level specified in the 
+#'                   cell annotation (see \code{'comparisonCol'}).
+#' @param nCellsPerBulk number of cells to sample to create each pseudo-bulk sample
+#' @param nBulkPerGroup number of pseudo-bulk samples to create for each group
+#' @param method     Method for determining differential accessibility. Currently only \code{'DESeq2'} is supported
+#' @return a \code{data.frame} containing differential accessibility information
+#' 
+#' @rdname getDiffAcc-DsATACsc-method
+#' @docType methods
+#' @aliases getDiffAcc
+#' @aliases getDiffAcc,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("getDiffAcc",
+	signature(
+		.object="DsATACsc"
+	),
+	function(
+		.object,
+		regionType,
+		comparisonCol,
+		grp1Name=NULL,
+		grp2Name=NULL,
+		nCellsPerBulk=100,
+		nBulkPerGroup=20,
+		method='DESeq2'
+	) {
+		ph <- getSampleAnnot(.object)
+		if (!is.element(method, c("DESeq2"))) logger.error(c("Invalid method for calling differential accessibility:", method))
+		if (is.character(comparisonCol) && length(comparisonCol)==1){
+			if (!is.element(comparisonCol, colnames(ph))) logger.error(c("Comparison column not found in sample annotation:", comparisonCol))
+			contrastF <- factor(ph[,comparisonCol])
+		} else if (length(comparisonCol)==nrow(ph)){
+			contrastF <- factor(comparisonCol)
+		} else {
+			logger.error("Invalid value for comparisonCol")
+		}
+		if (length(levels(contrastF)) < 2)  logger.error(c("Invalid comparison column. There should be at least 2 groups."))
+
+		if (is.null(grp1Name)) grp1Name <- levels(contrastF)[1]
+		if (is.null(grp2Name)) grp2Name <- levels(contrastF)[2]
+		if (!is.element(grp1Name, c(levels(contrastF), ".ALL"))) logger.error(c("Invalid group name (1). Sample annotation has no samples associated with that group:", grp1Name))
+		if (!is.element(grp2Name, c(levels(contrastF), ".ALL"))) logger.error(c("Invalid group name (2). Sample annotation has no samples associated with that group:", grp2Name))
+		cidx.grp1 <- which(contrastF==grp1Name)
+		if (grp1Name==".ALL") cidx.grp1 <- which(contrastF!=grp2Name)
+		cidx.grp2 <- which(contrastF==grp2Name)
+		if (grp2Name==".ALL") cidx.grp2 <- which(contrastF!=grp1Name)
+
+
+		if (method=="DESeq2"){
+			cm <- ChrAccR::getCounts(.object, regionType, allowSparseMatrix=TRUE)
+
+			nCells <- min(c(length(cidx.grp1), length(cidx.grp2)))
+			doBoostrap <- FALSE
+			if (nCells < nCellsPerBulk){
+				logger.warning(c("Few cells detected per group", "--> selecting only", nCells, "cells for sampling"))
+				doBoostrap <- TRUE
+			} else {
+				nCells <- nCellsPerBulk
+			}
+
+			cidxL.grp1 <- lapply(1:nBulkPerGroup, FUN=function(i){
+				sample(cidx.grp1, nCells, replace=doBoostrap)
+			})
+			cidxL.grp2 <- lapply(1:nBulkPerGroup, FUN=function(i){
+				sample(cidx.grp2, nCells, replace=doBoostrap)
+			})
+			cm.grp1 <- do.call("cbind", lapply(cidxL.grp1, FUN=function(cids){
+				safeMatrixStats(cm[,cids,drop=FALSE], statFun="rowSums", na.rm=TRUE)
+			}))
+			colnames(cm.grp1) <- paste(grp1Name, "sample", 1:nBulkPerGroup, sep="_")
+			cm.grp2 <- do.call("cbind", lapply(cidxL.grp2, FUN=function(cids){
+				safeMatrixStats(cm[,cids,drop=FALSE], statFun="rowSums", na.rm=TRUE)
+			}))
+			colnames(cm.grp2) <- paste(grp2Name, "sample", 1:nBulkPerGroup, sep="_")
+
+			designF <- as.formula(paste0("~", paste("group", collapse="+")))
+			dds <- DESeq2::DESeqDataSetFromMatrix(
+				countData=cbind(cm.grp1, cm.grp2),
+				colData=data.frame(sampleId=c(colnames(cm.grp1), colnames(cm.grp2)), group=rep(c(grp1Name, grp2Name), times=rep(nBulkPerGroup, 2))),
+				design=designF
+			)
+			rowRanges(dds) <- getCoord(.object, regionType)
+			dds <- DESeq2::DESeq(dds)
+
+			diffRes <- DESeq2::results(dds, contrast=c("group", grp1Name, grp2Name))
+			dm <- data.frame(diffRes)
+			rankMat <- cbind(
+				# rank(-dm[,"baseMean"]), na.last="keep", ties.method="min"),
+				rank(-abs(dm[,"log2FoldChange"]), na.last="keep", ties.method="min"),
+				rank(dm[,"pvalue"], na.last="keep", ties.method="min")
+			)
+			dm[,"cRank"] <- matrixStats::rowMaxs(rankMat, na.rm=FALSE)
+			# dm[,"cRank"] <- rowMaxs(rankMat, na.rm=TRUE)
+			dm[!is.finite(dm[,"cRank"]),"cRank"] <- NA
+			dm[,"cRank_rerank"] <- rank(dm[,"cRank"], na.last="keep", ties.method="min")
+
+			l10fpkm <- log10(DESeq2::fpkm(dds, robust=TRUE)+1)
+			grp1.m.l10fpkm <- rowMeans(l10fpkm[, cidx.grp1, drop=FALSE], na.rm=TRUE)
+			grp2.m.l10fpkm <- rowMeans(l10fpkm[, cidx.grp2, drop=FALSE], na.rm=TRUE)
+			vstCounts <- assay(DESeq2::vst(dds, blind=FALSE))
+			grp1.m.vst <- rowMeans(vstCounts[, cidx.grp1, drop=FALSE], na.rm=TRUE)
+			grp2.m.vst <- rowMeans(vstCounts[, cidx.grp2, drop=FALSE], na.rm=TRUE)
+
+			res <- data.frame(
+				log2BaseMean=log2(dm[,"baseMean"]),
+				meanLog10FpkmGrp1=grp1.m.l10fpkm,
+				meanLog10FpkmGrp2=grp2.m.l10fpkm,
+				meanVstCountGrp1=grp1.m.vst,
+				meanVstCountGrp2=grp2.m.vst,
+				dm
+			)
+			# add group names to column names
+			for (cn in c("meanLog10FpkmGrp", "meanVstCountGrp")){
+				colnames(res)[colnames(res)==paste0(cn,"1")] <- paste0(cn, "1_", grp1Name)
+				colnames(res)[colnames(res)==paste0(cn,"2")] <- paste0(cn, "2_", grp2Name)
+			}
+		}
+		return(res)
+	}
+)
