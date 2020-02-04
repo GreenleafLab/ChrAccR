@@ -826,13 +826,12 @@ setMethod("getDiffAcc",
 
 		if (is.null(grp1Name)) grp1Name <- levels(contrastF)[1]
 		if (is.null(grp2Name)) grp2Name <- levels(contrastF)[2]
-		if (!is.element(grp1Name, c(levels(contrastF), ".ALL"))) logger.error(c("Invalid group name (1). Sample annotation has no samples associated with that group:", grp1Name))
-		if (!is.element(grp2Name, c(levels(contrastF), ".ALL"))) logger.error(c("Invalid group name (2). Sample annotation has no samples associated with that group:", grp2Name))
+		if (!is.element(grp1Name, c(levels(contrastF), ".ALL"))) logger.error(c("Invalid group name (1). No cells annotated with that group:", grp1Name))
+		if (!is.element(grp2Name, c(levels(contrastF), ".ALL"))) logger.error(c("Invalid group name (2). No cells annotated with that group:", grp2Name))
 		cidx.grp1 <- which(contrastF==grp1Name)
 		if (grp1Name==".ALL") cidx.grp1 <- which(contrastF!=grp2Name)
 		cidx.grp2 <- which(contrastF==grp2Name)
 		if (grp2Name==".ALL") cidx.grp2 <- which(contrastF!=grp1Name)
-
 
 		if (method=="DESeq2"){
 			logger.info(c("Using method:", method))
@@ -847,7 +846,7 @@ setMethod("getDiffAcc",
 				} else {
 					nCells <- nCellsPerBulk
 				}
-				logger.info(c("Using", nCells, "per sample"))
+				logger.info(c("Using", nCells, "cells per sample"))
 				logger.info(c("Using", nBulkPerGroup, "samples per group"))
 
 				cidxL.grp1 <- lapply(1:nBulkPerGroup, FUN=function(i){
@@ -868,9 +867,10 @@ setMethod("getDiffAcc",
 
 			logger.start("Creating DESeq2 dataset")
 				designF <- as.formula(paste0("~", paste("group", collapse="+")))
+				sannot <- data.frame(sampleId=c(colnames(cm.grp1), colnames(cm.grp2)), group=rep(c(grp1Name, grp2Name), times=rep(nBulkPerGroup, 2)))
 				dds <- DESeq2::DESeqDataSetFromMatrix(
 					countData=cbind(cm.grp1, cm.grp2),
-					colData=data.frame(sampleId=c(colnames(cm.grp1), colnames(cm.grp2)), group=rep(c(grp1Name, grp2Name), times=rep(nBulkPerGroup, 2))),
+					colData=sannot,
 					design=designF
 				)
 				rowRanges(dds) <- getCoord(.object, regionType)
@@ -890,12 +890,14 @@ setMethod("getDiffAcc",
 				dm[!is.finite(dm[,"cRank"]),"cRank"] <- NA
 				dm[,"cRank_rerank"] <- rank(dm[,"cRank"], na.last="keep", ties.method="min")
 
+				sidx.grp1 <- which(sannot[,"group"]==grp1Name)
+				sidx.grp2 <- which(sannot[,"group"]==grp2Name)
 				l10fpkm <- log10(DESeq2::fpkm(dds, robust=TRUE)+1)
-				grp1.m.l10fpkm <- rowMeans(l10fpkm[, cidx.grp1, drop=FALSE], na.rm=TRUE)
-				grp2.m.l10fpkm <- rowMeans(l10fpkm[, cidx.grp2, drop=FALSE], na.rm=TRUE)
+				grp1.m.l10fpkm <- rowMeans(l10fpkm[, sidx.grp1, drop=FALSE], na.rm=TRUE)
+				grp2.m.l10fpkm <- rowMeans(l10fpkm[, sidx.grp2, drop=FALSE], na.rm=TRUE)
 				vstCounts <- assay(DESeq2::vst(dds, blind=FALSE))
-				grp1.m.vst <- rowMeans(vstCounts[, cidx.grp1, drop=FALSE], na.rm=TRUE)
-				grp2.m.vst <- rowMeans(vstCounts[, cidx.grp2, drop=FALSE], na.rm=TRUE)
+				grp1.m.vst <- rowMeans(vstCounts[, sidx.grp1, drop=FALSE], na.rm=TRUE)
+				grp2.m.vst <- rowMeans(vstCounts[, sidx.grp2, drop=FALSE], na.rm=TRUE)
 
 				res <- data.frame(
 					log2BaseMean=log2(dm[,"baseMean"]),
