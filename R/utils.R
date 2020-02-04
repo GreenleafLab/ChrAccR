@@ -465,18 +465,21 @@ smoothMagic <- function(X=NULL, X_knn=NULL, k=15, ka=ceiling(k/4), td=3){
 
 #' findGroupMarkers
 #' 
-#' Detect group markers by testing distribution of values corresponding to a group (foreground) to the corresponding values from a background set.
+#' [EXPERIMENTAL] Detect group markers by testing distribution of values corresponding to a group (foreground) to the corresponding values from a background set.
 #' The background set can be matched by finding nearest neighbors to the foreground.
 #'
 #' @param X       matrix with values to be differentially tested for each group (features X samples)
-#' @param grouping Group assignments. Ideally a factor vector. The length must match the number of samples (columns of X)
+#' @param grouping Group assignments. Factor vector or a vector that can be coerced to a factor. The length must match the number of samples (columns of X)
 #' @param bgRatio For each group the number of samples that will be drawn as background set. This should be a factor, i.e. a value of 2 means that the background set for each group will be twice the size of the foreground set
 #' @param matchFrac fraction of samples from the background set that are drawn from the pool of nearest neighbors of the foreground. This way the degree of matching between background and foreground can be adjusted.
+#' @param X_knn   matrix to be used for finding nearest neighbors. Must have the same columns (samples) as X. If \code{NULL} (default), \code{X} will be used
+#' @param knn_k   k to be used for nearest-neighbor matching
 #' @param testMethod test to be used. Currently valid options are \code{"wilcoxon"} and \code{"ttest"}
 #' @return list containing test statistics for each group and details on the foreground/background samples drawn for each group
 #' @author Fabian Mueller
 #' @export
-findGroupMarkers <- function(X, grouping, bgRatio=1.0, matchFrac=1.0, testMethod="wilcoxon"){
+#' @noRd
+findGroupMarkers <- function(X, grouping, bgRatio=1.0, matchFrac=1.0, X_knn=NULL, knn_k=100, testMethod="wilcoxon"){
 	require(FNN)
 	if (!is.factor(grouping)){
 		grouping <- factor(grouping)
@@ -484,6 +487,11 @@ findGroupMarkers <- function(X, grouping, bgRatio=1.0, matchFrac=1.0, testMethod
 	if (length(grouping) != ncol(X)){
 		logger.error("Dimensions of grouping and matrix do not match")
 	}
+	if (is.null(X_knn)) X_knn <- X
+	if (is.null(X_knn)) logger.error("Expected matrix to compute nearest neighbors")
+	if (ncol(X_knn) != ncol(X)) logger.error("Incompatible column numbers of X and X_knn")
+	X_knn <- t(X_knn)
+
 	diffFun <- NULL
 	if (testMethod=="ttest"){
 		require(matrixTests)
@@ -540,26 +548,30 @@ findGroupMarkers <- function(X, grouping, bgRatio=1.0, matchFrac=1.0, testMethod
 		bgIdxL <- lapply(1:nGrps, FUN=function(i){
 			g <- levels(grouping)[i]
 			logger.status(c("Group:", g, paste0("(", i, " of ", nGrps, ")")))
+			logger.info(c("Group size:", gIdxL[[g]]))
 			oogIdx <- (1:ncol(X))[-gIdxL[[g]]] # out-of-group indices
 			bgIdx <- c()
 			bgN <- min(length(oogIdx), ceiling(bgRatio * gN[g]))
 			# background samples from nearest neighbor matches
-			knn_k <- 0
-			if (matchFrac > 0) knn_k <- max(0, min(bgN, ceiling(matchFrac * bgRatio * gN[g])))
-			if (knn_k > 0){
-				knnRes <- FNN::get.knnx(t(X[,oogIdx]), t(X[,gIdxL[[g]]]), k=knn_k)
+			match_k <- 0
+			if (matchFrac > 0) match_k <- max(0, min(bgN, ceiling(matchFrac * bgRatio * gN[g])))
+			k <- min(knn_k, match_k)
+			if (match_k > 0){
+				knnRes <- FNN::get.knnx(X_knn[oogIdx,], X_knn[gIdxL[[g]],], k=k)
 				matchIdx <- oogIdx[unique(sort(as.vector(knnRes$nn.index)))]
-				if (length(matchIdx) > knn_k) matchIdx <- sort(sample(matchIdx,knn_k))
+				if (length(matchIdx) > match_k) matchIdx <- sort(sample(matchIdx, match_k))
 				bgIdx <- sort(union(bgIdx, matchIdx))
 			}
-			# fill remaining samples with random matches
-			rand_k <- max(0, bgN - knn_k)
+			logger.info(c("Matched samples:", length(bgIdx)))
+			# fill remaining samples with random samples
+			rand_k <- max(0, bgN - length(bgIdx))
 			if (rand_k > 0){
 				ss <- setdiff(oogIdx, bgIdx)
 				rand_k <- min(rand_k, length(ss))
 				rIdx <- sort(sample(ss, rand_k))
 				bgIdx <- sort(union(bgIdx, rIdx))
 			}
+			logger.info(c("Random samples:", rand_k))
 			return(bgIdx)
 		})
 		names(bgIdxL) <- levels(grouping)
