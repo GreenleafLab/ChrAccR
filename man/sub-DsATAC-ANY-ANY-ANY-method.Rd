@@ -12,5 +12,5 @@
 \item{i}{sample names or indices}
 }
 \description{
-NOTE: '[' operator for DsATAC does not reorder samples
+NOTE: '[' operator for DsATAC does not reorder samples or deal with index multiplicity
 }

@@ -1447,7 +1447,7 @@ setMethod("removeSamples",
 #-------------------------------------------------------------------------------
 #' Subsetting DsATAC datasets by sample
 #' 
-#' NOTE: '[' operator for DsATAC does not reorder samples
+#' NOTE: '[' operator for DsATAC does not reorder samples or deal with index multiplicity
 #'
 #' @param x DsATAC object
 #' @param i sample names or indices
@@ -1476,6 +1476,9 @@ setMethod("[", "DsATAC",
 		}
 		if (is.character(i) || is.numeric(i)){
 			logger.info("NOTE: '[' operator for DsATAC does not reorder samples")
+		}
+		if (any(duplicated(i))){
+			logger.info("NOTE: '[' operator for DsATAC does not deal with index multiplicity")
 		}
 		return(removeSamples(x, !inds2keep))
 	}
