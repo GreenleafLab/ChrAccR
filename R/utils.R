@@ -487,6 +487,10 @@ findGroupMarkers <- function(X, grouping, bgRatio=1.0, matchFrac=1.0, X_knn=NULL
 	if (length(grouping) != ncol(X)){
 		logger.error("Dimensions of grouping and matrix do not match")
 	}
+	if (!is.matrix(X)){
+		logger.warning("findGroupMarkers requires a matrix object as input. --> converting")
+		X <- as.matrix(X)
+	}
 	if (is.null(X_knn)) X_knn <- X
 	if (is.null(X_knn)) logger.error("Expected matrix to compute nearest neighbors")
 	if (ncol(X_knn) != ncol(X)) logger.error("Incompatible column numbers of X and X_knn")
@@ -548,7 +552,7 @@ findGroupMarkers <- function(X, grouping, bgRatio=1.0, matchFrac=1.0, X_knn=NULL
 		bgIdxL <- lapply(1:nGrps, FUN=function(i){
 			g <- levels(grouping)[i]
 			logger.status(c("Group:", g, paste0("(", i, " of ", nGrps, ")")))
-			logger.info(c("Group size:", gIdxL[[g]]))
+			logger.info(c("Group size:", length(gIdxL[[g]])))
 			oogIdx <- (1:ncol(X))[-gIdxL[[g]]] # out-of-group indices
 			bgIdx <- c()
 			bgN <- min(length(oogIdx), ceiling(bgRatio * gN[g]))
@@ -562,7 +566,7 @@ findGroupMarkers <- function(X, grouping, bgRatio=1.0, matchFrac=1.0, X_knn=NULL
 				if (length(matchIdx) > match_k) matchIdx <- sort(sample(matchIdx, match_k))
 				bgIdx <- sort(union(bgIdx, matchIdx))
 			}
-			logger.info(c("Matched samples:", length(bgIdx)))
+			if (length(bgIdx) > 0) logger.info(c("Matched samples:", length(bgIdx)))
 			# fill remaining samples with random samples
 			rand_k <- max(0, bgN - length(bgIdx))
 			if (rand_k > 0){
@@ -570,8 +574,8 @@ findGroupMarkers <- function(X, grouping, bgRatio=1.0, matchFrac=1.0, X_knn=NULL
 				rand_k <- min(rand_k, length(ss))
 				rIdx <- sort(sample(ss, rand_k))
 				bgIdx <- sort(union(bgIdx, rIdx))
+				logger.info(c("Random samples:", rand_k))
 			}
-			logger.info(c("Random samples:", rand_k))
 			return(bgIdx)
 		})
 		names(bgIdxL) <- levels(grouping)
