@@ -475,11 +475,12 @@ smoothMagic <- function(X=NULL, X_knn=NULL, k=15, ka=ceiling(k/4), td=3){
 #' @param X_knn   matrix to be used for finding nearest neighbors. Must have the same columns (samples) as X. If \code{NULL} (default), \code{X} will be used
 #' @param knn_k   k to be used for nearest-neighbor matching
 #' @param testMethod test to be used. Currently valid options are \code{"wilcoxon"} and \code{"ttest"}
+#' @param eps     pseudocount to add before calculating log fold-changes
 #' @return list containing test statistics for each group and details on the foreground/background samples drawn for each group
 #' @author Fabian Mueller
 #' @export
 #' @noRd
-findGroupMarkers <- function(X, grouping, bgRatio=1.0, matchFrac=1.0, X_knn=NULL, knn_k=100, testMethod="wilcoxon"){
+findGroupMarkers <- function(X, grouping, bgRatio=1.0, matchFrac=1.0, X_knn=NULL, knn_k=100, testMethod="wilcoxon", eps=1){
 	require(FNN)
 	if (!is.factor(grouping)){
 		grouping <- factor(grouping)
@@ -487,7 +488,7 @@ findGroupMarkers <- function(X, grouping, bgRatio=1.0, matchFrac=1.0, X_knn=NULL
 	if (length(grouping) != ncol(X)){
 		logger.error("Dimensions of grouping and matrix do not match")
 	}
-	if (!is.matrix(X)){
+	if (is.element(testMethod, c("ttest", "wilcoxon")) && !is.matrix(X)){
 		logger.warning("findGroupMarkers requires a matrix object as input. --> converting")
 		X <- as.matrix(X)
 	}
@@ -582,7 +583,6 @@ findGroupMarkers <- function(X, grouping, bgRatio=1.0, matchFrac=1.0, X_knn=NULL
 	logger.completed()
 
 	logger.start("Differential test")
-		eps <- 1e-6
 		testL <- lapply(1:nGrps, FUN=function(i){
 			g <- levels(grouping)[i]
 			logger.status(c("Group:", g, paste0("(", i, " of ", nGrps, ")")))
