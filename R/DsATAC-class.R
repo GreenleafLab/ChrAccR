@@ -1476,10 +1476,11 @@ setMethod("[", "DsATAC",
 		}
 		if (is.character(i) || is.numeric(i)){
 			logger.info("NOTE: '[' operator for DsATAC does not reorder samples")
+			if (any(duplicated(i))){
+				logger.info("NOTE: '[' operator for DsATAC does not deal with index multiplicity")
+			}
 		}
-		if (!is.logical(i) && any(duplicated(i))){
-			logger.info("NOTE: '[' operator for DsATAC does not deal with index multiplicity")
-		}
+		
 		return(removeSamples(x, !inds2keep))
 	}
 )
