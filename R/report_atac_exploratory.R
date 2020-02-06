@@ -553,7 +553,7 @@ setMethod("createReport_exploratory",
 				if (length(geneNames) < 1) {
 					logger.info("Picking the 10 most variable genes for gene activity reporting")
 					# pick the most variable genes
-					vv <- matrixStats::rowVars(gaM, na.rm=TRUE)
+					vv <- matrixStats::rowVars(as.matrix(gaM), na.rm=TRUE)
 					selIdx <- which(rank(-vv, na.last="keep",ties.method="min") <= 10)
 					geneNames <- geneNameUniv[selIdx]
 				}
