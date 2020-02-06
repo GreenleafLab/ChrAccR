@@ -586,13 +586,14 @@ setMethod("createReport_exploratory",
 				rr <- muReportR::addReportSection(rr, "Gene activity", txt, level=1L, collapsed=FALSE)
 
 				umapC <- dre$umapCoord[cellIds,]
+				cs <- getConfigElement("colorSchemesCont")[[".default.geneactivity"]]
 				
 				figSettings.gene <- geneNames
 				names(figSettings.gene) <- gsub("_", "", normalize.str(geneNames, return.camel=TRUE))
 
 				pL <- lapply(seq_along(geneNames), FUN=function(i){
 					gn <- colnames(gaAnnot)[i]
-					pp <- getDimRedPlot(umapC, annot=gaAnnot, colorCol=gn, shapeCol=FALSE, colScheme=c("#e0f3db", "#a8ddb5", "#4eb3d3", "#08589e"), ptSize=0.25, addLabels=FALSE, addDensity=FALSE, annot.text=NULL) + coord_fixed()
+					pp <- getDimRedPlot(umapC, annot=gaAnnot, colorCol=gn, shapeCol=FALSE, colScheme=cs, ptSize=0.25, addLabels=FALSE, addDensity=FALSE, annot.text=NULL) + coord_fixed()
 					figFn <- paste0("geneActUmap_", names(figSettings.gene)[i])
 					repPlot <- muReportR::createReportGgPlot(pp, figFn, rr, width=7, height=7, create.pdf=TRUE, high.png=0L)
 					repPlot <- muReportR::off(repPlot, handle.errors=TRUE)

@@ -9,7 +9,8 @@
 )
 .config$colorSchemesCont <- list(
 	".default" = c("#440154FF", "#472D7BFF", "#3B528BFF", "#2C728EFF", "#21908CFF", "#27AD81FF", "#5DC863FF", "#AADC32FF", "#FDE725FF"),
-	".default.div" = c("#01665E", "#35978F", "#80CDC1", "#C7EAE5", "#F5F5F5", "#F6E8C3", "#DFC27D", "#BF812D", "#8C510A")
+	".default.div" = c("#01665E", "#35978F", "#80CDC1", "#C7EAE5", "#F5F5F5", "#F6E8C3", "#DFC27D", "#BF812D", "#8C510A"),
+	".default.geneactivity" = c("#e0f3db", "#a8ddb5", "#4eb3d3", "#08589e")
 )
 .config$geneModelVersions <- c(
 	"hg38"="gencode.v27",
