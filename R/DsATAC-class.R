@@ -3555,7 +3555,7 @@ setMethod("getCiceroGeneActivities",
 		logger.completed()
 		
 		seCicero <- SummarizedExperiment::SummarizedExperiment(
-			assays = SimpleList(gA = ciceroGA),
+			assays = S4Vectors::SimpleList(gA = ciceroGA),
 			rowRanges = promoterGr[rownames(ciceroGA)],
 			colData = getSampleAnnot(.object)
 		)
@@ -3650,7 +3650,7 @@ setMethod("getRBFGeneActivities",
 			gaM <- t(t(gaM) * scaleFac) # R operates column-wise while reusing the scale factors
 			
 			se <- SummarizedExperiment::SummarizedExperiment(
-				assays = SimpleList(gA = gaM),
+				assays = S4Vectors::SimpleList(gA = gaM),
 				rowRanges = tssGr,
 				colData = getSampleAnnot(.object)
 			)
