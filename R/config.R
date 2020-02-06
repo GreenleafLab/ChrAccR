@@ -46,7 +46,7 @@
 .config$scIterativeLsiRegType <- NULL
 .config$scIterativeLsiClusterResolution <- 0.4
 .config$scIterativeLsiUmapParams <- list(distMethod="euclidean", min_dist=0.5, n_neighbors=25)
-.config$scDoGeneActivity <- FALSE
+.config$scGeneActivity <- FALSE
 .config$muPipeR_cmdr <- NULL
 
 #' setConfigElement
@@ -90,7 +90,7 @@
 #'   }
 #'   \item{\bold{\code{genesOfInterest}}}{
 #'       Names of genes of interest to be highlighted in the reports (e.g. dimension reduction) in the reports.
-#'       [currently only relevant for single-cell data and only when \code{scDoGeneActivity} is activated]
+#'       [currently only relevant for single-cell data and only when \code{scGeneActivity} is activated]
 #'   }
 #'   \item{\bold{\code{annotationColumns}}}{
 #'       Sample annotation columns to be used for reporting
@@ -162,8 +162,10 @@
 #'   \item{\bold{\code{scIterativeLsiUmapParams}}\code{ = list(distMethod="euclidean", min_dist=0.5, n_neighbors=25)}}{
 #'       For single-cell analysis only: UMAP parameters to use for iterative LSI (final embedding).
 #'   }
-#'   \item{\bold{\code{scDoGeneActivity}}\code{ = FALSE}}{
-#'       For single-cell analysis only: Compute gene activity from accessibility (using Cicero)
+#'   \item{\bold{\code{scGeneActivity}}\code{ = FALSE}}{
+#'       For single-cell analysis only: Compute gene activity from accessibility.
+#'       Possible options are \code{"RBF"} for radial-basis-function-weighted count aggregation (default when set to \code{TRUE}) or 
+#'       \code{"Cicero"} for Cicero correlation-based aggregation
 #'   }
 #' }
 #' @author Fabian Mueller

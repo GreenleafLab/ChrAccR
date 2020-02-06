@@ -3559,6 +3559,12 @@ setMethod("getCiceroGeneActivities",
 			rowRanges = promoterGr[rownames(ciceroGA)],
 			colData = getSampleAnnot(.object)
 		)
+		S4Vectors::metadata(seCicero)$method <- "cicero"
+		S4Vectors::metadata(seCicero)$params <- list(
+			maxDist = maxDist,
+			corCutOff = corCutOff,
+			knn.k = knn.k
+		)
 		return(seCicero)
 	}
 )
@@ -3653,6 +3659,13 @@ setMethod("getRBFGeneActivities",
 				assays = S4Vectors::SimpleList(gA = gaM),
 				rowRanges = tssGr,
 				colData = getSampleAnnot(.object)
+			)
+			S4Vectors::metadata(se)$method <- "RBF"
+			S4Vectors::metadata(se)$params <- list(
+				maxDist = maxDist,
+				sigma = sigma,
+				minWeight = minWeight,
+				binarize = binarize
 			)
 		logger.completed()
 		return(se)

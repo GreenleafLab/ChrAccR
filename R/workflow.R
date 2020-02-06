@@ -518,10 +518,27 @@ run_atac_sc_unsupervised <- function(dsa, anaDir){
 		logger.info("Added clustering info to DsATAC object")
 
 		# gene activity scores
-		doGeneAct <- getConfigElement("scDoGeneActivity")
+		gaMethod <- getConfigElement("scGeneActivity")
+		doGeneAct <- !is.null(gaMethod) && !is.na(gaMethod)
+		if (doGeneAct){
+			if (is.logical(gaMethod)) {
+				doGeneAct <- gaMethod
+				if (doGeneAct) gaMethod <- "RBF"
+			} else if (is.character(gaMethod)) {
+				doGeneAct <- nchar(gaMethod) > 0
+			}
+		}
 		if (doGeneAct){
 			logger.start("Computing gene activity scores")
-				geneAct <- ChrAccR::getCiceroGeneActivities(dsan, ".peaks.itlsi0", promoterGr=NULL, dimRedCoord=itLsi$pcaCoord[,itLsi$pcs])
+				if (is.element(tolower(gaMethod), c("cicero"))){
+					logger.info("Using Cicero")
+					geneAct <- ChrAccR::getCiceroGeneActivities(dsan, ".peaks.itlsi0", promoterGr=NULL, dimRedCoord=itLsi$pcaCoord[,itLsi$pcs])
+				} else if (is.element(tolower(gaMethod), c("rbf"))){
+					logger.info("Using RBF-weighted count aggregation")
+					geneAct <- ChrAccR::getRBFGeneActivities(dsan, ".peaks.itlsi0", tssGr=NULL)
+				} else {
+					logger.error(c("Unknown method for gene activity score computation:", gaMethod))
+				}
 			logger.completed()
 		}
 	} else {

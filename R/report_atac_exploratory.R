@@ -566,8 +566,21 @@ setMethod("createReport_exploratory",
 					return(x)
 				})
 
+				md <- S4Vectors::metadata(geneActSe)
+				methodTxt <- ""
+				if (tolower(md$method) == "rbf"){
+					methodTxt <- paste0(
+						" Fragment counts in peaks within ", md$params[["maxDist"]], "bp to a TSS have been summed up using RBF-based weighting",
+						"correlation cutoff: ", md$params[["corCutOff"]], ")"
+					)
+				} else if (tolower(md$method) == "cicero"){
+					methodTxt <- paste0(
+						" Peaks within ", md$params[["maxDist"]], "bp to a TSS have been associated to that TSS using Cicero's correlation-based linking (",
+						"sigma: ", md$params[["sigma"]], "; baseline weight: ", md$params[["minWeight"]], ")"
+					)
+				}
 				txt <- c(
-					"Gene activities have been computed as the aggregated accessibility at the TSS and correlated peaks using Cicero.",
+					"Gene activities have been computed as the aggregated accessibility of TSS-associated peaks.", methodTxt,
 					" The resulting scores for single-cells have been rescaled to one million counts and have been log-normalized."
 				)
 				rr <- muReportR::addReportSection(rr, "Gene activity", txt, level=1L, collapsed=FALSE)
