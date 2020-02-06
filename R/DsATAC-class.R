@@ -3639,7 +3639,7 @@ setMethod("getRBFGeneActivities",
 		logger.completed()
 
 		logger.start("Computing activity scores")
-			cm <- ChrAccR::getCounts(.object, rt, allowSparseMatrix=TRUE)
+			cm <- ChrAccR::getCounts(.object, regionType, allowSparseMatrix=TRUE)
 			if (!is(cm, 'sparseMatrix')) cm <- as(cm, "sparseMatrix")
 			if (binarize) cm@x[cm@x > 0] <- 1
 			# gaM <- weightM %*% cm
