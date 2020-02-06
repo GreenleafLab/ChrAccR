@@ -3599,7 +3599,7 @@ setMethod("getRBFGeneActivities",
 		.object,
 		regionType,
 		tssGr=NULL,
-		maxDist=250000L,
+		maxDist=100000L,
 		sigma=10000,
 		minWeight=0.25,
 		binarize=FALSE
@@ -3618,40 +3618,43 @@ setMethod("getRBFGeneActivities",
 				logger.error("tssGr must have names")
 			}
 		}
-		rGr <- getCoord(dsa, regionType) # region coords		
+		logger.start("Computing RBF weights")
+			rGr <- getCoord(dsa, regionType) # region coords		
+			tz <- -1 # true zero replacement
+			hassym <- 0
+			if (minWeight > 0) hassym <- log(1 - minWeight)
+			weightM <- lapply(1:length(tssGr), FUN=function(i){
+				# print(i)
+				rr <- GenomicRanges::distance(tssGr[i], rGr, ignore.strand=TRUE)
+				rr[rr==0] <- tz # true zero distances (regions overlapping TSS)
+				rr[is.na(rr) | abs(rr)>maxDist] <- 0
+				rr <- as(rr, "sparseMatrix")
+				idxTz <- rr@x==tz # which entries are true zeroes
+				rr@x <- exp(-rr@x^2/(2*sigma^2) + hassym) + minWeight # apply RBF weights
+				rr@x[idxTz] <- 1 # reset true zero weights
+				return(rr)
+			})
+			weightM <- t(do.call("cbind", weightM))
+			rownames(weightM) <- names(tssGr)
+		logger.completed()
 
-		tz <- -1 # true zero replacement
-		hassym <- 0
-		if (minWeight > 0) hassym <- log(1 - minWeight)
-		weightM <- lapply(1:length(tssGr), FUN=function(i){
-			# print(i)
-			rr <- GenomicRanges::distance(tssGr[i], rGr, ignore.strand=TRUE)
-			rr[rr==0] <- tz # true zero distances (regions overlapping TSS)
-			rr[is.na(rr) | abs(rr)>maxDist] <- 0
-			rr <- as(rr, "sparseMatrix")
-			idxTz <- rr@x==tz # which entries are true zeroes
-			rr@x <- exp(-rr@x^2/(2*sigma^2) + hassym) + minWeight # apply RBF weights
-			rr@x[idxTz] <- 1 # reset true zero weights
-			return(rr)
-		})
-		weightM <- t(do.call("cbind", weightM))
-		rownames(weightM) <- names(tssGr)
+		logger.start("Computing activity scores")
+			cm <- ChrAccR::getCounts(.object, rt, allowSparseMatrix=TRUE)
+			if (!is(cm, 'sparseMatrix')) cm <- as(cm, "sparseMatrix")
+			if (binarize) cm@x[cm@x > 0] <- 1
+			# gaM <- weightM %*% cm
+			gaM <- as.matrix(weightM %*% cm) # multiply as sparse matrices: much faster
 
-		cm <- ChrAccR::getCounts(dsf, rt, allowSparseMatrix=TRUE)
-		if (!is(cm, 'sparseMatrix')) cm <- as(cm, "sparseMatrix")
-		if (binarize) cm@x[cm@x > 0] <- 1
-		# gaM <- weightM %*% cm
-		gaM <- as.matrix(weightM %*% cm) # multiply as sparse matrices: much faster
-
-		# normalize by total counts
-		scaleFac <- 1/Matrix::colSums(cm, na.rm=TRUE)
-		gaM <- t(t(gaM) * scaleFac) # R operates column-wise while reusing the scale factors
-		
-		se <- SummarizedExperiment::SummarizedExperiment(
-			assays = SimpleList(gA = gaM),
-			rowRanges = tssGr,
-			colData = getSampleAnnot(.object)
-		)
+			# normalize by total counts
+			scaleFac <- 1/Matrix::colSums(cm, na.rm=TRUE)
+			gaM <- t(t(gaM) * scaleFac) # R operates column-wise while reusing the scale factors
+			
+			se <- SummarizedExperiment::SummarizedExperiment(
+				assays = SimpleList(gA = gaM),
+				rowRanges = tssGr,
+				colData = getSampleAnnot(.object)
+			)
+		logger.completed()
 		return(se)
 	}
 )
