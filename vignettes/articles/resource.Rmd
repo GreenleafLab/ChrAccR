@@ -27,9 +27,7 @@ Analysis of sorted immune cells from the B and T cell lineages. The dataset incl
 ![](images/atac_ia_tb_pca.png){width=400px}
 
 ### Analysis reports
-* [Dataset summary](https://muellerf.s3.amazonaws.com/data/ChrAccR/resource/reports/atac_ia_tb/summary.html)
-* [Exploratory analysis](https://muellerf.s3.amazonaws.com/data/ChrAccR/resource/reports/atac_ia_tb/exploratory.html)
-* [Differential analysis](https://muellerf.s3.amazonaws.com/data/ChrAccR/resource/reports/atac_ia_tb/differential.html)
+* [Index](https://muellerf.s3.amazonaws.com/data/ChrAccR/resource/reports/atac_ia_tb/index.html)
 
 ## Human hematopoiesis at single-cell resolution
 Analysis of normal human hematopoiesis at single-cell resolution. The dataset comprises 31,894 cells derived from bone marrow and PBMC samples. A study providing the dataset and an in-depth analysis in the context of childhood leukemia has been previously published in Nature Biotechnology [@Granja:nbt:2019].

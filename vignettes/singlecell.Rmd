@@ -164,6 +164,32 @@ gene_act <- getCiceroGeneActivities(
 )
 ```
 
+<!-- ```{r, message = FALSE, warning = FALSE}
+promoter_gr <- getCoord(dsa, "promoter")
+names(promoter_gr) <- GenomicRanges::elementMetadata(promoter_gr)[,"gene_name"]
+gene_act <- getRBFGeneActivities(
+  dsa,
+  ".peaks.itlsi",
+  tssGr=promoter_gr,
+)
+
+geneNames <- c("CD34", "CD48")
+gaM <- SummarizedExperiment::assay(gene_act)[geneNames,]
+gaM <- log2(gaM*1e4+1) # scale
+gaM <- t(gaM)
+gaM <- apply(gaM, 2, FUN=function(x){
+  qq <- quantile(x, probs=0.99)
+  x[x>qq] <- qq
+  return(x)
+})
+df_with_ga <- data.frame(df, gaM)
+
+plotL <- lapply(geneNames, FUN=function(gn){
+  ggplot(df_with_ga, aes_string(x="UMAP1", y="UMAP2", color=gn)) + geom_point(size=0.25) + scale_color_gradientn(colors=c("#e0f3db", "#a8ddb5", "#4eb3d3", "#08589e"))
+})
+do.call(cowplot::plot_grid, plotL)
+``` -->
+
 # Analyzing the full dataset
 
 The full dataset of the single-cell human hematopoiesis study [@Granja:nbt:2019] is publicly available. Here, we show how `ChrAccR` can be applied to create a dataset from scratch using the aligned fragment files as input. Downstream steps can be run as shown above for the example subset of the data.
