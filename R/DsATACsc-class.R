@@ -610,7 +610,7 @@ setMethod("iterativeLSI",
 					it0fragCountCor <- apply(pcs, 2, FUN=function(x){
 						cor(x, depthV, method="spearman")
 					})
-					idx <- which(it0fragCountCor > rmDepthCor)
+					idx <- which(abs(it0fragCountCor) > rmDepthCor)
 					if (length(idx) > 0){
 						rmStr <- paste(paste0("PC", idx, " (r=", round(it0fragCountCor[idx], 4), ")"), collapse=", ")
 						logger.info(c("The following PCs are correlated (Spearman) with cell fragment counts and will be removed:", rmStr))

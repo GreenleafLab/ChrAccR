@@ -184,7 +184,6 @@ getGroupsFromTable <- function(tt, cols=NULL, minGrpSize=2, maxGrpCount=nrow(tt)
 #' @return result of the corresponding matrix statistic
 #' @author Fabian Mueller
 #' @export
-#}
 safeMatrixStats <- function(X, statFun="rowSums", ...){
   cl <- class(X)
   pkg <- attr(cl, "package")
@@ -198,6 +197,25 @@ safeMatrixStats <- function(X, statFun="rowSums", ...){
   # print(statFun)
   statFun <- eval(parse(text=statFun))
   return(statFun(X, ...))
+}
+
+#' getRBF
+#' 
+#' retrieve a gaussian radial basis function for weighting
+#'
+#' @param sigma   decay parameter (shape parameter (epsilon) of a gaussian RBF= 1/(sqrt(2)*sigma))
+#' @param cutoff  distance cutoff. Everything beyond will be 0
+#' @param ymin    y assymptote, i.e. the assymptotic minimum of the function
+#' @return parametrized function
+#' @author Fabian Mueller
+#' @noRd
+getRBF <- function(sigma=10000, cutoff=Inf, ymin=0){
+	hassym <- 0
+	if (ymin > 0) hassym <- log(1 - ymin)
+	rbf <- function(x){
+		ifelse(is.na(x) | abs(x)>cutoff, 0, exp(-x^2/(2*sigma^2) + hassym) + ymin)
+	}
+	return(rbf)
 }
 
 #' custom_cicero_cds

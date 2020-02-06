@@ -1521,7 +1521,7 @@ setMethod("transformCounts",
 		if (!all(regionTypes %in% getRegionTypes(.object))){
 			logger.error(c("Unsupported region type:", paste(setdiff(regionTypes, getRegionTypes(.object)), collapse=", ")))
 		}
-		if (!is.element(method, c("quantile", "percentile", "rankPerc", "log2", "log10", "RPKM", "CPM", "vst", "batchCorrect", "tf-idf"))) logger.error(c("Unsupported normalization method type:", method))
+		if (!is.element(method, c("quantile", "percentile", "rankPerc", "log2", "log10", "RPKM", "CPM", "RPKMtss", "CPMtss", "vst", "batchCorrect", "tf-idf"))) logger.error(c("Unsupported normalization method type:", method))
 
 		# choose appropriate functions for row and column functions
 		# depending on the matrix type
@@ -1587,8 +1587,15 @@ setMethod("transformCounts",
 					.object@countTransform[[rt]] <- c("percentile", .object@countTransform[[rt]])
 				}
 			logger.completed()
-		} else if (is.element(method, c("RPKM", "CPM"))){
-			doRpkm <- method=="RPKM"
+		} else if (is.element(method, c("RPKM", "CPM", "RPKMtss", "CPMtss"))){
+			doRpkm <- grepl("^RPKM", method)
+			doTssBg <- grepl("tss$", method)
+			if (doTssBg){
+				annoPkg <- getChrAccRAnnotationPackage(.object@genome)
+				if (is.null(annoPkg)) logger.error("Annotation package needed")
+				tssGr <- get("getGeneAnnotation", asNamespace(annoPkg))(anno="gencode_coding", type="tssGr")
+				tssGr <- suppressWarnings(trim(resize(tssGr, width=101L, fix="center", ignore.strand=TRUE)))
+			}
 			logger.start(c("Performing", method, "normalization"))
 				for (rt in regionTypes){
 					logger.status(c("Region type:", rt))
@@ -1596,8 +1603,16 @@ setMethod("transformCounts",
 					cm <- as.matrix(.object@counts[[rt]])
 					# cm <- .object@counts[[rt]]
 					regLen <- rep(1000L, getNRegions(.object, rt)) # for CPM, treat all regions as length 1000
-					if (doRpkm) regLen <- width(getCoord(.object, rt))
-					sizeFac <- matrix(csFun(cm, na.rm=TRUE), ncol=ncol(cm), nrow=nrow(cm), byrow=TRUE)
+					rGr <- NULL
+					if (doRpkm || doTssBg) rGr <- getCoord(.object, rt)
+					if (doRpkm) regLen <- width(rGr)
+					sizeFac <- NULL
+					if (doTssBg){
+						ovTss <- overlapsAny(rGr, tssGr, ignore.strand=TRUE)
+						sizeFac <- matrix(csFun(cm[ovTss,,drop=FALSE], na.rm=TRUE), ncol=ncol(cm), nrow=sum(ovTss), byrow=TRUE)
+					} else {
+						sizeFac <- matrix(csFun(cm, na.rm=TRUE), ncol=ncol(cm), nrow=nrow(cm), byrow=TRUE)
+					}
 					# .object@counts[[rt]] <- data.table(cm/(regLen * sizeFac) * 1e3 * 1e6)
 					.object@counts[[rt]] <- cm/(regLen * sizeFac) * 1e3 * 1e6
 					if (.object@diskDump) .object@counts[[rt]] <- as(.object@counts[[rt]], "HDF5Array")
@@ -3545,5 +3560,98 @@ setMethod("getCiceroGeneActivities",
 			colData = getSampleAnnot(.object)
 		)
 		return(seCicero)
+	}
+)
+
+
+if (!isGeneric("getRBFGeneActivities")) {
+	setGeneric(
+		"getRBFGeneActivities",
+		function(.object, ...) standardGeneric("getRBFGeneActivities"),
+		signature=c(".object")
+	)
+}
+#' getRBFGeneActivities-methods
+#'
+#' [EXPERIMENTAL] Obtain gene activities by weighting counts using a Gaussian radial basis function (RBF)
+#'
+#' @param .object    \code{\linkS4class{DsATAC}} object
+#' @param regionType region type of regions that will be linked to the promoter (typical some sort of peak annotation)
+#' @param tssGr      \code{GRanges} object of TSS coordinates
+#' @param maxDist    maximum distance to consider for associating a region to a TSS
+#' @param sigma      decay parameter of the radial basis function (shape parameter (epsilon) of a gaussian RBF= 1/(sqrt(2)*sigma))
+#' @param minWeight  weight assymptote, i.e. the assymptotic minimum of the RBF
+#' @param binarize   binarize counts before weighting
+#' @return an \code{SummarizedExperiment} object containing gene activities for all cells/samples in the dataset
+#' 
+#' @rdname getRBFGeneActivities-DsATAC-method
+#' @docType methods
+#' @aliases getRBFGeneActivities
+#' @aliases getRBFGeneActivities,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+#' @noRd
+setMethod("getRBFGeneActivities",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		regionType,
+		tssGr=NULL,
+		maxDist=250000L,
+		sigma=10000,
+		minWeight=0.25,
+		binarize=FALSE
+	) {
+		if (!is.element(regionType, getRegionTypes(.object))) logger.error(c("Unsupported region type:", regionType))
+		if (is.null(tssGr)){
+			annoPkg <- getChrAccRAnnotationPackage(.object@genome)
+			if (is.null(annoPkg)) logger.error("Annotation package needed")
+			tssGr <- get("getGeneAnnotation", asNamespace(annoPkg))(anno="gencode_coding", type="tssGr")
+		}
+		if (is.null(names(tssGr))){
+			emd <- elementMetadata(tssGr)
+			if (is.element("gene_name", colnames(emd))){
+				names(tssGr) <- emd[,"gene_name"]
+			} else {
+				logger.error("tssGr must have names")
+			}
+		}
+		rGr <- getCoord(dsa, regionType) # region coords		
+
+		tz <- -1 # true zero replacement
+		hassym <- 0
+		if (minWeight > 0) hassym <- log(1 - minWeight)
+		weightM <- lapply(1:length(tssGr), FUN=function(i){
+			# print(i)
+			rr <- GenomicRanges::distance(tssGr[i], rGr, ignore.strand=TRUE)
+			rr[rr==0] <- tz # true zero distances (regions overlapping TSS)
+			rr[is.na(rr) | abs(rr)>maxDist] <- 0
+			rr <- as(rr, "sparseMatrix")
+			idxTz <- rr@x==tz # which entries are true zeroes
+			rr@x <- exp(-rr@x^2/(2*sigma^2) + hassym) + minWeight # apply RBF weights
+			rr@x[idxTz] <- 1 # reset true zero weights
+			return(rr)
+		})
+		weightM <- t(do.call("cbind", weightM))
+		rownames(weightM) <- names(tssGr)
+
+		cm <- ChrAccR::getCounts(dsf, rt, allowSparseMatrix=TRUE)
+		if (!is(cm, 'sparseMatrix')) cm <- as(cm, "sparseMatrix")
+		if (binarize) cm@x[cm@x > 0] <- 1
+		# gaM <- weightM %*% cm
+		gaM <- as.matrix(weightM %*% cm) # multiply as sparse matrices: much faster
+
+		# normalize by total counts
+		scaleFac <- 1/Matrix::colSums(cm, na.rm=TRUE)
+		gaM <- t(t(gaM) * scaleFac) # R operates column-wise while reusing the scale factors
+		
+		se <- SummarizedExperiment::SummarizedExperiment(
+			assays = SimpleList(gA = gaM),
+			rowRanges = tssGr,
+			colData = getSampleAnnot(.object)
+		)
+		return(se)
 	}
 )
