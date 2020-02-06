@@ -570,13 +570,14 @@ setMethod("createReport_exploratory",
 				methodTxt <- ""
 				if (tolower(md$method) == "rbf"){
 					methodTxt <- paste0(
-						" Fragment counts in peaks within ", md$params[["maxDist"]], "bp to a TSS have been summed up using RBF-based weighting",
-						"correlation cutoff: ", md$params[["corCutOff"]], ")"
+						" Peaks within ", md$params[["maxDist"]], "bp to a TSS have been summed up using RBF-based weighting (",
+						"sigma: ", md$params[["sigma"]], "; baseline weight: ", md$params[["minWeight"]], ")."
 					)
 				} else if (tolower(md$method) == "cicero"){
 					methodTxt <- paste0(
-						" Peaks within ", md$params[["maxDist"]], "bp to a TSS have been associated to that TSS using Cicero's correlation-based linking (",
-						"sigma: ", md$params[["sigma"]], "; baseline weight: ", md$params[["minWeight"]], ")"
+						" Fragment counts in peaks within ", md$params[["maxDist"]],
+						"bp to a TSS have been associated to that TSS using Cicero's correlation-based linking (",
+						"correlation cutoff: ", md$params[["corCutOff"]], ")."
 					)
 				}
 				txt <- c(
