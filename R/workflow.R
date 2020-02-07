@@ -505,7 +505,7 @@ run_atac_sc_unsupervised <- function(dsa, anaDir){
 				it1clusterResolution=clustRes,
 				it2clusterResolution=clustRes,
 				rmDepthCor=0.5,
-				normPcs=TRUE,
+				normPcs=FALSE,
 				umapParams=umapParams
 			)
 		logger.completed()
