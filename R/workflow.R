@@ -2,10 +2,11 @@
 #' 
 #' Prepare analysis directory for ChrAccR workflow
 #' @param anaDir	analysis directory
+#' @param initConfig save config JSON to config directory
 #' @return nothing of particular interest
 #' @author Fabian Mueller
 #' @noRd
-prepAnaDir <- function(anaDir){
+prepAnaDir <- function(anaDir, initConfig=TRUE){
 	res <- dir.exists(anaDir)
 	if (res){
 		logger.info(c("Analysis directory already exists"))
@@ -16,7 +17,7 @@ prepAnaDir <- function(anaDir){
 	for (dd in dds){
 		if (!dir.exists(file.path(anaDir, dd))) dir.create(file.path(anaDir, dd))
 	}
-	saveConfig(file.path(anaDir, "config", "config.json"))
+	if (initConfig) saveConfig(file.path(anaDir, "config", "config.json"))
 	invisible(res)
 }
 
@@ -630,7 +631,7 @@ run_atac_differential <- function(dsa, anaDir){
 #' @author Fabian Mueller
 #' @export
 run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleIdCol=NULL, regionSets=NULL, startStage="raw", resetStage=NULL){
-	doContinue <- prepAnaDir(anaDir)
+	doContinue <- prepAnaDir(anaDir, initConfig=TRUE)
 	wfState <- getWfState(anaDir)
 	
 	loadConfig(file.path(wfState$anaDir, wfState$configPath))
@@ -680,7 +681,7 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 		}
 	} else {
 		if (doContinue) {
-			logger.error("Starting new analysis although the analysis directory already exists. Did you mean to continue your analysis?")
+			logger.error("Starting new analysis although the analysis directory already exists. For continuing an existing analysis 'input' argument has to be NULL")
 		}
 		if (is.element(class(input), c("DsATAC", "DsATACsc"))){
 			sampleAnnot <- getSampleAnnot(input)

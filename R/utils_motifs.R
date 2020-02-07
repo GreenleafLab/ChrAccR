@@ -338,8 +338,7 @@ getMotifDistMat <- function(assembly="hg38", mmObj=NULL, method="jaspar"){
 #' @param distM        distance matrix (\code{dist} object) containing motif dissimilarities/distances. Only required if \code{k>0}.
 #' @param assembly     genome assembly for which the motifs dissimilarity should be retrieved. Only the species information
 #'                     of the assembly is really relevant. Can be \code{"vert"} for all vertebrate motifs. Only required if for automatic mode (i.e. \code{k<1}).
-#' @param motifs either a character string (currently only "jaspar" is supported) or an object containing PWMs
-#'               that can be used by \code{motifmatchr::matchMotifs} (\code{PWMatrixList} object)
+#' @param motifs       a character string specifying the motif set (currently only "jaspar" is supported)
 #' @param clusterMethod  method to be used for motif clustering (currently only \code{'pam'} (PAM - partitioning around medoids) is supported)
 
 #' @return a list structure containing the clustering result
@@ -374,6 +373,48 @@ getMotifClustering <- function(k=0, distM=NULL, assembly="hg38", motifs="jaspar"
 		}
 	}
 	return(cr)
+}
+
+#' collapseMotifMatrix
+#'
+#' Retrieve motif clustering of TF motifs
+#'
+#' @param X            matrix to be collapsed. E.g. matrix obtained by \code{chromVAR::deviationScores}
+#' @param motifClust   optional: motif clustering computed by \code{\link{getMotifClustering}}. If \code{NULL} (default) the default clustering will be retrieved
+#' @param assembly     genome assembly for which the motif clustering should be retrieved. Only required if for automatic mode (i.e. \code{motifClust=NULL}).
+#' @param motifs       a character string specifying the motif set (currently only "jaspar" is supported)
+#' @param aggrFun      function to use to aggregate values
+#' @return list containing two elements: \code{X}: Collapsed matrix containing motif cluster aggregated values;
+#'         \code{clustering}: clustering result used for aggregation (see\code{\link{getMotifClustering}} for details)
+#' @author Fabian Mueller
+#' @export
+collapseMotifMatrix <- function(X, motifClust=NULL, assembly="hg38", motifs="jaspar", aggrFun=mean){
+	if (motifs != "jaspar") logger.error(c("Currently motif clustering is only supported for JASPAR motifs"))
+
+	if (is.null(motifClust)){
+		motifClust <- getMotifClustering(k=0, distM=NULL, assembly=assembly, motifs=motifs, clusterMethod="pam")
+	}
+
+	if (is.null(rownames(X)) || !all(rownames(X) %in% names(motifClust$clustAssign))){
+		logger.error("X must have valid rownames that are all contained in the clustering")
+	}
+
+	df <- reshape2::melt(X)
+	colnames(df)[1:2] <- c("motif", "sample")
+	df[,"cluster"] <- motifClust$clustAssign[as.character(df[,"motif"])]
+
+	Xc <- reshape2::acast(df, formula=cluster~sample, fun.aggregate=aggrFun, value.var="value")
+
+	if (!is.null(motifClust$clustNames)){
+		rownames(Xc) <- motifClust$clustNames[rownames(Xc)]
+	}
+
+	res <- list(
+		X = Xc,
+		clustering = motifClust
+	)
+	class(res) <- "CollapsedMotifMatrix"
+	return(res)
 }
 
 ################################################################################
