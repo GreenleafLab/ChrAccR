@@ -377,7 +377,7 @@ getMotifClustering <- function(k=0, distM=NULL, assembly="hg38", motifs="jaspar"
 
 #' collapseMotifMatrix
 #'
-#' Retrieve motif clustering of TF motifs
+#' Collapse TF motif matrix of arbitrary values by aggregating values over motif cluster assignment
 #'
 #' @param X            matrix to be collapsed. Must have the motif names as rownames. E.g. matrix obtained by \code{chromVAR::deviationScores}
 #' @param motifClust   optional: motif clustering computed by \code{\link{getMotifClustering}}. If \code{NULL} (default) the default clustering will be retrieved

@@ -28,7 +28,7 @@ list containing two elements: \code{X}: Collapsed matrix containing motif cluste
         \code{clustering}: clustering result used for aggregation (see\code{\link{getMotifClustering}} for details)
 }
 \description{
-Retrieve motif clustering of TF motifs
+Collapse TF motif matrix of arbitrary values by aggregating values over motif cluster assignment
 }
 \author{
 Fabian Mueller
