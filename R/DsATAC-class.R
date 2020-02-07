@@ -3625,7 +3625,7 @@ setMethod("getRBFGeneActivities",
 			}
 		}
 		logger.start("Computing RBF weights")
-			rGr <- getCoord(dsa, regionType) # region coords		
+			rGr <- getCoord(.object, regionType) # region coords		
 			tz <- -1 # true zero replacement
 			hassym <- 0
 			if (minWeight > 0) hassym <- log(1 - minWeight)
