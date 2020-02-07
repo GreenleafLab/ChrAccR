@@ -13,7 +13,7 @@ collapseMotifMatrix(
 )
 }
 \arguments{
-\item{X}{matrix to be collapsed. E.g. matrix obtained by \code{chromVAR::deviationScores}}
+\item{X}{matrix to be collapsed. Must have the motif names as rownames. E.g. matrix obtained by \code{chromVAR::deviationScores}}
 
 \item{motifClust}{optional: motif clustering computed by \code{\link{getMotifClustering}}. If \code{NULL} (default) the default clustering will be retrieved}
 

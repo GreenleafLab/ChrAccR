@@ -379,7 +379,7 @@ getMotifClustering <- function(k=0, distM=NULL, assembly="hg38", motifs="jaspar"
 #'
 #' Retrieve motif clustering of TF motifs
 #'
-#' @param X            matrix to be collapsed. E.g. matrix obtained by \code{chromVAR::deviationScores}
+#' @param X            matrix to be collapsed. Must have the motif names as rownames. E.g. matrix obtained by \code{chromVAR::deviationScores}
 #' @param motifClust   optional: motif clustering computed by \code{\link{getMotifClustering}}. If \code{NULL} (default) the default clustering will be retrieved
 #' @param assembly     genome assembly for which the motif clustering should be retrieved. Only required if for automatic mode (i.e. \code{motifClust=NULL}).
 #' @param motifs       a character string specifying the motif set (currently only "jaspar" is supported)
