@@ -542,7 +542,7 @@ setMethod("createReport_exploratory",
 
 				geneNames <- getConfigElement("genesOfInterest")
 				if (length(geneNames) > 0){
-					midx <- match(towlower(geneNames), tolower(geneNameUniv))
+					midx <- match(tolower(geneNames), tolower(geneNameUniv))
 					if (any(is.na(midx))){
 						logger.warning(c("The following gene names could not be found and will be omitted:", paste(geneNames[is.na(midx)], collapse=",")))
 						midx <- na.omit(midx)
