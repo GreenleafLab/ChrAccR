@@ -586,7 +586,7 @@ setMethod("createReport_exploratory",
 				)
 				rr <- muReportR::addReportSection(rr, "Gene activity", txt, level=1L, collapsed=FALSE)
 
-				umapC <- dre$umapCoord[cellIds,]
+				umapC <- dre$umapCoord[idx,]
 				cs <- getConfigElement("colorSchemesCont")[[".default.geneactivity"]]
 				
 				figSettings.gene <- geneNames
