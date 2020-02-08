@@ -536,7 +536,11 @@ setMethod("createReport_exploratory",
 						geneNameUniv <- geneAnnot[,cn]
 					}
 				}
-				# gaM <- t(smoothMagic(t(SummarizedExperiment::assay(geneAct)[,cellIds]), X_knn=dro$pcaCoord[cellIds,dro$pcs], k=15, ka=4, td=3)$Xs)
+				doSmooth <- FALSE
+				if (doSmooth){
+					logger.info("Smooting gene activity scores for plotting using MAGIC")
+					gaM <- t(smoothMagic(t(gaM[,cellIds]), X_knn=dre$pcaCoord[cellIds,dre$pcs], k=15, ka=4, td=3)$Xs)
+				}
 				gaM <- log2(gaM*1e6+1) # normalize to better dynamic range
 				idx <- sample(cellIds) # random cell order for plotting
 
@@ -574,16 +578,25 @@ setMethod("createReport_exploratory",
 						"sigma: ", md$params[["sigma"]], "; baseline weight: ", md$params[["minWeight"]], ")."
 					)
 				} else if (tolower(md$method) == "cicero"){
+					ciceroRefTxt <- 'Pliner, et al. (2018). Cicero Predicts cis-Regulatory DNA Interactions from Single-Cell Chromatin Accessibility Data. Molecular Cell  71(5), 858 - 871.e8. <a href="https://dx.doi.org/10.1016/j.molcel.2018.06.044">doi:10.1016/j.molcel.2018.06.044</a>'
+					rr <- muReportR::addReportReference(rr, ciceroRefTxt)
 					methodTxt <- paste0(
 						" Fragment counts in peaks within ", md$params[["maxDist"]],
 						"bp to a TSS have been associated to that TSS using Cicero's correlation-based linking (",
-						"correlation cutoff: ", md$params[["corCutOff"]], ")."
+						"correlation cutoff: ", md$params[["corCutOff"]], ") ", muReportR::getReportReference(rr, ciceroRefTxt), "."
 					)
 				}
+				smoothingTxt <- ""
+				if (doSmooth){
+					magicRefTxt <- 'Dijk, et al. (2018). Recovering Gene Interactions from Single-Cell Data Using Data Diffusion Cell  174(3), 716-729.e27. <a href="https://dx.doi.org/10.1016/j.cell.2018.05.061">doi:10.1016/j.cell.2018.05.061</a>'
+					rr <- muReportR::addReportReference(rr, magicRefTxt)
+					smoothingTxt <- c(" Gene activity scores have been smoothed using the MAGIC algorithm ", muReportR::getReportReference(rr, magicRefTxt), " for plotting.")
+				}
 				txt <- c(
-					"Gene activities have been computed as the aggregated accessibility of TSS-associated peaks.", methodTxt,
+					"Gene activities have been computed as the aggregated accessibility of TSS-associated peaks.", methodTxt, smoothingTxt,
 					" The resulting scores for single-cells have been rescaled to one million counts and have been log-normalized."
 				)
+
 				rr <- muReportR::addReportSection(rr, "Gene activity", txt, level=1L, collapsed=FALSE)
 
 				umapC <- dre$umapCoord[idx,]
