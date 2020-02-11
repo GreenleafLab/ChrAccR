@@ -8,6 +8,8 @@ rowZscores(X, na.rm = FALSE)
 }
 \arguments{
 \item{X}{input matrix}
+
+\item{na.rm}{should NAs be omitted?}
 }
 \value{
 z-score normalized matrix
