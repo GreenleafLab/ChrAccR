@@ -3228,7 +3228,15 @@ setMethod("getTssEnrichmentBatch",
 			res[names(posCounts)] <- posCounts
 			res
 		}))
-		if (!all(rownames(profileMat)==as.character(1:nSamples))) logger.error("could not retrieve profiles for all samples")
+		if (!all(rownames(profileMat)==as.character(1:nSamples))) {
+			logger.warning("could not retrieve profiles for all samples. NAs will be returned")
+			missingIdxc <- setdiff(as.character(1:nSamples), rownames(profileMat))
+			missM <- matrix(as.integer(NA), nrow=length(missingIdxc), ncol=ncol(profileMat))
+			rownames(missM) <- missingIdxc
+			colnames(missM) <- colnames(profileMat)
+			profileMat <- rbind(profileMat, missM)
+			profileMat <- profileMat[as.character(1:nSamples),]
+		}
 		if (ncol(profileMat)!=L) logger.error("Computing profile matrix failed: incorrect dimensions")
 		rownames(profileMat) <- sampleIds
 		colnames(profileMat) <- NULL
@@ -3249,7 +3257,9 @@ setMethod("getTssEnrichmentBatch",
 		profileMatNorm[!is.finite(profileMatNorm)] <- NA
 		profileMatSmoothed[!is.finite(profileMatSmoothed)] <- NA
 		tsse <- matrixStats::rowMaxs(profileMatNorm[,tssWidx], na.rm=TRUE)
+		tsse[!is.finite(tsse)] <- NA
 		tsse.s <- matrixStats::rowMaxs(profileMatSmoothed[,tssWidx], na.rm=TRUE)
+		tsse.s[!is.finite(tsse.s)] <- NA
 
 		res <- list(
 			profileMatNorm=t(profileMatNorm),
