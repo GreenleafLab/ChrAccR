@@ -138,7 +138,7 @@ setMethod("createReport_summary",
 				pp <- ggplot(summaryDf) + aes_string(x="sample", y=cn) +
 				      geom_violin(adjust=1, fill="#4d4f53") +
 				      geom_boxplot(aes(fill=NULL), outlier.shape=NA, width=0.2) +
-				      ylim(c(0,quantile(summaryDf[,cn], 0.98))) + coord_flip() +
+				      ylim(c(0,quantile(summaryDf[,cn], 0.98, na.rm=TRUE))) + coord_flip() +
 				      theme(axis.title.y=element_blank()) + guides(fill=FALSE) 
 				figFn <- paste0("statDistr_", cn)
 				repPlot <- muReportR::createReportGgPlot(pp, figFn, rr, width=10, height=5, create.pdf=TRUE, high.png=0L)
