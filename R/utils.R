@@ -54,6 +54,7 @@ isCanonicalChrom <- function(ss){
 #' 
 #' Performs z-score normalization on the rows of a matrix. (Basically a wrapper around \code{matrixStats})
 #' @param X input matrix
+#' @param na.rm should NAs be omitted?
 #' @return z-score normalized matrix
 #' @author Fabian Mueller
 #' @export
@@ -64,6 +65,7 @@ rowZscores <- function(X, na.rm=FALSE){
 #' 
 #' Performs z-score normalization on the columns of a matrix. (Basically a wrapper around \code{matrixStats})
 #' @param X input matrix
+#' @param na.rm should NAs be omitted?
 #' @return z-score normalized matrix
 #' @author Fabian Mueller
 #' @export
