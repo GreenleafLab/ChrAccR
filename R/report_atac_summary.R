@@ -105,6 +105,7 @@ setMethod("createReport_summary",
 				stringsAsFactors=FALSE
 			)
 			sampleStatsTab[,"nCells"] <- table(summaryDf[,"sample"])[sampleStatsTab[,"sample"]]
+			sampleStatsTab[,"nFragments"] <- tapply(summaryDf[,"nPass"], summaryDf[,"sample"], FUN=function(x){sum(x, na.rm=TRUE)})[sampleStatsTab[,"sample"]]
 			for (cn in cns){
 				infix <- ""
 				if (!is.element(cn, c("tssEnrichment"))){
