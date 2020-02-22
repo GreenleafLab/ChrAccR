@@ -3219,6 +3219,13 @@ setMethod("getTssEnrichmentBatch",
 		dd[negIdx] <- -dd[negIdx]
 		sampleIdx <- elementMetadata(iGro)[,".sampleIdx"]
 
+		# tssCut <- floor(tssW/2)
+		# nTss <- tapply(seq_along(iGro), sampleIdx, FUN=function(idx){
+		# 	idx <- idx[abs(dd[idx]) <= tssCut]
+		# 	length(unique(queryHits(oo)[idx]))
+		# })
+		# bgCut <- flank - normTailW
+
 		logger.status("computing TSS profiles ...")
 		countV <- rep(0L, 2*flank+1)
 		names(countV) <- as.character(-flank:flank)
@@ -3240,12 +3247,13 @@ setMethod("getTssEnrichmentBatch",
 		if (ncol(profileMat)!=L) logger.error("Computing profile matrix failed: incorrect dimensions")
 		rownames(profileMat) <- sampleIds
 		colnames(profileMat) <- NULL
+		# profileMat <- profileMat + 1 # pseudo-counts on aggregate matrix
 		bgIdx <- c(1:normTailW, (L-normTailW+1):L) # indices of the regions to use as background
 		tssWidx <- (flank-floor(tssW/2)):(flank+floor(tssW/2))+1 # indices corresponding to window around TSS
 
 		logger.status("normalizing TSS profiles ...")
 		bgMeans <- rowMeans(profileMat[,bgIdx], na.rm=TRUE)
-		normFactors <- pmax(bgMeans, 0.5) # low count samples/cells
+		normFactors <- pmax(bgMeans, 0.5) # low count samples/cells (no effect if pseudocounts are added)
 
 		profileMatNorm <- profileMat/normFactors # divide rows by row normalization factor
 
