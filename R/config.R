@@ -46,8 +46,12 @@
 .config$differentialAdjColumns <- NULL
 .config$lolaDbPaths <- NULL
 .config$scIterativeLsiRegType <- NULL
-.config$scIterativeLsiClusterResolution <- 0.4
-.config$scIterativeLsiUmapParams <- list(distMethod="euclidean", min_dist=0.5, n_neighbors=25)
+.config$scIterativeLsiParams <- list(
+	it0clusterResolution = 0.4,
+	it1clusterResolution = 0.4,
+	it2clusterResolution = 0.4,
+	umapParams = list(distMethod="euclidean", min_dist=0.5, n_neighbors=25)
+)
 .config$scGeneActivity <- FALSE
 .config$muPipeR_cmdr <- NULL
 
@@ -158,11 +162,8 @@
 #'       For single-cell analysis only: region type to be used for clustering and dimension reduction using iterative LSI. By default (\code{NULL}),
 #'       ChrAccR will look for a region type named \code{"tiling"}.
 #'   }
-#'   \item{\bold{\code{scIterativeLsiClusterResolution}}\code{ = 0.4}}{
-#'       For single-cell analysis only: Cluster resolution to use for iterative LSI.
-#'   }
-#'   \item{\bold{\code{scIterativeLsiUmapParams}}\code{ = list(distMethod="euclidean", min_dist=0.5, n_neighbors=25)}}{
-#'       For single-cell analysis only: UMAP parameters to use for iterative LSI (final embedding).
+#'   \item{\bold{\code{scIterativeLsiParams}}}{
+#'       Parameters to use for iterative LSI. See \code{\link{iterativeLSI,DsATACsc-method}} for details.
 #'   }
 #'   \item{\bold{\code{scGeneActivity}}\code{ = FALSE}}{
 #'       For single-cell analysis only: Compute gene activity from accessibility.

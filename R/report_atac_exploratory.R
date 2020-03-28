@@ -99,11 +99,17 @@ setMethod("createReport_exploratory",
 				}
 				logger.start("Dimension reduction using iterative LSI")
 					logger.info(c("Using region type:", itLsiRt))
-					clustRes <- getConfigElement("scIterativeLsiClusterResolution")
-					logger.info(c("Using cluster resolution:", clustRes))
-					umapParams <- getConfigElement("scIterativeLsiUmapParams")
-					if (is.null(umapParams)) umapParams <- list(distMethod="euclidean", min_dist=0.5, n_neighbors=25)
-					dre <- iterativeLSI(.object, it0regionType=itLsiRt, it0clusterResolution=clustRes, it1clusterResolution=clustRes, it2clusterResolution=clustRes, umapParams=umapParams)
+
+					argL <- getConfigElement("scIterativeLsiParams")
+					argL[[".object"]] <- .object
+					argL[["it0regionType"]] <- itLsiRt
+					dre <- do.call(iterativeLSI, argL)
+
+					# clustRes <- getConfigElement("scIterativeLsiClusterResolution")
+					# logger.info(c("Using cluster resolution:", clustRes))
+					# umapParams <- getConfigElement("scIterativeLsiUmapParams")
+					# if (is.null(umapParams)) umapParams <- list(distMethod="euclidean", min_dist=0.5, n_neighbors=25)
+					# dre <- iterativeLSI(.object, it0regionType=itLsiRt, it0clusterResolution=clustRes, it1clusterResolution=clustRes, it2clusterResolution=clustRes, umapParams=umapParams)
 				logger.completed()
 			} else {
 				logger.info("Using pre-computed iterative LSI result")
