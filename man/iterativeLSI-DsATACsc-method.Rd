@@ -49,7 +49,7 @@
 
 \item{it2clusterResolution}{resolution paramter for Seurat's  clustering (\code{Seurat::FindClusters}) in the final iteration (2)}
 
-\item{rmDepthCor}{coreelation cutoff to be used to discard principal components associated with fragment depth (iteration 0)}
+\item{rmDepthCor}{correlation cutoff to be used to discard principal components associated with fragment depth (all iterationa)}
 
 \item{normPcs}{flag indicating whether to apply z-score normalization to PCs for each cell (all iterations)}
 

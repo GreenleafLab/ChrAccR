@@ -408,12 +408,18 @@ if (!isGeneric("dimRed_UMAP")) {
 #'
 #' Retrieve dimension reduction embedding and object using UMAP
 #'
-#' @param .object    \code{\linkS4class{DsATACsc}} object
-#' @param regions    character string specifying the region type to retrieve the UMAP coordinates from. Alternatively, a \code{GRanges} object specifying coordinates that fragment counts will be aggregated over
-#' @param tfidf      normalize the counts using TF-IDF transformation
-#' @param pcs        components to use to compute the SVD
-#' @param normPcs    flag indicating whether to apply z-score normalization to PCs for each cell
-#' @param umapParams  parameters to compute UMAP coordinates (passed on to \code{muRtools::getDimRedCoords.umap} and further to \code{uwot::umap})
+#' @param .object     \code{\linkS4class{DsATACsc}} object
+#' @param regions     character string specifying the region type to retrieve the UMAP coordinates from.
+#'                    Alternatively, a \code{GRanges} object specifying coordinates that fragment counts
+#'                    will be aggregated over
+#' @param tfidf       normalize the counts using TF-IDF transformation
+#' @param pcs         components to use to compute the SVD
+#' @param normPcs     flag indicating whether to apply z-score normalization to PCs for each cell
+#' @param umapParams  parameters to compute UMAP coordinates (passed on to
+#'                    \code{muRtools::getDimRedCoords.umap} and further to \code{uwot::umap})
+#' @param rmDepthCor  correlation cutoff to be used to discard principal components
+#'                    associated with fragment depth (all iterationa). By default (value >=1)
+#'                    no filtering will be applied.
 #' @return an \code{S3} object containing dimensionality reduction results
 #' 
 #' @details
@@ -439,7 +445,8 @@ setMethod("dimRed_UMAP",
 			distMethod="euclidean",
 			min_dist=0.5,
 			n_neighbors=25
-		)
+		),
+		rmDepthCor=1
 	) {
 		rt <- regions
 		gr <- NULL
@@ -469,6 +476,18 @@ setMethod("dimRed_UMAP",
 		gr <- getCoord(dsn, rt)
 		cm <- ChrAccR::getCounts(dsn, rt, allowSparseMatrix=TRUE)
 
+		ph <- getSampleAnnot(dsn)
+		depthCol <- colnames(ph) %in% c("numIns", ".CR.cellQC.passed_filters", ".CR.cellQC.total")
+		depthV <- NULL
+		pcCorFragmentCount <- NULL
+		doRmDepthPcs <- FALSE
+		if (any(depthCol)){
+			depthV <- ph[,colnames(ph)[depthCol][1]]
+		}
+		if (!is.null(depthV) && rmDepthCor > 0 && rmDepthCor < 1){
+			doRmDepthPcs <- TRUE
+		}
+
 		mat <- cm
 		pcaCoord <- NULL
 		if (length(pcs) > 1){
@@ -478,6 +497,11 @@ setMethod("dimRed_UMAP",
 				if (normPcs) {
 					logger.info("Scaling SVDs")
 					mat <- rowZscores(mat, na.rm=TRUE)
+				}
+				if (doRmDepthPcs){
+					rr <- rmDepthPcs(mat, depthV, cutoff=rmDepthCor, pcIdx=pcs)
+					pcs <- rr$pcIdx_filtered
+					pcCorFragmentCount <- rr$fragCountCor
 				}
 				mat <- mat[, pcs, drop=FALSE]
 			logger.completed()
@@ -493,6 +517,7 @@ setMethod("dimRed_UMAP",
 		res <- list(
 			pcaCoord=pcaCoord,
 			pcs = pcs,
+			pcCorFragmentCount = pcCorFragmentCount,
 			idfBase=idfBase,
 			umapCoord=umapCoord,
 			umapRes=umapRes,
@@ -528,7 +553,7 @@ if (!isGeneric("iterativeLSI")) {
 #' @param it1mostVarPeaks the number of the most variable peaks to consider after iteration 1
 #' @param it2pcs      the principal components to consider in the final iteration (2)
 #' @param it2clusterResolution resolution paramter for Seurat's  clustering (\code{Seurat::FindClusters}) in the final iteration (2)
-#' @param rmDepthCor  coreelation cutoff to be used to discard principal components associated with fragment depth (iteration 0)
+#' @param rmDepthCor  correlation cutoff to be used to discard principal components associated with fragment depth (all iterationa)
 #' @param normPcs     flag indicating whether to apply z-score normalization to PCs for each cell (all iterations)
 #' @param umapParams  parameters to compute UMAP coordinates (passed on to \code{muRtools::getDimRedCoords.umap} and further to \code{uwot::umap})
 #' @return an \code{S3} object containing dimensionality reduction results, peak sets and clustering
@@ -577,8 +602,12 @@ setMethod("iterativeLSI",
 		ph <- getSampleAnnot(.object)
 		depthCol <- colnames(ph) %in% c("numIns", ".CR.cellQC.passed_filters", ".CR.cellQC.total")
 		depthV <- NULL
+		doRmDepthPcs <- FALSE
 		if (any(depthCol)){
 			depthV <- ph[,colnames(ph)[depthCol][1]]
+		}
+		if (!is.null(depthV) && rmDepthCor > 0 && rmDepthCor < 1){
+			doRmDepthPcs <- TRUE
 		}
 
 		logger.start("Iteration 0")
@@ -606,16 +635,10 @@ setMethod("iterativeLSI",
 					pcs <- rowZscores(pcs, na.rm=TRUE) # z-score normalize PCs for each cell
 				}
 				it0fragCountCor <- NULL
-				if (!is.null(depthV) && rmDepthCor > 0 && rmDepthCor < 1){
-					it0fragCountCor <- apply(pcs, 2, FUN=function(x){
-						cor(x, depthV, method="spearman")
-					})
-					idx <- which(abs(it0fragCountCor) > rmDepthCor)
-					if (length(idx) > 0){
-						rmStr <- paste(paste0("PC", idx, " (r=", round(it0fragCountCor[idx], 4), ")"), collapse=", ")
-						logger.info(c("The following PCs are correlated (Spearman) with cell fragment counts and will be removed:", rmStr))
-						it0pcs <- setdiff(it0pcs, idx)
-					}
+				if (doRmDepthPcs){
+					rr <- rmDepthPcs(pcs, depthV, cutoff=rmDepthCor, pcIdx=it0pcs)
+					it0pcs <- rr$pcIdx_filtered
+					it0fragCountCor <- rr$fragCountCor
 				}
 				pcs <- pcs[, it0pcs, drop=FALSE]
 				
@@ -683,6 +706,12 @@ setMethod("iterativeLSI",
 					logger.info("Scaling SVDs")
 					pcs <- rowZscores(pcs, na.rm=TRUE)
 				}
+				it1fragCountCor <- NULL
+				if (doRmDepthPcs){
+					rr <- rmDepthPcs(pcs, depthV, cutoff=rmDepthCor, pcIdx=it1pcs)
+					it1pcs <- rr$pcIdx_filtered
+					it1fragCountCor <- rr$fragCountCor
+				}
 				pcs <- pcs[, it1pcs, drop=FALSE]
 			logger.completed()
 
@@ -741,6 +770,7 @@ setMethod("iterativeLSI",
 		res <- list(
 			pcaCoord=umapRes$pcaCoord,
 			pcs = umapRes$pcs,
+			pcCorFragmentCount=umapRes$pcCorFragmentCount,
 			idfBase=umapRes$idfBase,
 			umapCoord=umapRes$umapCoord,
 			umapRes=umapRes$umapRes,
@@ -762,6 +792,7 @@ setMethod("iterativeLSI",
 					pcaCoord=pcaCoord_it1,
 					clustAss=clustAss_it1,
 					pcs=it1pcs,
+					pcCorFragmentCount=it1fragCountCor,
 					clusterResolution=it1clusterResolution,
 					mostVarPeaks=it1mostVarPeaks
 				)

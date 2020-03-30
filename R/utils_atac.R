@@ -309,3 +309,33 @@ getConsensusPeakSet <- function(grl, mode="no_by_score", grouping=NULL, groupAgr
 	res <- sort(res)
 	return(res)
 }
+
+#-------------------------------------------------------------------------------
+#' rmDepthPcs
+#' 
+#' Removing PCs correlated with sequencing depth
+#' @param pcCoords	matrix of PC coordinates (PCs as columns)
+#' @param depthV    vecor of sequencing depth
+#' @param cutoff    correlation cutoff
+#' @param pcIdx     indices/names of PCs to use
+#' @return Data structure for internal use that contains the filtered PCs and correlation results
+#' @author Fabian Mueller
+#' @noRd
+rmDepthPcs <- function(pcCoords, depthV, cutoff=0.5, pcIdx=1:ncol(pcCoords)){
+	fragCountCor <- apply(pcCoords, 2, FUN=function(x){
+		cor(x, depthV, method="spearman")
+	})
+	idx <- which(abs(fragCountCor) > cutoff)
+	if (length(idx) > 0){
+		rmStr <- paste(paste0("PC", idx, " (r=", round(fragCountCor[idx], 4), ")"), collapse=", ")
+		logger.info(c("The following PCs are correlated (Spearman) with cell fragment counts and will be removed:", rmStr))
+		pcs_filtered <- setdiff(pcIdx, idx)
+	}
+	res <-  list(
+		pcIdx_filtered=pcs_filtered,
+		fragCountCor=fragCountCor
+	)
+	class(res) <- "PcDepthRemovalResult"
+	return(res)
+}
+

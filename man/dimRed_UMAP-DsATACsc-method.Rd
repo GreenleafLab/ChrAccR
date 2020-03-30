@@ -12,13 +12,16 @@
   tfidf = TRUE,
   pcs = 1:50,
   normPcs = FALSE,
-  umapParams = list(distMethod = "euclidean", min_dist = 0.5, n_neighbors = 25)
+  umapParams = list(distMethod = "euclidean", min_dist = 0.5, n_neighbors = 25),
+  rmDepthCor = 1
 )
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATACsc}} object}
 
-\item{regions}{character string specifying the region type to retrieve the UMAP coordinates from. Alternatively, a \code{GRanges} object specifying coordinates that fragment counts will be aggregated over}
+\item{regions}{character string specifying the region type to retrieve the UMAP coordinates from.
+Alternatively, a \code{GRanges} object specifying coordinates that fragment counts
+will be aggregated over}
 
 \item{tfidf}{normalize the counts using TF-IDF transformation}
 
@@ -26,7 +29,12 @@
 
 \item{normPcs}{flag indicating whether to apply z-score normalization to PCs for each cell}
 
-\item{umapParams}{parameters to compute UMAP coordinates (passed on to \code{muRtools::getDimRedCoords.umap} and further to \code{uwot::umap})}
+\item{umapParams}{parameters to compute UMAP coordinates (passed on to
+\code{muRtools::getDimRedCoords.umap} and further to \code{uwot::umap})}
+
+\item{rmDepthCor}{correlation cutoff to be used to discard principal components
+associated with fragment depth (all iterationa). By default (value >=1)
+no filtering will be applied.}
 }
 \value{
 an \code{S3} object containing dimensionality reduction results
