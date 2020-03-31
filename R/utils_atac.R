@@ -322,6 +322,7 @@ getConsensusPeakSet <- function(grl, mode="no_by_score", grouping=NULL, groupAgr
 #' @author Fabian Mueller
 #' @noRd
 rmDepthPcs <- function(pcCoords, depthV, cutoff=0.5, pcIdx=1:ncol(pcCoords)){
+	pcs_filtered <- pcIdx
 	fragCountCor <- apply(pcCoords, 2, FUN=function(x){
 		cor(x, depthV, method="spearman")
 	})
