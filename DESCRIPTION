@@ -24,6 +24,7 @@ Suggests:
     tools,
     grid,
     cowplot,
+    uwot,
     rtracklayer,
     DESeq2,
     limma,
