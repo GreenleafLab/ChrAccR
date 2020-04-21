@@ -1,7 +1,8 @@
 pandoc: '2.2'
-pkgdown: 1.4.1
+pkgdown: 1.5.1
 pkgdown_sha: ~
 articles:
   resource: articles/resource.html
   overview: overview.html
+last_built: 2020-04-21T02:11Z
 
