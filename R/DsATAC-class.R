@@ -1750,6 +1750,7 @@ setMethod("filterLowCovg",
 			rem <- rsFun(getCounts(.object, rt, naIsZero=TRUE, allowSparseMatrix=TRUE) >= thresh) < numAllowed
 			nRem <- sum(rem)
 			nRegs <- getNRegions(.object, rt)
+			if (nRem >= nRegs) logger.error(c("Cannot remove all regions of type:", rt))
 			if (nRem > 0){
 				.object <- removeRegions(.object, rem, rt)
 			}
