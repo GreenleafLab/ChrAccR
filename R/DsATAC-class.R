@@ -1747,7 +1747,7 @@ setMethod("filterLowCovg",
 		for (rt in regionTypes){
 			rsFun <- rowSums
 			if (.object@sparseCounts) rsFun <- Matrix::rowSums
-			rem <- rsFun(getCounts(.object, rt, naIsZero=TRUE, allowSparseMatrix=TRUE)) < numAllowed
+			rem <- rsFun(getCounts(.object, rt, naIsZero=TRUE, allowSparseMatrix=TRUE) >= thresh) < numAllowed
 			nRem <- sum(rem)
 			nRegs <- getNRegions(.object, rt)
 			if (nRem > 0){
