@@ -99,11 +99,17 @@ setMethod("createReport_exploratory",
 				}
 				logger.start("Dimension reduction using iterative LSI")
 					logger.info(c("Using region type:", itLsiRt))
-					clustRes <- getConfigElement("scIterativeLsiClusterResolution")
-					logger.info(c("Using cluster resolution:", clustRes))
-					umapParams <- getConfigElement("scIterativeLsiUmapParams")
-					if (is.null(umapParams)) umapParams <- list(distMethod="euclidean", min_dist=0.5, n_neighbors=25)
-					dre <- iterativeLSI(.object, it0regionType=itLsiRt, it0clusterResolution=clustRes, it1clusterResolution=clustRes, it2clusterResolution=clustRes, umapParams=umapParams)
+
+					argL <- getConfigElement("scIterativeLsiParams")
+					argL[[".object"]] <- .object
+					argL[["it0regionType"]] <- itLsiRt
+					dre <- do.call(iterativeLSI, argL)
+
+					# clustRes <- getConfigElement("scIterativeLsiClusterResolution")
+					# logger.info(c("Using cluster resolution:", clustRes))
+					# umapParams <- getConfigElement("scIterativeLsiUmapParams")
+					# if (is.null(umapParams)) umapParams <- list(distMethod="euclidean", min_dist=0.5, n_neighbors=25)
+					# dre <- iterativeLSI(.object, it0regionType=itLsiRt, it0clusterResolution=clustRes, it1clusterResolution=clustRes, it2clusterResolution=clustRes, umapParams=umapParams)
 				logger.completed()
 			} else {
 				logger.info("Using pre-computed iterative LSI result")
@@ -231,10 +237,23 @@ setMethod("createReport_exploratory",
 				descItLsi <- c("In order to obtain a low dimensional representation of single-cell ATAC datasets in terms of principal components and UMAP coordinates, an iterative application of the Latent Semantic Indexing approach ", muReportR::getReportReference(rr, cusRefTxt), " described in ", muReportR::getReportReference(rr, granjaRefTxt), " was used. This approach also identifies cell clusters and a peak set that represents a consensus peak set of cluster peaks in a given dataset. In brief, in an initial iteration clusters are identified based on the most accessible regions (e.g. genomic tiling regions). Here, the counts are first normalized using the term frequency - inverse document frequency (TF-IDF) transformation and singular values are computed based on these normalized counts in selected regions (i.e. the most accessible regions in the initial iteration). Clusters are identified based on the singular values using Louvain clustering (as implemented in the Seurat package). Peak calling is then performed on the aggregated insertion sites from all cells of each cluster (using MACS2) and a union/consensus set of peaks uniform-length non-overlapping peaks is selected. In a second iteration, the peak regions whose TF-IDF-normalized counts which exhibit the most variability across the initial clusters provide the basis for a refined clustering using derived singular values. In the final iteration, the most variable peaks across the refined clusters are identified as the final peak set and singular values are computed again. Based on these final singular values UMAP coordinates are computed for low-dimensional projection.")
 				rr <- muReportR::addReportSection(rr, "Dimension reduction", descItLsi, level=1L, collapsed=FALSE)
 
-				it0Info <- dre$iterationData$iteration0
-				pc1rem <- !is.element("pcs", names(it0Info)) || !is.element(1, it0Info[["pcs"]]) # the first condition is for backwards compatibility only, assuming the default parameters for iterativeLSI have been used (which exclude the first component)
-				if (pc1rem){
-					txt <- c("The first singular value has been removed in the initial iteration (due to high correlation with read depth)")
+				# check for PCs that have been removed due to high correlation with sequencing depth
+				pcRemL <- list(
+					it0 = setdiff(1:ncol(dre$iterationData$iteration0$pcaCoord),
+						          dre$iterationData$iteration0$pcs
+					),
+					it1 = setdiff(1:ncol(dre$iterationData$iteration1$pcaCoord),
+						          dre$iterationData$iteration1$pcs
+					),
+					it2 = setdiff(1:ncol(dre$pcaCoord), dre$pcs)
+				)
+				nRem <- sapply(pcRemL, length)
+				if (any(nRem > 0)){
+					txt <- c(
+						"Singular values highly correlated with read depth have been removed: ",
+						nRem[1], " components in iteration 0, ", nRem[2], " components in iteration 1, ",
+						"and ", nRem[3], " components in the final iteration."
+					)
 					rr <- muReportR::addReportParagraph(rr, txt)
 				}
 

@@ -44,6 +44,14 @@ getATACfragments <- function(ga, offsetTn=TRUE){
 		# start(res) <- rowMins(coordMat)
 		# end(res) <- rowMaxs(coordMat)
 		if (offsetTn){
+			# remove fragments with insertion size < 9 to not cause any trouble with Tn5 offset
+			remIdx <- width(res) < 9
+			nRem <- sum(remIdx)
+			if (nRem > 0){
+				logger.info(c("Removing", nRem, "fragments with insertion size < 9"))
+				res <- res[!remIdx]
+			}
+
 			# shift inserts inward due to the Tn5 dimer offset:
 			# --> +4 bp
 			# -------------------------
@@ -309,3 +317,34 @@ getConsensusPeakSet <- function(grl, mode="no_by_score", grouping=NULL, groupAgr
 	res <- sort(res)
 	return(res)
 }
+
+#-------------------------------------------------------------------------------
+#' rmDepthPcs
+#' 
+#' Removing PCs correlated with sequencing depth
+#' @param pcCoords	matrix of PC coordinates (PCs as columns)
+#' @param depthV    vecor of sequencing depth
+#' @param cutoff    correlation cutoff
+#' @param pcIdx     indices/names of PCs to use
+#' @return Data structure for internal use that contains the filtered PCs and correlation results
+#' @author Fabian Mueller
+#' @noRd
+rmDepthPcs <- function(pcCoords, depthV, cutoff=0.5, pcIdx=1:ncol(pcCoords)){
+	pcs_filtered <- pcIdx
+	fragCountCor <- apply(pcCoords, 2, FUN=function(x){
+		cor(x, depthV, method="spearman")
+	})
+	idx <- which(abs(fragCountCor) > cutoff)
+	if (length(idx) > 0){
+		rmStr <- paste(paste0("PC", idx, " (r=", round(fragCountCor[idx], 4), ")"), collapse=", ")
+		logger.info(c("The following PCs are correlated (Spearman) with cell fragment counts and will be removed:", rmStr))
+		pcs_filtered <- setdiff(pcIdx, idx)
+	}
+	res <-  list(
+		pcIdx_filtered=pcs_filtered,
+		fragCountCor=fragCountCor
+	)
+	class(res) <- "PcDepthRemovalResult"
+	return(res)
+}
+

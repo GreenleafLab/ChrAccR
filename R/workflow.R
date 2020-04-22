@@ -494,20 +494,21 @@ run_atac_sc_unsupervised <- function(dsa, anaDir){
 		}
 		logger.start("Iterative LSI")
 			logger.info(c("Using region type:", itLsiRt))
-			clustRes <- getConfigElement("scIterativeLsiClusterResolution")
-			umapParams <- getConfigElement("scIterativeLsiUmapParams")
-			if (is.null(umapParams)) umapParams <- list(distMethod="euclidean", min_dist=0.5, n_neighbors=25)
-			logger.info(c("Using cluster resolution:", clustRes))
-			itLsi <- iterativeLSI(
-				dsan,
-				it0regionType=itLsiRt,
-				it0clusterResolution=clustRes,
-				it1clusterResolution=clustRes,
-				it2clusterResolution=clustRes,
-				rmDepthCor=0.5,
-				normPcs=FALSE,
-				umapParams=umapParams
-			)
+			argL <- getConfigElement("scIterativeLsiParams")
+			argL[[".object"]] <- dsan
+			argL[["it0regionType"]] <- itLsiRt
+			# logger.info(c("Using cluster resolution:", clustRes))
+			# itLsi <- iterativeLSI(
+			# 	dsan,
+			# 	it0regionType=itLsiRt,
+			# 	it0clusterResolution=clustRes,
+			# 	it1clusterResolution=clustRes,
+			# 	it2clusterResolution=clustRes,
+			# 	rmDepthCor=0.5,
+			# 	normPcs=FALSE,
+			# 	umapParams=umapParams
+			# )
+			itLsi <- do.call(iterativeLSI, argL)
 		logger.completed()
 		logger.start("Aggregating counts across initial cluster peaks")
 			dsan <- regionAggregation(dsan, itLsi$clusterPeaks_unfiltered, ".peaks.itlsi0", signal="insertions", dropEmpty=FALSE, bySample=FALSE)
