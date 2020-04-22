@@ -85,7 +85,7 @@
 using ChrAccR</div></h1>
                         <h4 class="author">Fabian Mueller</h4>
             
-            <h4 class="date">2020-04-21</h4>
+            <h4 class="date">2020-04-22</h4>
       
       
       <div class="hidden name"><code>overview.Rmd</code></div>
@@ -212,15 +212,15 @@ using ChrAccR</div></h1>
 </ul>
 <p>For playing around with the <code>ChrAccR</code> datastructures, we use a reduced version of the <span class="citation">(Calderon et al. <a href="#ref-Calderon:2019cb">2019</a>)</span> dataset which focuses on only a subset of the human genome (approximately 1%). It is provided in the <code>ChrAccRex</code> package and can be loaded using:</p>
 <div class="sourceCode" id="cb11"><html><body><pre class="r"><span class="no">dsa</span> <span class="kw">&lt;-</span> <span class="kw pkg">ChrAccRex</span><span class="kw ns">::</span><span class="fu"><a href="https://rdrr.io/pkg/ChrAccRex/man/loadExample.html">loadExample</a></span>(<span class="st">"dsAtac_ia_example"</span>)</pre></body></html></div>
-<pre><code>&gt; 2020-04-21 02:47:34     0.9  STATUS STARTED Loading region count data from HDF5
-&gt; 2020-04-21 02:47:34     0.9  STATUS     Region type: promoters_gc_protein_coding
-&gt; 2020-04-21 02:47:34     1.0  STATUS     Region type: IA_prog_peaks
-&gt; 2020-04-21 02:47:34     1.0  STATUS     Region type: t200
-&gt; 2020-04-21 02:47:34     1.0  STATUS     Region type: t10k
-&gt; 2020-04-21 02:47:34     1.0  STATUS COMPLETED Loading region count data from HDF5
+<pre><code>&gt; 2020-04-22 18:16:28     0.9  STATUS STARTED Loading region count data from HDF5
+&gt; 2020-04-22 18:16:28     0.9  STATUS     Region type: promoters_gc_protein_coding
+&gt; 2020-04-22 18:16:28     1.0  STATUS     Region type: IA_prog_peaks
+&gt; 2020-04-22 18:16:28     1.0  STATUS     Region type: t200
+&gt; 2020-04-22 18:16:28     1.0  STATUS     Region type: t10k
+&gt; 2020-04-22 18:16:28     1.0  STATUS COMPLETED Loading region count data from HDF5
 &gt; 
-&gt; 2020-04-21 02:47:34     1.0  STATUS STARTED Updating fragment RDS file references
-&gt; 2020-04-21 02:47:34     1.0  STATUS COMPLETED Updating fragment RDS file references</code></pre>
+&gt; 2020-04-22 18:16:28     1.0  STATUS STARTED Updating fragment RDS file references
+&gt; 2020-04-22 18:16:28     1.0  STATUS COMPLETED Updating fragment RDS file references</code></pre>
 <p>To get an overview of what information is stored in the example dataset, you can just type the object name:</p>
 <div class="sourceCode" id="cb13"><html><body><pre class="r"><span class="no">dsa</span></pre></body></html></div>
 <pre><code>&gt; DsATAC chromatin accessibility dataset 
@@ -494,18 +494,18 @@ using ChrAccR</div></h1>
 <p>There are also shortcuts for filtering certain regions from the dataset, for example:</p>
 <div class="sourceCode" id="cb39"><html><body><pre class="r"><span class="co"># remove those regions that do not have at least 10 insertions in at least 75% of the samples</span>
 <span class="no">dsa_filtered</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/filterLowCovg-DsATAC-method.html">filterLowCovg</a></span>(<span class="no">dsa</span>, <span class="kw">thresh</span><span class="kw">=</span><span class="fl">10L</span>, <span class="kw">reqSamples</span><span class="kw">=</span><span class="fl">0.75</span>)</pre></body></html></div>
-<pre><code>&gt; 2020-04-21 02:47:40     1.2  STATUS Removing regions with read counts lower than 10 in more than 8 samples (24%)
-&gt; 2020-04-21 02:47:40     1.2    INFO Removed 8 regions (3.81%) of type promoters_gc_protein_coding
-&gt; 2020-04-21 02:47:40     1.2    INFO Removed 11817 regions (86.07%) of type IA_prog_peaks
-&gt; 2020-04-21 02:47:41     1.2    INFO Removed 133034 regions (98.54%) of type t200
-&gt; 2020-04-21 02:47:41     1.2    INFO Removed 21 regions (0.78%) of type t10k</code></pre>
+<pre><code>&gt; 2020-04-22 18:16:34     1.2  STATUS Removing regions with read counts lower than 10 in more than 8 samples (24%)
+&gt; 2020-04-22 18:16:34     1.2    INFO Removed 8 regions (3.81%) of type promoters_gc_protein_coding
+&gt; 2020-04-22 18:16:34     1.2    INFO Removed 11817 regions (86.07%) of type IA_prog_peaks
+&gt; 2020-04-22 18:16:35     1.2    INFO Removed 133034 regions (98.54%) of type t200
+&gt; 2020-04-22 18:16:35     1.2    INFO Removed 21 regions (0.78%) of type t10k</code></pre>
 <div class="sourceCode" id="cb41"><html><body><pre class="r"><span class="co"># remove regions on chromosome 21</span>
 <span class="no">dsa_filtered</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/filterChroms-DsATAC-method.html">filterChroms</a></span>(<span class="no">dsa</span>, <span class="kw">exclChrom</span><span class="kw">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"chr21"</span>))</pre></body></html></div>
-<pre><code>&gt; 2020-04-21 02:47:41     1.2    INFO Removed 64 regions (30.48%) of type promoters_gc_protein_coding
-&gt; 2020-04-21 02:47:41     1.2    INFO Removed 7118 regions (51.84%) of type IA_prog_peaks
-&gt; 2020-04-21 02:47:41     1.2    INFO Removed 89001 regions (65.92%) of type t200
-&gt; 2020-04-21 02:47:41     1.2    INFO Removed 1781 regions (65.87%) of type t10k
-&gt; 2020-04-21 02:47:41     1.2  STATUS Filtering fragment data</code></pre>
+<pre><code>&gt; 2020-04-22 18:16:35     1.2    INFO Removed 64 regions (30.48%) of type promoters_gc_protein_coding
+&gt; 2020-04-22 18:16:35     1.2    INFO Removed 7118 regions (51.84%) of type IA_prog_peaks
+&gt; 2020-04-22 18:16:35     1.2    INFO Removed 89001 regions (65.92%) of type t200
+&gt; 2020-04-22 18:16:35     1.2    INFO Removed 1781 regions (65.87%) of type t10k
+&gt; 2020-04-22 18:16:35     1.2  STATUS Filtering fragment data</code></pre>
 <p>To remove a region type entirely, use <code>removeRegionType</code>:</p>
 <div class="sourceCode" id="cb43"><html><body><pre class="r"><span class="no">dsa_not10k</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/removeRegionType-DsATAC-method.html">removeRegionType</a></span>(<span class="no">dsa</span>, <span class="st">"t10k"</span>)
 <span class="fu"><a href="../reference/getRegionTypes-DsAcc-method.html">getRegionTypes</a></span>(<span class="no">dsa_not10k</span>)</pre></body></html></div>
@@ -518,32 +518,32 @@ using ChrAccR</div></h1>
 <p><code>ChrAccR</code> provides several methods for normalizing and adjusting the region count data. These methods can be accessed through the <code>transformCounts</code> function:</p>
 <div class="sourceCode" id="cb45"><html><body><pre class="r"><span class="co"># quantile normalization for all region types</span>
 <span class="no">dsa_qnorm</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/transformCounts-DsATAC-method.html">transformCounts</a></span>(<span class="no">dsa</span>, <span class="kw">method</span><span class="kw">=</span><span class="st">"quantile"</span>)</pre></body></html></div>
-<pre><code>&gt; 2020-04-21 02:47:49     1.2  STATUS STARTED Performing quantile normalization
-&gt; 2020-04-21 02:47:49     1.2  STATUS     Region type: promoters_gc_protein_coding
-&gt; 2020-04-21 02:47:49     1.2  STATUS     Region type: IA_prog_peaks
-&gt; 2020-04-21 02:47:50     1.2  STATUS     Region type: t200
-&gt; 2020-04-21 02:47:53     1.3  STATUS     Region type: t10k
-&gt; 2020-04-21 02:47:53     1.3  STATUS COMPLETED Performing quantile normalization</code></pre>
+<pre><code>&gt; 2020-04-22 18:16:43     1.2  STATUS STARTED Performing quantile normalization
+&gt; 2020-04-22 18:16:43     1.2  STATUS     Region type: promoters_gc_protein_coding
+&gt; 2020-04-22 18:16:43     1.2  STATUS     Region type: IA_prog_peaks
+&gt; 2020-04-22 18:16:43     1.2  STATUS     Region type: t200
+&gt; 2020-04-22 18:16:46     1.3  STATUS     Region type: t10k
+&gt; 2020-04-22 18:16:46     1.3  STATUS COMPLETED Performing quantile normalization</code></pre>
 <div class="sourceCode" id="cb47"><html><body><pre class="r"><span class="co"># RPKM normalization of peak counts</span>
 <span class="no">dsa_rpkm</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/transformCounts-DsATAC-method.html">transformCounts</a></span>(<span class="no">dsa</span>, <span class="kw">method</span><span class="kw">=</span><span class="st">"RPKM"</span>, <span class="kw">regionTypes</span><span class="kw">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"IA_prog_peaks"</span>))</pre></body></html></div>
-<pre><code>&gt; 2020-04-21 02:47:53     1.3  STATUS STARTED Performing RPKM normalization
-&gt; 2020-04-21 02:47:53     1.3  STATUS     Region type: IA_prog_peaks
-&gt; 2020-04-21 02:47:53     1.3  STATUS COMPLETED Performing RPKM normalization</code></pre>
+<pre><code>&gt; 2020-04-22 18:16:46     1.3  STATUS STARTED Performing RPKM normalization
+&gt; 2020-04-22 18:16:46     1.3  STATUS     Region type: IA_prog_peaks
+&gt; 2020-04-22 18:16:47     1.3  STATUS COMPLETED Performing RPKM normalization</code></pre>
 <div class="sourceCode" id="cb49"><html><body><pre class="r"><span class="co"># log2(RPKM)</span>
 <span class="no">dsa_l2rpkm</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/transformCounts-DsATAC-method.html">transformCounts</a></span>(<span class="no">dsa_rpkm</span>, <span class="kw">method</span><span class="kw">=</span><span class="st">"log2"</span>, <span class="kw">regionTypes</span><span class="kw">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"IA_prog_peaks"</span>))</pre></body></html></div>
-<pre><code>&gt; 2020-04-21 02:47:53     1.3  STATUS STARTED log2 transforming counts
-&gt; 2020-04-21 02:47:53     1.3  STATUS     Region type: IA_prog_peaks
-&gt; 2020-04-21 02:47:53     1.3  STATUS COMPLETED log2 transforming counts</code></pre>
+<pre><code>&gt; 2020-04-22 18:16:47     1.3  STATUS STARTED log2 transforming counts
+&gt; 2020-04-22 18:16:47     1.3  STATUS     Region type: IA_prog_peaks
+&gt; 2020-04-22 18:16:47     1.3  STATUS COMPLETED log2 transforming counts</code></pre>
 <div class="sourceCode" id="cb51"><html><body><pre class="r"><span class="co"># DESeq2 variance stabilizing transformation (vst)</span>
 <span class="no">dsa_vst</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/transformCounts-DsATAC-method.html">transformCounts</a></span>(<span class="no">dsa</span>, <span class="kw">method</span><span class="kw">=</span><span class="st">"vst"</span>, <span class="kw">regionTypes</span><span class="kw">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"IA_prog_peaks"</span>))</pre></body></html></div>
-<pre><code>&gt; 2020-04-21 02:47:53     1.3  STATUS STARTED Applying DESeq2 VST
-&gt; 2020-04-21 02:47:53     1.3  STATUS     Region type: IA_prog_peaks
-&gt; 2020-04-21 02:47:55     1.4  STATUS COMPLETED Applying DESeq2 VST</code></pre>
+<pre><code>&gt; 2020-04-22 18:16:47     1.3  STATUS STARTED Applying DESeq2 VST
+&gt; 2020-04-22 18:16:47     1.3  STATUS     Region type: IA_prog_peaks
+&gt; 2020-04-22 18:16:49     1.4  STATUS COMPLETED Applying DESeq2 VST</code></pre>
 <div class="sourceCode" id="cb53"><html><body><pre class="r"><span class="co"># correct for potential batch effects based on the annotated donor</span>
 <span class="no">dsa_vst</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/transformCounts-DsATAC-method.html">transformCounts</a></span>(<span class="no">dsa_vst</span>, <span class="kw">method</span><span class="kw">=</span><span class="st">"batchCorrect"</span>, <span class="kw">batch</span><span class="kw">=</span><span class="fu"><a href="../reference/getSampleAnnot-DsAcc-method.html">getSampleAnnot</a></span>(<span class="no">dsa_qnorm</span>)[,<span class="st">"donor"</span>], <span class="kw">regionTypes</span><span class="kw">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"IA_prog_peaks"</span>))</pre></body></html></div>
-<pre><code>&gt; 2020-04-21 02:47:55     1.4  STATUS STARTED Applying batch effect correction
-&gt; 2020-04-21 02:47:55     1.4  STATUS     Region type: IA_prog_peaks
-&gt; 2020-04-21 02:47:56     1.4  STATUS COMPLETED Applying batch effect correction</code></pre>
+<pre><code>&gt; 2020-04-22 18:16:49     1.4  STATUS STARTED Applying batch effect correction
+&gt; 2020-04-22 18:16:49     1.4  STATUS     Region type: IA_prog_peaks
+&gt; 2020-04-22 18:16:49     1.4  STATUS COMPLETED Applying batch effect correction</code></pre>
 </div>
 <div id="adding-a-region-type-for-count-data-aggregation" class="section level3">
 <h3 class="hasAnchor">
@@ -566,20 +566,20 @@ using ChrAccR</div></h1>
 <a href="#merging-samples" class="anchor"></a>Merging samples</h3>
 <p>You can also merge samples, e.g. from different technical or biological replicates. In the following example, we merge all biological replicates (originating from different donors) for the same cell type and stimulation conditions. This grouping information is contained in the <code>sampleGroup</code> annotation column. By default, counts will be added up for each aggregated region, but you can specify other aggregation methods such as the mean or median in the <code>countAggrFun</code> argument.</p>
 <div class="sourceCode" id="cb56"><html><body><pre class="r"><span class="no">dsa_merged</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/mergeSamples-DsATAC-method.html">mergeSamples</a></span>(<span class="no">dsa</span>, <span class="st">"sampleGroup"</span>, <span class="kw">countAggrFun</span><span class="kw">=</span><span class="st">"sum"</span>)</pre></body></html></div>
-<pre><code>&gt; 2020-04-21 02:47:56     1.4  STATUS Merging samples (region set: 'promoters_gc_protein_coding')...
-&gt; 2020-04-21 02:47:56     1.4  STATUS Merging samples (region set: 'IA_prog_peaks')...
-&gt; 2020-04-21 02:47:56     1.4  STATUS Merging samples (region set: 't200')...
-&gt; 2020-04-21 02:47:58     1.4  STATUS Merging samples (region set: 't10k')...
-&gt; 2020-04-21 02:47:58     1.4  STATUS STARTED Merging sample fragment data
-&gt; 2020-04-21 02:47:58     1.4  STATUS     Merged sample 1 of 8
-&gt; 2020-04-21 02:48:00     1.4  STATUS     Merged sample 2 of 8
-&gt; 2020-04-21 02:48:02     1.5  STATUS     Merged sample 3 of 8
-&gt; 2020-04-21 02:48:03     1.4  STATUS     Merged sample 4 of 8
-&gt; 2020-04-21 02:48:05     1.4  STATUS     Merged sample 5 of 8
-&gt; 2020-04-21 02:48:07     1.4  STATUS     Merged sample 6 of 8
-&gt; 2020-04-21 02:48:08     1.4  STATUS     Merged sample 7 of 8
-&gt; 2020-04-21 02:48:11     1.4  STATUS     Merged sample 8 of 8
-&gt; 2020-04-21 02:48:12     1.4  STATUS COMPLETED Merging sample fragment data</code></pre>
+<pre><code>&gt; 2020-04-22 18:16:49     1.4  STATUS Merging samples (region set: 'promoters_gc_protein_coding')...
+&gt; 2020-04-22 18:16:50     1.4  STATUS Merging samples (region set: 'IA_prog_peaks')...
+&gt; 2020-04-22 18:16:50     1.4  STATUS Merging samples (region set: 't200')...
+&gt; 2020-04-22 18:16:52     1.4  STATUS Merging samples (region set: 't10k')...
+&gt; 2020-04-22 18:16:52     1.4  STATUS STARTED Merging sample fragment data
+&gt; 2020-04-22 18:16:52     1.4  STATUS     Merged sample 1 of 8
+&gt; 2020-04-22 18:16:54     1.4  STATUS     Merged sample 2 of 8
+&gt; 2020-04-22 18:16:55     1.5  STATUS     Merged sample 3 of 8
+&gt; 2020-04-22 18:16:57     1.4  STATUS     Merged sample 4 of 8
+&gt; 2020-04-22 18:16:59     1.4  STATUS     Merged sample 5 of 8
+&gt; 2020-04-22 18:17:00     1.4  STATUS     Merged sample 6 of 8
+&gt; 2020-04-22 18:17:02     1.4  STATUS     Merged sample 7 of 8
+&gt; 2020-04-22 18:17:05     1.4  STATUS     Merged sample 8 of 8
+&gt; 2020-04-22 18:17:06     1.5  STATUS COMPLETED Merging sample fragment data</code></pre>
 <div class="sourceCode" id="cb58"><html><body><pre class="r"><span class="fu"><a href="../reference/getSamples-DsAcc-method.html">getSamples</a></span>(<span class="no">dsa_merged</span>)</pre></body></html></div>
 <pre><code>&gt; [1] "TCD8EM_S"    "TCD8EM_U"    "TCD8naive_S" "TCD8naive_U" "TeffMem_S"  
 &gt; [6] "TeffMem_U"   "TeffNaive_S" "TeffNaive_U"</code></pre>
@@ -591,25 +591,25 @@ using ChrAccR</div></h1>
 <p>In many analysis workflow, you want to save an R dataset to disk in order to use it in downstream analysis using custom R scripts. Note that R’s workflow of <code>saveRDS</code> <code>readRDS</code> is generally not applicable for saving and loading <code>DsATAC</code> datasets, because <code>ChrAccR</code> optionally uses disk-backed data structures in order to be more memory efficient in the analysis. Instead, please use <code>ChrAccR</code>’s functions:</p>
 <div class="sourceCode" id="cb60"><html><body><pre class="r"><span class="no">dest</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/tempfile.html">tempdir</a></span>(), <span class="st">"myDsAtacDataset"</span>)
 <span class="fu"><a href="../reference/saveDsAcc.html">saveDsAcc</a></span>(<span class="no">dsa</span>, <span class="no">dest</span>)</pre></body></html></div>
-<pre><code>&gt; 2020-04-21 02:48:12     1.4  STATUS STARTED Saving region count data to HDF5
-&gt; 2020-04-21 02:48:12     1.4  STATUS     Region type: promoters_gc_protein_coding
-&gt; 2020-04-21 02:48:12     1.4  STATUS     Region type: IA_prog_peaks
-&gt; 2020-04-21 02:48:13     1.5  STATUS     Region type: t200
-&gt; 2020-04-21 02:48:14     1.5  STATUS     Region type: t10k
-&gt; 2020-04-21 02:48:14     1.5  STATUS COMPLETED Saving region count data to HDF5
+<pre><code>&gt; 2020-04-22 18:17:06     1.5  STATUS STARTED Saving region count data to HDF5
+&gt; 2020-04-22 18:17:06     1.5  STATUS     Region type: promoters_gc_protein_coding
+&gt; 2020-04-22 18:17:06     1.5  STATUS     Region type: IA_prog_peaks
+&gt; 2020-04-22 18:17:06     1.5  STATUS     Region type: t200
+&gt; 2020-04-22 18:17:08     1.5  STATUS     Region type: t10k
+&gt; 2020-04-22 18:17:08     1.5  STATUS COMPLETED Saving region count data to HDF5
 &gt; 
-&gt; 2020-04-21 02:48:14     1.5  STATUS STARTED Saving fragment data to RDS
-&gt; 2020-04-21 02:48:14     1.5  STATUS COMPLETED Saving fragment data to RDS</code></pre>
+&gt; 2020-04-22 18:17:08     1.5  STATUS STARTED Saving fragment data to RDS
+&gt; 2020-04-22 18:17:08     1.5  STATUS COMPLETED Saving fragment data to RDS</code></pre>
 <div class="sourceCode" id="cb62"><html><body><pre class="r"><span class="no">dsa_reloaded</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/loadDsAcc.html">loadDsAcc</a></span>(<span class="no">dest</span>)</pre></body></html></div>
-<pre><code>&gt; 2020-04-21 02:48:14     1.5  STATUS STARTED Loading region count data from HDF5
-&gt; 2020-04-21 02:48:14     1.5  STATUS     Region type: promoters_gc_protein_coding
-&gt; 2020-04-21 02:48:14     1.5  STATUS     Region type: IA_prog_peaks
-&gt; 2020-04-21 02:48:14     1.5  STATUS     Region type: t200
-&gt; 2020-04-21 02:48:15     1.5  STATUS     Region type: t10k
-&gt; 2020-04-21 02:48:15     1.5  STATUS COMPLETED Loading region count data from HDF5
+<pre><code>&gt; 2020-04-22 18:17:08     1.5  STATUS STARTED Loading region count data from HDF5
+&gt; 2020-04-22 18:17:08     1.5  STATUS     Region type: promoters_gc_protein_coding
+&gt; 2020-04-22 18:17:08     1.5  STATUS     Region type: IA_prog_peaks
+&gt; 2020-04-22 18:17:08     1.5  STATUS     Region type: t200
+&gt; 2020-04-22 18:17:08     1.5  STATUS     Region type: t10k
+&gt; 2020-04-22 18:17:08     1.5  STATUS COMPLETED Loading region count data from HDF5
 &gt; 
-&gt; 2020-04-21 02:48:15     1.5  STATUS STARTED Updating fragment RDS file references
-&gt; 2020-04-21 02:48:15     1.5  STATUS COMPLETED Updating fragment RDS file references</code></pre>
+&gt; 2020-04-22 18:17:08     1.5  STATUS STARTED Updating fragment RDS file references
+&gt; 2020-04-22 18:17:08     1.5  STATUS COMPLETED Updating fragment RDS file references</code></pre>
 <div class="sourceCode" id="cb64"><html><body><pre class="r"><span class="no">dsa_reloaded</span></pre></body></html></div>
 <pre><code>&gt; DsATAC chromatin accessibility dataset 
 &gt; [contains disk-backed data] 
@@ -735,7 +735,7 @@ using ChrAccR</div></h1>
 <h2 class="hasAnchor">
 <a href="#differential-accessibility" class="anchor"></a>Differential accessibility</h2>
 <div class="sourceCode" id="cb78"><html><body><pre class="r"><span class="no">daTab</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/getDiffAcc-DsATAC-method.html">getDiffAcc</a></span>(<span class="no">dsa</span>, <span class="st">"IA_prog_peaks"</span>, <span class="st">"stimulus"</span>, <span class="kw">grp1Name</span><span class="kw">=</span><span class="st">"S"</span>, <span class="kw">grp2Name</span><span class="kw">=</span><span class="st">"U"</span>, <span class="kw">adjustCols</span><span class="kw">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"cellType"</span>, <span class="st">"donor"</span>))</pre></body></html></div>
-<pre><code>&gt; 2020-04-21 02:48:16     1.5 WARNING The following design columns will not be considered because they do not have replicates: donor</code></pre>
+<pre><code>&gt; 2020-04-22 18:17:10     1.5 WARNING The following design columns will not be considered because they do not have replicates: donor</code></pre>
 </div>
 <div id="transcription-factor-motif-enrichment-using-chromvar" class="section level2">
 <h2 class="hasAnchor">
@@ -745,7 +745,7 @@ using ChrAccR</div></h1>
 <div class="sourceCode" id="cb80"><html><body><pre class="r"><span class="no">cvRes</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/getChromVarDev-DsATAC-method.html">getChromVarDev</a></span>(<span class="no">dsa</span>, <span class="st">"IA_prog_peaks"</span>, <span class="kw">motifs</span><span class="kw">=</span><span class="st">"jaspar"</span>)
 <span class="no">devZ</span> <span class="kw">&lt;-</span> <span class="kw pkg">chromVAR</span><span class="kw ns">::</span><span class="fu"><a href="https://rdrr.io/pkg/chromVAR/man/deviationScores.html">deviationScores</a></span>(<span class="no">cvRes</span>)
 <span class="fu"><a href="https://rdrr.io/r/utils/str.html">str</a></span>(<span class="no">devZ</span>)</pre></body></html></div>
-<pre><code>&gt;  num [1:452, 1:33] -1.106 0.123 -1.036 -0.817 -0.114 ...
+<pre><code>&gt;  num [1:452, 1:33] -1.176 0.174 -0.575 -1.074 -0.386 ...
 &gt;  - attr(*, "dimnames")=List of 2
 &gt;   ..$ : chr [1:452] "MA0025.1_NFIL3" "MA0030.1_FOXF2" "MA0031.1_FOXD1" "MA0051.1_IRF2" ...
 &gt;   ..$ : chr [1:33] "TCD8EM_S_1001" "TCD8EM_S_1002" "TCD8EM_S_1003" "TCD8EM_S_1004" ...</code></pre>
@@ -783,7 +783,7 @@ using ChrAccR</div></h1>
 &gt; colData names(8): sampleId cellType ... replicateGroup dataset</code></pre>
 <p>To export data as a <code>DESeq2</code> dataset for differential accessibility analysis:</p>
 <div class="sourceCode" id="cb86"><html><body><pre class="r"><span class="no">dds</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/getDESeq2Dataset-DsATAC-method.html">getDESeq2Dataset</a></span>(<span class="no">dsa</span>, <span class="st">"IA_prog_peaks"</span>, <span class="kw">designCols</span><span class="kw">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="st">"donor"</span>, <span class="st">"stimulus"</span>, <span class="st">"cellType"</span>))</pre></body></html></div>
-<pre><code>&gt; 2020-04-21 02:48:58     1.9 WARNING The following design columns will not be considered because they do not have replicates: donor</code></pre>
+<pre><code>&gt; 2020-04-22 18:17:52     1.9 WARNING The following design columns will not be considered because they do not have replicates: donor</code></pre>
 <div class="sourceCode" id="cb88"><html><body><pre class="r"><span class="no">dds</span></pre></body></html></div>
 <pre><code>&gt; class: DESeqDataSet 
 &gt; dim: 13730 33 
@@ -800,7 +800,7 @@ using ChrAccR</div></h1>
 <h1 class="hasAnchor">
 <a href="#session-info" class="anchor"></a>Session Info</h1>
 <div class="sourceCode" id="cb90"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html">Sys.Date</a></span>()</pre></body></html></div>
-<pre><code>&gt; [1] "2020-04-21"</code></pre>
+<pre><code>&gt; [1] "2020-04-22"</code></pre>
 <div class="sourceCode" id="cb92"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html">sessionInfo</a></span>()</pre></body></html></div>
 <pre><code>&gt; R version 3.6.2 (2017-01-27)
 &gt; Platform: x86_64-pc-linux-gnu (64-bit)
