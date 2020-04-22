@@ -44,6 +44,14 @@ getATACfragments <- function(ga, offsetTn=TRUE){
 		# start(res) <- rowMins(coordMat)
 		# end(res) <- rowMaxs(coordMat)
 		if (offsetTn){
+			# remove fragments with insertion size < 9 to not cause any trouble with Tn5 offset
+			remIdx <- width(res) < 9
+			nRem <- sum(remIdx)
+			if (nRem > 0){
+				logger.info(c("Removing", nRem, "fragments with insertion size < 9"))
+				res <- res[!remIdx]
+			}
+
 			# shift inserts inward due to the Tn5 dimer offset:
 			# --> +4 bp
 			# -------------------------
