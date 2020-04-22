@@ -3220,6 +3220,13 @@ setMethod("getTssEnrichmentBatch",
 		dd[negIdx] <- -dd[negIdx]
 		sampleIdx <- elementMetadata(iGro)[,".sampleIdx"]
 
+		# tssCut <- floor(tssW/2)
+		# nTss <- tapply(seq_along(iGro), sampleIdx, FUN=function(idx){
+		# 	idx <- idx[abs(dd[idx]) <= tssCut]
+		# 	length(unique(queryHits(oo)[idx]))
+		# })
+		# bgCut <- flank - normTailW
+
 		logger.status("computing TSS profiles ...")
 		countV <- rep(0L, 2*flank+1)
 		names(countV) <- as.character(-flank:flank)
@@ -3229,16 +3236,25 @@ setMethod("getTssEnrichmentBatch",
 			res[names(posCounts)] <- posCounts
 			res
 		}))
-		if (!all(rownames(profileMat)==as.character(1:nSamples))) logger.error("could not retrieve profiles for all samples")
+		if (!all(rownames(profileMat)==as.character(1:nSamples))) {
+			logger.warning("could not retrieve profiles for all samples. NAs will be returned")
+			missingIdxc <- setdiff(as.character(1:nSamples), rownames(profileMat))
+			missM <- matrix(as.integer(NA), nrow=length(missingIdxc), ncol=ncol(profileMat))
+			rownames(missM) <- missingIdxc
+			colnames(missM) <- colnames(profileMat)
+			profileMat <- rbind(profileMat, missM)
+			profileMat <- profileMat[as.character(1:nSamples),]
+		}
 		if (ncol(profileMat)!=L) logger.error("Computing profile matrix failed: incorrect dimensions")
 		rownames(profileMat) <- sampleIds
 		colnames(profileMat) <- NULL
+		# profileMat <- profileMat + 1 # pseudo-counts on aggregate matrix
 		bgIdx <- c(1:normTailW, (L-normTailW+1):L) # indices of the regions to use as background
 		tssWidx <- (flank-floor(tssW/2)):(flank+floor(tssW/2))+1 # indices corresponding to window around TSS
 
 		logger.status("normalizing TSS profiles ...")
 		bgMeans <- rowMeans(profileMat[,bgIdx], na.rm=TRUE)
-		normFactors <- pmax(bgMeans, 0.5) # low count samples/cells
+		normFactors <- pmax(bgMeans, 0.5) # low count samples/cells (no effect if pseudocounts are added)
 
 		profileMatNorm <- profileMat/normFactors # divide rows by row normalization factor
 
@@ -3250,7 +3266,9 @@ setMethod("getTssEnrichmentBatch",
 		profileMatNorm[!is.finite(profileMatNorm)] <- NA
 		profileMatSmoothed[!is.finite(profileMatSmoothed)] <- NA
 		tsse <- matrixStats::rowMaxs(profileMatNorm[,tssWidx], na.rm=TRUE)
+		tsse[!is.finite(tsse)] <- NA
 		tsse.s <- matrixStats::rowMaxs(profileMatSmoothed[,tssWidx], na.rm=TRUE)
+		tsse.s[!is.finite(tsse.s)] <- NA
 
 		res <- list(
 			profileMatNorm=t(profileMatNorm),

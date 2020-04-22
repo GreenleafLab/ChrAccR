@@ -10,7 +10,8 @@
 .config$colorSchemesCont <- list(
 	".default" = c("#440154FF", "#472D7BFF", "#3B528BFF", "#2C728EFF", "#21908CFF", "#27AD81FF", "#5DC863FF", "#AADC32FF", "#FDE725FF"),
 	".default.div" = c("#01665E", "#35978F", "#80CDC1", "#C7EAE5", "#F5F5F5", "#F6E8C3", "#DFC27D", "#BF812D", "#8C510A"),
-	".default.geneactivity" = c("#e0f3db", "#a8ddb5", "#4eb3d3", "#08589e")
+	# ".default.geneactivity" = c("#e0f3db", "#a8ddb5", "#4eb3d3", "#08589e")
+	".default.geneactivity" = c('#3361A5', '#248AF3', '#14B3FF', '#88CEEF', '#C1D5DC', '#EAD397', '#FDB31A', '#E42A2A', '#A31D1D') # solarextra
 )
 .config$geneModelVersions <- c(
 	"hg38"="gencode.v27",
@@ -45,8 +46,12 @@
 .config$differentialAdjColumns <- NULL
 .config$lolaDbPaths <- NULL
 .config$scIterativeLsiRegType <- NULL
-.config$scIterativeLsiClusterResolution <- 0.4
-.config$scIterativeLsiUmapParams <- list(distMethod="euclidean", min_dist=0.5, n_neighbors=25)
+.config$scIterativeLsiParams <- list(
+	it0clusterResolution = 0.4,
+	it1clusterResolution = 0.4,
+	it2clusterResolution = 0.4,
+	umapParams = list(distMethod="euclidean", min_dist=0.5, n_neighbors=25)
+)
 .config$scGeneActivity <- FALSE
 .config$muPipeR_cmdr <- NULL
 
@@ -157,11 +162,8 @@
 #'       For single-cell analysis only: region type to be used for clustering and dimension reduction using iterative LSI. By default (\code{NULL}),
 #'       ChrAccR will look for a region type named \code{"tiling"}.
 #'   }
-#'   \item{\bold{\code{scIterativeLsiClusterResolution}}\code{ = 0.4}}{
-#'       For single-cell analysis only: Cluster resolution to use for iterative LSI.
-#'   }
-#'   \item{\bold{\code{scIterativeLsiUmapParams}}\code{ = list(distMethod="euclidean", min_dist=0.5, n_neighbors=25)}}{
-#'       For single-cell analysis only: UMAP parameters to use for iterative LSI (final embedding).
+#'   \item{\bold{\code{scIterativeLsiParams}}}{
+#'       Parameters to use for iterative LSI. See \code{\link{iterativeLSI,DsATACsc-method}} for details.
 #'   }
 #'   \item{\bold{\code{scGeneActivity}}\code{ = FALSE}}{
 #'       For single-cell analysis only: Compute gene activity from accessibility.
