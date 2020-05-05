@@ -753,7 +753,9 @@ if (!isGeneric("mergeSamples")) {
 #' Merge signal and insertion data across samples
 #'
 #' @param .object \code{\linkS4class{DsATAC}} object
-#' @param mergeGroups  factor or character vector or column name in sample annotation table
+#' @param mergeGroups  factor or character vector or column name in sample annotation table.
+#'                Can alternatively be a (named) list containing sample indices or names
+#'                for each group to merge.
 #' @param countAggrFun aggregation function for signal counts.
 #'                Currently \code{sum} (default), \code{mean} and \code{median} are supported.
 #' @return a new \code{\linkS4class{DsATAC}} object with samples merged
@@ -784,17 +786,38 @@ setMethod("mergeSamples",
 		sampleNames <- getSamples(.object)
 		nSamples <- length(sampleNames)
 		ph <- getSampleAnnot(.object)
+		rownames(ph) <- sampleNames # not sure if really necessary
 		if (is.character(mergeGroups) && length(mergeGroups) == 1 && is.element(mergeGroups, colnames(ph))){
 			mergeGroups <- ph[,mergeGroups]
 		}
-		if ((!is.factor(mergeGroups) && !is.character(mergeGroups)) || length(mergeGroups) != nrow(ph)){
-			logger.error("Invalid merge groups")
-		}
-		if (is.factor(mergeGroups)) mergeGroups <- as.character(mergeGroups)
+		# index list supplied
+		if (is.list(mergeGroups)){
+			if (is.null(names(mergeGroups))) names(mergeGroups) <- paste0("g", seq_along(mergeGroups))
+			# convert to integer indices
+			mergeGroups <- lapply(mergeGroups, FUN=function(x){
+				if (is.character(x)){
+					return(match(x, sampleNames))
+				} else if (is.logical(x)){
+					return(which(x))
+				} else {
+					return(x)
+				}
+			})
+			ph_cat <- do.call(rbind, lapply(names(mergeGroups), FUN=function(gn){
+				data.frame(ph[mergeGroups[[gn]],,drop=FALSE], .mergeGroup=gn, stringsAsFactors=FALSE)
+			}))
+			phm <- muRtools::aggregateDf(ph_cat, ph_cat[,".mergeGroup"])
+			mgL <- mergeGroups
+		} else {
+			if ((!is.factor(mergeGroups) && !is.character(mergeGroups)) || length(mergeGroups) != nrow(ph)){
+				logger.error("Invalid merge groups")
+			}
+			if (is.factor(mergeGroups)) mergeGroups <- as.character(mergeGroups)
 
-		phm <- muRtools::aggregateDf(ph, mergeGroups)
-		mgL <- lapply(rownames(phm), FUN=function(mg){which(mergeGroups==mg)})
-		names(mgL) <- rownames(phm)
+			phm <- muRtools::aggregateDf(ph, mergeGroups)
+			mgL <- lapply(rownames(phm), FUN=function(mg){which(mergeGroups==mg)})
+			names(mgL) <- rownames(phm)
+		}
 
 		.object@sampleAnnot <- phm
 
