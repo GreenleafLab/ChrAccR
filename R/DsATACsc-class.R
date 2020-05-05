@@ -804,6 +804,95 @@ setMethod("iterativeLSI",
 	}
 )
 
+
+#-------------------------------------------------------------------------------
+if (!isGeneric("samplePseudoBulk")) {
+	setGeneric(
+		"samplePseudoBulk",
+		function(.object, ...) standardGeneric("samplePseudoBulk"),
+		signature=c(".object")
+	)
+}
+#' samplePseudoBulk-methods
+#'
+#' Samples pseudo-bulk samples from single-cells
+#'
+#' @param .object    \code{\linkS4class{DsATACsc}} object
+#' @param nnData     Data to use for nearest neighbor matching. Can either be the
+#'                   name of a region type in \code{.object} or a data matrix with
+#'                   the same number of rows as \code{.object} has cells.
+#' @param nSamples   number of pseudobulk samples to be returned
+#' @param nCellsPerSample number of cells to be aggregated per sample
+#' @return \code{S3} data structure containing a list of sampling results as well as
+#'         a \code{\linkS4class{DsATAC}} object containing pseudo-bulk aggregates
+#' 
+#' @details
+#' Samples pseudo-bulk samples from single-cells by sampling \code{nSamples} individual cells
+#' and then merging it with its \code{nCellsPerSample - 1} nearest neighbors (according to \code{nnData}).
+#' 
+#' @rdname samplePseudoBulk-DsATACsc-method
+#' @docType methods
+#' @aliases samplePseudoBulk
+#' @aliases samplePseudoBulk,DsATACsc-method
+#' @author Fabian Mueller
+#' @export
+setMethod("samplePseudoBulk",
+	signature(
+		.object="DsATACsc"
+	),
+	function(
+		.object,
+		nnData,
+		nSamples,
+		nCellsPerSample=100
+	) {
+		cellIds <- getSamples(.object)
+		seed_cells <- sample(cellIds, nSamples)
+
+		if (is.character(nnData)) nnData <- t(getCounts(.object, nnData))
+		if (nrow(nnData) != length(cellIds)) logger.error("Invalid value for nnData")
+		if (is.null(rownames(nnData))) rownames(nnData) <- cellIds
+
+		# retrieve the nearest neighbors for each seed cell
+		knnRes <- FNN::get.knnx(nnData, nnData[seed_cells,], k=nCellsPerSample)
+		neighborCells <- knnRes$nn.index
+		neighborCells <- matrix(cellIds[neighborCells], ncol=ncol(neighborCells))
+		rownames(neighborCells) <- seed_cells
+
+		sampleRes <- lapply(1:length(seed_cells), FUN=function(i){
+			res <- list(
+				seedCellId = seed_cells[i],
+				cellIds = neighborCells[i,]
+			)
+			return(res)
+		})
+		names(sampleRes) <- paste0("pb", 1:length(seed_cells))
+
+		mergeIdxL <- lapply(sampleRes, FUN=function(x){
+			x$cellIds
+		})
+		dsam <- mergeSamples(.object, mergeIdxL, countAggrFun="sum")
+
+		# clean up sample annotation (avoid huge concatenations)
+		ph <- data.frame(
+			pseudoBulkId = getSamples(dsam),
+			stringsAsFactors = FALSE
+		)
+		ph[,"seedCell"] <- sapply(getSamples(dsam), FUN=function(x){sampleRes[[x]]$seedCellId})
+		ph[,"nCells"] <- sapply(getSamples(dsam), FUN=function(x){length(sampleRes[[x]]$cellIds)})
+		rownames(ph) <- getSamples(dsam)
+		dsam@sampleAnnot <- ph
+		class(dsam) <- "DsATAC" # now a bulk dataset
+
+		res <- list(
+			samplingResult = sampleRes,
+			dataset = dsam
+		)
+		class(res) <- "PseudoBulkSamplingResult"
+		return(res)
+	}
+)
+
 #-------------------------------------------------------------------------------
 
 #' getDiffAcc-methods
