@@ -807,6 +807,7 @@ setMethod("mergeSamples",
 				data.frame(ph[mergeGroups[[gn]],,drop=FALSE], .mergeGroup=gn, stringsAsFactors=FALSE)
 			}))
 			phm <- muRtools::aggregateDf(ph_cat, ph_cat[,".mergeGroup"])
+			phm <- phm[names(mergeGroups), ]
 			mgL <- mergeGroups
 		} else {
 			if ((!is.factor(mergeGroups) && !is.character(mergeGroups)) || length(mergeGroups) != nrow(ph)){
