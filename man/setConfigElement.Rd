@@ -60,8 +60,10 @@ Set a configuration item to a given value
   \item{\bold{\code{annotationMinGroupSize}}\code{ = 2}}{
       Minimum size of a group to be used in the reports. Influences which annotation columns are automatically selected for reporting.
   }
-  \item{\bold{\code{annotationMaxGroupCount}}\code{ = 20}}{
-      Maximum number of groups to be used in the reports. Influences which annotation columns are automatically selected for reporting.
+  \item{\bold{\code{annotationMaxGroupCount}}\code{ = NULL}}{
+      Maximum number of groups to be used in the reports. Influences which annotation columns are
+      automatically selected for reporting. If \code{NULL} (default) it will effectively be the
+      number of samples - 1.
   }
   \item{\bold{\code{doPeakCalling}}\code{ = FALSE}}{
       Perform per-sample peak calling and retrieve consensus peak set. Requires that \code{macs2} is installed and can be called from the command line. [for bulk data analysis only]

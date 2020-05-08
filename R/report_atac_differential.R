@@ -49,7 +49,8 @@ setMethod("createReport_differential",
 			cols=getConfigElement("differentialColumns"),
 			compNames=getConfigElement("differentialCompNames"),
 			cols1vAll=getConfigElement("differentialColumns1vsAll"),
-			minGroupSize=getConfigElement("annotationMinGroupSize")
+			minGroupSize=getConfigElement("annotationMinGroupSize"),
+			maxGroupCount=getConfigElement("annotationMaxGroupCount")
 		)
 
 		if (is.null(compTab)) logger.error("No valid comparisons found")
