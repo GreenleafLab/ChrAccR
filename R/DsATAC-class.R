@@ -2459,9 +2459,11 @@ setMethod("getMotifFootprints",
 		type=".genome",
 		motifDb="jaspar"
 	) {
+		universeGr <- NULL
 		if (type!=".genome"){
-			logger.warning("Currently only '.genome' is supported as 'type' argument")
-			type <- ".genome"
+			logger.warning("Footprinting: Using types other than '.genome' is experimental")
+			universeGr <- getCoord(.object, type)
+			elementMetadata(universeGr) <- NULL
 		}
 		logger.start("Finding motif occurrences")
 			motifKmerFreqML <- NULL # region window k-mer frequencies for bias correction
@@ -2470,7 +2472,9 @@ setMethod("getMotifFootprints",
 				logger.info(c("Using annotation from package:", annoPkg))
 				motifObj        <- get("getMotifAnnotation", asNamespace(annoPkg))(anno=motifDb, type="motifs")
 				motifGrl        <- get("getMotifAnnotation", asNamespace(annoPkg))(anno=motifDb, type="motifOccGrl")
-				motifKmerFreqML <- get("getMotifAnnotation", asNamespace(annoPkg))(anno=motifDb, type="motifWindowKmerFreq")
+				if (type==".genome"){
+					motifKmerFreqML <- get("getMotifAnnotation", asNamespace(annoPkg))(anno=motifDb, type="motifWindowKmerFreq")
+				}
 			} else {
 				logger.info("Using motifmatchr")
 				motifObj <- prepareMotifmatchr(.object@genome, motifDb)$motifs # currently only used for motif logo plotting. Could be omitted if that is not desired
@@ -2483,24 +2487,39 @@ setMethod("getMotifFootprints",
 			names(motifLens) <- motifNames
 		logger.completed()
 
+		obj_filt <- .object
+		if (!is.null(universeGr)){
+			# remove region aggregates to save time and space (we just need insertions)
+			for (rt in getRegionTypes(obj_filt)){
+				obj_filt <- removeRegionType(obj_filt, rt)
+			}
+			logger.start(c("Filtering insertions by region type:", type))
+				obj_filt <- filterByGRanges(obj_filt, universeGr, method="white")
+			logger.completed()
+		}
+
 		logger.start("Computing sample coverage")
-			sampleCovg <- getCoverage(.object, samples=samples)
-			# TODO: filter by region type
+			sampleCovg <- getCoverage(obj_filt, samples=samples)
 		logger.completed()
 		logger.start("Computing sample insertion k-mer frequencies")
-			sampleKmerFreqM <- getInsertionKmerFreq(.object, samples=samples, k=6, normGenome=TRUE)
-			# TODO: filter by region type
+			sampleKmerFreqM <- getInsertionKmerFreq(obj_filt, samples=samples, k=6, normGenome=TRUE)
 		logger.completed()
 
 		res <- lapply(motifNames, FUN=function(mn){
 			logger.start(c("Motif:", mn))
-				motifCenGr <- unique(trim(resize(motifGrl[[mn]], width=2*motifFlank+1, fix="center", ignore.strand=TRUE)))
+				motifCenGr <- motifGrl[[mn]]
+				if (!is.null(universeGr)){
+					idx <- overlapsAny(motifCenGr, universeGr, type="within", ignore.strand=TRUE)
+					logger.info(paste0("Retaining ", sum(idx), " of ", length(idx), " (", round(100*sum(idx)/length(idx), 2), "%) motif occurrences overlapping with query region type"))
+					motifCenGr <- motifCenGr[idx]
+				}
+				motifCenGr <- unique(trim(resize(motifCenGr, width=2*motifFlank+1, fix="center", ignore.strand=TRUE)))
 				regKmerFreqM <- NULL # region window k-mer frequencies for bias correction
 				if (length(motifKmerFreqML) > 0){
 					regKmerFreqM <- motifKmerFreqML[[mn]]
 				}
 
-				footprintDf <- aggregateRegionCounts(.object, motifCenGr, samples=samples, sampleCovg=sampleCovg, sampleKmerFreqM=sampleKmerFreqM, regionKmerFreqM=regKmerFreqM)
+				footprintDf <- aggregateRegionCounts(obj_filt, motifCenGr, samples=samples, sampleCovg=sampleCovg, sampleKmerFreqM=sampleKmerFreqM, regionKmerFreqM=regKmerFreqM)
 				footprintDf$pos <- footprintDf$pos - (motifFlank+1) # offset the position: aggregateRegionCounts returns positions in [0,regionWidth]
 
 				motifLen <- motifLens[mn]
