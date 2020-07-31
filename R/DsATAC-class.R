@@ -3650,6 +3650,9 @@ if (!isGeneric("getRBFGeneActivities")) {
 #' @param sigma      decay parameter of the radial basis function (shape parameter (epsilon) of a gaussian RBF= 1/(sqrt(2)*sigma))
 #' @param minWeight  weight assymptote, i.e. the assymptotic minimum of the RBF
 #' @param binarize   binarize counts before weighting
+#' @param useGeneBody include gene bodies in the analysis.
+#'                   I.e. counts within the gene body will receive full weight
+#'                   instead of downweighting starting from the TSS
 #' @return an \code{SummarizedExperiment} object containing gene activities for all cells/samples in the dataset
 #' 
 #' @rdname getRBFGeneActivities-DsATAC-method
@@ -3670,13 +3673,18 @@ setMethod("getRBFGeneActivities",
 		maxDist=100000L,
 		sigma=10000,
 		minWeight=0.25,
-		binarize=FALSE
+		binarize=FALSE,
+		useGeneBody=FALSE
 	) {
 		if (!is.element(regionType, getRegionTypes(.object))) logger.error(c("Unsupported region type:", regionType))
 		if (is.null(tssGr)){
 			annoPkg <- getChrAccRAnnotationPackage(.object@genome)
 			if (is.null(annoPkg)) logger.error("Annotation package needed")
-			tssGr <- get("getGeneAnnotation", asNamespace(annoPkg))(anno="gencode_coding", type="tssGr")
+			if (useGeneBody){
+				tssGr <- get("getGeneAnnotation", asNamespace(annoPkg))(anno="gencode_coding", type="geneGr")
+			} else {
+				tssGr <- get("getGeneAnnotation", asNamespace(annoPkg))(anno="gencode_coding", type="tssGr")
+			}
 		}
 		if (is.null(names(tssGr))){
 			emd <- elementMetadata(tssGr)
