@@ -3645,7 +3645,7 @@ if (!isGeneric("getRBFGeneActivities")) {
 #'
 #' @param .object    \code{\linkS4class{DsATAC}} object
 #' @param regionType region type of regions that will be linked to the promoter (typical some sort of peak annotation)
-#' @param tssGr      \code{GRanges} object of TSS coordinates
+#' @param tssGr      \code{GRanges} object of TSS coordinates or gene body coordinates
 #' @param maxDist    maximum distance to consider for associating a region to a TSS
 #' @param sigma      decay parameter of the radial basis function (shape parameter (epsilon) of a gaussian RBF= 1/(sqrt(2)*sigma))
 #' @param minWeight  weight assymptote, i.e. the assymptotic minimum of the RBF
