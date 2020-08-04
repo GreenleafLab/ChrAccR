@@ -2468,7 +2468,7 @@ setMethod("getMotifFootprints",
 		logger.start("Finding motif occurrences")
 			motifKmerFreqML <- NULL # region window k-mer frequencies for bias correction
 			annoPkg <- getChrAccRAnnotationPackage(.object@genome)
-			if (!is.null(annoPkg)){
+			if (!is.null(annoPkg) & is.character(motifDb)){
 				logger.info(c("Using annotation from package:", annoPkg))
 				motifObj        <- get("getMotifAnnotation", asNamespace(annoPkg))(anno=motifDb, type="motifs")
 				motifGrl        <- get("getMotifAnnotation", asNamespace(annoPkg))(anno=motifDb, type="motifOccGrl")
