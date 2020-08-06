@@ -2477,7 +2477,10 @@ setMethod("getMotifFootprints",
 				}
 			} else {
 				logger.info("Using motifmatchr")
-				motifObj <- prepareMotifmatchr(.object@genome, motifDb)$motifs # currently only used for motif logo plotting. Could be omitted if that is not desired
+				motifObj <- NULL
+				if (is.character(motifDb)){
+					motifObj <- prepareMotifmatchr(.object@genome, motifDb)$motifs # currently only used for motif logo plotting. Could be omitted if that is not desired
+				}
 				motifGrl <- getMotifOccurrences(motifNames, motifDb=motifDb, genome=.object@genome)
 			}
 
