@@ -1633,7 +1633,7 @@ setMethod("transformCounts",
 					sizeFac <- NULL
 					if (doTssBg){
 						ovTss <- overlapsAny(rGr, tssGr, ignore.strand=TRUE)
-						sizeFac <- matrix(csFun(cm[ovTss,,drop=FALSE], na.rm=TRUE), ncol=ncol(cm), nrow=sum(ovTss), byrow=TRUE)
+						sizeFac <- matrix(csFun(cm[ovTss,,drop=FALSE], na.rm=TRUE), ncol=ncol(cm), nrow=nrow(cm), byrow=TRUE)
 					} else {
 						sizeFac <- matrix(csFun(cm, na.rm=TRUE), ncol=ncol(cm), nrow=nrow(cm), byrow=TRUE)
 					}
