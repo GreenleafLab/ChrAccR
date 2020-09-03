@@ -3723,9 +3723,9 @@ setMethod("getRBFGeneActivities",
 			if (binarize) cm@x[cm@x > 0] <- 1
 			# gaM <- weightM %*% cm
 			gaM <- as.matrix(weightM %*% cm) # multiply as sparse matrices: much faster
-
-			# normalize by total counts
-			scaleFac <- 1/Matrix::colSums(cm, na.rm=TRUE)
+			
+			# scaleFac <- 1/Matrix::colSums(cm, na.rm=TRUE) # normalize by total counts
+			scaleFac <- 1/colSums(gaM, na.rm=TRUE) # normalize by weighted counts
 			gaM <- t(t(gaM) * scaleFac) # R operates column-wise while reusing the scale factors
 			
 			se <- SummarizedExperiment::SummarizedExperiment(
