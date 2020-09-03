@@ -3656,6 +3656,9 @@ if (!isGeneric("getRBFGeneActivities")) {
 #' @param useGeneBody include gene bodies in the analysis.
 #'                   I.e. counts within the gene body will receive full weight
 #'                   instead of downweighting starting from the TSS
+#' @param normCounts normalize gene activity "counts". Can be \code{"none"} (no normalization),
+#'                   \code{"total"} (normalize by total counts per cell) or 
+#' 					 \code{"weighted"} (default; normalize by distance-weighted counts per cell)
 #' @return an \code{SummarizedExperiment} object containing gene activities for all cells/samples in the dataset
 #' 
 #' @rdname getRBFGeneActivities-DsATAC-method
@@ -3677,9 +3680,11 @@ setMethod("getRBFGeneActivities",
 		sigma=10000,
 		minWeight=0.25,
 		binarize=FALSE,
-		useGeneBody=FALSE
+		useGeneBody=FALSE,
+		normCounts="weighted"
 	) {
 		if (!is.element(regionType, getRegionTypes(.object))) logger.error(c("Unsupported region type:", regionType))
+		if (!is.element(normCounts, c("none", "total", "weighted"))) logger.error("Invalid normCounts argument")
 		if (is.null(tssGr)){
 			annoPkg <- getChrAccRAnnotationPackage(.object@genome)
 			if (is.null(annoPkg)) logger.error("Annotation package needed")
@@ -3723,9 +3728,13 @@ setMethod("getRBFGeneActivities",
 			if (binarize) cm@x[cm@x > 0] <- 1
 			# gaM <- weightM %*% cm
 			gaM <- as.matrix(weightM %*% cm) # multiply as sparse matrices: much faster
-			
-			# scaleFac <- 1/Matrix::colSums(cm, na.rm=TRUE) # normalize by total counts
-			scaleFac <- 1/colSums(gaM, na.rm=TRUE) # normalize by weighted counts
+
+			scaleFac <- rep(1, ncol(gaM))
+			if (normCounts == "total"){
+				scaleFac <- 1/Matrix::colSums(cm, na.rm=TRUE) # normalize by total counts
+			} else if (normCounts == "weighted"){
+				scaleFac <- 1/colSums(gaM, na.rm=TRUE) # normalize by weighted counts
+			}
 			gaM <- t(t(gaM) * scaleFac) # R operates column-wise while reusing the scale factors
 			
 			se <- SummarizedExperiment::SummarizedExperiment(
