@@ -477,7 +477,7 @@ setMethod("dimRed_UMAP",
 		cm <- ChrAccR::getCounts(dsn, rt, allowSparseMatrix=TRUE)
 
 		ph <- getSampleAnnot(dsn)
-		depthCol <- colnames(ph) %in% c("numIns", ".CR.cellQC.passed_filters", ".CR.cellQC.total")
+		depthCol <- colnames(ph) %in% c("numIns", ".CR.cellQC.passed_filters", ".CR.cellQC.total", ".CR.cellQC.atac_fragments", ".CR.cellQC.atac_raw_reads")
 		depthV <- NULL
 		pcCorFragmentCount <- NULL
 		doRmDepthPcs <- FALSE
