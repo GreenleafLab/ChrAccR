@@ -279,7 +279,7 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 			rownames(sa.sample) <- NULL
 			sa <- data.frame(
 				.sampleId=sid,
-				cellId=paste(sid, sa[,".CR.cellQC.barcode"], sep=""),
+				cellId=paste(sid, "_", sa[,".CR.cellQC.barcode"], sep=""),
 				sa.sample,
 				sa.qc,
 				sa,
