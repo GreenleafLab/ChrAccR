@@ -256,25 +256,49 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 	# TODO: Read cells for each sample and construct joined sample annotation table
 	cellAnnotL <- lapply(1:nrow(sampleAnnot), FUN=function(i){
 		sid <- sampleIds[i]
-		sa <- readTab(file.path(sampleDirs[sid], "singlecell.csv"), sep=",")
-		# trueCellIdx <- !(sa[, "cell_id"] %in% c("None")) & sa[, "is__cell_barcode"]==1
-		trueCellIdx <- sa[, "is__cell_barcode"]==1
+		
+		scTabFn <- file.path(sampleDirs[sid], "per_barcode_metrics.csv")
+		isMultiome <- file.exists(scTabFn)
+		if (!isMultiome){
+			scTabFn <- file.path(sampleDirs[sid], "singlecell.csv")
+		}
+		sa <- readTab(scTabFn, sep=",")
+		if (isMultiome){
+			trueCellIdx <- sa[, "is_cell"]==1
+		} else {
+			# trueCellIdx <- !(sa[, "cell_id"] %in% c("None")) & sa[, "is__cell_barcode"]==1
+			trueCellIdx <- sa[, "is__cell_barcode"]==1
+		}
 		sa <- sa[trueCellIdx, ]
 		colnames(sa) <- paste0(".CR.cellQC.", colnames(sa))
 		# sa.qc <- readTab(file.path(sampleDirs[sid], "summary.csv"), sep=",") #reading from csv, which contains only a subset of information
-		sa.qc <- json2df(file.path(sampleDirs[sid], "summary.json"))
-		colnames(sa.qc) <- paste0(".CR.sampleQC.", colnames(sa.qc))
-		sa.sample <- sampleAnnot[sid,]
-		rownames(sa.sample) <- NULL
-		sa <- data.frame(
-			.sampleId=sid,
-			cellId=paste(sid, sa[,".CR.cellQC.cell_id"], sep=""),
-			sa.sample,
-			sa.qc,
-			sa,
-			stringsAsFactors = FALSE
-		)
-		
+		if (isMultiome){
+			sa.qc <- readTab(file.path(sampleDirs[sid], "summary.csv"), sep=",")
+			colnames(sa.qc) <- paste0(".CR.sampleQC.", colnames(sa.qc))
+			sa.sample <- sampleAnnot[sid,]
+			rownames(sa.sample) <- NULL
+			sa <- data.frame(
+				.sampleId=sid,
+				cellId=paste(sid, sa[,".CR.cellQC.barcode"], sep=""),
+				sa.sample,
+				sa.qc,
+				sa,
+				stringsAsFactors = FALSE
+			)
+		} else {
+			sa.qc <- json2df(file.path(sampleDirs[sid], "summary.json"))
+			colnames(sa.qc) <- paste0(".CR.sampleQC.", colnames(sa.qc))
+			sa.sample <- sampleAnnot[sid,]
+			rownames(sa.sample) <- NULL
+			sa <- data.frame(
+				.sampleId=sid,
+				cellId=paste(sid, sa[,".CR.cellQC.cell_id"], sep=""),
+				sa.sample,
+				sa.qc,
+				sa,
+				stringsAsFactors = FALSE
+			)
+		}		
 		return(sa)
 	})
 	colnames.union <- c()
@@ -298,7 +322,9 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 			peakSet <- NULL
 			for (i in seq_along(sampleDirs)){
 				sid <- names(sampleDirs)[i]
-				pGr <- rtracklayer::import(file.path(sampleDirs[i], "peaks.bed"), format="BED")
+				pbedFn <- list.files(sampleDirs[i], pattern="peaks.bed")[1]
+				pbedFn <- file.path(sampleDirs[i], pbedFn)
+				pGr <- rtracklayer::import(pbedFn, format="BED")
 				pGr <- setGenomeProps(pGr, genome, onlyMainChrs=TRUE, silent=TRUE)
 				pGr <- trim(resize(pGr, width=unifWidth, fix="center", ignore.strand=TRUE))
 				pGr <- pGr[width(pGr)==median(width(pGr))] #remove too short regions which might have been trimmed
@@ -322,7 +348,11 @@ DsATAC.cellranger <- function(sampleAnnot, sampleDirPrefixCol, genome, dataDir="
 		logger.completed()
 	}
 
-	fragmentFiles <- file.path(sampleDirs, "fragments.tsv.gz")
+	fragmentFiles <- sapply(sampleDirs, FUN=function(sdir){
+		ffn <- file.path(sdir, "atac_fragments.tsv.gz") # multiome data
+		if (file.exists(ffn)) return(ffn)
+		return(file.path(sdir, "fragments.tsv.gz"))
+	})
 	obj <- DsATACsc.fragments(sampleAnnot, fragmentFiles, genome=genome, regionSets=regionSets, sampleIdCol=sampleIdCol, cellAnnot=cellAnnot, keepInsertionInfo=keepInsertionInfo, diskDump.fragments=diskDump.fragments)
 	
 	return(obj)
