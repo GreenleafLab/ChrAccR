@@ -198,14 +198,14 @@ setMethod("getScQcStatsTab",
 		.object
 	) {
 		cellAnnot <- getSampleAnnot(.object)
-		sampleIdCn <- findOrderedNames(colnames(cellAnnot), c(".sampleid", "sampleid", ".CR.cellQC.barcode"), ignore.case=TRUE)
+		sampleIdCn <- findOrderedNames(colnames(cellAnnot), c(".sampleid", "sampleid", "cellId", ".CR.cellQC.barcode"), ignore.case=TRUE)
 		nFragCns <- c(
-			total=findOrderedNames(colnames(cellAnnot), c(".CR.cellQC.total", "nFrags")),
-			pass=findOrderedNames(colnames(cellAnnot), c(".CR.cellQC.passed_filters", "nFrags")),
-			tss=findOrderedNames(colnames(cellAnnot), ".CR.cellQC.TSS_fragments"),
-			peak=findOrderedNames(colnames(cellAnnot), ".CR.cellQC.peak_region_fragments"),
-			duplicate=findOrderedNames(colnames(cellAnnot), ".CR.cellQC.duplicate"),
-			mito=findOrderedNames(colnames(cellAnnot), ".CR.cellQC.mitochondrial")
+			total=findOrderedNames(colnames(cellAnnot), c(".CR.cellQC.total", ".CR.cellQC.atac_raw_reads", "nFrags")),
+			pass=findOrderedNames(colnames(cellAnnot), c(".CR.cellQC.passed_filters", ".CR.cellQC.atac_fragments", "nFrags")),
+			tss=findOrderedNames(colnames(cellAnnot), ".CR.cellQC.(atac_)?TSS_fragments"),
+			peak=findOrderedNames(colnames(cellAnnot), ".CR.cellQC.(atac_)?peak_region_fragments"),
+			duplicate=findOrderedNames(colnames(cellAnnot), c(".CR.cellQC.duplicate", ".CR.cellQC.atac_dup_reads")),
+			mito=findOrderedNames(colnames(cellAnnot), c(".CR.cellQC.mitochondrial", ".CR.cellQC.atac_mitochondrial_reads"))
 		)
 		summaryDf <- data.frame(cell=getSamples(.object), sample=rep("sample", nrow(cellAnnot)))
 		if (!is.na(sampleIdCn)) summaryDf[,"sample"] <- cellAnnot[,sampleIdCn]
@@ -600,7 +600,7 @@ setMethod("iterativeLSI",
 		if (length(.object@fragments) != length(cellIds)) logger.error("Object does not contain fragment information for all samples")
 
 		ph <- getSampleAnnot(.object)
-		depthCol <- colnames(ph) %in% c("numIns", ".CR.cellQC.passed_filters", ".CR.cellQC.total")
+		depthCol <- colnames(ph) %in% c("numIns", ".CR.cellQC.passed_filters", ".CR.cellQC.total", ".CR.cellQC.atac_fragments", ".CR.cellQC.atac_raw_reads")
 		depthV <- NULL
 		doRmDepthPcs <- FALSE
 		if (any(depthCol)){
@@ -660,6 +660,7 @@ setMethod("iterativeLSI",
 				peakCallClusters <- names(ct)[ct >= it0clusterMinCells]
 				doExcludeClusters <- !all(levels(clustAss_it0) %in% peakCallClusters)
 				if (doExcludeClusters){
+					if (length(peakCallClusters) < 1) logger.error("No clusters with enough cells found on which to call peaks")
 					logger.info(c("Considering the following clusters for peak calling:", paste(peakCallClusters, collapse=",")))
 				}
 			logger.completed()
