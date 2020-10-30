@@ -45,12 +45,14 @@ setMethod("createReport_differential",
 		rDir.data <- muReportR::getReportDir(rr, dir="data", absolute=FALSE)
 		rDir.data.abs <- muReportR::getReportDir(rr, dir="data", absolute=TRUE)
 		
+		mgc <- getConfigElement("annotationMaxGroupCount")
+		if (is.null(mgc)) mgc <- length(.object)-1
 		compTab <- getComparisonTable(.object,
 			cols=getConfigElement("differentialColumns"),
 			compNames=getConfigElement("differentialCompNames"),
 			cols1vAll=getConfigElement("differentialColumns1vsAll"),
 			minGroupSize=getConfigElement("annotationMinGroupSize"),
-			maxGroupCount=getConfigElement("annotationMaxGroupCount")
+			maxGroupCount=mgc
 		)
 
 		if (is.null(compTab)) logger.error("No valid comparisons found")
