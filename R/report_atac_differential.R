@@ -82,16 +82,16 @@ setMethod("createReport_differential",
 				names(diffObjL) <- regionTypes
 			logger.completed()
 			deseqCols <- as.character(design(diffObjL[[1]]))
-			idx <- compTab[,"compCol"] %in% deseqCols
-			if (sum(idx) == 0) logger.error("No valid comparison information found [after creating differential objects]")
-			if (sum(idx) < nrow(compTab)){
-				missingCols <- unique(compTab[!idx,"compCol"])
-				logger.warning(
-					c("The folling comparison columns were not found in the differential object and will be discarded:",
-						paste(missingCols, collapse=", ")
-				))
-				compTab <- compTab[idx,,drop=FALSE]
-			}
+			# idx <- compTab[,"compCol"] %in% deseqCols
+			# if (sum(idx) == 0) logger.error("No valid comparison information found [after creating differential objects]")
+			# if (sum(idx) < nrow(compTab)){
+			# 	missingCols <- unique(compTab[!idx,"compCol"])
+			# 	logger.warning(
+			# 		c("The folling comparison columns were not found in the differential object and will be discarded:",
+			# 			paste(missingCols, collapse=", ")
+			# 	))
+			# 	compTab <- compTab[idx,,drop=FALSE]
+			# }
 
 			logger.start("Differential accessibility tables")
 				diffTabL <- lapply(regionTypes, FUN=function(rt){
