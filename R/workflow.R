@@ -754,7 +754,8 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 					maxFrags <- getConfigElement("filteringScMaxFragmentsPerCell")
 					dsa <- DsATACsc.fragments(sampleAnnot, inputFns, genome, regionSets=regionSets, sampleIdCol=sampleIdCol, minFragsPerBarcode=minFrags, maxFragsPerBarcode=maxFrags, cellAnnot=NULL, keepInsertionInfo=TRUE, diskDump.fragments=FALSE, cellQcStats=TRUE)
 				} else if (inputType == "sc_cellranger"){
-					dsa <- DsATAC.cellranger(sampleAnnot, input, genome, dataDir="", regionSets=regionSets, addPeakRegions=TRUE, sampleIdCol=sampleIdCol, keepInsertionInfo=TRUE, diskDump.fragments=FALSE)
+					addCrPeaks <- getConfigElement("addCellRangerPeaks")
+					dsa <- DsATAC.cellranger(sampleAnnot, input, genome, dataDir="", regionSets=regionSets, addPeakRegions=addCrPeaks, sampleIdCol=sampleIdCol, keepInsertionInfo=TRUE, diskDump.fragments=FALSE)
 				}
 				if (doRepMerge){
 					logger.start("Merging replicates")

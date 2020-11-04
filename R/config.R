@@ -29,6 +29,7 @@
 .config$annotationMinGroupSize <- 2L
 .config$annotationMaxGroupCount <- NULL
 .config$doPeakCalling <- FALSE
+.config$addCellRangerPeaks <- TRUE
 .config$annotationPeakGroupColumn <- NULL
 .config$annotationPeakGroupAgreePerc <- 1
 .config$filteringCovgCount <- 1L
