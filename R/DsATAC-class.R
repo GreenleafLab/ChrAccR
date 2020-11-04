@@ -2466,6 +2466,7 @@ setMethod("getMotifFootprints",
 			elementMetadata(universeGr) <- NULL
 		}
 		logger.start("Finding motif occurrences")
+			motifObj <- NULL
 			motifKmerFreqML <- NULL # region window k-mer frequencies for bias correction
 			annoPkg <- getChrAccRAnnotationPackage(.object@genome)
 			if (!is.null(annoPkg) & is.character(motifDb)){
@@ -2480,7 +2481,6 @@ setMethod("getMotifFootprints",
 				motifGrl <- motifDb
 			} else {
 				logger.info("Using motifmatchr")
-				motifObj <- NULL
 				if (is.character(motifDb)){
 					motifObj <- prepareMotifmatchr(.object@genome, motifDb)$motifs # currently only used for motif logo plotting. Could be omitted if that is not desired
 				}
