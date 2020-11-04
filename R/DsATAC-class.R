@@ -2428,7 +2428,7 @@ if (!isGeneric("getMotifFootprints")) {
 #' @param motifFlank number of base pairs flanking the motif on each side
 #' @param type       (PLACEHOLDER ARGUMENT: NOT IMPLEMENTED YET) character string specifying the region type or \code{".genome"} (default) for genome-wide profiling
 #' @param motifDb    either a character string (currently only "jaspar" and sets contained in \code{chromVARmotifs} ("homer", "encode", "cisbp") are supported) or an object containing PWMs
-#'                   that can be used by \code{motifmatchr::matchMotifs} (such as an \code{PFMatrixList} or \code{PWMatrixList} object)
+#'                   that can be used by \code{motifmatchr::matchMotifs} (such as an \code{PFMatrixList} or \code{PWMatrixList} object) OR a list of \code{GRanges} objects specifying motif occurrences
 #' @return a \code{list} of footprinting results with one element for each motif. Each motif's results contain summary data frames with aggregated counts
 #'         across all motif occurrences and a \code{ggplot} object for plotting footprints
 #' 
@@ -2475,6 +2475,9 @@ setMethod("getMotifFootprints",
 				if (type==".genome"){
 					motifKmerFreqML <- get("getMotifAnnotation", asNamespace(annoPkg))(anno=motifDb, type="motifWindowKmerFreq")
 				}
+			} else if (is.list(motifDb) || any(grepl("GRanges",class(motifDb)))){
+				logger.info("Provided motif occurrences as (GRanges) list")
+				motifGrl <- motifDb
 			} else {
 				logger.info("Using motifmatchr")
 				motifObj <- NULL
