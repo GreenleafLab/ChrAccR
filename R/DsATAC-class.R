@@ -6,7 +6,7 @@
 #' @section Slots:
 #' \describe{
 #'   \item{\code{fragments}}{
-#'		\code{GRanges} object storing sequencing fragments. Alternativily pointers to files in which this data is stored
+#'		\code{GRanges} object storing sequencing fragments. Alternativily pointers to files in which this data isf stored
 #'      as R data object
 #'   }
 #'   \item{\code{counts}}{
@@ -2533,7 +2533,10 @@ setMethod("getMotifFootprints",
 				# Definitions according to [Corces, Granja, et al. (2018). The chromatin accessibility landscape of primary human cancers. Science, 362(6413)]
 				absPos <- abs(footprintDf[,"pos"])
 				i_base <- ceiling(motifLen/2) + 5
-				fp_baseMean  <- mean(footprintDf[absPos <= i_base, "countNormBiasCor"], na.rm=TRUE)
+				x_base <- footprintDf[absPos <= i_base, "countNormBiasCor"]
+				# 10% trimmed mean
+				x_base[x_base > quantile(x_base, 0.9) | x_base < quantile(x_base, 0.1)] <- NA
+				fp_baseMean  <- mean(x_base, na.rm=TRUE)
 				fp_flankMean <- mean(footprintDf[absPos > i_base & absPos <= 50, "countNormBiasCor"], na.rm=TRUE)
 				fp_bgMean    <- mean(footprintDf[absPos >= 200, "countNormBiasCor"], na.rm=TRUE)
 
