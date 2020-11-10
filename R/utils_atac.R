@@ -82,10 +82,19 @@ getATACfragments <- function(ga, offsetTn=TRUE){
 #' 
 #' Given a \code{GAlignmentPairs} or \code{GAlignments} object, return a \code{GRanges} object containing the fragment (or insertion site for single-end data)
 #' @param fragGr       GRanges object containing fragments
+#' @param doSubsample  subsample fragments if they exceed the threshold (to avoid long computation and long vector errors)
 #' @return \code{GRanges} object containing derived insertions.
 #' @author Fabian Mueller
 #' @noRd
-getInsertionSitesFromFragmentGr <- function(fragGr){
+getInsertionSitesFromFragmentGr <- function(fragGr, doSubsample=TRUE){
+	if (is.logical(doSubsample) & doSubsample){
+		# doSubsample <- .Machine$integer.max/2-1
+		doSubsample <- 1e9
+	}
+	if (length(fragGr) > doSubsample){
+		logger.info(c("Subsampling to", doSubsample, "fragments"))
+		fragGr <- fragGr[sort(sample(1:length(fragGr), doSubsample))]
+	}
 	isW <- width(fragGr)>1 # the insertion site is already width=1 --> single end. For paired end-data all of these should be TRUE
 	grins <- GRanges()
 	if (any(!isW)){
