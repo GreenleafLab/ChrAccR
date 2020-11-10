@@ -3251,6 +3251,17 @@ setMethod("getTssEnrichmentBatch",
 		fGr <- getFragmentGrl(.object, sampleIds, asGRangesList=FALSE)
 		# logger.status("[DEBUG] ...(1)...")
 		nFrags <- sapply(fGr, length)
+		# subsample fragments if they exceed the threshold (to avoid long computation and long vector errors)
+		# doSubsample <- .Machine$integer.max/2-1
+		doSubsample <- 1e9
+		if (sum(nFrags) > doSubsample){
+			prop <- doSubsample/sum(nFrags)
+			logger.warning(c("Subsampling to", round(prop*100, 2), "% of fragments"))
+			nFrags <- floor(nFrags*prop)
+			fGr <- lapply(1:length(fGr), FUN=function(i){
+				fGr[[i]][sort(sample(1:length(fGr[[i]]), nFrags[i]))]
+			})
+		}
 		# logger.status("[DEBUG] ...(2)...")
 		fGr <- do.call("c", unname(fGr))
 		# logger.status("[DEBUG] ...(3)...")
