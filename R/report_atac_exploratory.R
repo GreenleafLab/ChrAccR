@@ -364,6 +364,11 @@ setMethod("createReport_exploratory",
 						cres.col <- as.hclust(getClusteringDendrogram(cm[mostVarIdx,], distMethod="euclidean", linkMethod=linkMethod, corMethod=corMethod))
 						cres.row <- as.hclust(getClusteringDendrogram(tcm[,mostVarIdx], distMethod="euclidean", linkMethod=linkMethod, corMethod=corMethod))
 						plotFn <- paste0("varRegionHeatmap_", rtString)
+						logger.info(c("[DEBUG] Annot column names:", paste(colnames(sannot.sub), collapse=", ")))
+						# print(str(sannot.sub))
+						logger.info(c("[DEBUG] Annot color names:", paste(names(grpColors), collapse=", ")))
+						print(grpColors)
+
 						repPlot <- muReportR::createReportPlot(plotFn, rr, width=10, height=10, create.pdf=TRUE, high.png=300L)
 							pheatmap::pheatmap(
 								cm[mostVarIdx,],
