@@ -712,7 +712,7 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 
 				if (all(validCellRanger)){
 					inputType <- "sc_cellranger"
-				} else if (all(grepl("\\.fragments\\.tsv(\\.gz)?$", inputFns))){
+				} else if (all(grepl("[\\._]fragments\\.tsv(\\.gz)?$", inputFns))){
 					inputType <- "sc_fragments"
 				} else if (length(inputFns) > 1){
 					# assuming bulk
