@@ -396,10 +396,11 @@ custom_cicero_cds <- function(
 #' @param X       matrix to be projected (features X samples)
 #' @param umapObj dimension reduction result as returned by \code{\link{dimRed_UMAP}}
 #' @param binarize binarize the counts before projecting
+#' @param addPcCoord also add PC coordinates to the resulting matrix
 #' @return Projected UMAP coordinates
 #' @author Fabian Mueller
 #' @export
-projectMatrix_UMAP <- function(X, umapObj, binarize=TRUE){
+projectMatrix_UMAP <- function(X, umapObj, binarize=TRUE, addPcCoord=FALSE){
 	if (!is.element(class(umapObj), c("DimRed_UMAP_sc", "iterativeLSIResultSc"))){
 		logger.error("Invalid dimension reduction object")
 	}
@@ -417,6 +418,9 @@ projectMatrix_UMAP <- function(X, umapObj, binarize=TRUE){
 	umapCoord_proj <- uwot::umap_transform(pcaCoord_proj, umapObj$umapRes)
 	rownames(umapCoord_proj) <- rownames(pcaCoord_proj)
 	colnames(umapCoord_proj) <- colnames(umapObj$umapCoord)
+	if (addPcCoord){
+		umapCoord_proj <- cbind(umapCoord_proj, pcaCoord_proj)
+	}
 	return(umapCoord_proj)
 }
 
