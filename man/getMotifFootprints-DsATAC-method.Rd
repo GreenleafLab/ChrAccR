@@ -27,7 +27,7 @@
 \item{type}{(PLACEHOLDER ARGUMENT: NOT IMPLEMENTED YET) character string specifying the region type or \code{".genome"} (default) for genome-wide profiling}
 
 \item{motifDb}{either a character string (currently only "jaspar" and sets contained in \code{chromVARmotifs} ("homer", "encode", "cisbp") are supported) or an object containing PWMs
-that can be used by \code{motifmatchr::matchMotifs} (such as an \code{PFMatrixList} or \code{PWMatrixList} object)}
+that can be used by \code{motifmatchr::matchMotifs} (such as an \code{PFMatrixList} or \code{PWMatrixList} object) OR a list of \code{GRanges} objects specifying motif occurrences}
 }
 \value{
 a \code{list} of footprinting results with one element for each motif. Each motif's results contain summary data frames with aggregated counts

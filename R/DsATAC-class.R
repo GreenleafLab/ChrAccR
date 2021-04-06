@@ -6,7 +6,7 @@
 #' @section Slots:
 #' \describe{
 #'   \item{\code{fragments}}{
-#'		\code{GRanges} object storing sequencing fragments. Alternativily pointers to files in which this data is stored
+#'		\code{GRanges} object storing sequencing fragments. Alternativily pointers to files in which this data isf stored
 #'      as R data object
 #'   }
 #'   \item{\code{counts}}{
@@ -753,7 +753,9 @@ if (!isGeneric("mergeSamples")) {
 #' Merge signal and insertion data across samples
 #'
 #' @param .object \code{\linkS4class{DsATAC}} object
-#' @param mergeGroups  factor or character vector or column name in sample annotation table
+#' @param mergeGroups  factor or character vector or column name in sample annotation table.
+#'                Can alternatively be a (named) list containing sample indices or names
+#'                for each group to merge.
 #' @param countAggrFun aggregation function for signal counts.
 #'                Currently \code{sum} (default), \code{mean} and \code{median} are supported.
 #' @return a new \code{\linkS4class{DsATAC}} object with samples merged
@@ -784,17 +786,39 @@ setMethod("mergeSamples",
 		sampleNames <- getSamples(.object)
 		nSamples <- length(sampleNames)
 		ph <- getSampleAnnot(.object)
+		rownames(ph) <- sampleNames # not sure if really necessary
 		if (is.character(mergeGroups) && length(mergeGroups) == 1 && is.element(mergeGroups, colnames(ph))){
 			mergeGroups <- ph[,mergeGroups]
 		}
-		if ((!is.factor(mergeGroups) && !is.character(mergeGroups)) || length(mergeGroups) != nrow(ph)){
-			logger.error("Invalid merge groups")
-		}
-		if (is.factor(mergeGroups)) mergeGroups <- as.character(mergeGroups)
+		# index list supplied
+		if (is.list(mergeGroups)){
+			if (is.null(names(mergeGroups))) names(mergeGroups) <- paste0("g", seq_along(mergeGroups))
+			# convert to integer indices
+			mergeGroups <- lapply(mergeGroups, FUN=function(x){
+				if (is.character(x)){
+					return(match(x, sampleNames))
+				} else if (is.logical(x)){
+					return(which(x))
+				} else {
+					return(x)
+				}
+			})
+			ph_cat <- do.call(rbind, lapply(names(mergeGroups), FUN=function(gn){
+				data.frame(ph[mergeGroups[[gn]],,drop=FALSE], .mergeGroup=gn, stringsAsFactors=FALSE)
+			}))
+			phm <- muRtools::aggregateDf(ph_cat, ph_cat[,".mergeGroup"])
+			phm <- phm[names(mergeGroups), ]
+			mgL <- mergeGroups
+		} else {
+			if ((!is.factor(mergeGroups) && !is.character(mergeGroups)) || length(mergeGroups) != nrow(ph)){
+				logger.error("Invalid merge groups")
+			}
+			if (is.factor(mergeGroups)) mergeGroups <- as.character(mergeGroups)
 
-		phm <- muRtools::aggregateDf(ph, mergeGroups)
-		mgL <- lapply(rownames(phm), FUN=function(mg){which(mergeGroups==mg)})
-		names(mgL) <- rownames(phm)
+			phm <- muRtools::aggregateDf(ph, mergeGroups)
+			mgL <- lapply(rownames(phm), FUN=function(mg){which(mergeGroups==mg)})
+			names(mgL) <- rownames(phm)
+		}
 
 		.object@sampleAnnot <- phm
 
@@ -1609,7 +1633,7 @@ setMethod("transformCounts",
 					sizeFac <- NULL
 					if (doTssBg){
 						ovTss <- overlapsAny(rGr, tssGr, ignore.strand=TRUE)
-						sizeFac <- matrix(csFun(cm[ovTss,,drop=FALSE], na.rm=TRUE), ncol=ncol(cm), nrow=sum(ovTss), byrow=TRUE)
+						sizeFac <- matrix(csFun(cm[ovTss,,drop=FALSE], na.rm=TRUE), ncol=ncol(cm), nrow=nrow(cm), byrow=TRUE)
 					} else {
 						sizeFac <- matrix(csFun(cm, na.rm=TRUE), ncol=ncol(cm), nrow=nrow(cm), byrow=TRUE)
 					}
@@ -2404,7 +2428,7 @@ if (!isGeneric("getMotifFootprints")) {
 #' @param motifFlank number of base pairs flanking the motif on each side
 #' @param type       (PLACEHOLDER ARGUMENT: NOT IMPLEMENTED YET) character string specifying the region type or \code{".genome"} (default) for genome-wide profiling
 #' @param motifDb    either a character string (currently only "jaspar" and sets contained in \code{chromVARmotifs} ("homer", "encode", "cisbp") are supported) or an object containing PWMs
-#'                   that can be used by \code{motifmatchr::matchMotifs} (such as an \code{PFMatrixList} or \code{PWMatrixList} object)
+#'                   that can be used by \code{motifmatchr::matchMotifs} (such as an \code{PFMatrixList} or \code{PWMatrixList} object) OR a list of \code{GRanges} objects specifying motif occurrences
 #' @return a \code{list} of footprinting results with one element for each motif. Each motif's results contain summary data frames with aggregated counts
 #'         across all motif occurrences and a \code{ggplot} object for plotting footprints
 #' 
@@ -2435,21 +2459,31 @@ setMethod("getMotifFootprints",
 		type=".genome",
 		motifDb="jaspar"
 	) {
+		universeGr <- NULL
 		if (type!=".genome"){
-			logger.warning("Currently only '.genome' is supported as 'type' argument")
-			type <- ".genome"
+			logger.warning("Footprinting: Using types other than '.genome' is experimental")
+			universeGr <- getCoord(.object, type)
+			elementMetadata(universeGr) <- NULL
 		}
 		logger.start("Finding motif occurrences")
+			motifObj <- NULL
 			motifKmerFreqML <- NULL # region window k-mer frequencies for bias correction
 			annoPkg <- getChrAccRAnnotationPackage(.object@genome)
-			if (!is.null(annoPkg)){
+			if (!is.null(annoPkg) & is.character(motifDb)){
 				logger.info(c("Using annotation from package:", annoPkg))
 				motifObj        <- get("getMotifAnnotation", asNamespace(annoPkg))(anno=motifDb, type="motifs")
 				motifGrl        <- get("getMotifAnnotation", asNamespace(annoPkg))(anno=motifDb, type="motifOccGrl")
-				motifKmerFreqML <- get("getMotifAnnotation", asNamespace(annoPkg))(anno=motifDb, type="motifWindowKmerFreq")
+				if (type==".genome"){
+					motifKmerFreqML <- get("getMotifAnnotation", asNamespace(annoPkg))(anno=motifDb, type="motifWindowKmerFreq")
+				}
+			} else if (is.list(motifDb) || any(grepl("GRanges",class(motifDb)))){
+				logger.info("Provided motif occurrences as (GRanges) list")
+				motifGrl <- motifDb
 			} else {
 				logger.info("Using motifmatchr")
-				motifObj <- prepareMotifmatchr(.object@genome, motifDb)$motifs # currently only used for motif logo plotting. Could be omitted if that is not desired
+				if (is.character(motifDb)){
+					motifObj <- prepareMotifmatchr(.object@genome, motifDb)$motifs # currently only used for motif logo plotting. Could be omitted if that is not desired
+				}
 				motifGrl <- getMotifOccurrences(motifNames, motifDb=motifDb, genome=.object@genome)
 			}
 
@@ -2459,24 +2493,39 @@ setMethod("getMotifFootprints",
 			names(motifLens) <- motifNames
 		logger.completed()
 
+		obj_filt <- .object
+		if (!is.null(universeGr)){
+			# remove region aggregates to save time and space (we just need insertions)
+			for (rt in getRegionTypes(obj_filt)){
+				obj_filt <- removeRegionType(obj_filt, rt)
+			}
+			logger.start(c("Filtering insertions by region type:", type))
+				obj_filt <- filterByGRanges(obj_filt, universeGr, method="white")
+			logger.completed()
+		}
+
 		logger.start("Computing sample coverage")
-			sampleCovg <- getCoverage(.object, samples=samples)
-			# TODO: filter by region type
+			sampleCovg <- getCoverage(obj_filt, samples=samples)
 		logger.completed()
 		logger.start("Computing sample insertion k-mer frequencies")
-			sampleKmerFreqM <- getInsertionKmerFreq(.object, samples=samples, k=6, normGenome=TRUE)
-			# TODO: filter by region type
+			sampleKmerFreqM <- getInsertionKmerFreq(obj_filt, samples=samples, k=6, normGenome=TRUE)
 		logger.completed()
 
 		res <- lapply(motifNames, FUN=function(mn){
 			logger.start(c("Motif:", mn))
-				motifCenGr <- unique(trim(resize(motifGrl[[mn]], width=2*motifFlank+1, fix="center", ignore.strand=TRUE)))
+				motifCenGr <- motifGrl[[mn]]
+				if (!is.null(universeGr)){
+					idx <- overlapsAny(motifCenGr, universeGr, type="within", ignore.strand=TRUE)
+					logger.info(paste0("Retaining ", sum(idx), " of ", length(idx), " (", round(100*sum(idx)/length(idx), 2), "%) motif occurrences overlapping with query region type"))
+					motifCenGr <- motifCenGr[idx]
+				}
+				motifCenGr <- unique(trim(resize(motifCenGr, width=2*motifFlank+1, fix="center", ignore.strand=TRUE)))
 				regKmerFreqM <- NULL # region window k-mer frequencies for bias correction
 				if (length(motifKmerFreqML) > 0){
 					regKmerFreqM <- motifKmerFreqML[[mn]]
 				}
 
-				footprintDf <- aggregateRegionCounts(.object, motifCenGr, samples=samples, sampleCovg=sampleCovg, sampleKmerFreqM=sampleKmerFreqM, regionKmerFreqM=regKmerFreqM)
+				footprintDf <- aggregateRegionCounts(obj_filt, motifCenGr, samples=samples, sampleCovg=sampleCovg, sampleKmerFreqM=sampleKmerFreqM, regionKmerFreqM=regKmerFreqM)
 				footprintDf$pos <- footprintDf$pos - (motifFlank+1) # offset the position: aggregateRegionCounts returns positions in [0,regionWidth]
 
 				motifLen <- motifLens[mn]
@@ -2484,7 +2533,10 @@ setMethod("getMotifFootprints",
 				# Definitions according to [Corces, Granja, et al. (2018). The chromatin accessibility landscape of primary human cancers. Science, 362(6413)]
 				absPos <- abs(footprintDf[,"pos"])
 				i_base <- ceiling(motifLen/2) + 5
-				fp_baseMean  <- mean(footprintDf[absPos <= i_base, "countNormBiasCor"], na.rm=TRUE)
+				x_base <- footprintDf[absPos <= i_base, "countNormBiasCor"]
+				# 10% trimmed mean
+				x_base[x_base > quantile(x_base, 0.9) | x_base < quantile(x_base, 0.1)] <- NA
+				fp_baseMean  <- mean(x_base, na.rm=TRUE)
 				fp_flankMean <- mean(footprintDf[absPos > i_base & absPos <= 50, "countNormBiasCor"], na.rm=TRUE)
 				fp_bgMean    <- mean(footprintDf[absPos >= 200, "countNormBiasCor"], na.rm=TRUE)
 
@@ -3199,6 +3251,17 @@ setMethod("getTssEnrichmentBatch",
 		fGr <- getFragmentGrl(.object, sampleIds, asGRangesList=FALSE)
 		# logger.status("[DEBUG] ...(1)...")
 		nFrags <- sapply(fGr, length)
+		# subsample fragments if they exceed the threshold (to avoid long computation and long vector errors)
+		# doSubsample <- .Machine$integer.max/2-1
+		doSubsample <- 1e9
+		if (sum(nFrags) > doSubsample){
+			prop <- doSubsample/sum(nFrags)
+			logger.warning(c("Subsampling to", round(prop*100, 2), "% of fragments"))
+			nFrags <- floor(nFrags*prop)
+			fGr <- lapply(1:length(fGr), FUN=function(i){
+				fGr[[i]][sort(sample(1:length(fGr[[i]]), nFrags[i]))]
+			})
+		}
 		# logger.status("[DEBUG] ...(2)...")
 		fGr <- do.call("c", unname(fGr))
 		# logger.status("[DEBUG] ...(3)...")
@@ -3602,11 +3665,17 @@ if (!isGeneric("getRBFGeneActivities")) {
 #'
 #' @param .object    \code{\linkS4class{DsATAC}} object
 #' @param regionType region type of regions that will be linked to the promoter (typical some sort of peak annotation)
-#' @param tssGr      \code{GRanges} object of TSS coordinates
+#' @param tssGr      \code{GRanges} object of TSS coordinates or gene body coordinates
 #' @param maxDist    maximum distance to consider for associating a region to a TSS
 #' @param sigma      decay parameter of the radial basis function (shape parameter (epsilon) of a gaussian RBF= 1/(sqrt(2)*sigma))
 #' @param minWeight  weight assymptote, i.e. the assymptotic minimum of the RBF
 #' @param binarize   binarize counts before weighting
+#' @param useGeneBody include gene bodies in the analysis.
+#'                   I.e. counts within the gene body will receive full weight
+#'                   instead of downweighting starting from the TSS
+#' @param normCounts normalize gene activity "counts". Can be \code{"none"} (no normalization),
+#'                   \code{"total"} (normalize by total counts per cell) or 
+#' 					 \code{"weighted"} (default; normalize by distance-weighted counts per cell)
 #' @return an \code{SummarizedExperiment} object containing gene activities for all cells/samples in the dataset
 #' 
 #' @rdname getRBFGeneActivities-DsATAC-method
@@ -3627,13 +3696,20 @@ setMethod("getRBFGeneActivities",
 		maxDist=100000L,
 		sigma=10000,
 		minWeight=0.25,
-		binarize=FALSE
+		binarize=FALSE,
+		useGeneBody=FALSE,
+		normCounts="weighted"
 	) {
 		if (!is.element(regionType, getRegionTypes(.object))) logger.error(c("Unsupported region type:", regionType))
+		if (!is.element(normCounts, c("none", "total", "weighted"))) logger.error("Invalid normCounts argument")
 		if (is.null(tssGr)){
 			annoPkg <- getChrAccRAnnotationPackage(.object@genome)
 			if (is.null(annoPkg)) logger.error("Annotation package needed")
-			tssGr <- get("getGeneAnnotation", asNamespace(annoPkg))(anno="gencode_coding", type="tssGr")
+			if (useGeneBody){
+				tssGr <- get("getGeneAnnotation", asNamespace(annoPkg))(anno="gencode_coding", type="geneGr")
+			} else {
+				tssGr <- get("getGeneAnnotation", asNamespace(annoPkg))(anno="gencode_coding", type="tssGr")
+			}
 		}
 		if (is.null(names(tssGr))){
 			emd <- elementMetadata(tssGr)
@@ -3670,8 +3746,12 @@ setMethod("getRBFGeneActivities",
 			# gaM <- weightM %*% cm
 			gaM <- as.matrix(weightM %*% cm) # multiply as sparse matrices: much faster
 
-			# normalize by total counts
-			scaleFac <- 1/Matrix::colSums(cm, na.rm=TRUE)
+			scaleFac <- rep(1, ncol(gaM))
+			if (normCounts == "total"){
+				scaleFac <- 1/Matrix::colSums(cm, na.rm=TRUE) # normalize by total counts
+			} else if (normCounts == "weighted"){
+				scaleFac <- 1/colSums(gaM, na.rm=TRUE) # normalize by weighted counts
+			}
 			gaM <- t(t(gaM) * scaleFac) # R operates column-wise while reusing the scale factors
 			
 			se <- SummarizedExperiment::SummarizedExperiment(

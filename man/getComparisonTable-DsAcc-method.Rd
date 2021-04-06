@@ -11,7 +11,8 @@
   cols = NULL,
   cols1vAll = NULL,
   compNames = NULL,
-  minGroupSize = 2L
+  minGroupSize = 2L,
+  maxGroupCount = length(.object) - 1
 )
 }
 \arguments{
@@ -24,6 +25,8 @@
 \item{compNames}{vector of character strings specifying a fixed comparison names to be parsed (format "$GRP1_NAME vs $GRP1_NAME [$ANNOTATION_COLUMN]")}
 
 \item{minGroupSize}{Minimum size of a group to be used in comparison. Affects the annotation columns that will be used for comparisons.}
+
+\item{maxGroupCount}{Maximum number of groups for a column to be considered for comparison.}
 }
 \value{
 a \code{data.frame} with comparison inforamtion containing columns for the comparison name (\code{compName}), 

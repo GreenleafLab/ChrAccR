@@ -151,7 +151,9 @@ setMethod("createReport_exploratory",
 
 		mgc <- nrow(sannot)
 		if (is.null(specAnnotCols0)) mgc <- nrow(sannot)-1 # exclude all-unique columns if no columns are explicitely specified
-		mgc <- min(getConfigElement("annotationMaxGroupCount"), mgc)
+		if (!is.null(getConfigElement("annotationMaxGroupCount"))){
+			mgc <- min(getConfigElement("annotationMaxGroupCount"), mgc)
+		}
 		if (is.null(specAnnotCols0)) {
 			# add automatically found columns to group set
 			defaultGrps <- getGroupsFromTable(sannot, cols=NULL, minGrpSize=getConfigElement("annotationMinGroupSize"), maxGrpCount=mgc)
@@ -362,6 +364,7 @@ setMethod("createReport_exploratory",
 						cres.col <- as.hclust(getClusteringDendrogram(cm[mostVarIdx,], distMethod="euclidean", linkMethod=linkMethod, corMethod=corMethod))
 						cres.row <- as.hclust(getClusteringDendrogram(tcm[,mostVarIdx], distMethod="euclidean", linkMethod=linkMethod, corMethod=corMethod))
 						plotFn <- paste0("varRegionHeatmap_", rtString)
+
 						repPlot <- muReportR::createReportPlot(plotFn, rr, width=10, height=10, create.pdf=TRUE, high.png=300L)
 							pheatmap::pheatmap(
 								cm[mostVarIdx,],

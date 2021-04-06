@@ -2,7 +2,7 @@ Package: ChrAccR
 Title: Analyzing chromatin accessibility data in R
 Description: Tools for analyzing chromatin accessibility data in R. Bulk and single-cell ATAC-seq data are supported.
 Authors@R: person("Fabian", "Mueller", email = "muellerf@stanford.edu", role = c("aut", "cre"), comment = c(ORCID = "0000-0001-5809-2321"))
-Date: 2020-04-20
+Date: 2021-04-06
 Suggests:
     ChrAccRex,
     muReportR,
@@ -24,6 +24,7 @@ Suggests:
     tools,
     grid,
     cowplot,
+    uwot,
     rtracklayer,
     DESeq2,
     limma,
@@ -58,7 +59,7 @@ Imports:
     utils,
     data.table
 License: GPL-2
-Version: 0.9.11
+Version: 0.9.15
 Collate:
     'ChrAccR.R'
     'classDefs.R'
@@ -84,4 +85,4 @@ Collate:
     'workflow.R'
 VignetteBuilder: knitr
 Encoding: UTF-8
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.1

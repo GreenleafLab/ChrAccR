@@ -396,10 +396,11 @@ custom_cicero_cds <- function(
 #' @param X       matrix to be projected (features X samples)
 #' @param umapObj dimension reduction result as returned by \code{\link{dimRed_UMAP}}
 #' @param binarize binarize the counts before projecting
+#' @param addPcCoord also add PC coordinates to the resulting matrix
 #' @return Projected UMAP coordinates
 #' @author Fabian Mueller
 #' @export
-projectMatrix_UMAP <- function(X, umapObj, binarize=TRUE){
+projectMatrix_UMAP <- function(X, umapObj, binarize=TRUE, addPcCoord=FALSE){
 	if (!is.element(class(umapObj), c("DimRed_UMAP_sc", "iterativeLSIResultSc"))){
 		logger.error("Invalid dimension reduction object")
 	}
@@ -417,6 +418,9 @@ projectMatrix_UMAP <- function(X, umapObj, binarize=TRUE){
 	umapCoord_proj <- uwot::umap_transform(pcaCoord_proj, umapObj$umapRes)
 	rownames(umapCoord_proj) <- rownames(pcaCoord_proj)
 	colnames(umapCoord_proj) <- colnames(umapObj$umapCoord)
+	if (addPcCoord){
+		umapCoord_proj <- cbind(umapCoord_proj, pcaCoord_proj)
+	}
 	return(umapCoord_proj)
 }
 
@@ -495,12 +499,14 @@ smoothMagic <- function(X=NULL, X_knn=NULL, k=15, ka=ceiling(k/4), td=3){
 #' @param X_knn   matrix to be used for finding nearest neighbors. Must have the same columns (samples) as X. If \code{NULL} (default), \code{X} will be used
 #' @param knn_k   k to be used for nearest-neighbor matching
 #' @param testMethod test to be used. Currently valid options are \code{"wilcoxon"} and \code{"ttest"}
+#' @param subsampleFrac Fraction of cells to consider for each comparison. If the size of the dataset exceeds
+#'                this number, a random subset of cells will be considered for each comparison.
 #' @param eps     pseudocount to add before calculating log fold-changes
 #' @return list containing test statistics for each group and details on the foreground/background samples drawn for each group
 #' @author Fabian Mueller
 #' @export
 #' @noRd
-findGroupMarkers <- function(X, grouping, bgRatio=1.0, matchFrac=1.0, X_knn=NULL, knn_k=100, testMethod="wilcoxon", eps=1){
+findGroupMarkers <- function(X, grouping, bgRatio=1.0, matchFrac=1.0, X_knn=NULL, knn_k=100, testMethod="wilcoxon", subsampleFrac=1.0, eps=1){
 	require(FNN)
 	if (!is.factor(grouping)){
 		grouping <- factor(grouping)
@@ -509,9 +515,9 @@ findGroupMarkers <- function(X, grouping, bgRatio=1.0, matchFrac=1.0, X_knn=NULL
 		logger.error("Dimensions of grouping and matrix do not match")
 	}
 	if (is.element(testMethod, c("ttest", "wilcoxon")) && !is.matrix(X)){
-		logger.warning("findGroupMarkers requires a matrix object as input. --> converting")
-		X <- as.matrix(X)
+		logger.warning("t-test and Wilcoxon test require a matrix object as input. --> X will be converted to dense")
 	}
+
 	if (is.null(X_knn)) X_knn <- X
 	if (is.null(X_knn)) logger.error("Expected matrix to compute nearest neighbors")
 	if (ncol(X_knn) != ncol(X)) logger.error("Incompatible column numbers of X and X_knn")
@@ -522,7 +528,9 @@ findGroupMarkers <- function(X, grouping, bgRatio=1.0, matchFrac=1.0, X_knn=NULL
 		require(matrixTests)
 		diffFun <- function(X, idx1, idx2){
 			X1 <- X[,idx1]
+			if (!is.matrix(X1)) X1 <- as.matrix(X1)
 			X2 <- X[,idx2]
+			if (!is.matrix(X2)) X2 <- as.matrix(X2)
 			testRes <- matrixTests::row_t_welch(X1, X2)
 			rr <- data.frame(
 				pval  = testRes$pvalue,
@@ -546,7 +554,9 @@ findGroupMarkers <- function(X, grouping, bgRatio=1.0, matchFrac=1.0, X_knn=NULL
 		require(matrixStats)
 		diffFun <- function(X, idx1, idx2){
 			X1 <- X[,idx1]
+			if (!is.matrix(X1)) X1 <- as.matrix(X1)
 			X2 <- X[,idx2]
+			if (!is.matrix(X2)) X2 <- as.matrix(X2)
 			testRes <- matrixTests::row_wilcoxon_twosample(X1, X2)
 			rr <- data.frame(
 				pval  = testRes$pvalue,
@@ -565,24 +575,33 @@ findGroupMarkers <- function(X, grouping, bgRatio=1.0, matchFrac=1.0, X_knn=NULL
 	} else {
 		logger.error(c("Unknown differential test method:", testMethod))
 	}
+	allIdx <- seq_len(ncol(X))
 	gIdxL <- tapply(seq_along(grouping), grouping, c)
-	gN <- table(grouping)
 	nGrps <- nlevels(grouping)
+
 	logger.start("Sampling background")
 		# sample background using nearest neighbors and random drawing
-		bgIdxL <- lapply(1:nGrps, FUN=function(i){
+		idxL <- lapply(1:nGrps, FUN=function(i){
 			g <- levels(grouping)[i]
+			gIdx <- gIdxL[[g]]
 			logger.status(c("Group:", g, paste0("(", i, " of ", nGrps, ")")))
-			logger.info(c("Group size:", length(gIdxL[[g]])))
-			oogIdx <- (1:ncol(X))[-gIdxL[[g]]] # out-of-group indices
+			logger.info(c("Group size:", length(gIdx)))
+			oogIdx <- allIdx[-gIdxL[[g]]] # out-of-group indices
+			gN <- length(gIdx)
+			if (subsampleFrac > 0 && subsampleFrac < 1){
+				nSample <- ceiling(subsampleFrac * gN)
+				logger.info(paste0("Subsampling to ", nSample, " of ", gN, " cells (", round(100*nSample/gN, 2), "%)"))
+				gIdx <- sort(sample(gIdx, nSample))
+				gN <- length(gIdx)
+			}
 			bgIdx <- c()
-			bgN <- min(length(oogIdx), ceiling(bgRatio * gN[g]))
+			bgN <- min(length(oogIdx), ceiling(bgRatio * gN))
 			# background samples from nearest neighbor matches
 			match_k <- 0
-			if (matchFrac > 0) match_k <- max(0, min(bgN, ceiling(matchFrac * bgRatio * gN[g])))
+			if (matchFrac > 0) match_k <- max(0, min(bgN, ceiling(matchFrac * bgRatio * gN)))
 			k <- min(knn_k, match_k)
 			if (match_k > 0){
-				knnRes <- FNN::get.knnx(X_knn[oogIdx,], X_knn[gIdxL[[g]],], k=k)
+				knnRes <- FNN::get.knnx(X_knn[oogIdx,], X_knn[gIdx,], k=k)
 				matchIdx <- oogIdx[unique(sort(as.vector(knnRes$nn.index)))]
 				if (length(matchIdx) > match_k) matchIdx <- sort(sample(matchIdx, match_k))
 				bgIdx <- sort(union(bgIdx, matchIdx))
@@ -597,16 +616,16 @@ findGroupMarkers <- function(X, grouping, bgRatio=1.0, matchFrac=1.0, X_knn=NULL
 				bgIdx <- sort(union(bgIdx, rIdx))
 				logger.info(c("Random samples:", rand_k))
 			}
-			return(bgIdx)
+			return(list(group=gIdx, background=bgIdx))
 		})
-		names(bgIdxL) <- levels(grouping)
+		names(idxL) <- levels(grouping)
 	logger.completed()
 
 	logger.start("Differential test")
 		testL <- lapply(1:nGrps, FUN=function(i){
 			g <- levels(grouping)[i]
 			logger.status(c("Group:", g, paste0("(", i, " of ", nGrps, ")")))
-			rr <- diffFun(X, gIdxL[[g]], bgIdxL[[g]])
+			rr <- diffFun(X, idxL[[g]]$group, idxL[[g]]$background)
 			rr[,"group"] <- factor(g, levels=levels(grouping))
 			rr[,"log2FC"] <- log2((rr[,"mean1"] + eps)/(rr[,"mean2"] + eps))
 			return(rr)
@@ -619,8 +638,7 @@ findGroupMarkers <- function(X, grouping, bgRatio=1.0, matchFrac=1.0, X_knn=NULL
 		testRes = testL,
 		grouping = list(
 			grouping = grouping,
-			groupIdx = gIdxL,
-			backgroundIdx = bgIdxL
+			groupIdx = idxL
 		)
 	)
 	class(res) <- "groupMarkers"

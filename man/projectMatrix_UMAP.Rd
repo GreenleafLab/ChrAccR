@@ -4,7 +4,7 @@
 \alias{projectMatrix_UMAP}
 \title{projectMatrix_UMAP}
 \usage{
-projectMatrix_UMAP(X, umapObj, binarize = TRUE)
+projectMatrix_UMAP(X, umapObj, binarize = TRUE, addPcCoord = FALSE)
 }
 \arguments{
 \item{X}{matrix to be projected (features X samples)}
@@ -12,6 +12,8 @@ projectMatrix_UMAP(X, umapObj, binarize = TRUE)
 \item{umapObj}{dimension reduction result as returned by \code{\link{dimRed_UMAP}}}
 
 \item{binarize}{binarize the counts before projecting}
+
+\item{addPcCoord}{also add PC coordinates to the resulting matrix}
 }
 \value{
 Projected UMAP coordinates

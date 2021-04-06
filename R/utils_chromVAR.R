@@ -35,7 +35,9 @@ getGenomeObject <- function(assembly, adjChrNames=TRUE){
 	if (adjChrNames){
 		prep <- grepl(mainREnum, seqnames(res))
 		seqnames(res)[prep] <- paste0("chr", seqnames(res)[prep])
-		seqnames(res)[seqnames(res)=="chrMT"] <- "chrM"
+		if (is.element("chrMT", seqnames(res)) & !is.element("chrM", seqnames(res))){
+			seqnames(res)[seqnames(res)=="chrMT"] <- "chrM"
+		}
 	}
 	return(res)
 }

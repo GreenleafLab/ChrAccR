@@ -45,11 +45,14 @@ setMethod("createReport_differential",
 		rDir.data <- muReportR::getReportDir(rr, dir="data", absolute=FALSE)
 		rDir.data.abs <- muReportR::getReportDir(rr, dir="data", absolute=TRUE)
 		
+		mgc <- getConfigElement("annotationMaxGroupCount")
+		if (is.null(mgc)) mgc <- length(.object)-1
 		compTab <- getComparisonTable(.object,
 			cols=getConfigElement("differentialColumns"),
 			compNames=getConfigElement("differentialCompNames"),
 			cols1vAll=getConfigElement("differentialColumns1vsAll"),
-			minGroupSize=getConfigElement("annotationMinGroupSize")
+			minGroupSize=getConfigElement("annotationMinGroupSize"),
+			maxGroupCount=mgc
 		)
 
 		if (is.null(compTab)) logger.error("No valid comparisons found")
@@ -78,6 +81,18 @@ setMethod("createReport_differential",
 				})
 				names(diffObjL) <- regionTypes
 			logger.completed()
+			deseqCols <- as.character(design(diffObjL[[1]]))
+			# idx <- compTab[,"compCol"] %in% deseqCols
+			# if (sum(idx) == 0) logger.error("No valid comparison information found [after creating differential objects]")
+			# if (sum(idx) < nrow(compTab)){
+			# 	missingCols <- unique(compTab[!idx,"compCol"])
+			# 	logger.warning(
+			# 		c("The folling comparison columns were not found in the differential object and will be discarded:",
+			# 			paste(missingCols, collapse=", ")
+			# 	))
+			# 	compTab <- compTab[idx,,drop=FALSE]
+			# }
+
 			logger.start("Differential accessibility tables")
 				diffTabL <- lapply(regionTypes, FUN=function(rt){
 					logger.status(c("Region type:", rt))

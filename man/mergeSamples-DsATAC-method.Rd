@@ -11,7 +11,9 @@
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}
 
-\item{mergeGroups}{factor or character vector or column name in sample annotation table}
+\item{mergeGroups}{factor or character vector or column name in sample annotation table.
+Can alternatively be a (named) list containing sample indices or names
+for each group to merge.}
 
 \item{countAggrFun}{aggregation function for signal counts.
 Currently \code{sum} (default), \code{mean} and \code{median} are supported.}

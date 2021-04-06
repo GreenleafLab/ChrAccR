@@ -593,6 +593,7 @@ if (!isGeneric("getComparisonTable")) {
 #' @param cols1vAll  column names in the sample annotation table to consider for 1-vs-all comparisons
 #' @param compNames  vector of character strings specifying a fixed comparison names to be parsed (format "$GRP1_NAME vs $GRP1_NAME [$ANNOTATION_COLUMN]")
 #' @param minGroupSize Minimum size of a group to be used in comparison. Affects the annotation columns that will be used for comparisons.
+#' @param maxGroupCount Maximum number of groups for a column to be considered for comparison.
 #' @return a \code{data.frame} with comparison inforamtion containing columns for the comparison name (\code{compName}), 
 #'         column in the annotation table (\code{compCol})
 #'         and group names for the two groups in the comparison (\code{grp1Name, grp2Name}),
@@ -612,7 +613,8 @@ setMethod("getComparisonTable",
 		cols=NULL,
 		cols1vAll=NULL,
 		compNames=NULL,
-		minGroupSize=2L
+		minGroupSize=2L,
+		maxGroupCount=length(.object)-1
 	) {
 		colsAdd <- NULL
 		fixedCompInfo <- NULL
@@ -640,7 +642,7 @@ setMethod("getComparisonTable",
 
 		# get comparison info
 		sannot <- getSampleAnnot(.object)
-		sampleGrps <- getGroupsFromTable(sannot, cols=unique(c(colsAdd, cols, cols1vAll)), minGrpSize=minGroupSize)
+		sampleGrps <- getGroupsFromTable(sannot, cols=unique(c(colsAdd, cols, cols1vAll)), minGrpSize=minGroupSize, maxGrpCount=maxGroupCount)
 		if (length(sampleGrps) < 1) logger.error("No valid comparisons found (to begin with)")
 		compTab <- do.call("rbind", lapply(1:length(sampleGrps), FUN=function(i){
 			tt <- NULL
