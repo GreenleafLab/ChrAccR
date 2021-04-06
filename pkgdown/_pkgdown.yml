@@ -20,5 +20,5 @@ navbar:
 
 authors:
   Fabian Mueller:
-    href: http://web.stanford.edu/~muellerf/
+    href: http://epigenome-informatics.org
 # To automatically build the site after TravisCI checks: https://www.datacamp.com/community/tutorials/cd-package-docs-pkgdown-travis
