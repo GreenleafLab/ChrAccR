@@ -3,9 +3,8 @@ cache: packages
 r:
 - bioc-release
 r_packages:
-- textshaping
 - pheatmap
-- pkgdown
+# - pkgdown
 # - devtools
 bioc_packages:
 - BSgenome.Hsapiens.UCSC.hg38
