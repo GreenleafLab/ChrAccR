@@ -74,7 +74,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ChrAccR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.9.11</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.9.15</span>
       </span>
     </div>
 
@@ -90,6 +90,9 @@
     <li>
       <a href="../articles/overview.html">Overview</a>
     </li>
+    <li>
+      <a href="../articles/singlecell.html">Single-cell analysis</a>
+    </li>
   </ul>
 </li>
 <li>
@@ -100,7 +103,7 @@
 </li>
 <li>
   <a href="https://github.com/GreenleafLab/ChrAccR">
-    <span class="fa fa-github"></span>
+    <span class="fas fa-github"></span>
      
     GitHub
   </a>
@@ -131,7 +134,7 @@
     </div>
 
     <pre class="usage"><span class='co'># S4 method for DsATAC</span>
-<span class='fu'>getDESeq2Dataset</span>(<span class='no'>.object</span>, <span class='no'>regionType</span>, <span class='kw'>designCols</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>compTab</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='no'>...</span>)</pre>
+<span class='fu'>getDESeq2Dataset</span><span class='op'>(</span><span class='va'>.object</span>, <span class='va'>regionType</span>, designCols <span class='op'>=</span> <span class='cn'>NULL</span>, compTab <span class='op'>=</span> <span class='cn'>NULL</span>, <span class='va'>...</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -150,7 +153,7 @@
     </tr>
     <tr>
       <th>compTab</th>
-      <td><p>if design columns are not specified, you can specify a comparison table directly. These comparison tables can be obtained by <code><a href='getComparisonTable-DsAcc-method.html'>getComparisonTable(...)</a></code></p></td>
+      <td><p>if design columns are not specified, you can specify a comparison table directly. These comparison tables can be obtained by <code><a href='getComparisonTable,DsAcc-method.html'>getComparisonTable(...)</a></code></p></td>
     </tr>
     <tr>
       <th>...</th>
@@ -161,13 +164,17 @@
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
     <p><code>DESeqDataSet</code> as returned by <code><a href='https://rdrr.io/pkg/DESeq2/man/DESeq.html'>DESeq2::DESeq</a></code></p>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Fabian Mueller</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> (<span class='fl'>FALSE</span>) {
-<span class='no'>dsa</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>ChrAccRex</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/pkg/ChrAccRex/man/loadExample.html'>loadExample</a></span>(<span class='st'>"dsAtac_ia_example"</span>)
-<span class='no'>dds</span> <span class='kw'>&lt;-</span> <span class='fu'>getDESeq2Dataset</span>(<span class='no'>dsa</span>, <span class='st'>"IA_prog_peaks"</span>, <span class='kw'>designCols</span><span class='kw'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='st'>"donor"</span>, <span class='st'>"stimulus"</span>, <span class='st'>"cellType"</span>))
-<span class='no'>dds</span>
-}</div></pre>
+    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
+<span class='va'>dsa</span> <span class='op'>&lt;-</span> <span class='fu'>ChrAccRex</span><span class='fu'>::</span><span class='fu'><a href='https://rdrr.io/pkg/ChrAccRex/man/loadExample.html'>loadExample</a></span><span class='op'>(</span><span class='st'>"dsAtac_ia_example"</span><span class='op'>)</span>
+<span class='va'>dds</span> <span class='op'>&lt;-</span> <span class='fu'>getDESeq2Dataset</span><span class='op'>(</span><span class='va'>dsa</span>, <span class='st'>"IA_prog_peaks"</span>, designCols<span class='op'>=</span><span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"donor"</span>, <span class='st'>"stimulus"</span>, <span class='st'>"cellType"</span><span class='op'>)</span><span class='op'>)</span>
+<span class='va'>dds</span>
+<span class='op'>}</span>
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
@@ -179,11 +186,11 @@
 
       <footer>
       <div class="copyright">
-  <p>Developed by <a href='http://web.stanford.edu/~muellerf/'>Fabian Mueller</a>.</p>
+  <p>Developed by <a href='http://epigenome-informatics.org'>Fabian Mueller</a>.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>

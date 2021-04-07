@@ -74,7 +74,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ChrAccR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.9.11</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.9.15</span>
       </span>
     </div>
 
@@ -90,6 +90,9 @@
     <li>
       <a href="../articles/overview.html">Overview</a>
     </li>
+    <li>
+      <a href="../articles/singlecell.html">Single-cell analysis</a>
+    </li>
   </ul>
 </li>
 <li>
@@ -100,7 +103,7 @@
 </li>
 <li>
   <a href="https://github.com/GreenleafLab/ChrAccR">
-    <span class="fa fa-github"></span>
+    <span class="fas fa-github"></span>
      
     GitHub
   </a>
@@ -131,13 +134,13 @@
     </div>
 
     <pre class="usage"><span class='co'># S4 method for DsNOMe</span>
-<span class='fu'>regionAggregation</span>(
-  <span class='no'>.object</span>,
-  <span class='no'>regGr</span>,
-  <span class='no'>type</span>,
-  <span class='kw'>methAggrFun</span> <span class='kw'>=</span> <span class='st'>"weightedMean"</span>,
-  <span class='kw'>dropEmpty</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>
-)</pre>
+<span class='fu'>regionAggregation</span><span class='op'>(</span>
+  <span class='va'>.object</span>,
+  <span class='va'>regGr</span>,
+  <span class='va'>type</span>,
+  methAggrFun <span class='op'>=</span> <span class='st'>"weightedMean"</span>,
+  dropEmpty <span class='op'>=</span> <span class='cn'>TRUE</span>
+<span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -174,6 +177,9 @@ and <code>weightedMean</code> (default) are supported.</p></td>
     <p>Coverage values are aggregated by summing up coverage values for individual GCs
 while the aggregation function for methylation levels is specified by the
 <code>methAggrFun</code> parameter.</p>
+    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
+
+    <p>Fabian Mueller</p>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
@@ -186,11 +192,11 @@ while the aggregation function for methylation levels is specified by the
 
       <footer>
       <div class="copyright">
-  <p>Developed by <a href='http://web.stanford.edu/~muellerf/'>Fabian Mueller</a>.</p>
+  <p>Developed by <a href='http://epigenome-informatics.org'>Fabian Mueller</a>.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
 </div>
 
       </footer>
