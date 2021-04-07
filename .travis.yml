@@ -3,7 +3,6 @@ cache: packages
 r:
 - bioc-release
 r_packages:
-- ragg
 - pheatmap
 - pkgdown
 # - devtools
