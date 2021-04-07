@@ -22,6 +22,9 @@ addons:
     packages:
 #   - libgsl0ldbl
     - libgsl0-dev
+    - libcurl4-openssl-dev
+    - libharfbuzz-dev
+    - libfribidi-dev
 # before_script:
 #   - Rscript -e 'devtools::document()'
 # r_build_args: --no-build-vignettes
