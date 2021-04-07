@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>samplePseudoBulk-methods — samplePseudoBulk,DsATACsc-method • ChrAccR</title>
+<title>DsATAC.cellranger — DsATAC.cellranger • ChrAccR</title>
 
 
 <!-- jquery -->
@@ -41,8 +41,8 @@
   <link href="../extra.css" rel="stylesheet">
   
 
-<meta property="og:title" content="samplePseudoBulk-methods — samplePseudoBulk,DsATACsc-method" />
-<meta property="og:description" content="Samples pseudo-bulk samples from single-cells" />
+<meta property="og:title" content="DsATAC.cellranger — DsATAC.cellranger" />
+<meta property="og:description" content="Create a DsATAC dataset from multiple input files output by 10x cellranger" />
 
 
 
@@ -124,49 +124,71 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>samplePseudoBulk-methods</h1>
+    <h1>DsATAC.cellranger</h1>
     
-    <div class="hidden name"><code>samplePseudoBulk-DsATACsc-method.Rd</code></div>
+    <div class="hidden name"><code>DsATAC.cellranger.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Samples pseudo-bulk samples from single-cells</p>
+    <p>Create a DsATAC dataset from multiple input files output by 10x cellranger</p>
     </div>
 
-    <pre class="usage"><span class='co'># S4 method for DsATACsc</span>
-<span class='fu'>samplePseudoBulk</span><span class='op'>(</span><span class='va'>.object</span>, <span class='va'>nnData</span>, <span class='va'>nSamples</span>, nCellsPerSample <span class='op'>=</span> <span class='fl'>100</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>DsATAC.cellranger</span><span class='op'>(</span>
+  <span class='va'>sampleAnnot</span>,
+  <span class='va'>sampleDirPrefixCol</span>,
+  <span class='va'>genome</span>,
+  dataDir <span class='op'>=</span> <span class='st'>""</span>,
+  regionSets <span class='op'>=</span> <span class='cn'>NULL</span>,
+  addPeakRegions <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  sampleIdCol <span class='op'>=</span> <span class='va'>sampleDirPrefixCol</span>,
+  keepInsertionInfo <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  diskDump.fragments <span class='op'>=</span> <span class='va'>keepInsertionInfo</span>
+<span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>.object</th>
-      <td><p><code><a href='DsATACsc-class.html'>DsATACsc</a></code> object</p></td>
+      <th>sampleAnnot</th>
+      <td><p>data.frame specifying the sample annotation table</p></td>
     </tr>
     <tr>
-      <th>nnData</th>
-      <td><p>Data to use for nearest neighbor matching. Can either be the
-name of a region type in <code>.object</code> or a data matrix with
-the same number of rows as <code>.object</code> has cells.</p></td>
+      <th>sampleDirPrefixCol</th>
+      <td><p>column name specifying the directory prefix for each sample in the sample annotation table</p></td>
     </tr>
     <tr>
-      <th>nSamples</th>
-      <td><p>number of pseudobulk samples to be returned</p></td>
+      <th>genome</th>
+      <td><p>genome assembly</p></td>
     </tr>
     <tr>
-      <th>nCellsPerSample</th>
-      <td><p>number of cells to be aggregated per sample</p></td>
+      <th>dataDir</th>
+      <td><p>directory where the files are located</p></td>
+    </tr>
+    <tr>
+      <th>regionSets</th>
+      <td><p>a list of GRanges objects which contain region sets over which count data will be aggregated</p></td>
+    </tr>
+    <tr>
+      <th>addPeakRegions</th>
+      <td><p>should a merged set of peaks be created as one of the region sets (merged, non-overlapping peaks of width=500bp from the peaks of individual samples)</p></td>
+    </tr>
+    <tr>
+      <th>sampleIdCol</th>
+      <td><p>column name or index in the sample annotation table containing unique sample identifiers</p></td>
+    </tr>
+    <tr>
+      <th>keepInsertionInfo</th>
+      <td><p>flag indicating whether to maintain the insertion information in the resulting object.</p></td>
+    </tr>
+    <tr>
+      <th>diskDump.fragments</th>
+      <td><p>Keep fragment coordinates stored on disk rather than in main memory. This saves memory, but increases runtime and I/O.</p></td>
     </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p><code>S3</code> data structure containing a list of sampling results as well as
-        a <code><a href='DsATAC-class.html'>DsATAC</a></code> object containing pseudo-bulk aggregates</p>
-    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
-
-    <p>Samples pseudo-bulk samples from single-cells by sampling <code>nSamples</code> individual cells
-and then merging it with its <code>nCellsPerSample - 1</code> nearest neighbors (according to <code>nnData</code>).</p>
+    <p><code><a href='DsATAC-class.html'>DsATAC</a></code> object</p>
     <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
 
     <p>Fabian Mueller</p>

@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>samplePseudoBulk-methods — samplePseudoBulk,DsATACsc-method • ChrAccR</title>
+<title>filterCellsTssEnrichment-methods — filterCellsTssEnrichment,DsATACsc-method • ChrAccR</title>
 
 
 <!-- jquery -->
@@ -41,8 +41,8 @@
   <link href="../extra.css" rel="stylesheet">
   
 
-<meta property="og:title" content="samplePseudoBulk-methods — samplePseudoBulk,DsATACsc-method" />
-<meta property="og:description" content="Samples pseudo-bulk samples from single-cells" />
+<meta property="og:title" content="filterCellsTssEnrichment-methods — filterCellsTssEnrichment,DsATACsc-method" />
+<meta property="og:description" content="Filter out cells with low TSS enrichment" />
 
 
 
@@ -124,49 +124,34 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>samplePseudoBulk-methods</h1>
+    <h1>filterCellsTssEnrichment-methods</h1>
     
-    <div class="hidden name"><code>samplePseudoBulk-DsATACsc-method.Rd</code></div>
+    <div class="hidden name"><code>filterCellsTssEnrichment-DsATAC-method.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Samples pseudo-bulk samples from single-cells</p>
+    <p>Filter out cells with low TSS enrichment</p>
     </div>
 
     <pre class="usage"><span class='co'># S4 method for DsATACsc</span>
-<span class='fu'>samplePseudoBulk</span><span class='op'>(</span><span class='va'>.object</span>, <span class='va'>nnData</span>, <span class='va'>nSamples</span>, nCellsPerSample <span class='op'>=</span> <span class='fl'>100</span><span class='op'>)</span></pre>
+<span class='fu'>filterCellsTssEnrichment</span><span class='op'>(</span><span class='va'>.object</span>, cutoff <span class='op'>=</span> <span class='fl'>6</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>.object</th>
-      <td><p><code><a href='DsATACsc-class.html'>DsATACsc</a></code> object</p></td>
+      <td><p><code><a href='DsATAC-class.html'>DsATAC</a></code> object</p></td>
     </tr>
     <tr>
-      <th>nnData</th>
-      <td><p>Data to use for nearest neighbor matching. Can either be the
-name of a region type in <code>.object</code> or a data matrix with
-the same number of rows as <code>.object</code> has cells.</p></td>
-    </tr>
-    <tr>
-      <th>nSamples</th>
-      <td><p>number of pseudobulk samples to be returned</p></td>
-    </tr>
-    <tr>
-      <th>nCellsPerSample</th>
-      <td><p>number of cells to be aggregated per sample</p></td>
+      <th>cutoff</th>
+      <td><p>TSS enrichment cutoff to filter cells</p></td>
     </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p><code>S3</code> data structure containing a list of sampling results as well as
-        a <code><a href='DsATAC-class.html'>DsATAC</a></code> object containing pseudo-bulk aggregates</p>
-    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
-
-    <p>Samples pseudo-bulk samples from single-cells by sampling <code>nSamples</code> individual cells
-and then merging it with its <code>nCellsPerSample - 1</code> nearest neighbors (according to <code>nnData</code>).</p>
+    <p>modified <code><a href='DsATAC-class.html'>DsATAC</a></code> object without filtered cells</p>
     <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
 
     <p>Fabian Mueller</p>

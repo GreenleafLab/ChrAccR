@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>samplePseudoBulk-methods — samplePseudoBulk,DsATACsc-method • ChrAccR</title>
+<title>dimRed_UMAP-methods — dimRed_UMAP,DsATACsc-method • ChrAccR</title>
 
 
 <!-- jquery -->
@@ -41,8 +41,8 @@
   <link href="../extra.css" rel="stylesheet">
   
 
-<meta property="og:title" content="samplePseudoBulk-methods — samplePseudoBulk,DsATACsc-method" />
-<meta property="og:description" content="Samples pseudo-bulk samples from single-cells" />
+<meta property="og:title" content="dimRed_UMAP-methods — dimRed_UMAP,DsATACsc-method" />
+<meta property="og:description" content="Retrieve dimension reduction embedding and object using UMAP" />
 
 
 
@@ -124,17 +124,25 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>samplePseudoBulk-methods</h1>
+    <h1>dimRed_UMAP-methods</h1>
     
-    <div class="hidden name"><code>samplePseudoBulk-DsATACsc-method.Rd</code></div>
+    <div class="hidden name"><code>dimRed_UMAP-DsATACsc-method.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Samples pseudo-bulk samples from single-cells</p>
+    <p>Retrieve dimension reduction embedding and object using UMAP</p>
     </div>
 
     <pre class="usage"><span class='co'># S4 method for DsATACsc</span>
-<span class='fu'>samplePseudoBulk</span><span class='op'>(</span><span class='va'>.object</span>, <span class='va'>nnData</span>, <span class='va'>nSamples</span>, nCellsPerSample <span class='op'>=</span> <span class='fl'>100</span><span class='op'>)</span></pre>
+<span class='fu'>dimRed_UMAP</span><span class='op'>(</span>
+  <span class='va'>.object</span>,
+  <span class='va'>regions</span>,
+  tfidf <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  pcs <span class='op'>=</span> <span class='fl'>1</span><span class='op'>:</span><span class='fl'>50</span>,
+  normPcs <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  umapParams <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span><span class='op'>(</span>distMethod <span class='op'>=</span> <span class='st'>"euclidean"</span>, min_dist <span class='op'>=</span> <span class='fl'>0.5</span>, n_neighbors <span class='op'>=</span> <span class='fl'>25</span><span class='op'>)</span>,
+  rmDepthCor <span class='op'>=</span> <span class='fl'>1</span>
+<span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -144,29 +152,42 @@
       <td><p><code><a href='DsATACsc-class.html'>DsATACsc</a></code> object</p></td>
     </tr>
     <tr>
-      <th>nnData</th>
-      <td><p>Data to use for nearest neighbor matching. Can either be the
-name of a region type in <code>.object</code> or a data matrix with
-the same number of rows as <code>.object</code> has cells.</p></td>
+      <th>regions</th>
+      <td><p>character string specifying the region type to retrieve the UMAP coordinates from.
+Alternatively, a <code>GRanges</code> object specifying coordinates that fragment counts
+will be aggregated over</p></td>
     </tr>
     <tr>
-      <th>nSamples</th>
-      <td><p>number of pseudobulk samples to be returned</p></td>
+      <th>tfidf</th>
+      <td><p>normalize the counts using TF-IDF transformation</p></td>
     </tr>
     <tr>
-      <th>nCellsPerSample</th>
-      <td><p>number of cells to be aggregated per sample</p></td>
+      <th>pcs</th>
+      <td><p>components to use to compute the SVD</p></td>
+    </tr>
+    <tr>
+      <th>normPcs</th>
+      <td><p>flag indicating whether to apply z-score normalization to PCs for each cell</p></td>
+    </tr>
+    <tr>
+      <th>umapParams</th>
+      <td><p>parameters to compute UMAP coordinates (passed on to
+<code><a href='https://rdrr.io/pkg/muRtools/man/getDimRedCoords.umap.html'>muRtools::getDimRedCoords.umap</a></code> and further to <code><a href='https://rdrr.io/pkg/uwot/man/umap.html'>uwot::umap</a></code>)</p></td>
+    </tr>
+    <tr>
+      <th>rmDepthCor</th>
+      <td><p>correlation cutoff to be used to discard principal components
+associated with fragment depth (all iterationa). By default (value &gt;=1)
+no filtering will be applied.</p></td>
     </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p><code>S3</code> data structure containing a list of sampling results as well as
-        a <code><a href='DsATAC-class.html'>DsATAC</a></code> object containing pseudo-bulk aggregates</p>
+    <p>an <code>S3</code> object containing dimensionality reduction results</p>
     <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
 
-    <p>Samples pseudo-bulk samples from single-cells by sampling <code>nSamples</code> individual cells
-and then merging it with its <code>nCellsPerSample - 1</code> nearest neighbors (according to <code>nnData</code>).</p>
+    <p>The output object includes the final singular values/principal components (<code>result$pcaCoord</code>), the low-dimensional coordinates (<code>result$umapCoord</code>) as well as region set that provided the basis for the dimension reduction (<code>result$regionGr</code>).</p>
     <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
 
     <p>Fabian Mueller</p>
