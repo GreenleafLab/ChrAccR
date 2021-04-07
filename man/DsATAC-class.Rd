@@ -12,7 +12,7 @@ inherits from \code{\linkS4class{DsAcc}}
 
 \describe{
   \item{\code{fragments}}{
-	\code{GRanges} object storing sequencing fragments. Alternativily pointers to files in which this data is stored
+	\code{GRanges} object storing sequencing fragments. Alternativily pointers to files in which this data isf stored
      as R data object
   }
   \item{\code{counts}}{
