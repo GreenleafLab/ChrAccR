@@ -26,7 +26,7 @@ addons:
     - libfribidi-dev
 # before_script:
 #   - Rscript -e 'devtools::document()'
-# r_build_args: --no-build-vignettes
+r_build_args: --no-build-vignettes
 r_check_args: --no-build-vignettes
 warnings_are_errors: false
 # automatically build pkgdown site using the gh-pages branch
