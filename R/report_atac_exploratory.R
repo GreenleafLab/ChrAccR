@@ -454,17 +454,18 @@ setMethod("createReport_exploratory",
 
 			if (useMotifClusters){
 				# save motif cluster annotation and add report text
-				cvMot$motifOcc <- NULL
+				cvMot$clusterOcc <- NULL
 				annotFn <- file.path(rDir.data.abs, paste0("motifCluster_annot", ".rds"))
 				saveRDS(cvMot, annotFn)
 				mcTxt <- c("Vierstra, Lazar, Sandstrom, et al. (2020). Global reference mapping of human transcription factor footprints. <i>Nature</i>, <b>583</b>(7818), 729–736. doi:10.1038/s41586-020-2528-x")
 				rr <- muReportR::addReportReference(rr, mcTxt)
 				txt <- paste0(
-					"Non-redundant motif cluster annotation ", 
+					"Non-redundant motif clustering ",
 					muReportR::getReportReference(rr, mcTxt),
-					 " was used", " (",
+					" (",
 					paste(c("<a href=\"", rDir.data, "/", "motifCluster_annot.rds", "\">","RDS file","</a>"), collapse=""),
-					")."
+					")",
+					" was used for annotating genome-wide TF binding sites and computing motif cluster accessibility."
 				)
 				rr <- muReportR::addReportParagraph(rr, txt)
 			}
