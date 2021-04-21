@@ -360,7 +360,7 @@ setMethod("createReport_differential",
 					"Comparison" = figSettings.comp,
 					"Region type" = figSettings.region
 				)
-				rr <- muReportR::addReportFigure(rr, "MA plot", plotL.vo, figSettings)
+				rr <- muReportR::addReportFigure(rr, "Differential motif activity volcano plot", plotL.vo, figSettings)
 
 
 				txt <- c("Tables summarizing differential chromVAR activity for all motifs can be found below.")
