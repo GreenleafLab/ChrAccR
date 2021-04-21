@@ -103,6 +103,11 @@ setMethod("createReport_differential",
 						chromEnd=end(gr),
 						strand=strand(gr)
 					)
+					emd <- elementMetadata(gr)
+					gene_col <- findOrderedNames(colnames(emd), c("gene_name", "nearest_gene", ".nearest_gene_name", "gene_id"), exact=TRUE, ignore.case=TRUE)
+					if (!is.na(gene_col)){
+						coordDf[,gene_col] <- as.character(emd[,gene_col])
+					}
 					ll <- lapply(1:nrow(compTab), FUN=function(i){
 						dat <- getDiffAcc(
 							.object, rt, compTab[i,"compCol"], grp1Name=compTab[i,"grp1Name"], grp2Name=compTab[i,"grp2Name"],
