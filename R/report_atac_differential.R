@@ -286,7 +286,7 @@ setMethod("createReport_differential",
 					logger.start(c("Region type:", rt))
 						regionTypes_cv <- c(regionTypes_cv, rt)
 						cvd <- readRDS(cvFn)
-						cvdM <- deviationScores(cvd)
+						cvdM <- chromVAR::deviationScores(cvd)
 						for (i in 1:nrow(compTab)){
 							logger.start(c("comparison", i, ":", compTab[i,"compName"]))
 								grp1name <- compTab[i,"grp1Name"]
