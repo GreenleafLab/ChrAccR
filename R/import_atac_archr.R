@@ -93,7 +93,7 @@ DsATACsc.archr <- function(ap, keepInsertionInfo=FALSE, diskDump.fragments=keepI
 		regionSets <- list()
 		tileGr <- NULL
 		tileDf <- ArchR:::.getFeatureDF(afs, "TileMatrix")
-		if (!is.null(tileDf) && class(tileDf)=="DataFrame"){
+		if (!is.null(tileDf) && is.element(class(tileDf), c("DataFrame", "DFrame"))){
 			logger.status("Preparing tiling regions ...")
 			x <- tileDf[,"start"]
 			tileW <- median(x[2:length(x)]-x[1:(length(x)-1)])
@@ -116,7 +116,7 @@ DsATACsc.archr <- function(ap, keepInsertionInfo=FALSE, diskDump.fragments=keepI
 		if (is.element("LSIFeatures", names(redDim))){
 			logger.status("Preparing iterativeLSI feature regions ...")
 			featDf <- redDim$LSIFeatures
-			if (class(featDf)=="DataFrame" && !is.null(tileGr)){
+			if (is.element(class(featDf), c("DataFrame", "DFrame")) && !is.null(tileGr)){
 				logger.info("Assuming iterativeLSI has been applied to tiling windows")
 				tileIdxL <- tapply(featDf[,"idx"], featDf[,"seqnames"], c)
 				tileGrl <- split(tileGr, seqnames(tileGr))
