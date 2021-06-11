@@ -92,7 +92,7 @@ DsATACsc.archr <- function(ap, keepInsertionInfo=FALSE, diskDump.fragments=keepI
 	logger.start("Preparing region sets")
 		regionSets <- list()
 		tileGr <- NULL
-		tileDf <- ArchR::.getFeatureDF(afs, "TileMatrix")
+		tileDf <- ArchR:::.getFeatureDF(afs, "TileMatrix")
 		if (!is.null(tileDf) && class(tileDf)=="DataFrame"){
 			logger.status("Preparing tiling regions ...")
 			x <- tileDf[,"start"]
