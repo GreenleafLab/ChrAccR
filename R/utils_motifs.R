@@ -448,12 +448,14 @@ PWMatrixToProbMatrix <- function(x){
 #' @export
 #' @examples
 #' \dontrun{
-#' hmSeqLogo(prepareMotifmatchr("hg38", "jaspar")$motifs[["MA0137.3_STAT1"]], unit(0.5, "npc"), unit(0.5, "npc"), 0.5, 0.5, ic.scale=TRUE)
+#' mm <- prepareMotifmatchr("hg38", "jaspar")$motifs[["MA0137.3_STAT1"]]
+#' hmSeqLogo(mm, unit(0.5, "npc"), unit(0.5, "npc"), 0.5, 0.5, ic.scale=TRUE)
 #' }
 hmSeqLogo <- function(pwm, x=unit(0.5, "npc"), y=unit(0.5, "npc"), width=1, height=1, ic.scale=TRUE){
 	if (!requireNamespace("grid")) logger.error(c("Could not load dependency: grid"))
-	# convert units to numbers
-	unitType <- attr(x, "unit")
+	# # convert units to numbers
+	# unitType <- attr(x, "unit")
+	unitType <- "npc"
 	x <- as.numeric(x)
 	y <- as.numeric(y)
 	width <- as.numeric(width)
@@ -493,11 +495,12 @@ hmSeqLogo <- function(pwm, x=unit(0.5, "npc"), y=unit(0.5, "npc"), width=1, heig
 		for (i in 1:length(chars)) {
 			letter <- chars[letterOrder[i]]
 			ht <- hts[letterOrder[i]]
-			if (ht>0) letters <- seqLogo:::addLetter(letters, letter, x.pos, y.pos, ht, wt)
+			if (ht>0) letters <- seqLogo:::addLetter(letters, letter, x.pos, y.pos, ht, wt, fill=c("A"="green","C"="red","G"="blue","T"="orange"))
 			y.pos <- y.pos + ht #+ 0.01
 		}
 		x.pos <- x.pos + wt
 	}
+	# print(str(letters))
 	grid::grid.polygon(x=unit(letters$x, unitType), y=unit(letters$y, unitType), id=letters$id, gp=grid::gpar(fill=letters$fill,col="transparent"))
 }
 
