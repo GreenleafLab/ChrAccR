@@ -50,6 +50,66 @@ isCanonicalChrom <- function(ss){
 	return(grepl(re, ss))
 }
 
+#' findNearestGeneForGr
+#'
+#' get gene annotation for a \code{GRanges} object by linking to the nearest gene
+#'
+#' @param gr    \code{GRanges} object
+#' @param geneGr  gene annotation from which to pull the annotation. Can be \code{NULL} for
+#'              automatic retrieval of annotation. Must be named or have a gene name column
+#'              in the metadata
+#' @param maxDist maximum distance for matching to nearest gene
+#' @return \code{data.frame} containing information on the nearest gene for each element in \code{gr}
+#'
+#' @export
+findNearestGeneForGr <- function(gr, geneGr=NULL, maxDist=1e5){
+	if (is.null(geneGr)){
+		genAss <- genome(gr)[1]
+		annoPkg <- getChrAccRAnnotationPackage(genAss)
+		if (is.null(annoPkg)) logger.error("Annotation package needed")
+		geneGr <- get("getGeneAnnotation", asNamespace(annoPkg))(anno="gencode_coding", type="tssGr")
+	}
+	if (is.null(names(geneGr))){
+		emd <- elementMetadata(geneGr)
+		nameCol <- findOrderedNames(colnames(emd), c("gene_name", "genename", "gene_id", "geneid"), exact=TRUE, ignore.case=TRUE)
+		if (!is.na(nameCol)){
+			names(geneGr) <- emd[,nameCol]
+		} else {
+			logger.error("geneGr must have names")
+		}
+	}
+
+	tssGr <- promoters(geneGr, upstream=0, downstream=1) #get the TSS coordinate
+	dd <- distanceToNearest(gr, tssGr, ignore.strand=TRUE, select="arbitrary")
+	dd <- dd[mcols(dd)[,"distance"] <= maxDist,] # remove too far matches
+
+	res <- data.frame(
+		gene_name=rep(as.character(NA), length(gr)),
+		dist_to_tss=rep(as.integer(NA), length(gr)),
+		stringsAsFactors=FALSE
+	)
+	geneGr.sub <- geneGr[subjectHits(dd)]
+	geneStrand <- as.character(strand(geneGr.sub))
+	emd <- elementMetadata(geneGr.sub)
+	# assign negative distances for elements that are downstream of the gene
+	dist.signed <- mcols(dd)[,"distance"]
+	coord.q <- start(resize(gr[queryHits(dd)], width=1, fix="center", ignore.strand=TRUE))
+	# isNeg.q <- strand(gr[queryHits(dd)])=="-"
+	coord.s <- start(tssGr[subjectHits(dd)])
+	isNeq.s <- geneStrand=="-"
+	isDownstream <- (dist.signed > 0) & ((!isNeq.s & (coord.q > coord.s)) | (isNeq.s & (coord.q < coord.s)))
+	dist.signed[isDownstream] <- -dist.signed[isDownstream]
+
+	res[queryHits(dd),"gene_name"]   <- names(geneGr.sub)
+	res[queryHits(dd),"dist_to_tss"] <- dist.signed
+	res[queryHits(dd),"gene_chrom"]  <- as.character(seqnames(geneGr.sub))
+	res[queryHits(dd),"gene_chromStart"]  <- start(geneGr.sub)
+	res[queryHits(dd),"gene_chromEnd"]  <- end(geneGr.sub)
+	res[queryHits(dd),"gene_strand"]  <- geneStrand
+
+	return(res)
+}
+
 #' rowZscores
 #' 
 #' Performs z-score normalization on the rows of a matrix. (Basically a wrapper around \code{matrixStats})

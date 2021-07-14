@@ -17,7 +17,7 @@
 that can be used by \code{motifmatchr::matchMotifs} (such as an \code{PFMatrixList} or \code{PWMatrixList} object)}
 }
 \value{
-a \code{data.frame} summarizing Fisher's Exact Test enrichment statistics for each motif
+Deviations object as returned by \code{chromVAR::computeDeviations}
 }
 \description{
 Compute chromVar deviations

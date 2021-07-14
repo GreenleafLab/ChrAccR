@@ -448,12 +448,14 @@ PWMatrixToProbMatrix <- function(x){
 #' @export
 #' @examples
 #' \dontrun{
-#' hmSeqLogo(prepareMotifmatchr("hg38", "jaspar")$motifs[["MA0137.3_STAT1"]], unit(0.5, "npc"), unit(0.5, "npc"), 0.5, 0.5, ic.scale=TRUE)
+#' mm <- prepareMotifmatchr("hg38", "jaspar")$motifs[["MA0137.3_STAT1"]]
+#' hmSeqLogo(mm, unit(0.5, "npc"), unit(0.5, "npc"), 0.5, 0.5, ic.scale=TRUE)
 #' }
 hmSeqLogo <- function(pwm, x=unit(0.5, "npc"), y=unit(0.5, "npc"), width=1, height=1, ic.scale=TRUE){
 	if (!requireNamespace("grid")) logger.error(c("Could not load dependency: grid"))
-	# convert units to numbers
-	unitType <- attr(x, "unit")
+	# # convert units to numbers
+	# unitType <- attr(x, "unit")
+	unitType <- "npc"
 	x <- as.numeric(x)
 	y <- as.numeric(y)
 	width <- as.numeric(width)
@@ -493,11 +495,12 @@ hmSeqLogo <- function(pwm, x=unit(0.5, "npc"), y=unit(0.5, "npc"), width=1, heig
 		for (i in 1:length(chars)) {
 			letter <- chars[letterOrder[i]]
 			ht <- hts[letterOrder[i]]
-			if (ht>0) letters <- seqLogo:::addLetter(letters, letter, x.pos, y.pos, ht, wt)
+			if (ht>0) letters <- seqLogo:::addLetter(letters, letter, x.pos, y.pos, ht, wt, fill=c("A"="green","C"="red","G"="blue","T"="orange"))
 			y.pos <- y.pos + ht #+ 0.01
 		}
 		x.pos <- x.pos + wt
 	}
+	# print(str(letters))
 	grid::grid.polygon(x=unit(letters$x, unitType), y=unit(letters$y, unitType), id=letters$id, gp=grid::gpar(fill=letters$fill,col="transparent"))
 }
 
@@ -547,4 +550,76 @@ plotFootprint <- function(footprintDf, pwm=NULL, colorMap=NULL){
 
 	pp <- cowplot::plot_grid(ppm, ppb + theme(legend.position="none"), ncol=1, rel_heights=c(2, 1), align="v", axis="lr")
 	return(pp)
+}
+
+################################################################################
+# Motif clusters
+################################################################################
+# chromVAR for Altius institute motif clusters
+#' getMotifClusterAnnot_altius
+#' 
+#' Retrieve non-redundant motif cluster annotation curated by the altius institute (Vierstra et al., Nature, 2020; doi:10.1038/s41586-020-2528-x)
+#' @param makeUnique further remove redundancy in motif occurences by retaining only the best matching motif when motif overlaps are present
+#' @param genome genome assembly. Currently only \code{"hg38"} is supported
+#' @param annotFn Filename for the annotation. Useful to skip automatic download of the large dataset
+#' @return Motif cluster annotation
+#' @author Fabian Mueller
+#' @noRd
+getMotifClusterAnnot_altius <- function(makeUnique=TRUE, genome="hg38", annotFn=NULL){
+	if (is.null(annotFn)){
+		if (genome=="hg38"){
+			furl <- "https://muellerf.s3.amazonaws.com/data/ChrAccR/data/annotation/tfMotifClusters_hg38.rds"
+			logger.start("Downloading annotation")
+				annotFn <- tempfile("annot_", fileext=".rds")
+				download.file(furl, annotFn)
+			logger.completed()
+		} else {
+			logger.error("Unsupported genome")
+		}
+	}
+	logger.start("Loading Altius TF motif cluster annotation data")
+		mcAnnot <- readRDS(annotFn)
+	logger.completed()
+	if (makeUnique){
+		logger.start("Making overlapping motifs unique")
+			mcGr <- unlist(mcAnnot$clusterOcc)
+			mcGr_u <- getNonOverlappingByScore(mcGr, scoreCol="score")
+			mcGrl <- split(mcGr_u, elementMetadata(mcGr_u)[,"cid"])
+			mcGrl <- mcGrl[names(mcAnnot$clusterOcc)]
+			rm(mcGr, mcGr_u)
+		logger.completed()
+		mcAnnot$clusterOcc <- mcGrl
+	}
+	return(mcAnnot)
+}
+
+#' computeDeviations_altius
+#' 
+#' Compute chromVAR deviations from non-redundant motif clusters curated by the altius institute (Vierstra et al., Nature, 2020; doi:10.1038/s41586-020-2528-x)
+#' @param dsa   \code{\linkS4class{DsATAC}} object
+#' @param type  haracter string specifying the region type
+#' @param mcAnnot motif cluster annotation object. If \code{NULL}, it will be automatically downloaded
+#' @return Deviations object as returned by \code{chromVAR::computeDeviations}
+#' @author Fabian Mueller
+#' @noRd
+computeDeviations_altius <- function(dsa, type, mcAnnot=NULL){
+	if (is.null(mcAnnot)){
+		mcAnnot <- getMotifClusterAnnot_altius(genome=getGenome(dsa))
+	}
+	logger.start("Preparing chromVAR object")
+		gr <- getCoord(dsa, type)
+		countSe <- getCountsSE(dsa, type, naIsZero=TRUE)
+		motifClusterOccM <- as(do.call(cbind, lapply(mcAnnot$clusterOcc, FUN=function(x){
+			overlapsAny(gr, x, ignore.strand=TRUE)
+		})), "sparseMatrix")
+		mmObj_mc <- SummarizedExperiment::SummarizedExperiment(assays=list(motifMatches=motifClusterOccM), rowRanges=gr, colData=S4Vectors::DataFrame(mcAnnot$clusterAnnot))
+		genomeObj <- getGenomeObject(getGenome(dsa))
+		genome(countSe) <- BSgenome::providerVersion(genomeObj) #override inconsistent naming of genome versions (e.g. hg38 and GRCh38)
+		countSe <- chromVAR::addGCBias(countSe, genome=genomeObj)
+
+		ridx <- safeMatrixStats(assay(countSe), "rowSums") > 0 & safeMatrixStats(assay(mmObj_mc), "rowSums") > 0 # only consider regions where there is an actual motif match and counts
+		logger.status("Computing deviations")
+		cv_mc <- chromVAR::computeDeviations(object=countSe[ridx,], annotations=mmObj_mc[ridx,])
+	logger.completed()
+	return(cv_mc)
 }

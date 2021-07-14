@@ -415,10 +415,22 @@ setMethod("createReport_exploratory",
 		if (is.null(regionTypes.cv)) regionTypes.cv <- regionTypes[grepl("peak", regionTypes, ignore.case=TRUE)]
 		doChromVar <- length(regionTypes.cv) > 0 && all(regionTypes.cv %in% regionTypes)
 		if (doChromVar){
+			cvMot <- getConfigElement("chromVarMotifs")
+			useMotifClusters <- cvMot %in% c("motifClusters") && getGenome(.object) %in% c("hg38")
+			if (useMotifClusters){
+				logger.start("Preparing motif cluster annotation")
+					cvMot <- getMotifClusterAnnot_altius(genome=getGenome(.object))
+				logger.completed()
+			}
+
 			logger.start("Computing chromVAR scores")
 				cvResL <- lapply(regionTypes.cv, FUN=function(rt){
 					logger.status(c("Region type:", rt))
-					cvd <- getChromVarDev(.object, rt, motifs=getConfigElement("chromVarMotifs"))
+					if (useMotifClusters){
+						cvd <- computeDeviations_altius(.object, rt, mcAnnot=cvMot)
+					} else {
+						cvd <- getChromVarDev(.object, rt, motifs=cvMot)
+					}
 					fn <- file.path(rDir.data.abs, paste0("chromVarDev_", normalize.str(rt, return.camel=TRUE), ".rds"))
 					saveRDS(cvd, fn)
 					return(cvd)
@@ -439,6 +451,24 @@ setMethod("createReport_exploratory",
 				paste0("<b>", rt, ":</b> ", paste(c("<a href=\"", rDir.data, "/", paste0("chromVarDev_", normalize.str(rt, return.camel=TRUE), ".rds"), "\">","RDS file","</a>"),collapse=""))
 			})
 			rr <- muReportR::addReportList(rr, ll, type="u")
+
+			if (useMotifClusters){
+				# save motif cluster annotation and add report text
+				cvMot$clusterOcc <- NULL
+				annotFn <- file.path(rDir.data.abs, paste0("motifCluster_annot", ".rds"))
+				saveRDS(cvMot, annotFn)
+				mcTxt <- c("Vierstra, Lazar, Sandstrom, et al. (2020). Global reference mapping of human transcription factor footprints. <i>Nature</i>, <b>583</b>(7818), 729–736. doi:10.1038/s41586-020-2528-x")
+				rr <- muReportR::addReportReference(rr, mcTxt)
+				txt <- paste0(
+					"Non-redundant motif clustering ",
+					muReportR::getReportReference(rr, mcTxt),
+					" (",
+					paste(c("<a href=\"", rDir.data, "/", "motifCluster_annot.rds", "\">","RDS file","</a>"), collapse=""),
+					")",
+					" was used for annotating genome-wide TF binding sites and computing motif cluster accessibility."
+				)
+				rr <- muReportR::addReportParagraph(rr, txt)
+			}
 
 			logger.start("Plotting chromVAR results")
 				cvMotifsForDimRed <- getConfigElement("chromVarMotifNamesForDimRed")

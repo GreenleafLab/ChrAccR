@@ -2372,7 +2372,7 @@ if (!isGeneric("getChromVarDev")) {
 #' @param type       character string specifying the region type
 #' @param motifs     either a character string (currently only "jaspar" and sets contained in \code{chromVARmotifs} ("homer", "encode", "cisbp") are supported) or an object containing PWMs
 #'                   that can be used by \code{motifmatchr::matchMotifs} (such as an \code{PFMatrixList} or \code{PWMatrixList} object)
-#' @return a \code{data.frame} summarizing Fisher's Exact Test enrichment statistics for each motif
+#' @return Deviations object as returned by \code{chromVAR::computeDeviations}
 #' 
 #' @rdname getChromVarDev-DsATAC-method
 #' @docType methods

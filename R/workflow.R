@@ -257,6 +257,13 @@ run_atac_peakcalling <- function(dsa, anaDir){
 				}
 				peakGr <- getConsensusPeakSet(peakGrl, mode="no_by_score", grouping=ggs, groupAgreePerc=getConfigElement("annotationPeakGroupAgreePerc"), groupConsSelect=FALSE, scoreCol="score", keepOvInfo=TRUE)
 				logger.info(c("Identified", length(peakGr), "consensus peaks"))
+				if (TRUE){
+					logger.start("Annotating peaks")
+						geneAnnotDf <- findNearestGeneForGr(peakGr)
+						elementMetadata(peakGr)[,".nearest_gene_name"] <- geneAnnotDf[,"gene_name"]
+						elementMetadata(peakGr)[,".nearest_gene_dist"] <- geneAnnotDf[,"dist_to_tss"]
+					logger.completed()
+				}
 				logger.start("Adding peak set to DsATAC")
 					dsn <- regionAggregation(dsn, peakGr, ".peaks.cons", signal="insertions", dropEmpty=FALSE)
 				logger.completed()
