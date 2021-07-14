@@ -36,7 +36,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ChrAccR</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.9.15</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.9.17</span>
       </span>
     </div>
 
@@ -65,7 +65,7 @@
 </li>
 <li>
   <a href="https://github.com/GreenleafLab/ChrAccR">
-    <span class="fas fa-github"></span>
+    <span class="fa fa-github"></span>
      
     GitHub
   </a>
@@ -88,7 +88,7 @@
 using ChrAccR</div></h1>
                         <h4 class="author">Fabian Mueller</h4>
             
-            <h4 class="date">2021-04-07</h4>
+            <h4 class="date">2021-07-14</h4>
       
       
       <div class="hidden name"><code>overview.Rmd</code></div>
@@ -227,15 +227,15 @@ using ChrAccR</div></h1>
 <p>For playing around with the <code>ChrAccR</code> datastructures, we use a reduced version of the <span class="citation">(Calderon et al. <a href="#ref-Calderon:2019cb">2019</a>)</span> dataset which focuses on only a subset of the human genome (approximately 1%). It is provided in the <code>ChrAccRex</code> package and can be loaded using:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">dsa</span> <span class="op">&lt;-</span> <span class="fu">ChrAccRex</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/ChrAccRex/man/loadExample.html">loadExample</a></span><span class="op">(</span><span class="st">"dsAtac_ia_example"</span><span class="op">)</span></code></pre></div>
-<pre><code>&gt; 2021-04-07 11:08:14     1.2  STATUS STARTED Loading region count data from HDF5
-&gt; 2021-04-07 11:08:14     1.2  STATUS     Region type: promoters_gc_protein_coding
-&gt; 2021-04-07 11:08:14     1.2  STATUS     Region type: IA_prog_peaks
-&gt; 2021-04-07 11:08:14     1.2  STATUS     Region type: t200
-&gt; 2021-04-07 11:08:14     1.2  STATUS     Region type: t10k
-&gt; 2021-04-07 11:08:14     1.2  STATUS COMPLETED Loading region count data from HDF5
+<pre><code>&gt; 2021-07-14 17:19:04     1.2  STATUS STARTED Loading region count data from HDF5
+&gt; 2021-07-14 17:19:04     1.2  STATUS     Region type: promoters_gc_protein_coding
+&gt; 2021-07-14 17:19:04     1.2  STATUS     Region type: IA_prog_peaks
+&gt; 2021-07-14 17:19:04     1.2  STATUS     Region type: t200
+&gt; 2021-07-14 17:19:04     1.2  STATUS     Region type: t10k
+&gt; 2021-07-14 17:19:04     1.2  STATUS COMPLETED Loading region count data from HDF5
 &gt; 
-&gt; 2021-04-07 11:08:14     1.2  STATUS STARTED Updating fragment RDS file references
-&gt; 2021-04-07 11:08:14     1.2  STATUS COMPLETED Updating fragment RDS file references</code></pre>
+&gt; 2021-07-14 17:19:04     1.2  STATUS STARTED Updating fragment RDS file references
+&gt; 2021-07-14 17:19:04     1.2  STATUS COMPLETED Updating fragment RDS file references</code></pre>
 <p>To get an overview of what information is stored in the example dataset, you can just type the object name:</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">dsa</span></code></pre></div>
@@ -523,19 +523,19 @@ using ChrAccR</div></h1>
 <div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># remove those regions that do not have at least 10 insertions in at least 75% of the samples</span>
 <span class="va">dsa_filtered</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/filterLowCovg,DsATAC-method.html">filterLowCovg</a></span><span class="op">(</span><span class="va">dsa</span>, thresh<span class="op">=</span><span class="fl">10L</span>, reqSamples<span class="op">=</span><span class="fl">0.75</span><span class="op">)</span></code></pre></div>
-<pre><code>&gt; 2021-04-07 11:08:21     1.4  STATUS Removing regions with read counts lower than 10 in more than 8 samples (24%)
-&gt; 2021-04-07 11:08:21     1.4    INFO Removed 8 regions (3.81%) of type promoters_gc_protein_coding
-&gt; 2021-04-07 11:08:21     1.4    INFO Removed 11817 regions (86.07%) of type IA_prog_peaks
-&gt; 2021-04-07 11:08:21     1.4    INFO Removed 133034 regions (98.54%) of type t200
-&gt; 2021-04-07 11:08:21     1.4    INFO Removed 21 regions (0.78%) of type t10k</code></pre>
+<pre><code>&gt; 2021-07-14 17:19:11     1.4  STATUS Removing regions with read counts lower than 10 in more than 8 samples (24%)
+&gt; 2021-07-14 17:19:11     1.4    INFO Removed 8 regions (3.81%) of type promoters_gc_protein_coding
+&gt; 2021-07-14 17:19:11     1.4    INFO Removed 11817 regions (86.07%) of type IA_prog_peaks
+&gt; 2021-07-14 17:19:11     1.4    INFO Removed 133034 regions (98.54%) of type t200
+&gt; 2021-07-14 17:19:11     1.4    INFO Removed 21 regions (0.78%) of type t10k</code></pre>
 <div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># remove regions on chromosome 21</span>
 <span class="va">dsa_filtered</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/filterChroms,DsATAC-method.html">filterChroms</a></span><span class="op">(</span><span class="va">dsa</span>, exclChrom<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"chr21"</span><span class="op">)</span><span class="op">)</span></code></pre></div>
-<pre><code>&gt; 2021-04-07 11:08:21     1.4    INFO Removed 64 regions (30.48%) of type promoters_gc_protein_coding
-&gt; 2021-04-07 11:08:21     1.4    INFO Removed 7118 regions (51.84%) of type IA_prog_peaks
-&gt; 2021-04-07 11:08:21     1.4    INFO Removed 89001 regions (65.92%) of type t200
-&gt; 2021-04-07 11:08:21     1.4    INFO Removed 1781 regions (65.87%) of type t10k
-&gt; 2021-04-07 11:08:21     1.4  STATUS Filtering fragment data</code></pre>
+<pre><code>&gt; 2021-07-14 17:19:11     1.4    INFO Removed 64 regions (30.48%) of type promoters_gc_protein_coding
+&gt; 2021-07-14 17:19:11     1.4    INFO Removed 7118 regions (51.84%) of type IA_prog_peaks
+&gt; 2021-07-14 17:19:11     1.4    INFO Removed 89001 regions (65.92%) of type t200
+&gt; 2021-07-14 17:19:11     1.4    INFO Removed 1781 regions (65.87%) of type t10k
+&gt; 2021-07-14 17:19:11     1.4  STATUS Filtering fragment data</code></pre>
 <p>To remove a region type entirely, use <code>removeRegionType</code>:</p>
 <div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">dsa_not10k</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/removeRegionType,DsATAC-method.html">removeRegionType</a></span><span class="op">(</span><span class="va">dsa</span>, <span class="st">"t10k"</span><span class="op">)</span>
@@ -550,36 +550,36 @@ using ChrAccR</div></h1>
 <div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># quantile normalization for all region types</span>
 <span class="va">dsa_qnorm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/transformCounts,DsATAC-method.html">transformCounts</a></span><span class="op">(</span><span class="va">dsa</span>, method<span class="op">=</span><span class="st">"quantile"</span><span class="op">)</span></code></pre></div>
-<pre><code>&gt; 2021-04-07 11:08:30     1.4  STATUS STARTED Performing quantile normalization
-&gt; 2021-04-07 11:08:30     1.4  STATUS     Region type: promoters_gc_protein_coding
-&gt; 2021-04-07 11:08:30     1.5  STATUS     Region type: IA_prog_peaks
-&gt; 2021-04-07 11:08:31     1.5  STATUS     Region type: t200
-&gt; 2021-04-07 11:08:35     1.5  STATUS     Region type: t10k
-&gt; 2021-04-07 11:08:36     1.5  STATUS COMPLETED Performing quantile normalization</code></pre>
+<pre><code>&gt; 2021-07-14 17:19:20     1.4  STATUS STARTED Performing quantile normalization
+&gt; 2021-07-14 17:19:20     1.4  STATUS     Region type: promoters_gc_protein_coding
+&gt; 2021-07-14 17:19:20     1.5  STATUS     Region type: IA_prog_peaks
+&gt; 2021-07-14 17:19:21     1.5  STATUS     Region type: t200
+&gt; 2021-07-14 17:19:25     1.6  STATUS     Region type: t10k
+&gt; 2021-07-14 17:19:25     1.6  STATUS COMPLETED Performing quantile normalization</code></pre>
 <div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># RPKM normalization of peak counts</span>
 <span class="va">dsa_rpkm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/transformCounts,DsATAC-method.html">transformCounts</a></span><span class="op">(</span><span class="va">dsa</span>, method<span class="op">=</span><span class="st">"RPKM"</span>, regionTypes<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"IA_prog_peaks"</span><span class="op">)</span><span class="op">)</span></code></pre></div>
-<pre><code>&gt; 2021-04-07 11:08:36     1.4  STATUS STARTED Performing RPKM normalization
-&gt; 2021-04-07 11:08:36     1.4  STATUS     Region type: IA_prog_peaks
-&gt; 2021-04-07 11:08:36     1.4  STATUS COMPLETED Performing RPKM normalization</code></pre>
+<pre><code>&gt; 2021-07-14 17:19:26     1.4  STATUS STARTED Performing RPKM normalization
+&gt; 2021-07-14 17:19:26     1.4  STATUS     Region type: IA_prog_peaks
+&gt; 2021-07-14 17:19:26     1.4  STATUS COMPLETED Performing RPKM normalization</code></pre>
 <div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># log2(RPKM)</span>
 <span class="va">dsa_l2rpkm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/transformCounts,DsATAC-method.html">transformCounts</a></span><span class="op">(</span><span class="va">dsa_rpkm</span>, method<span class="op">=</span><span class="st">"log2"</span>, regionTypes<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"IA_prog_peaks"</span><span class="op">)</span><span class="op">)</span></code></pre></div>
-<pre><code>&gt; 2021-04-07 11:08:36     1.4  STATUS STARTED log2 transforming counts
-&gt; 2021-04-07 11:08:36     1.4  STATUS     Region type: IA_prog_peaks
-&gt; 2021-04-07 11:08:37     1.4  STATUS COMPLETED log2 transforming counts</code></pre>
+<pre><code>&gt; 2021-07-14 17:19:26     1.4  STATUS STARTED log2 transforming counts
+&gt; 2021-07-14 17:19:26     1.4  STATUS     Region type: IA_prog_peaks
+&gt; 2021-07-14 17:19:27     1.4  STATUS COMPLETED log2 transforming counts</code></pre>
 <div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># DESeq2 variance stabilizing transformation (vst)</span>
 <span class="va">dsa_vst</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/transformCounts,DsATAC-method.html">transformCounts</a></span><span class="op">(</span><span class="va">dsa</span>, method<span class="op">=</span><span class="st">"vst"</span>, regionTypes<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"IA_prog_peaks"</span><span class="op">)</span><span class="op">)</span></code></pre></div>
-<pre><code>&gt; 2021-04-07 11:08:37     1.4  STATUS STARTED Applying DESeq2 VST
-&gt; 2021-04-07 11:08:37     1.4  STATUS     Region type: IA_prog_peaks
-&gt; 2021-04-07 11:08:39     1.5  STATUS COMPLETED Applying DESeq2 VST</code></pre>
+<pre><code>&gt; 2021-07-14 17:19:27     1.4  STATUS STARTED Applying DESeq2 VST
+&gt; 2021-07-14 17:19:27     1.4  STATUS     Region type: IA_prog_peaks
+&gt; 2021-07-14 17:19:29     1.5  STATUS COMPLETED Applying DESeq2 VST</code></pre>
 <div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="co"># correct for potential batch effects based on the annotated donor</span>
 <span class="va">dsa_vst</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/transformCounts,DsATAC-method.html">transformCounts</a></span><span class="op">(</span><span class="va">dsa_vst</span>, method<span class="op">=</span><span class="st">"batchCorrect"</span>, batch<span class="op">=</span><span class="fu"><a href="../reference/getSampleAnnot,DsAcc-method.html">getSampleAnnot</a></span><span class="op">(</span><span class="va">dsa_qnorm</span><span class="op">)</span><span class="op">[</span>,<span class="st">"donor"</span><span class="op">]</span>, regionTypes<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"IA_prog_peaks"</span><span class="op">)</span><span class="op">)</span></code></pre></div>
-<pre><code>&gt; 2021-04-07 11:08:39     1.5  STATUS STARTED Applying batch effect correction
-&gt; 2021-04-07 11:08:39     1.5  STATUS     Region type: IA_prog_peaks
-&gt; 2021-04-07 11:08:39     1.5  STATUS COMPLETED Applying batch effect correction</code></pre>
+<pre><code>&gt; 2021-07-14 17:19:29     1.5  STATUS STARTED Applying batch effect correction
+&gt; 2021-07-14 17:19:29     1.5  STATUS     Region type: IA_prog_peaks
+&gt; 2021-07-14 17:19:30     1.5  STATUS COMPLETED Applying batch effect correction</code></pre>
 </div>
 <div id="adding-a-region-type-for-count-data-aggregation" class="section level3">
 <h3 class="hasAnchor">
@@ -604,20 +604,20 @@ using ChrAccR</div></h1>
 <p>You can also merge samples, e.g. from different technical or biological replicates. In the following example, we merge all biological replicates (originating from different donors) for the same cell type and stimulation conditions. This grouping information is contained in the <code>sampleGroup</code> annotation column. By default, counts will be added up for each aggregated region, but you can specify other aggregation methods such as the mean or median in the <code>countAggrFun</code> argument.</p>
 <div class="sourceCode" id="cb56"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">dsa_merged</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/mergeSamples,DsATAC-method.html">mergeSamples</a></span><span class="op">(</span><span class="va">dsa</span>, <span class="st">"sampleGroup"</span>, countAggrFun<span class="op">=</span><span class="st">"sum"</span><span class="op">)</span></code></pre></div>
-<pre><code>&gt; 2021-04-07 11:08:40     1.5  STATUS Merging samples (region set: 'promoters_gc_protein_coding')...
-&gt; 2021-04-07 11:08:40     1.5  STATUS Merging samples (region set: 'IA_prog_peaks')...
-&gt; 2021-04-07 11:08:40     1.5  STATUS Merging samples (region set: 't200')...
-&gt; 2021-04-07 11:08:42     1.6  STATUS Merging samples (region set: 't10k')...
-&gt; 2021-04-07 11:08:42     1.6  STATUS STARTED Merging sample fragment data
-&gt; 2021-04-07 11:08:42     1.6  STATUS     Merged sample 1 of 8
-&gt; 2021-04-07 11:08:43     1.6  STATUS     Merged sample 2 of 8
-&gt; 2021-04-07 11:08:45     1.6  STATUS     Merged sample 3 of 8
-&gt; 2021-04-07 11:08:47     1.6  STATUS     Merged sample 4 of 8
-&gt; 2021-04-07 11:08:49     1.6  STATUS     Merged sample 5 of 8
-&gt; 2021-04-07 11:08:50     1.6  STATUS     Merged sample 6 of 8
-&gt; 2021-04-07 11:08:52     1.6  STATUS     Merged sample 7 of 8
-&gt; 2021-04-07 11:08:54     1.6  STATUS     Merged sample 8 of 8
-&gt; 2021-04-07 11:08:56     1.6  STATUS COMPLETED Merging sample fragment data</code></pre>
+<pre><code>&gt; 2021-07-14 17:19:30     1.5  STATUS Merging samples (region set: 'promoters_gc_protein_coding')...
+&gt; 2021-07-14 17:19:30     1.5  STATUS Merging samples (region set: 'IA_prog_peaks')...
+&gt; 2021-07-14 17:19:30     1.5  STATUS Merging samples (region set: 't200')...
+&gt; 2021-07-14 17:19:32     1.6  STATUS Merging samples (region set: 't10k')...
+&gt; 2021-07-14 17:19:32     1.6  STATUS STARTED Merging sample fragment data
+&gt; 2021-07-14 17:19:32     1.6  STATUS     Merged sample 1 of 8
+&gt; 2021-07-14 17:19:33     1.6  STATUS     Merged sample 2 of 8
+&gt; 2021-07-14 17:19:35     1.6  STATUS     Merged sample 3 of 8
+&gt; 2021-07-14 17:19:37     1.6  STATUS     Merged sample 4 of 8
+&gt; 2021-07-14 17:19:39     1.6  STATUS     Merged sample 5 of 8
+&gt; 2021-07-14 17:19:40     1.6  STATUS     Merged sample 6 of 8
+&gt; 2021-07-14 17:19:42     1.6  STATUS     Merged sample 7 of 8
+&gt; 2021-07-14 17:19:45     1.6  STATUS     Merged sample 8 of 8
+&gt; 2021-07-14 17:19:46     1.6  STATUS COMPLETED Merging sample fragment data</code></pre>
 <div class="sourceCode" id="cb58"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="../reference/getSamples,DsAcc-method.html">getSamples</a></span><span class="op">(</span><span class="va">dsa_merged</span><span class="op">)</span></code></pre></div>
 <pre><code>&gt; [1] "TCD8EM_S"    "TCD8EM_U"    "TCD8naive_S" "TCD8naive_U" "TeffMem_S"  
@@ -631,26 +631,26 @@ using ChrAccR</div></h1>
 <div class="sourceCode" id="cb60"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">dest</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"myDsAtacDataset"</span><span class="op">)</span>
 <span class="fu"><a href="../reference/saveDsAcc.html">saveDsAcc</a></span><span class="op">(</span><span class="va">dsa</span>, <span class="va">dest</span><span class="op">)</span></code></pre></div>
-<pre><code>&gt; 2021-04-07 11:08:56     1.6  STATUS STARTED Saving region count data to HDF5
-&gt; 2021-04-07 11:08:56     1.6  STATUS     Region type: promoters_gc_protein_coding
-&gt; 2021-04-07 11:08:56     1.6  STATUS     Region type: IA_prog_peaks
-&gt; 2021-04-07 11:08:56     1.6  STATUS     Region type: t200
-&gt; 2021-04-07 11:08:58     1.5  STATUS     Region type: t10k
-&gt; 2021-04-07 11:08:58     1.5  STATUS COMPLETED Saving region count data to HDF5
+<pre><code>&gt; 2021-07-14 17:19:46     1.6  STATUS STARTED Saving region count data to HDF5
+&gt; 2021-07-14 17:19:46     1.6  STATUS     Region type: promoters_gc_protein_coding
+&gt; 2021-07-14 17:19:46     1.6  STATUS     Region type: IA_prog_peaks
+&gt; 2021-07-14 17:19:47     1.6  STATUS     Region type: t200
+&gt; 2021-07-14 17:19:49     1.6  STATUS     Region type: t10k
+&gt; 2021-07-14 17:19:49     1.6  STATUS COMPLETED Saving region count data to HDF5
 &gt; 
-&gt; 2021-04-07 11:08:58     1.5  STATUS STARTED Saving fragment data to RDS
-&gt; 2021-04-07 11:08:58     1.5  STATUS COMPLETED Saving fragment data to RDS</code></pre>
+&gt; 2021-07-14 17:19:49     1.6  STATUS STARTED Saving fragment data to RDS
+&gt; 2021-07-14 17:19:49     1.6  STATUS COMPLETED Saving fragment data to RDS</code></pre>
 <div class="sourceCode" id="cb62"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">dsa_reloaded</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/loadDsAcc.html">loadDsAcc</a></span><span class="op">(</span><span class="va">dest</span><span class="op">)</span></code></pre></div>
-<pre><code>&gt; 2021-04-07 11:08:58     1.5  STATUS STARTED Loading region count data from HDF5
-&gt; 2021-04-07 11:08:58     1.5  STATUS     Region type: promoters_gc_protein_coding
-&gt; 2021-04-07 11:08:58     1.5  STATUS     Region type: IA_prog_peaks
-&gt; 2021-04-07 11:08:58     1.5  STATUS     Region type: t200
-&gt; 2021-04-07 11:08:58     1.5  STATUS     Region type: t10k
-&gt; 2021-04-07 11:08:58     1.5  STATUS COMPLETED Loading region count data from HDF5
+<pre><code>&gt; 2021-07-14 17:19:49     1.6  STATUS STARTED Loading region count data from HDF5
+&gt; 2021-07-14 17:19:49     1.6  STATUS     Region type: promoters_gc_protein_coding
+&gt; 2021-07-14 17:19:49     1.6  STATUS     Region type: IA_prog_peaks
+&gt; 2021-07-14 17:19:49     1.6  STATUS     Region type: t200
+&gt; 2021-07-14 17:19:49     1.6  STATUS     Region type: t10k
+&gt; 2021-07-14 17:19:49     1.6  STATUS COMPLETED Loading region count data from HDF5
 &gt; 
-&gt; 2021-04-07 11:08:58     1.5  STATUS STARTED Updating fragment RDS file references
-&gt; 2021-04-07 11:08:58     1.5  STATUS COMPLETED Updating fragment RDS file references</code></pre>
+&gt; 2021-07-14 17:19:49     1.6  STATUS STARTED Updating fragment RDS file references
+&gt; 2021-07-14 17:19:49     1.6  STATUS COMPLETED Updating fragment RDS file references</code></pre>
 <div class="sourceCode" id="cb64"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">dsa_reloaded</span></code></pre></div>
 <pre><code>&gt; DsATAC chromatin accessibility dataset 
@@ -789,7 +789,7 @@ using ChrAccR</div></h1>
 <a href="#differential-accessibility" class="anchor"></a>Differential accessibility</h2>
 <div class="sourceCode" id="cb78"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">daTab</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getDiffAcc,DsATAC-method.html">getDiffAcc</a></span><span class="op">(</span><span class="va">dsa</span>, <span class="st">"IA_prog_peaks"</span>, <span class="st">"stimulus"</span>, grp1Name<span class="op">=</span><span class="st">"S"</span>, grp2Name<span class="op">=</span><span class="st">"U"</span>, adjustCols<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"cellType"</span>, <span class="st">"donor"</span><span class="op">)</span><span class="op">)</span></code></pre></div>
-<pre><code>&gt; 2021-04-07 11:09:00     1.6 WARNING The following design columns will not be considered because they do not have replicates: donor</code></pre>
+<pre><code>&gt; 2021-07-14 17:19:51     1.5 WARNING The following design columns will not be considered because they do not have replicates: donor</code></pre>
 </div>
 <div id="transcription-factor-motif-enrichment-using-chromvar" class="section level2">
 <h2 class="hasAnchor">
@@ -800,7 +800,7 @@ using ChrAccR</div></h1>
 <code class="sourceCode R"><span class="va">cvRes</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getChromVarDev,DsATAC-method.html">getChromVarDev</a></span><span class="op">(</span><span class="va">dsa</span>, <span class="st">"IA_prog_peaks"</span>, motifs<span class="op">=</span><span class="st">"jaspar"</span><span class="op">)</span>
 <span class="va">devZ</span> <span class="op">&lt;-</span> <span class="fu">chromVAR</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/chromVAR/man/deviationScores.html">deviationScores</a></span><span class="op">(</span><span class="va">cvRes</span><span class="op">)</span>
 <span class="fu"><a href="https://rdrr.io/r/utils/str.html">str</a></span><span class="op">(</span><span class="va">devZ</span><span class="op">)</span></code></pre></div>
-<pre><code>&gt;  num [1:452, 1:33] -1.2727 0.1311 -0.8651 -0.7864 -0.0231 ...
+<pre><code>&gt;  num [1:452, 1:33] -0.8895 0.1732 -0.865 -0.6657 0.0247 ...
 &gt;  - attr(*, "dimnames")=List of 2
 &gt;   ..$ : chr [1:452] "MA0025.1_NFIL3" "MA0030.1_FOXF2" "MA0031.1_FOXD1" "MA0051.1_IRF2" ...
 &gt;   ..$ : chr [1:33] "TCD8EM_S_1001" "TCD8EM_S_1002" "TCD8EM_S_1003" "TCD8EM_S_1004" ...</code></pre>
@@ -842,7 +842,7 @@ using ChrAccR</div></h1>
 <p>To export data as a <code>DESeq2</code> dataset for differential accessibility analysis:</p>
 <div class="sourceCode" id="cb86"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">dds</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getDESeq2Dataset,DsATAC-method.html">getDESeq2Dataset</a></span><span class="op">(</span><span class="va">dsa</span>, <span class="st">"IA_prog_peaks"</span>, designCols<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span><span class="op">(</span><span class="st">"donor"</span>, <span class="st">"stimulus"</span>, <span class="st">"cellType"</span><span class="op">)</span><span class="op">)</span></code></pre></div>
-<pre><code>&gt; 2021-04-07 11:09:51     1.9 WARNING The following design columns will not be considered because they do not have replicates: donor</code></pre>
+<pre><code>&gt; 2021-07-14 17:20:43     1.9 WARNING The following design columns will not be considered because they do not have replicates: donor</code></pre>
 <div class="sourceCode" id="cb88"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="va">dds</span></code></pre></div>
 <pre><code>&gt; class: DESeqDataSet 
@@ -861,7 +861,7 @@ using ChrAccR</div></h1>
 <a href="#session-info" class="anchor"></a>Session Info</h1>
 <div class="sourceCode" id="cb90"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html">Sys.Date</a></span><span class="op">(</span><span class="op">)</span></code></pre></div>
-<pre><code>&gt; [1] "2021-04-07"</code></pre>
+<pre><code>&gt; [1] "2021-07-14"</code></pre>
 <div class="sourceCode" id="cb92"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></code></pre></div>
 <pre><code>&gt; R version 4.0.2 (2020-06-22)
@@ -884,79 +884,79 @@ using ChrAccR</div></h1>
 &gt; [1] stats     graphics  grDevices utils     datasets  methods   base     
 &gt; 
 &gt; other attached packages:
-&gt; [1] ggplot2_3.3.3  ChrAccR_0.9.15
+&gt; [1] ggplot2_3.3.5  ChrAccR_0.9.17
 &gt; 
 &gt; loaded via a namespace (and not attached):
-&gt;   [1] chromVAR_1.12.0                   systemfonts_1.0.1                
+&gt;   [1] chromVAR_1.12.0                   systemfonts_1.0.2                
 &gt;   [3] plyr_1.8.6                        lazyeval_0.2.2                   
 &gt;   [5] splines_4.0.2                     BiocParallel_1.24.1              
-&gt;   [7] GenomeInfoDb_1.26.5               TFBSTools_1.28.0                 
+&gt;   [7] GenomeInfoDb_1.26.7               TFBSTools_1.28.0                 
 &gt;   [9] digest_0.6.27                     htmltools_0.5.1.1                
-&gt;  [11] GO.db_3.12.1                      fansi_0.4.2                      
+&gt;  [11] GO.db_3.12.1                      fansi_0.5.0                      
 &gt;  [13] magrittr_2.0.1                    memoise_2.0.0                    
 &gt;  [15] BSgenome_1.58.0                   JASPAR2018_1.1.1                 
 &gt;  [17] limma_3.46.0                      Biostrings_2.58.0                
 &gt;  [19] readr_1.4.0                       annotate_1.68.0                  
-&gt;  [21] matrixStats_0.58.0                BSgenome.Hsapiens.UCSC.hg38_1.4.3
+&gt;  [21] matrixStats_0.59.0                BSgenome.Hsapiens.UCSC.hg38_1.4.3
 &gt;  [23] R.utils_2.10.1                    pkgdown_1.6.1                    
-&gt;  [25] colorspace_2.0-0                  blob_1.2.1                       
-&gt;  [27] textshaping_0.3.3                 xfun_0.22                        
-&gt;  [29] dplyr_1.0.5                       crayon_1.4.1                     
+&gt;  [25] colorspace_2.0-2                  blob_1.2.1                       
+&gt;  [27] textshaping_0.3.5                 xfun_0.24                        
+&gt;  [29] dplyr_1.0.7                       crayon_1.4.1                     
 &gt;  [31] RCurl_1.98-1.3                    jsonlite_1.7.2                   
 &gt;  [33] genefilter_1.72.1                 TFMPvalue_0.0.8                  
 &gt;  [35] survival_3.1-12                   glue_1.4.2                       
 &gt;  [37] gtable_0.3.0                      zlibbioc_1.36.0                  
 &gt;  [39] XVector_0.30.0                    DelayedArray_0.16.3              
-&gt;  [41] Rhdf5lib_1.12.1                   BiocGenerics_0.36.0              
+&gt;  [41] Rhdf5lib_1.12.1                   BiocGenerics_0.36.1              
 &gt;  [43] HDF5Array_1.18.1                  scales_1.1.1                     
 &gt;  [45] pheatmap_1.0.12                   DBI_1.1.1                        
-&gt;  [47] miniUI_0.1.1.1                    Rcpp_1.0.6                       
-&gt;  [49] viridisLite_0.3.0                 xtable_1.8-4                     
+&gt;  [47] miniUI_0.1.1.1                    Rcpp_1.0.7                       
+&gt;  [49] viridisLite_0.4.0                 xtable_1.8-4                     
 &gt;  [51] bit_4.0.4                         preprocessCore_1.52.1            
-&gt;  [53] stats4_4.0.2                      DT_0.17                          
+&gt;  [53] stats4_4.0.2                      DT_0.18                          
 &gt;  [55] htmlwidgets_1.5.3                 muLogR_0.2                       
 &gt;  [57] httr_1.4.2                        RColorBrewer_1.1-2               
-&gt;  [59] nabor_0.5.0                       ellipsis_0.3.1                   
+&gt;  [59] nabor_0.5.0                       ellipsis_0.3.2                   
 &gt;  [61] pkgconfig_2.0.3                   XML_3.99-0.6                     
 &gt;  [63] R.methodsS3_1.8.1                 farver_2.1.0                     
-&gt;  [65] sass_0.3.1                        locfit_1.5-9.4                   
-&gt;  [67] utf8_1.2.1                        tidyselect_1.1.0                 
-&gt;  [69] labeling_0.4.2                    rlang_0.4.10                     
-&gt;  [71] reshape2_1.4.4                    later_1.1.0.1                    
+&gt;  [65] sass_0.4.0                        locfit_1.5-9.4                   
+&gt;  [67] utf8_1.2.1                        tidyselect_1.1.1                 
+&gt;  [69] labeling_0.4.2                    rlang_0.4.11                     
+&gt;  [71] reshape2_1.4.4                    later_1.2.0                      
 &gt;  [73] AnnotationDbi_1.52.0              munsell_0.5.0                    
-&gt;  [75] tools_4.0.2                       cachem_1.0.4                     
+&gt;  [75] tools_4.0.2                       cachem_1.0.5                     
 &gt;  [77] DirichletMultinomial_1.32.0       generics_0.1.0                   
-&gt;  [79] RSQLite_2.2.5                     evaluate_0.14                    
+&gt;  [79] RSQLite_2.2.7                     evaluate_0.14                    
 &gt;  [81] stringr_1.4.0                     fastmap_1.1.0                    
-&gt;  [83] yaml_2.2.1                        ragg_1.1.2                       
-&gt;  [85] ChrAccRex_0.2                     knitr_1.31                       
+&gt;  [83] yaml_2.2.1                        ragg_1.1.3                       
+&gt;  [85] ChrAccRex_0.2                     knitr_1.33                       
 &gt;  [87] bit64_4.0.5                       fs_1.5.0                         
 &gt;  [89] caTools_1.18.2                    purrr_0.3.4                      
-&gt;  [91] KEGGREST_1.30.1                   mime_0.10                        
+&gt;  [91] KEGGREST_1.30.1                   mime_0.11                        
 &gt;  [93] R.oo_1.24.0                       poweRlaw_0.70.6                  
 &gt;  [95] pracma_2.3.3                      compiler_4.0.2                   
-&gt;  [97] plotly_4.9.3                      png_0.1-7                        
-&gt;  [99] tibble_3.1.0                      geneplotter_1.68.0               
-&gt; [101] bslib_0.2.4                       stringi_1.5.3                    
-&gt; [103] highr_0.8                         desc_1.3.0                       
+&gt;  [97] plotly_4.9.4.1                    png_0.1-7                        
+&gt;  [99] tibble_3.1.2                      geneplotter_1.68.0               
+&gt; [101] bslib_0.2.5.1                     stringi_1.6.2                    
+&gt; [103] highr_0.9                         desc_1.3.0                       
 &gt; [105] lattice_0.20-41                   CNEr_1.26.0                      
-&gt; [107] Matrix_1.2-18                     vctrs_0.3.7                      
-&gt; [109] pillar_1.5.1                      lifecycle_1.0.0                  
-&gt; [111] rhdf5filters_1.2.0                jquerylib_0.1.3                  
-&gt; [113] data.table_1.14.0                 bitops_1.0-6                     
-&gt; [115] httpuv_1.5.5                      rtracklayer_1.50.0               
-&gt; [117] GenomicRanges_1.42.0              muRtools_0.9.4                   
+&gt; [107] Matrix_1.2-18                     vctrs_0.3.8                      
+&gt; [109] pillar_1.6.1                      lifecycle_1.0.0                  
+&gt; [111] rhdf5filters_1.2.1                jquerylib_0.1.4                  
+&gt; [113] data.table_1.14.0                 bitops_1.0-7                     
+&gt; [115] httpuv_1.6.1                      rtracklayer_1.50.0               
+&gt; [117] GenomicRanges_1.42.0              muRtools_0.9.5                   
 &gt; [119] R6_2.5.0                          promises_1.2.0.1                 
 &gt; [121] IRanges_2.24.1                    codetools_0.2-16                 
-&gt; [123] gtools_3.8.2                      assertthat_0.2.1                 
+&gt; [123] gtools_3.9.2                      assertthat_0.2.1                 
 &gt; [125] seqLogo_1.56.0                    rhdf5_2.34.0                     
 &gt; [127] SummarizedExperiment_1.20.0       DESeq2_1.30.1                    
-&gt; [129] rprojroot_2.0.2                   withr_2.4.1                      
+&gt; [129] rprojroot_2.0.2                   withr_2.4.2                      
 &gt; [131] GenomicAlignments_1.26.0          Rsamtools_2.6.0                  
 &gt; [133] S4Vectors_0.28.1                  GenomeInfoDbData_1.2.4           
-&gt; [135] parallel_4.0.2                    hms_1.0.0                        
+&gt; [135] parallel_4.0.2                    hms_1.1.0                        
 &gt; [137] motifmatchr_1.12.0                grid_4.0.2                       
-&gt; [139] tidyr_1.1.3                       rmarkdown_2.7                    
+&gt; [139] tidyr_1.1.3                       rmarkdown_2.9                    
 &gt; [141] MatrixGenerics_1.2.1              Biobase_2.50.0                   
 &gt; [143] shiny_1.6.0</code></pre>
 </div>

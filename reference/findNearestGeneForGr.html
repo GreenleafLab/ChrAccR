@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>run_atac_normalization — run_atac_normalization • ChrAccR</title>
+<title>findNearestGeneForGr — findNearestGeneForGr • ChrAccR</title>
 
 
 <!-- jquery -->
@@ -41,8 +41,8 @@
   <link href="../extra.css" rel="stylesheet">
   
 
-<meta property="og:title" content="run_atac_normalization — run_atac_normalization" />
-<meta property="og:description" content="Run count normalization for ATAC-seq data" />
+<meta property="og:title" content="findNearestGeneForGr — findNearestGeneForGr" />
+<meta property="og:description" content="get gene annotation for a GRanges object by linking to the nearest gene" />
 
 
 
@@ -124,36 +124,39 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>run_atac_normalization</h1>
+    <h1>findNearestGeneForGr</h1>
     
-    <div class="hidden name"><code>run_atac_normalization.Rd</code></div>
+    <div class="hidden name"><code>findNearestGeneForGr.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Run count normalization for ATAC-seq data</p>
+    <p>get gene annotation for a <code>GRanges</code> object by linking to the nearest gene</p>
     </div>
 
-    <pre class="usage"><span class='fu'>run_atac_normalization</span><span class='op'>(</span><span class='va'>dsa</span>, <span class='va'>anaDir</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>findNearestGeneForGr</span><span class='op'>(</span><span class='va'>gr</span>, geneGr <span class='op'>=</span> <span class='cn'>NULL</span>, maxDist <span class='op'>=</span> <span class='fl'>1e+05</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>dsa</th>
-      <td><p><code><a href='DsATAC-class.html'>DsATAC</a></code> object</p></td>
+      <th>gr</th>
+      <td><p><code>GRanges</code> object</p></td>
     </tr>
     <tr>
-      <th>anaDir</th>
-      <td><p>analysis directory</p></td>
+      <th>geneGr</th>
+      <td><p>gene annotation from which to pull the annotation. Can be <code>NULL</code> for
+automatic retrieval of annotation. Must be named or have a gene name column
+in the metadata</p></td>
+    </tr>
+    <tr>
+      <th>maxDist</th>
+      <td><p>maximum distance for matching to nearest gene</p></td>
     </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p><code>S3</code> object containing the normalized <code><a href='DsATAC-class.html'>DsATAC</a></code> object and an analysis report object</p>
-    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
-
-    <p>Fabian Mueller</p>
+    <p><code>data.frame</code> containing information on the nearest gene for each element in <code>gr</code></p>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
