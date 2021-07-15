@@ -2951,12 +2951,17 @@ setMethod("callPeaks",
 			)
 			genomeSizeArg <- ""
 			if (methodOpts$genomeSizesFromObject){
-				# find the set of the largest tiling regions you can find in the object
-				rts <- gtools::mixedsort(grep("^t", getRegionTypes(.object), value=TRUE), decreasing=TRUE)
-				if (length(rts) == 0 || is.na(rts[1])) logger.error("No appropriate tiling region set found for determining genome size")
-				ggr <- getCoord(.object, rts[1])
-				genomeSizeArg <- as.character(sum(width(ggr))) 
-				logger.info(paste0("Using a genome size of ", genomeSizeArg, " bp (determined from region type: ", rts[1], ")"))
+				# # find the set of the largest tiling regions you can find in the object
+				# rts <- gtools::mixedsort(grep("^(tiling|t[0-9]+)", getRegionTypes(.object), value=TRUE), decreasing=TRUE)
+				# if (length(rts) < 1 || is.na(rts[1])) logger.error("No appropriate tiling region set found for determining genome size")
+				# ggr <- getCoord(.object, rts[1])
+				# genomeSizeArg <- as.character(sum(width(ggr))) 
+				# logger.info(paste0("Using a genome size of ", genomeSizeArg, " bp (determined from region type: ", rts[1], ")"))
+
+				fgr <- do.call("c", unname(getFragmentGrl(.object, samples, asGRangesList=FALSE)))
+				fgr <- reduce(fgr, min.gapwidth=9L, ignore.strand=TRUE) #adjust gapwidth to account for Tn5 offsetting
+				genomeSizeArg <- as.character(sum(width(fgr)))
+				logger.info(paste0("Using a genome size of ", genomeSizeArg, " bp (determined from aggregating fragments)"))
 			} else if (is.element(.object@genome, c("hg19", "hg38"))){
 				genomeSizeArg <- "hs"
 			} else if (is.element(.object@genome, c("mm9", "mm10"))){
