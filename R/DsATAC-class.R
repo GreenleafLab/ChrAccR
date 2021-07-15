@@ -2953,7 +2953,7 @@ setMethod("callPeaks",
 			if (methodOpts$genomeSizesFromObject){
 				# find the set of the largest tiling regions you can find in the object
 				rts <- gtools::mixedsort(grep("^t", getRegionTypes(.object), value=TRUE), decreasing=TRUE)
-				if (length(rts)) logger.error("No appropriate tiling region set found for determining genome size")
+				if (length(rts) == 0 || is.na(rts[1])) logger.error("No appropriate tiling region set found for determining genome size")
 				ggr <- getCoord(.object, rts[1])
 				genomeSizeArg <- as.character(sum(width(ggr))) 
 				logger.info(paste0("Using a genome size of ", genomeSizeArg, " bp (determined from region type: ", rts[1], ")"))
