@@ -2928,7 +2928,8 @@ setMethod("callPeaks",
 				"--extsize", "150",
 				"-p", "0.01"
 			),
-			fixedWidth=250
+			fixedWidth=250,
+			genomeSizesFromObject=FALSE
 		)
 	) {
 		if (!is.element(method, c("macs2_summit_fw_no"))) logger.error(c("Invalid 'method':", method))
@@ -2939,6 +2940,7 @@ setMethod("callPeaks",
 			if (!is.element("macs2.exec", names(methodOpts))) logger.error("Invalid 'methodOps' for method 'macs2_summit_fw_no' (missing 'macs2.exec')")
 			if (!is.element("macs2.params", names(methodOpts))) logger.error("Invalid 'methodOps' for method 'macs2_summit_fw_no' (missing 'macs2.params')")
 			if (!is.element("fixedWidth", names(methodOpts))) logger.error("Invalid 'methodOps' for method 'macs2_summit_fw_no' (missing 'fixedWidth')")
+			if (!is.element("genomeSizesFromObject", names(methodOpts))) logger.error("Invalid 'methodOps' for method 'macs2_summit_fw_no' (missing 'genomeSizesFromObject')")
 			argV <- c(
 				"--nomodel",
 				"--call-summits",
@@ -2948,7 +2950,14 @@ setMethod("callPeaks",
 				methodOpts$macs2.params
 			)
 			genomeSizeArg <- ""
-			if (is.element(.object@genome, c("hg19", "hg38"))){
+			if (methodOpts$genomeSizesFromObject){
+				# find the set of the largest tiling regions you can find in the object
+				rts <- gtools::mixedsort(grep("^t", getRegionTypes(.object), value=TRUE), decreasing=TRUE)
+				if (length(rts)) logger.error("No appropriate tiling region set found for determining genome size")
+				ggr <- getCoord(.object, rts[1])
+				genomeSizeArg <- as.character(sum(width(ggr))) 
+				logger.info(paste0("Using a genome size of ", genomeSizeArg, " bp (determined from region type: ", rts[1], ")"))
+			} else if (is.element(.object@genome, c("hg19", "hg38"))){
 				genomeSizeArg <- "hs"
 			} else if (is.element(.object@genome, c("mm9", "mm10"))){
 				genomeSizeArg <- "mm"
