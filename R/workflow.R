@@ -240,7 +240,23 @@ run_atac_peakcalling <- function(dsa, anaDir){
 		logger.start("Peak calling")
 			
 			logger.start("Per-sample peak sets")
-				peakGrl <- callPeaks(dsn)
+				pcMethod <- "macs2_summit_fw_no"
+				mopts <- list(
+					macs2.exec="macs2",
+					macs2.params=c(
+						"--shift", "-75",
+						"--extsize", "150",
+						"-p", "0.01"
+					),
+					fixedWidth=250,
+					genomeSizesFromObject=FALSE
+				)
+				if (!is.null(getConfigElement("peakCallingProfile")){
+					if (getConfigElement("peakCallingProfile")=="adjustGenomesize"){
+						mopts$genomeSizesFromObject <- TRUE
+					}
+				}
+				peakGrl <- callPeaks(dsn, method=pcMethod, methodOpts=mopts)
 			logger.completed()
 
 			logger.start("Consensus peak set")

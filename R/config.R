@@ -29,6 +29,7 @@
 .config$annotationMinGroupSize <- 2L
 .config$annotationMaxGroupCount <- NULL
 .config$doPeakCalling <- FALSE
+.config$peakCallingProfile <- NULL
 .config$addCellRangerPeaks <- TRUE
 .config$annotationPeakGroupColumn <- NULL
 .config$annotationPeakGroupAgreePerc <- 1
@@ -112,6 +113,10 @@
 #'   }
 #'   \item{\bold{\code{doPeakCalling}}\code{ = FALSE}}{
 #'       Perform per-sample peak calling and retrieve consensus peak set. Requires that \code{macs2} is installed and can be called from the command line. [for bulk data analysis only]
+#'   }
+#'   \item{\bold{\code{peakCallingProfile}}\code{ = NULL}}{
+#'       If set to a string describing a valid profile, will apply a special profile for \code{macs2} peak calling.
+#'       [only valid in combination with the \code{doPeakCalling} option]
 #'   }
 #'   \item{\bold{\code{annotationPeakGroupColumn}}}{
 #'       Annotation column to base the consensus peak set replication filtering on.
