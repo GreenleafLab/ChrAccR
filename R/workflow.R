@@ -251,7 +251,7 @@ run_atac_peakcalling <- function(dsa, anaDir){
 					fixedWidth=250,
 					genomeSizesFromObject=FALSE
 				)
-				if (!is.null(getConfigElement("peakCallingProfile")){
+				if (!is.null(getConfigElement("peakCallingProfile"))){
 					if (getConfigElement("peakCallingProfile")=="adjustGenomesize"){
 						mopts$genomeSizesFromObject <- TRUE
 					}
