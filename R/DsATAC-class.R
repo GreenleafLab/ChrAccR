@@ -1641,7 +1641,7 @@ setMethod("transformCounts",
 					.object@counts[[rt]] <- cm/(regLen * sizeFac) * 1e3 * 1e6
 					if (.object@diskDump) .object@counts[[rt]] <- as(.object@counts[[rt]], "HDF5Array")
 					colnames(.object@counts[[rt]]) <- cnames
-					.object@countTransform[[rt]] <- c("RPKM", .object@countTransform[[rt]])
+					.object@countTransform[[rt]] <- c(method, .object@countTransform[[rt]])
 				}
 			logger.completed()
 		} else if (is.element(method, c("log2", "log10"))){
