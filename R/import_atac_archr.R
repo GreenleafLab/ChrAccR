@@ -3,12 +3,13 @@
 #' 
 #' Create a DsATACsc dataset from an \code{ArchR} project
 #' @param ap	\code{ArchR} project object
+#' @param useTiling flag indicating whether to use tiling information from the ArchR project
 #' @param keepInsertionInfo flag indicating whether to maintain the insertion information in the resulting object.
 #' @param diskDump.fragments Keep fragment coordinates stored on disk rather than in main memory. This saves memory, but increases runtime and I/O.
 #' @return \code{\linkS4class{DsATACsc}} object
 #' @author Fabian Mueller
 #' @export
-DsATACsc.archr <- function(ap, keepInsertionInfo=FALSE, diskDump.fragments=keepInsertionInfo){
+DsATACsc.archr <- function(ap, useTiling=TRUE, keepInsertionInfo=FALSE, diskDump.fragments=keepInsertionInfo){
 	require(ArchR)
 	if (class(ap)!="ArchRProject") logger.error("Invalid input: expected ArchRProject")
 	afs <- ArchR::getArrowFiles(ap)
@@ -99,7 +100,12 @@ DsATACsc.archr <- function(ap, keepInsertionInfo=FALSE, diskDump.fragments=keepI
 			tileW <- median(x[2:length(x)]-x[1:(length(x)-1)])
 			logger.info(c("Determined tiling width as", tileW, "bp"))
 			tileGr <- getTileGr(tileW)
-			regionSets[[paste0("tiling", tileW, "bp")]] <- tileGr
+			if (useTiling){
+				regionSets[[paste0("tiling", tileW, "bp")]] <- tileGr
+			} else {
+				logger.info("Not adding tiling count matrix")
+			}
+			
 		}
 		geneAnnot <- ArchR::getGeneAnnotation(ap)
 		if (!is.null(geneAnnot) && all(c("TSS", "genes") %in% names(geneAnnot))){
