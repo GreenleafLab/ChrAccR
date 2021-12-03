@@ -312,6 +312,12 @@ setMethod("createReport_summary",
 					repPlot <- muReportR::createReportGgPlot(pp, figFn, rr, width=7, height=7, create.pdf=TRUE, high.png=0L)
 					repPlot <- muReportR::off(repPlot, handle.errors=TRUE)
 					rr <- muReportR::addReportFigure(rr, "Scatterplot of QC metrics", repPlot)
+
+					tt <- sannot
+					for (cc in c("nFragments", "tssEnrichment")){
+						tt[,cc] <- qcTab[rownames(tt),cc]
+					}
+					writeTab(tt, fn.sannot)
 				logger.completed()
 			}
 		}
