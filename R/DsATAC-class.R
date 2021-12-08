@@ -2661,7 +2661,7 @@ setMethod("getDESeq2Dataset",
 		}
 		#remove columns from the design that do not have replicates
 		idx <- sapply(designCols, FUN=function(cc){
-			is.numeric(ph[,cc]) || all(table(ph[,cc]) > 1)
+			is.numeric(ph[,cc]) || all(table(ph[,cc]) > 1 | table(ph[,cc]) == 0)
 		})
 		if (sum(idx) < length(designCols)){
 			logger.warning(c("The following design columns will not be considered because they do not have replicates:", paste(designCols[!idx], collapse=",")))
