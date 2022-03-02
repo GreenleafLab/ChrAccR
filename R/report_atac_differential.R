@@ -164,6 +164,8 @@ setMethod("createReport_differential",
 		rownames(cTab) <- as.character(1:nrow(cTab))
 		colnames(cTab) <- c("Comparison name", "Annotation column", "Group 1", "N1", "Group 2", "N2")
 		rr <- muReportR::addReportTable(rr, cTab)
+		fn <- file.path(rDir.data.abs, paste0("comparisonTable", ".rds"))
+		saveRDS(compTab, fn)
 
 		txt <- c("Tables containing differential accessibility results can be found below.")
 		rr <- muReportR::addReportParagraph(rr, txt)
