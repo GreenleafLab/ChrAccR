@@ -6,12 +6,15 @@
 \usage{
 DsATACsc.archr(
   ap,
+  useTiling = TRUE,
   keepInsertionInfo = FALSE,
   diskDump.fragments = keepInsertionInfo
 )
 }
 \arguments{
 \item{ap}{\code{ArchR} project object}
+
+\item{useTiling}{flag indicating whether to use tiling information from the ArchR project}
 
 \item{keepInsertionInfo}{flag indicating whether to maintain the insertion information in the resulting object.}
 

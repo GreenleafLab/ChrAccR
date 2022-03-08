@@ -117,6 +117,9 @@ Set a configuration item to a given value
   \item{\bold{\code{differentialAdjColumns}}}{
       Sample annotation columns to be adjusted for in differential testing
   }
+  \item{\bold{\code{differentialCutoffL2FC}}}{
+      Cutoff on log2 fold-change to be used for reporting differential accessibility.
+  }
   \item{\bold{\code{lolaDbPaths}}}{
       Precomputed LOLA databases to be used for enrichment analysis. If \code{NULL} (default), ChrAccR will download an apropriate core database.
   }

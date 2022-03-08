@@ -130,15 +130,17 @@ setMethod("createReport_differential",
 			logger.completed()
 		logger.completed()
 
+		cut_l2fc <- getConfigElement("differentialCutoffL2FC")
+		if (!is.numeric(cut_l2fc)) logger.error("Invalid cutoff for log2 fold-change for reporting DA")
 		isDiffFuns <- list(
-			cutL2fc2Padj05 = function(dm){
-				abs(dm[,"log2FoldChange"]) > 2 & dm[,"padj"] < 0.05
+			cutL2fcPadj05 = function(dm){
+				abs(dm[,"log2FoldChange"]) > cut_l2fc & dm[,"padj"] < 0.05
 			},
-			cutL2fc2Padj05gain = function(dm){
-				dm[,"log2FoldChange"] > 2 & dm[,"padj"] < 0.05
+			cutL2fcPadj05gain = function(dm){
+				dm[,"log2FoldChange"] > cut_l2fc & dm[,"padj"] < 0.05
 			},
-			cutL2fc2Padj05loss = function(dm){
-				dm[,"log2FoldChange"] < -2 & dm[,"padj"] < 0.05
+			cutL2fcPadj05loss = function(dm){
+				dm[,"log2FoldChange"] < -cut_l2fc & dm[,"padj"] < 0.05
 			},
 			cRankTopPerc1 = function(dm){
 				dm[,"cRank_rerank"] < quantile(dm[,"cRank_rerank"], prob=0.01, na.rm=TRUE)
@@ -148,9 +150,9 @@ setMethod("createReport_differential",
 			}
 		)
 		diffFunDesc <- c(
-			cutL2fc2Padj05     = "Differential [|log2(fold change)| > 2; adj. p-value < 0.05]",
-			cutL2fc2Padj05gain = "Gain [log2(fold change) > 2; adj. p-value < 0.05]",
-			cutL2fc2Padj05loss = "Loss [log2(fold change) < -2; adj. p-value < 0.05]",
+			cutL2fcPadj05     = paste0("Differential [|log2(fold change)| > ", cut_l2fc,"; adj. p-value < 0.05]"),
+			cutL2fcPadj05gain = paste0("Gain [log2(fold change) > ", cut_l2fc,"; adj. p-value < 0.05]"),
+			cutL2fcPadj05loss = paste0("Loss [log2(fold change) < -", cut_l2fc,"; adj. p-value < 0.05]"),
 			cRankTopPerc1      = "Differential [combined rank in top 1%]",
 			cRankTopPerc5      = "Differential [combined rank in top 5%]"
 		)
