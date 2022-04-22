@@ -1005,6 +1005,8 @@ setMethod("join",
 			if (joinRegionTypes == "intersect"){
 				regionTypes <- intersect(getRegionTypes(objectA), getRegionTypes(objectB))
 			}
+			obj@countTransform <- rep(list(character(0)), length(regionTypes))
+			names(obj@countTransform) <- regionTypes
 			for (rt in regionTypes){
 				logger.status(c("Region type:", rt))
 				# coordinates
