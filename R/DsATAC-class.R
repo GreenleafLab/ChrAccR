@@ -935,14 +935,12 @@ if (!isGeneric("join")) {
 ## dsaA <- removeRegionType(dsaA, "promoters_gc_protein_coding")
 ## # dsaA <- removeRegions(dsaA, sample(1:getNRegions(dsaA, "t10k"),1000), "t10k")
 ## dsaB <- removeRegionType(dsaB, "t200")
-## dsaB <- removeRegionType(dsaB, "IA_prog_peaks")## 
-
+## dsaB <- removeRegionType(dsaB, "IA_prog_peaks")
 ## dsaJ <- join(dsaA, dsaB)
 ## # check the results
 ## dsaJ
 ## getSampleAnnot(dsaJ)
-## length(dsaJ@fragments)## 
-
+## length(dsaJ@fragments)
 ## rt <- "promoters_gc_protein_coding"
 ## getNRegions(dsaJ, rt)
 ## dim(getCounts(dsaJ, rt))
