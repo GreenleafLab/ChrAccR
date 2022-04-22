@@ -1583,6 +1583,41 @@ setMethod("removeRegionType",
 		return(.object)
 	}
 )
+
+#-------------------------------------------------------------------------------
+if (!isGeneric("removeRegionData")) {
+	setGeneric(
+		"removeRegionData",
+		function(.object) standardGeneric("removeRegionData"),
+		signature=c(".object")
+	)
+}
+#' removeRegionData-methods
+#'
+#' Remove all region data from a \code{\linkS4class{DsATAC}} object
+#'
+#' @param .object \code{\linkS4class{DsATAC}} object
+#' @return a new \code{\linkS4class{DsATAC}} object with region data removed
+#' 
+#' @rdname removeRegionData-DsATAC-method
+#' @docType methods
+#' @aliases removeRegionData
+#' @aliases removeRegionData,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+setMethod("removeRegionData",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object
+	) {
+		.object@coord <- list()
+		.object@counts <- list()
+		.object@countTransform <- list()
+		return(.object)
+	}
+)
 #-------------------------------------------------------------------------------
 if (!isGeneric("removeSamples")) {
 	setGeneric(
