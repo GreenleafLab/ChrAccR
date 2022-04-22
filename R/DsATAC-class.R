@@ -891,6 +891,188 @@ setMethod("mergeSamples",
 		return(.object)
 	}
 )
+
+#-------------------------------------------------------------------------------
+# IN DEVELOPMENT
+if (!isGeneric("join")) {
+	setGeneric(
+		"join",
+		function(.object, ...) standardGeneric("join"),
+		signature=c(".object")
+	)
+}
+#' join-methods
+#'
+#' Combine two \code{\linkS4class{DsATAC}} objects
+#'
+#' @param .object \code{\linkS4class{DsATAC}} object
+#' @param objectB \code{\linkS4class{DsATAC}} object
+#' @param combineRegionTypes how to combine region types:
+#'                'union' (default): the resulting object will have counts aggregated over region types
+#'                from both objects. 'intersect': only region types present in both objects will occur
+#'				  in the output
+#' @return a new \code{\linkS4class{DsATAC}} object combining both input objects.
+#'         It contains untransformed counts.
+#'
+#' 
+#' @rdname join-DsATAC-method
+#' @docType methods
+#' @aliases join
+#' @aliases join,DsATAC-method
+#' @author Fabian Mueller
+#' @export
+## @examples
+## \dontrun{
+## dsaA <- ChrAccRex::loadExample("dsAtac_ia_example")
+## dsaB <- ChrAccRex::loadExample("dsAtac_ia_example")
+## rownames(dsaA@sampleAnnot) <- paste0(rownames(dsaB@sampleAnnot), "_A")
+## names(dsaA@fragments) <- rownames(dsaA@sampleAnnot)
+## rownames(dsaB@sampleAnnot) <- paste0(rownames(dsaB@sampleAnnot), "_B")
+## names(dsaB@fragments) <- rownames(dsaB@sampleAnnot)
+## dsaA@sampleAnnot[,"replicate"] <- NULL
+## dsaB@sampleAnnot[,"dataset"] <- NULL
+## dsaA <- removeRegionType(dsaA, "t200")
+## dsaA <- removeRegionType(dsaA, "promoters_gc_protein_coding")
+## # dsaA <- removeRegions(dsaA, sample(1:getNRegions(dsaA, "t10k"),1000), "t10k")
+## dsaB <- removeRegionType(dsaB, "t200")
+## dsaB <- removeRegionType(dsaB, "IA_prog_peaks")## 
+
+## dsaJ <- join(dsaA, dsaB)
+## # check the results
+## dsaJ
+## getSampleAnnot(dsaJ)
+## length(dsaJ@fragments)## 
+
+## rt <- "promoters_gc_protein_coding"
+## getNRegions(dsaJ, rt)
+## dim(getCounts(dsaJ, rt))
+## dim(dsaJ@counts[[rt]])
+## class(dsaJ@counts[[rt]])
+## }
+setMethod("join",
+	signature(
+		.object="DsATAC"
+	),
+	function(
+		.object,
+		objectB,
+		joinRegionTypes="union"
+	) {
+		logger.warning("IN DEVELOPMENT: The join function for DsATAC objects has not extensively been tested yet")
+		objectA <- .object
+
+		# compatibility checks
+		if (getGenome(objectA) != getGenome(objectB)) logger.error("Could not combine objects: non-matching genomes")
+		if ((objectA@diskDump != objectB@diskDump) | (objectA@diskDump.fragments != objectB@diskDump.fragments)){
+			logger.error("Could not combine objects: non-matching disk-dump settings")
+		}
+		if (objectA@sparseCounts != objectB@sparseCounts){
+			logger.error("Could not combine objects: non-matching sparseCounts settings")
+		}
+		# if ((.hasSlot(objectA, "diskDump.fragments.nSamplesPerFile") &
+		# 	 objectA@diskDump.fragments.nSamplesPerFile != 1L) |
+		# 	(.hasSlot(objectB, "diskDump.fragments.nSamplesPerFile") &
+		# 	 objectB@diskDump.fragments.nSamplesPerFile != 1L)){
+		# 	logger.error("Currently merging multiple samples for disk-dumped fragments is not supported in combine()")
+		# }
+
+		logger.start("Combining metadata")
+			samplesA <- getSamples(objectA)
+			samplesB <- getSamples(objectB)
+			if (length(intersect(samplesA, samplesB))>0) logger.error("Objects A and B must have distinct samples")
+			phA <- getSampleAnnot(objectA)
+			phB <- getSampleAnnot(objectB)
+			# cns <- union(colnames(phA), colnames(phB))
+			ph <- plyr::join(phA, phB, type="full", by=character(0))
+			if (nrow(ph)!=length(samplesA)+length(samplesB)) logger.error("Something went wrong in table join")
+			rownames(ph) <- c(samplesA, samplesB)
+
+			hasFragmentsA <- length(objectA@fragments) > 0
+			hasFragmentsB <- length(objectB@fragments) > 0
+		logger.completed()
+
+		obj <- DsATAC(ph, getGenome(objectA), diskDump=objectA@diskDump, diskDump.fragments=objectA@diskDump.fragments, sparseCounts=objectA@sparseCounts)
+
+		if (hasFragmentsA & hasFragmentsB){
+		logger.start("Combining fragment data")
+			obj@fragments <- c(objectA@fragments, objectB@fragments)
+			names(obj@fragments) <- getSamples(obj)
+		logger.completed()
+		}
+
+		logger.start("Combining regions types and counts")
+			regionTypes <- union(getRegionTypes(objectA), getRegionTypes(objectB))
+			if (joinRegionTypes == "intersect"){
+				regionTypes <- intersect(getRegionTypes(objectA), getRegionTypes(objectB))
+			}
+			for (rt in regionTypes){
+				logger.status(c("Region type:", rt))
+				# coordinates
+				gr <- NULL
+				grA <- NULL
+				grB <- NULL
+				if (is.element(rt, getRegionTypes(objectA))){
+					grA <- getCoord(objectA, type=rt)
+					gr <- grA
+				}
+				if (is.element(rt, getRegionTypes(objectB))){
+					grB <- getCoord(objectB, type=rt)
+					if (!is.null(gr)){
+						gr <- c(gr, grB)
+					} else {
+						gr <- grB
+					}
+				}
+				gr <- muRtools::sortGr(unique(gr))
+				obj@coord[[rt]] <- gr
+
+				# count matrix A
+				doAggr <- FALSE
+				if (is.null(grA) | length(grA) != length(gr)){
+					if (!hasFragmentsA) logger.error("Combining on non-matching region types requires fragment data")
+					doAggr <- TRUE
+				} else {
+					oo <- findOverlaps(grA, gr, type="equal")
+					# check if matches are exact
+					if (!all(subjectHits(oo)==1:length(gr))) doAggr <- TRUE
+					# only combine untransformed/unnormalized counts
+					if (length(objectA@countTransform[[rt]]) > 0) doAggr <- TRUE
+				}
+				cmA <- NULL
+				if (doAggr){
+					aggObj <- regionAggregation(objectA, gr, ".combineRegs", signal="insertions", dropEmpty=FALSE)
+					cmA <- aggObj@counts[[".combineRegs"]]
+				} else {
+					cmA <- objectA@counts[[rt]]
+				}
+				# count matrix B
+				doAggr <- FALSE
+				if (is.null(grB) | length(grB) != length(gr)){
+					if (!hasFragmentsB) logger.error("Combining on non-matching region types requires fragment data")
+					doAggr <- TRUE
+				} else {
+					oo <- findOverlaps(grB, gr, type="equal")
+					# check if matches are exact
+					if (!all(subjectHits(oo)==1:length(gr))) doAggr <- TRUE
+					# only combine untransformed/unnormalized counts
+					if (length(objectB@countTransform[[rt]]) > 0) doAggr <- TRUE
+				}
+				cmB <- NULL
+				if (doAggr){
+					aggObj <- regionAggregation(objectB, gr, ".combineRegs", signal="insertions", dropEmpty=FALSE)
+					cmB <- aggObj@counts[[".combineRegs"]]
+				} else {
+					cmB <- objectB@counts[[rt]]
+				}
+				# combine
+				obj@counts[[rt]] <- cbind(cmA, cmB) # TODO: check: does cbind work for sparse and HDF5Array matrices?
+			}
+
+		logger.completed()
+
+		return(obj)
+	}
+)
 #-------------------------------------------------------------------------------
 if (!isGeneric("removeFragmentData")) {
 	setGeneric(
