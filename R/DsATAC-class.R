@@ -665,11 +665,21 @@ setMethod("regionAggregation",
 			doAggr <- TRUE
 			if (bySample){
 				i <- 0
+				nUnrealizedValuesAdded <- 0
 				for (sid in sampleIds){
 					i <- i + 1
 					doMsg <- nSamples < 500 || (i %% 500 == 0)
 					if (doMsg) logger.status(c("Aggregating counts for sample", sid, paste0("(", i, " of ", nSamples, ")"), "..."))
 					.object@counts[[type]][,sid] <- as.matrix(countOverlaps(regGr, getInsertionSites(.object, samples=sid)[[1]], ignore.strand=TRUE))
+					# avoid issues if the stack of operations to realize in the DelayedArray becomes to large
+					# avoids `dim(x)' must work` issues (@seed C stack usage X is too close to the limit)
+					nUnrealizedValuesAdded <- nUnrealizedValuesAdded + nRegs
+					if (is.element("DelayedMatrix", class(.object@counts[[type]]))
+						& nUnrealizedValuesAdded > 5e9){
+						logger.status("Realizing disk-backed matrix")
+						.object@counts[[type]] <- realize(.object@counts[[type]])
+						nUnrealizedValuesAdded <- 0
+					}
 				}
 			} else {
 				chunkIdxL <- list(1:nSamples)
