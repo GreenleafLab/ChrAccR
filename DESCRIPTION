@@ -29,6 +29,7 @@ Suggests:
     DESeq2,
     limma,
     LOLA,
+    qvalue,
     TFBSTools,
     seqLogo,
     pheatmap,

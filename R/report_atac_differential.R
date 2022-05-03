@@ -224,6 +224,8 @@ setMethod("createReport_differential",
 			doLola <- !is.null(lolaDbPaths) && all(dir.exists(lolaDbPaths))
 			if (doLola){
 				logger.start("LOLA analysis")
+					require(LOLA)
+					require(qvalue)
 					logger.start("Preparing LOLA database")
 						lolaDb <- loadLolaDbs(lolaDbPaths)
 					logger.completed()
