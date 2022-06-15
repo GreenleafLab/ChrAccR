@@ -841,7 +841,7 @@ setMethod("mergePseudoBulk",
 		cleanSampleAnnot=TRUE
 	) {
 		phu <- getSampleAnnot(.object)
-		dsam <- mergeSamples(dsam, mergeGroups, countAggrFun="sum")
+		dsam <- mergeSamples(.object, mergeGroups, countAggrFun="sum")
 		ph <- getSampleAnnot(dsam)
 		if (cleanSampleAnnot){
 			# clean up sample annotation (avoid huge concatenations)
