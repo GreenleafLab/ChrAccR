@@ -614,7 +614,7 @@ computeDeviations_altius <- function(dsa, type, mcAnnot=NULL){
 		})), "sparseMatrix")
 		mmObj_mc <- SummarizedExperiment::SummarizedExperiment(assays=list(motifMatches=motifClusterOccM), rowRanges=gr, colData=S4Vectors::DataFrame(mcAnnot$clusterAnnot))
 		genomeObj <- getGenomeObject(getGenome(dsa))
-		genome(countSe) <- BSgenome::providerVersion(genomeObj) #override inconsistent naming of genome versions (e.g. hg38 and GRCh38)
+		genome(countSe) <- S4Vectors::metadata(genomeObj)$genome #override inconsistent naming of genome versions (e.g. hg38 and GRCh38)
 		countSe <- chromVAR::addGCBias(countSe, genome=genomeObj)
 
 		ridx <- safeMatrixStats(assay(countSe), "rowSums") > 0 & safeMatrixStats(assay(mmObj_mc), "rowSums") > 0 # only consider regions where there is an actual motif match and counts
