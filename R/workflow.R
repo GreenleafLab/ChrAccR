@@ -162,7 +162,7 @@ makeReportIndex <- function(reportDir, anaName="ChrAccR analysis", reportIds=cha
 	file.copy(system.file("extdata/dna.png", package="ChrAccR", mustWork=TRUE), imgDir)
 
 	txt <- c(
-		"Here are the resultes of your ChrAccR ATAC-seq analysis. The following reports have been generated:"
+		"Here are the results of your ChrAccR ATAC-seq analysis. The following reports have been generated:"
 	)
 	rr <- muReportR::addReportSection(rr, "Table of contents", txt, collapsed="never")
 
