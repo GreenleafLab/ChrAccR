@@ -110,8 +110,8 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", reg
 					# 	saveDsAcc(obj, file.path("/scratch/users/muellerf/temp", getHashString("DsATAC_tmp")))
 					# logger.completed()
 					logger.start("Agregating region count data")
-						rebe <- DelayedArray::getRealizationBackend() # store previous realization backend setting to be able to reset it later
-						DelayedArray::setRealizationBackend("HDF5Array")
+						rebe <- DelayedArray::getAutoRealizationBackend() # store previous realization backend setting to be able to reset it later
+						DelayedArray::setAutoRealizationBackend("HDF5Array")
 						rTypes <- getRegionTypes(obj)
 						rSinkL <- lapply(rTypes, FUN=function(rt){
 							rSink <- DelayedArray::RealizationSink(as.integer(c(getNRegions(obj, rt), nSamples)), type="integer")
@@ -137,7 +137,7 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", reg
 							obj@counts[[rt]] <- as(rSinkL[[rt]]$sink, "DelayedArray")
 							colnames(obj@counts[[rt]]) <- sampleIds
 						}
-						DelayedArray::setRealizationBackend(rebe) # reset realization backend to previous setting
+						DelayedArray::setAutoRealizationBackend(rebe) # reset realization backend to previous setting
 					logger.completed()
 				} else {
 					logger.start(c("Adding insertion and region count data from bam"))
