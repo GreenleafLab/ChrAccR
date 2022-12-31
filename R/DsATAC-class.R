@@ -3076,7 +3076,7 @@ setMethod("exportCountTracks",
 		cm <- ChrAccR::getCounts(.object, type, asMatrix=TRUE)
 		sampleNames <- getSamples(.object)
 		coords <- getCoord(.object, type)
-		GenomeInfoDb::genome(coords) <- ChrAccR::getGenome(ds)
+		GenomeInfoDb::genome(coords) <- ChrAccR::getGenome(.object)
 		if (!is.null(groupBy) && is.character(groupBy) && is.element(groupBy, colnames(getSampleAnnot(.object)))){
 			grps <- factor(getSampleAnnot(.object)[,groupBy])
 			cm <- do.call("cbind", tapply(getSamples(.object), grps, FUN=function(sids){
