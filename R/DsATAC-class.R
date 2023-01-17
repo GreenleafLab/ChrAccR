@@ -3054,7 +3054,6 @@ if (!isGeneric("exportCountTracks")) {
 #' @param formats    browser format. Currently only bed and "igv" are supported
 #' @param groupBy    a column in the sample annotation table to group by (the mean will be computed)
 #' @return nothing of particular interest
-#' 
 #' @rdname exportCountTracks-DsATAC-method
 #' @docType methods
 #' @aliases exportCountTracks
