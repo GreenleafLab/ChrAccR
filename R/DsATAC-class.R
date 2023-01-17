@@ -3049,6 +3049,8 @@ if (!isGeneric("exportCountTracks")) {
 #' @param .object    \code{\linkS4class{DsATAC}} object
 #' @param type       character string specifying the region type
 #' @param outDir     output directory. Must be existing.
+#' @param counts   counts obtained from ChrAccR::getCounts as a matrix format, 
+#' users can extract their own matrix and, transformed before exporting tracks from DsATAC object
 #' @param formats    browser format. Currently only bed and "igv" are supported
 #' @param groupBy    a column in the sample annotation table to group by (the mean will be computed)
 #' @return nothing of particular interest
