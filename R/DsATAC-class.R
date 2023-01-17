@@ -3066,14 +3066,20 @@ setMethod("exportCountTracks",
 	function(
 		.object,
 		type,
+		counts=NULL,
 		outDir,
 		formats=c("bed", "igv"),
 		groupBy=NULL
 	) {
 		if (!is.element(type, getRegionTypes(.object))) logger.error(c("Unsupported region type:", type))
 		if (!dir.exists(outDir)) logger.error(c("Output directory:", outDir, "does not exist."))
-		#count matrix
-		cm <- ChrAccR::getCounts(.object, type, asMatrix=TRUE)
+		#get the count matrix if it's not imputted
+		if(is.null(counts) || !is.matrix(counts)){
+			cm <- ChrAccR::getCounts(.object, type, asMatrix=TRUE)
+		}else{
+			cm <- counts
+		}
+		
 		sampleNames <- getSamples(.object)
 		coords <- getCoord(.object, type)
 		GenomeInfoDb::genome(coords) <- ChrAccR::getGenome(.object)
