@@ -642,7 +642,7 @@ setMethod("getComparisonTable",
 
 		# get comparison info
 		sannot <- getSampleAnnot(.object)
-		sampleGrps <- getGroupsFromTable(sannot, cols=unique(c(colsAdd, cols, cols1vAll)), minGrpSize=minGroupSize, maxGrpCount=maxGroupCount)
+		sampleGrps <- getGroupsFromTable(sannot, cols=unique(c(colsAdd, cols, cols1vAll)), minGrpSize=minGroupSize, maxGrpCount=maxGroupCount,removeMissing=TRUE)
 		if (length(sampleGrps) < 1) logger.error("No valid comparisons found (to begin with)")
 		compTab <- do.call("rbind", lapply(1:length(sampleGrps), FUN=function(i){
 			tt <- NULL

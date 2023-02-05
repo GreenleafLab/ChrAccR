@@ -199,12 +199,13 @@ fastDelayedArrayToMatrix <- function(X, i=NULL, j=NULL){
 #'                        \code{integer} vector) to consider. All other columns in the annotation table will be ignored.
 #' @param minGrpSize      Minimum number of items required to form a group in comparison
 #' @param maxGrpCount     Maximum number of groups to be considered
+#' @param removeMissing If TRUE removes the rows that doesn't pass min size. The default is FALSE.
 #' @return List of groupings. Each element corresponds to a categorical column in the table and contains the row indices for each
 #'         category
 #'
 #' @author Fabian Mueller
 #' @export
-getGroupsFromTable <- function(tt, cols=NULL, minGrpSize=2, maxGrpCount=nrow(tt)-1) {
+getGroupsFromTable <- function(tt, cols=NULL, minGrpSize=2, maxGrpCount=nrow(tt)-1,removeMissing=FALSE) {
 
 	if (nrow(tt) < 2) logger.error("Required a table with at least 2 rows")
 
@@ -227,11 +228,13 @@ getGroupsFromTable <- function(tt, cols=NULL, minGrpSize=2, maxGrpCount=nrow(tt)
 			rr <- rr[sapply(rr, length) > 0] # ignore levels that are missing in the dataset
 			rr <- rr[sapply(rr, function(x){!any(is.na(x))})] # ignore levels that are missing in the dataset
 			passesMinSize <- sapply(rr, length) >= minGrpSize 
-			if (length(rr) > 1 && length(rr) <= maxGrpCount && !all(passesMinSize)){
+			if (length(rr) > 1 && length(rr) <= maxGrpCount && !all(passesMinSize) && removeMissing){
 				notpassed <- names(which(passesMinSize == FALSE)) #remove comparasions that doesn't pass min size
                 rr <- rr[- which(names(rr) %in% notpassed)]
 			}
-            res[[cname]] <- rr
+			if (length(rr) > 1 && length(rr) <= maxGrpCount && all(passesMinSize)){
+				res[[cname]] <- rr
+				}
 		}
 	}
 	return(res)
