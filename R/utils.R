@@ -228,9 +228,11 @@ getGroupsFromTable <- function(tt, cols=NULL, minGrpSize=2, maxGrpCount=nrow(tt)
 			rr <- rr[sapply(rr, length) > 0] # ignore levels that are missing in the dataset
 			rr <- rr[sapply(rr, function(x){!any(is.na(x))})] # ignore levels that are missing in the dataset
 			passesMinSize <- sapply(rr, length) >= minGrpSize 
-			if (length(rr) > 1 && length(rr) <= maxGrpCount && !all(passesMinSize) && removeMissing){
+			if (length(rr) > 1 && length(rr) <= maxGrpCount && !all(passesMinSize)){
+				if(removeMissing){
 				notpassed <- names(which(passesMinSize == FALSE)) #remove comparasions that doesn't pass min size
                 rr <- rr[- which(names(rr) %in% notpassed)]
+				}
 			}
 			if (length(rr) > 1 && length(rr) <= maxGrpCount && all(passesMinSize)){
 				res[[cname]] <- rr
