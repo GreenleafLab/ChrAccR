@@ -229,7 +229,6 @@ getGroupsFromTable <- function(tt, cols=NULL, minGrpSize=2, maxGrpCount=nrow(tt)
 			passesMinSize <- sapply(rr, length) >= minGrpSize 
 			if (length(rr) > 1 && length(rr) <= maxGrpCount && !all(passesMinSize)){
 				notpassed <- names(which(passesMinSize == FALSE)) #remove comparasions that doesn't pass min size
-                rr<- within(rr, rm(notpassed)) 
                 rr <- rr[- which(names(rr) %in% notpassed)]
 			}
             res[[cname]] <- rr
