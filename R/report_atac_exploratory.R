@@ -156,7 +156,7 @@ setMethod("createReport_exploratory",
 		}
 		if (is.null(specAnnotCols0)) {
 			# add automatically found columns to group set
-			defaultGrps <- getGroupsFromTable(sannot, cols=NULL, minGrpSize=getConfigElement("annotationMinGroupSize"), maxGrpCount=mgc)
+			defaultGrps <- getGroupsFromTable(sannot, cols=NULL, minGrpSize=getConfigElement("annotationMinGroupSize"), maxGrpCount=mgc,removeMissing=FALSE)
 			specAnnotCols <- union(names(defaultGrps), specAnnotCols)
 		} else if (!all(specAnnotCols %in% colnames(sannot))){
 			logger.warning(c("The following annotation columns could not be found in the sample annotation/QC tables and will be discarded:", paste(setdiff(specAnnotCols, colnames(sannot)), collapse=",")))
@@ -165,7 +165,7 @@ setMethod("createReport_exploratory",
 				logger.warning("All annotation columns have been dropped. Resetting the specified annotation columns to default.")
 			}
 		}
-		sampleGrps <- getGroupsFromTable(sannot, cols=specAnnotCols, minGrpSize=getConfigElement("annotationMinGroupSize"), maxGrpCount=mgc)
+		sampleGrps <- getGroupsFromTable(sannot, cols=specAnnotCols, minGrpSize=getConfigElement("annotationMinGroupSize"), maxGrpCount=mgc,removeMissing=FALSE)
 		sampleGrps <- c(list(".ALL"=list("all"=c(1:nrow(sannot)))), sampleGrps)
 		grpNames <- names(sampleGrps)
 
