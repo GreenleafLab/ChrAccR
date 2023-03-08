@@ -838,7 +838,7 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 	if (doFilter){
 		logger.start("Running filtering analysis")
 			res <- run_atac_filtering(dsa, anaDir)
-			dsa <- res$ds_filtered
+			dsa <- dsa_unnorm <- res$ds_filtered
 		logger.completed()
 	}
 	saveDs_filtered <- saveDs && (doFilter) && is.na(wfState$dsAtacPaths["filtered"])
