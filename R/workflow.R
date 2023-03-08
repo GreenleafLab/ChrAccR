@@ -488,6 +488,63 @@ run_atac_normalization <- function(dsa, anaDir){
 }
 
 #-------------------------------------------------------------------------------
+#' run_atac_chromvar
+#' 
+#' Run chromVAR analysis for ATAC-seq data
+#' @param .object	\code{\linkS4class{DsATAC}} object
+#' @return An S3 object containing a list of chromVAR Deviations objects as returned by \code{chromVAR::computeDeviations}. One object for each region type specified in the \code{chromVarRegionTypes} configuration.
+#' @author Fabian Mueller
+#' @export
+run_atac_chromvar <- function(.object){
+	doChromVar <- FALSE
+	regionTypes.cv <- getConfigElement("chromVarRegionTypes")
+	if (is.null(regionTypes.cv)) regionTypes.cv <- regionTypes[grepl("peak", regionTypes, ignore.case=TRUE)]
+	doChromVar <- length(regionTypes.cv) > 0 && all(regionTypes.cv %in% regionTypes)
+	cvResL <- NULL
+	regionFilePaths <- c()
+	motifAnnotFilePath <- NULL
+	cvMot <- getConfigElement("chromVarMotifs")
+	useMotifClusters <- cvMot %in% c("motifClusters") && getGenome(.object) %in% c("hg38")
+	if (doChromVar){		
+		if (useMotifClusters){
+			logger.start("Preparing motif cluster annotation")
+				cvMot <- getMotifClusterAnnot_altius(genome=getGenome(.object))
+			logger.completed()
+		}
+
+		# regionFilePaths <- file.path(cvObjPath, paste0("chromVarDev_", normalize.str(regionTypes.cv, return.camel=TRUE), ".rds"))
+		# names(regionFilePaths) <- regionTypes.cv
+		logger.start("Computing chromVAR scores")
+			cvResL <- lapply(regionTypes.cv, FUN=function(rt){
+				logger.status(c("Region type:", rt))
+				if (useMotifClusters){
+					cvd <- computeDeviations_altius(.object, rt, mcAnnot=cvMot)
+				} else {
+					cvd <- getChromVarDev(.object, rt, motifs=cvMot)
+				}
+				# saveRDS(cvd, regionFilePaths[rt])
+				return(cvd)
+			})
+			names(cvResL) <- regionTypes.cv
+		logger.completed()
+
+		if (useMotifClusters){
+			# save motif cluster annotation and add report text
+			cvMot$clusterOcc <- NULL
+			motifAnnotFilePath <- file.path(cvObjPath, paste0("motifCluster_annot", ".rds"))
+			saveRDS(cvMot, motifAnnotFilePath)
+		}
+	}
+	res <- list(
+		cvResL=cvResL,
+		useMotifClusters=useMotifClusters,
+		cvMot=cvMot
+	)
+	class(res) <- "ChrAccR_runRes_chromVar"
+	return(cvResL)
+}
+
+#-------------------------------------------------------------------------------
 #' run_atac_sc_unsupervised
 #' 
 #' Run unsupervised analysis for single-cell ATAC-seq data (i.e. iterative LSI, clustering and cluster peak detection)
@@ -849,6 +906,22 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 		logger.completed()
 	}
 	#---------------------------------------------------------------------------
+	# Compute chromVAR deviation from unnormalized data
+	doChromVar <- is.element(startStage, c("raw", "filtered"))
+	cvResPath <- file.path(wfState$anaDir, wfState$dataDir, "chromVarResult.rds")
+	cvResObj <- NULL
+	if (doChromVar){
+		logger.start("Running chromVAR analysis")
+			cvResObj <- run_atac_chromvar(dsa)
+			saveRDS(cvResObj, cvResPath)
+		logger.completed()
+	} else if (file.exists(cvResPath)){
+		logger.start("Loading chromVAR results from disk")
+			cvResObj <- readRDS(cvResPath)
+		logger.completed()
+	}
+
+	#---------------------------------------------------------------------------
 	# Bulk: normalize data
 	diffWarn <- FALSE
 	if (is.null(dsa_unnorm)) {
@@ -915,7 +988,7 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 	doExploratory <- TRUE
 	if (doExploratory){
 		logger.start("Running exploratory analysis")
-			res <- run_atac_exploratory(dsa, anaDir, itLsiObj=itLsi, geneActSe=geneActSe)
+			res <- run_atac_exploratory(dsa, anaDir, chromVarObj=cvResObj, itLsiObj=itLsi, geneActSe=geneActSe)
 		logger.completed()
 	}
 	#---------------------------------------------------------------------------
@@ -925,7 +998,7 @@ run_atac <- function(anaDir, input=NULL, sampleAnnot=NULL, genome=NULL, sampleId
 			logger.warning(c("You are starting the analysis from a processed dataset. It is not recommended to compute differential accessibility from normalized counts"))
 		}
 		logger.start("Running differential analysis")
-			res <- run_atac_differential(dsa_unnorm, anaDir)
+			res <- run_atac_differential(dsa_unnorm, anaDir, chromVarObj=cvResObj)
 		logger.completed()
 	}
 

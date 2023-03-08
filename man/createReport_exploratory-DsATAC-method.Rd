@@ -6,12 +6,20 @@
 \alias{createReport_exploratory}
 \title{createReport_exploratory-methods}
 \usage{
-\S4method{createReport_exploratory}{DsATAC}(.object, reportDir, itLsiObj = NULL, geneActSe = NULL)
+\S4method{createReport_exploratory}{DsATAC}(
+  .object,
+  reportDir,
+  chromVarObj = NULL,
+  itLsiObj = NULL,
+  geneActSe = NULL
+)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}
 
 \item{reportDir}{directory in which the report will be created}
+
+\item{chromVarObj}{[optional] pre-computed result of a call to \code{run_atac_chromvar(...)}}
 
 \item{itLsiObj}{[for single-cell only; optional] pre-computed result of a call to \code{iterativeLSI(.object, ...)}}
 
