@@ -497,6 +497,7 @@ run_atac_normalization <- function(dsa, anaDir){
 #' @export
 run_atac_chromvar <- function(.object){
 	doChromVar <- FALSE
+	regionTypes <- getRegionTypes(.object)
 	regionTypes.cv <- getConfigElement("chromVarRegionTypes")
 	if (is.null(regionTypes.cv)) regionTypes.cv <- regionTypes[grepl("peak", regionTypes, ignore.case=TRUE)]
 	doChromVar <- length(regionTypes.cv) > 0 && all(regionTypes.cv %in% regionTypes)
