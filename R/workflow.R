@@ -644,12 +644,13 @@ run_atac_sc_unsupervised <- function(dsa, anaDir){
 #' Run exploratory analyses for ATAC-seq data
 #' @param dsa       \code{\linkS4class{DsATAC}} object
 #' @param anaDir	analysis directory
+#' @param chromVarObj [optional] pre-computed result of a call to \code{run_atac_chromvar(...)}
 #' @param itLsiObj  [for single-cell only; optional] pre-computed result of a call to \code{iterativeLSI(.object, ...)}
 #' @param geneActSe [for single-cell only; optional] pre-computed result of a call to \code{getCiceroGeneActivities(.object, ...)}
 #' @return \code{S3} object containing exploratory metrics and an analysis report object
 #' @author Fabian Mueller
 #' @export
-run_atac_exploratory <- function(dsa, anaDir, itLsiObj=NULL, geneActSe=NULL){
+run_atac_exploratory <- function(dsa, anaDir, chromVarObj=NULL, itLsiObj=NULL, geneActSe=NULL){
 	wfState <- getWfState(anaDir)
 	doReport <- !wfState$existingReports["exploratory"]
 
@@ -657,7 +658,7 @@ run_atac_exploratory <- function(dsa, anaDir, itLsiObj=NULL, geneActSe=NULL){
 
 	if (doReport){
 		logger.start("Creating exploratory report")
-			report <- createReport_exploratory(dsa, file.path(wfState$anaDir, wfState$reportDir), itLsiObj=itLsiObj, geneActSe=geneActSe)
+			report <- createReport_exploratory(dsa, file.path(wfState$anaDir, wfState$reportDir), chromVarObj=chromVarObj, itLsiObj=itLsiObj, geneActSe=geneActSe)
 		logger.completed()
 	}
 	res <- list(

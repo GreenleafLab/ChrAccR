@@ -4,12 +4,20 @@
 \alias{run_atac_exploratory}
 \title{run_atac_exploratory}
 \usage{
-run_atac_exploratory(dsa, anaDir, itLsiObj = NULL, geneActSe = NULL)
+run_atac_exploratory(
+  dsa,
+  anaDir,
+  chromVarObj = NULL,
+  itLsiObj = NULL,
+  geneActSe = NULL
+)
 }
 \arguments{
 \item{dsa}{\code{\linkS4class{DsATAC}} object}
 
 \item{anaDir}{analysis directory}
+
+\item{chromVarObj}{[optional] pre-computed result of a call to \code{run_atac_chromvar(...)}}
 
 \item{itLsiObj}{[for single-cell only; optional] pre-computed result of a call to \code{iterativeLSI(.object, ...)}}
 
