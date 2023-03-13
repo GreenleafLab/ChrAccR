@@ -103,6 +103,7 @@ resetWfToStage <- function(anaDir, resetTo){
 		delPaths <- c(delPaths, file.path(wfState$anaDir, wfState$reportDir, "normalization*"))
 		delPaths <- c(delPaths, file.path(wfState$anaDir, wfState$dsAtacPaths["processed"]))
 		delPaths <- c(delPaths, file.path(wfState$anaDir, wfState$dataDir, "iterativeLSI*"))
+		delPaths <- c(delPaths, file.path(wfState$anaDir, wfState$dataDir, "chromVarResult*"))
 	}
 	if (is.element(resetTo, c("raw"))){
 		delPaths <- c(delPaths, file.path(wfState$anaDir, wfState$dsAtacPaths["filtered"]))
