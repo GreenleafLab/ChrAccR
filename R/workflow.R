@@ -689,7 +689,7 @@ run_atac_differential <- function(dsa, anaDir, chromVarObj=NULL){
 
 	if (doReport){
 		logger.start("Creating differential report")
-			report <- createReport_differential(dsa, file.path(wfState$anaDir, wfState$reportDir))
+			report <- createReport_differential(dsa, file.path(wfState$anaDir, wfState$reportDir), chromVarObj=chromVarObj)
 		logger.completed()
 	}
 	res <- list(

@@ -38,7 +38,8 @@ setMethod("createReport_differential",
 	),
 	function(
 		.object,
-		reportDir
+		reportDir,
+		chromVarObj=NULL
 	) {
 		if (!requireNamespace("muReportR")) logger.error(c("Could not load dependency: muReportR"))
 		initConfigDir <- !dir.exists(file.path(reportDir, "_config"))
