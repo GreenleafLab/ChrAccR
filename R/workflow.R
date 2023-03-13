@@ -677,10 +677,11 @@ run_atac_exploratory <- function(dsa, anaDir, chromVarObj=NULL, itLsiObj=NULL, g
 #' Run differential analyses for ATAC-seq data
 #' @param dsa       \code{\linkS4class{DsATAC}} object
 #' @param anaDir	analysis directory
+#' @param chromVarObj [optional] pre-computed result of a call to \code{run_atac_chromvar(...)}
 #' @return \code{S3} object containing differential analysis results and an analysis report object
 #' @author Fabian Mueller
 #' @export
-run_atac_differential <- function(dsa, anaDir){
+run_atac_differential <- function(dsa, anaDir, chromVarObj=NULL){
 	wfState <- getWfState(anaDir)
 	doReport <- !wfState$existingReports["differential"]
 
