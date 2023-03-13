@@ -533,8 +533,8 @@ run_atac_chromvar <- function(.object){
 		if (useMotifClusters){
 			# save motif cluster annotation and add report text
 			cvMot$clusterOcc <- NULL
-			motifAnnotFilePath <- file.path(cvObjPath, paste0("motifCluster_annot", ".rds"))
-			saveRDS(cvMot, motifAnnotFilePath)
+			# motifAnnotFilePath <- file.path(cvObjPath, paste0("motifCluster_annot", ".rds"))
+			# saveRDS(cvMot, motifAnnotFilePath)
 		}
 	}
 	res <- list(
@@ -543,7 +543,7 @@ run_atac_chromvar <- function(.object){
 		cvMot=cvMot
 	)
 	class(res) <- "ChrAccR_runRes_chromVar"
-	return(cvResL)
+	return(res)
 }
 
 #-------------------------------------------------------------------------------
