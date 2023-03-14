@@ -284,11 +284,11 @@ setMethod("createReport_differential",
 
 		# differential chromVAR
 		doChromVar <- !is.null(chromVarObj$cvResL)
+		regionTypes_cv <- c()
 		if (doChromVar){
 		logger.start("Differential chromVAR")
 			regionTypes_cv <- names(chromVarObj$cvResL)
 			rDir.data.exp <- gsub("differential_data", "exploratory_data", muReportR::getReportDir(rr, dir="data", absolute=TRUE))
-			regionTypes_cv <- c()
 			plotL.vo <- list()
 			for (rt in intersect(regionTypes, regionTypes_cv)){
 				logger.start(c("Region type:", rt))
