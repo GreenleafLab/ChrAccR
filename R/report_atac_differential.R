@@ -345,8 +345,8 @@ setMethod("createReport_differential",
 							repPlot <- muReportR::off(repPlot, handle.errors=TRUE)
 							plotL.vo <- c(plotL.vo, list(repPlot))
 						logger.completed()
-					logger.completed()
-				}
+					}
+				logger.completed()
 			}
 
 			doDiffChromVar <- length(regionTypes_cv) > 0
