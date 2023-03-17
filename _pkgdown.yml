@@ -11,7 +11,7 @@ navbar:
       - text: Single-cell analysis
         href: articles/singlecell.html
   - text: Resource
-    href: articles/articles/resource.html
+    href: articles/resource.html
   - text: Reference
     href: reference/index.html
   - text: GitHub
