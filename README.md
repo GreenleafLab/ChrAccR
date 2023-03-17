@@ -1,6 +1,5 @@
 # ChrAccR <img src="man/figures/chraccr_logo.png" align="right" height="96"/>
 
-[![Build Status](https://travis-ci.org/GreenleafLab/ChrAccR.svg?branch=master)](https://travis-ci.org/GreenleafLab/ChrAccR)
 
 Welcome to `ChrAccR`, an R package that provides tools for the comprehensive analysis chromatin accessibility data. The package implements methods for data quality control, exploratory analyses (including unsupervised methods for dimension reduction, clustering and quantifying transcription factor activities) and the identification and characterization of differentially accessible regions. It can be used for the analysis of large bulk datasets comprising hundreds of samples as well as for single-cell datasets with 10s to 100s of thousands of cells. 
 

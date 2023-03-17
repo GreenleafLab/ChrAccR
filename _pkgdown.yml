@@ -1,0 +1,24 @@
+template:
+  params:
+    bootswatch: sandstone
+
+navbar:
+  left:
+  - text: Vignettes
+    menu:
+      - text: Overview
+        href: articles/overview.html
+      - text: Single-cell analysis
+        href: articles/singlecell.html
+  - text: Resource
+    href: articles/articles/resource.html
+  - text: Reference
+    href: reference/index.html
+  - text: GitHub
+    icon: fa-github
+    href: https://github.com/GreenleafLab/ChrAccR
+
+authors:
+  Fabian Mueller:
+    href: http://epigenome-informatics.org
+# To automatically build the site after TravisCI checks: https://www.datacamp.com/community/tutorials/cd-package-docs-pkgdown-travis
