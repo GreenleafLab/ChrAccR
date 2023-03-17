@@ -807,6 +807,60 @@ setMethod("iterativeLSI",
 
 
 #-------------------------------------------------------------------------------
+if (!isGeneric("mergePseudoBulk")) {
+	setGeneric(
+		"mergePseudoBulk",
+		function(.object, ...) standardGeneric("mergePseudoBulk"),
+		signature=c(".object")
+	)
+}
+#' mergePseudoBulk-methods
+#'
+#' Merge cells into pseudobulk samples based on annotation
+#'
+#' @param .object    \code{\linkS4class{DsATACsc}} object
+#' @param mergeGroups  factor or character vector or column name in sample annotation table.
+#'                Can alternatively be a (named) list containing sample indices or names
+#'                for each group to merge.
+#' @param cleanSampleAnnot clean up sample annotation table in the new object
+#' @return a new \code{\linkS4class{DsATAC}} object with cells merged into pseudobulk samples
+#' 
+#' @rdname mergePseudoBulk-DsATACsc-method
+#' @docType methods
+#' @aliases mergePseudoBulk
+#' @aliases mergePseudoBulk,DsATACsc-method
+#' @author Fabian Mueller
+#' @export
+setMethod("mergePseudoBulk",
+	signature(
+		.object="DsATACsc"
+	),
+	function(
+		.object,
+		mergeGroups,
+		cleanSampleAnnot=TRUE
+	) {
+		phu <- getSampleAnnot(.object)
+		dsam <- mergeSamples(.object, mergeGroups, countAggrFun="sum")
+		ph <- getSampleAnnot(dsam)
+		if (cleanSampleAnnot){
+			# clean up sample annotation (avoid huge concatenations)
+			ph <- data.frame(
+				pseudoBulkId = getSamples(dsam),
+				stringsAsFactors = FALSE
+			)
+			rownames(ph) <- ph[,"pseudoBulkId"]
+		}
+		if (is.character(mergeGroups) && length(mergeGroups) == 1 && is.element(mergeGroups, colnames(phu))){
+			ph[,".nCells"] <- as.integer(table(phu[,mergeGroups])[getSamples(dsam)])
+		}
+		dsam@sampleAnnot <- ph
+		class(dsam) <- "DsATAC" # now a bulk dataset
+		return(dsam)
+	}
+)
+
+#-------------------------------------------------------------------------------
 if (!isGeneric("samplePseudoBulk")) {
 	setGeneric(
 		"samplePseudoBulk",

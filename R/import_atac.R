@@ -110,14 +110,18 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", reg
 					# 	saveDsAcc(obj, file.path("/scratch/users/muellerf/temp", getHashString("DsATAC_tmp")))
 					# logger.completed()
 					logger.start("Agregating region count data")
-						rebe <- DelayedArray::getRealizationBackend() # store previous realization backend setting to be able to reset it later
-						DelayedArray::setRealizationBackend("HDF5Array")
+						# rebe <- DelayedArray::getRealizationBackend() # store previous realization backend setting to be able to reset it later # DEPRECATED
+						rebe <- DelayedArray::getAutoRealizationBackend() # store previous realization backend setting to be able to reset it later
+						# DelayedArray::setRealizationBackend("HDF5Array") # DEPRECATED
+						DelayedArray::setAutoRealizationBackend("HDF5Array")
 						rTypes <- getRegionTypes(obj)
 						rSinkL <- lapply(rTypes, FUN=function(rt){
-							rSink <- DelayedArray::RealizationSink(as.integer(c(getNRegions(obj, rt), nSamples)), type="integer")
+							# rSink <- DelayedArray::RealizationSink(as.integer(c(getNRegions(obj, rt), nSamples)), type="integer") # DEPRECATED
+							rSink <- DelayedArray::AutoRealizationSink(as.integer(c(getNRegions(obj, rt), nSamples)), type="integer")
 							return(list(
 								sink=rSink,
-								grid=DelayedArray::colGrid(rSink, ncol=1L)
+								# grid=DelayedArray::colGrid(rSink, ncol=1L) # DEPRECATED
+								grid=DelayedArray::colAutoGrid(rSink, ncol=1L)
 							))
 						})
 						names(rSinkL) <- rTypes
@@ -137,7 +141,8 @@ DsATAC.snakeATAC <- function(sampleAnnot, filePrefixCol, genome, dataDir="", reg
 							obj@counts[[rt]] <- as(rSinkL[[rt]]$sink, "DelayedArray")
 							colnames(obj@counts[[rt]]) <- sampleIds
 						}
-						DelayedArray::setRealizationBackend(rebe) # reset realization backend to previous setting
+						# DelayedArray::setRealizationBackend(rebe) # reset realization backend to previous setting # DEPRECATED
+						DelayedArray::setAutoRealizationBackend(rebe) # reset realization backend to previous setting
 					logger.completed()
 				} else {
 					logger.start(c("Adding insertion and region count data from bam"))

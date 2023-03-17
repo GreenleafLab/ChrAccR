@@ -11,6 +11,7 @@ if (!isGeneric("createReport_exploratory")) {
 #'
 #' @param .object    \code{\linkS4class{DsATAC}} object
 #' @param reportDir  directory in which the report will be created
+#' @param chromVarObj [optional] pre-computed result of a call to \code{run_atac_chromvar(...)}
 #' @param itLsiObj   [for single-cell only; optional] pre-computed result of a call to \code{iterativeLSI(.object, ...)}
 #' @param geneActSe  [for single-cell only; optional] pre-computed result of a call to \code{getCiceroGeneActivities(.object, ...)}
 #' @return (invisible) \code{muReportR::Report} object containing the report
@@ -38,6 +39,7 @@ setMethod("createReport_exploratory",
 	function(
 		.object,
 		reportDir,
+		chromVarObj=NULL,
 		itLsiObj=NULL,
 		geneActSe=NULL
 	) {
@@ -410,49 +412,26 @@ setMethod("createReport_exploratory",
 			logger.completed()
 		}
 
-		doChromVar <- FALSE
-		regionTypes.cv <- getConfigElement("chromVarRegionTypes")
-		if (is.null(regionTypes.cv)) regionTypes.cv <- regionTypes[grepl("peak", regionTypes, ignore.case=TRUE)]
-		doChromVar <- length(regionTypes.cv) > 0 && all(regionTypes.cv %in% regionTypes)
+		doChromVar <- !is.null(chromVarObj$cvResL) && is.element("ChrAccR_runRes_chromVar", class(chromVarObj))
+
+		# res <- list(
+		# 	cvResL=cvResL,
+		# 	useMotifClusters=useMotifClusters,
+		# 	regionFilePaths=regionFilePaths,
+		# 	motifAnnotFilePath=motifAnnotFilePath
+		# )
 		if (doChromVar){
-			cvMot <- getConfigElement("chromVarMotifs")
-			useMotifClusters <- cvMot %in% c("motifClusters") && getGenome(.object) %in% c("hg38")
-			if (useMotifClusters){
-				logger.start("Preparing motif cluster annotation")
-					cvMot <- getMotifClusterAnnot_altius(genome=getGenome(.object))
-				logger.completed()
-			}
-
-			logger.start("Computing chromVAR scores")
-				cvResL <- lapply(regionTypes.cv, FUN=function(rt){
-					logger.status(c("Region type:", rt))
-					if (useMotifClusters){
-						cvd <- computeDeviations_altius(.object, rt, mcAnnot=cvMot)
-					} else {
-						cvd <- getChromVarDev(.object, rt, motifs=cvMot)
-					}
-					fn <- file.path(rDir.data.abs, paste0("chromVarDev_", normalize.str(rt, return.camel=TRUE), ".rds"))
-					saveRDS(cvd, fn)
-					return(cvd)
-				})
-				names(cvResL) <- regionTypes.cv
-			logger.completed()
-
+			regionTypes.cv <- names(chromVarObj$cvResL)
+			cvResL <- chromVarObj$cvResL
 			cromVarRefTxt <- c("Schep, Wu, Buenrostro, & Greenleaf (2017). chromVAR: inferring transcription-factor-associated accessibility from single-cell epigenomic data. <i>Nature Methods</i>, <b>14</b>(10), 975-978")
 			rr <- muReportR::addReportReference(rr, cromVarRefTxt)
 			txt <- c(
 				"chromVAR ", muReportR::getReportReference(rr, cromVarRefTxt), " analysis. ",
-				"The following motif set(s) were used for the analysis: ", paste(getConfigElement("chromVarMotifs"), collapse=", "), ". ",
-				"R data files of chromVAR deviation scores have been attached to this report:"
+				"The following motif set(s) were used for the analysis: ", paste(getConfigElement("chromVarMotifs"), collapse=", "), "."
 			)
 			rr <- muReportR::addReportSection(rr, "chromVAR", txt, level=1L, collapsed=FALSE)
 
-			ll <- lapply(regionTypes.cv, FUN=function(rt){
-				paste0("<b>", rt, ":</b> ", paste(c("<a href=\"", rDir.data, "/", paste0("chromVarDev_", normalize.str(rt, return.camel=TRUE), ".rds"), "\">","RDS file","</a>"),collapse=""))
-			})
-			rr <- muReportR::addReportList(rr, ll, type="u")
-
-			if (useMotifClusters){
+			if (chromVarObj$useMotifClusters){
 				# save motif cluster annotation and add report text
 				cvMot$clusterOcc <- NULL
 				annotFn <- file.path(rDir.data.abs, paste0("motifCluster_annot", ".rds"))
@@ -462,9 +441,6 @@ setMethod("createReport_exploratory",
 				txt <- paste0(
 					"Non-redundant motif clustering ",
 					muReportR::getReportReference(rr, mcTxt),
-					" (",
-					paste(c("<a href=\"", rDir.data, "/", "motifCluster_annot.rds", "\">","RDS file","</a>"), collapse=""),
-					")",
 					" was used for annotating genome-wide TF binding sites and computing motif cluster accessibility."
 				)
 				rr <- muReportR::addReportParagraph(rr, txt)

@@ -11,6 +11,7 @@ if (!isGeneric("createReport_differential")) {
 #'
 #' @param .object    \code{\linkS4class{DsATAC}} object
 #' @param reportDir  directory in which the report will be created
+#' @param chromVarObj [optional] pre-computed result of a call to \code{run_atac_chromvar(...)}
 #' @return (invisible) \code{muReportR::Report} object containing the report
 #' 
 #' @rdname createReport_differential-DsATAC-method
@@ -37,7 +38,8 @@ setMethod("createReport_differential",
 	),
 	function(
 		.object,
-		reportDir
+		reportDir,
+		chromVarObj=NULL
 	) {
 		if (!requireNamespace("muReportR")) logger.error(c("Could not load dependency: muReportR"))
 		initConfigDir <- !dir.exists(file.path(reportDir, "_config"))
@@ -130,15 +132,17 @@ setMethod("createReport_differential",
 			logger.completed()
 		logger.completed()
 
+		cut_l2fc <- getConfigElement("differentialCutoffL2FC")
+		if (!is.numeric(cut_l2fc)) logger.error("Invalid cutoff for log2 fold-change for reporting DA")
 		isDiffFuns <- list(
-			cutL2fc2Padj05 = function(dm){
-				abs(dm[,"log2FoldChange"]) > 2 & dm[,"padj"] < 0.05
+			cutL2fcPadj05 = function(dm){
+				abs(dm[,"log2FoldChange"]) > cut_l2fc & dm[,"padj"] < 0.05
 			},
-			cutL2fc2Padj05gain = function(dm){
-				dm[,"log2FoldChange"] > 2 & dm[,"padj"] < 0.05
+			cutL2fcPadj05gain = function(dm){
+				dm[,"log2FoldChange"] > cut_l2fc & dm[,"padj"] < 0.05
 			},
-			cutL2fc2Padj05loss = function(dm){
-				dm[,"log2FoldChange"] < -2 & dm[,"padj"] < 0.05
+			cutL2fcPadj05loss = function(dm){
+				dm[,"log2FoldChange"] < -cut_l2fc & dm[,"padj"] < 0.05
 			},
 			cRankTopPerc1 = function(dm){
 				dm[,"cRank_rerank"] < quantile(dm[,"cRank_rerank"], prob=0.01, na.rm=TRUE)
@@ -148,9 +152,9 @@ setMethod("createReport_differential",
 			}
 		)
 		diffFunDesc <- c(
-			cutL2fc2Padj05     = "Differential [|log2(fold change)| > 2; adj. p-value < 0.05]",
-			cutL2fc2Padj05gain = "Gain [log2(fold change) > 2; adj. p-value < 0.05]",
-			cutL2fc2Padj05loss = "Loss [log2(fold change) < -2; adj. p-value < 0.05]",
+			cutL2fcPadj05     = paste0("Differential [|log2(fold change)| > ", cut_l2fc,"; adj. p-value < 0.05]"),
+			cutL2fcPadj05gain = paste0("Gain [log2(fold change) > ", cut_l2fc,"; adj. p-value < 0.05]"),
+			cutL2fcPadj05loss = paste0("Loss [log2(fold change) < -", cut_l2fc,"; adj. p-value < 0.05]"),
 			cRankTopPerc1      = "Differential [combined rank in top 1%]",
 			cRankTopPerc5      = "Differential [combined rank in top 5%]"
 		)
@@ -164,6 +168,8 @@ setMethod("createReport_differential",
 		rownames(cTab) <- as.character(1:nrow(cTab))
 		colnames(cTab) <- c("Comparison name", "Annotation column", "Group 1", "N1", "Group 2", "N2")
 		rr <- muReportR::addReportTable(rr, cTab)
+		fn <- file.path(rDir.data.abs, paste0("comparisonTable", ".rds"))
+		saveRDS(compTab, fn)
 
 		txt <- c("Tables containing differential accessibility results can be found below.")
 		rr <- muReportR::addReportParagraph(rr, txt)
@@ -220,6 +226,8 @@ setMethod("createReport_differential",
 			doLola <- !is.null(lolaDbPaths) && all(dir.exists(lolaDbPaths))
 			if (doLola){
 				logger.start("LOLA analysis")
+					require(LOLA)
+					require(qvalue)
 					logger.start("Preparing LOLA database")
 						lolaDb <- loadLolaDbs(lolaDbPaths)
 					logger.completed()
@@ -274,73 +282,71 @@ setMethod("createReport_differential",
 			}
 		logger.completed()
 
-		#TODO: test differential chromVAR
-		if (TRUE){
+		# differential chromVAR
+		doChromVar <- !is.null(chromVarObj$cvResL)
+		regionTypes_cv <- c()
+		if (doChromVar){
 		logger.start("Differential chromVAR")
+			regionTypes_cv <- names(chromVarObj$cvResL)
 			rDir.data.exp <- gsub("differential_data", "exploratory_data", muReportR::getReportDir(rr, dir="data", absolute=TRUE))
-			regionTypes_cv <- c()
 			plotL.vo <- list()
-			for (rt in regionTypes){
-				cvFn <- file.path(rDir.data.exp, paste0("chromVarDev_", normalize.str(rt, return.camel=TRUE), ".rds"))
-				if (file.exists(cvFn)){
-					logger.start(c("Region type:", rt))
-						regionTypes_cv <- c(regionTypes_cv, rt)
-						cvd <- readRDS(cvFn)
-						cvdM <- chromVAR::deviationScores(cvd)
-						for (i in 1:nrow(compTab)){
-							logger.start(c("comparison", i, ":", compTab[i,"compName"]))
-								grp1name <- compTab[i,"grp1Name"]
-								grp2name <- compTab[i,"grp2Name"]
-								ggs <- rep(as.character(NA), ncol(cvd))
-								gV <- factor(SummarizedExperiment::colData(cvd)[,compTab[i,"compCol"]])
-								sidx.grp1 <- which(gV==grp1name)
-								if (grp1name==".ALL") sidx.grp1 <- which(gV!=grp2name)
-								sidx.grp2 <- which(gV==grp2name)
-								if (grp2name==".ALL") sidx.grp2 <- which(gV!=grp1name)
-								ggs[sidx.grp1] <- grp1name
-								ggs[sidx.grp2] <- grp2name
-								cvd_cur <- cvd[,!is.na(ggs)]
-								ggs <- ggs[!is.na(ggs)]
-								
-								dd <- chromVAR::differentialDeviations(cvd_cur, ggs, alternative="two.sided", parametric=TRUE)
-								dm <- data.frame(
-									motifName = rownames(cvdM),
-									stringsAsFactors = FALSE
-								)
-								m1 <- cvdM[,sidx.grp1,drop=FALSE]
-								m2 <- cvdM[,sidx.grp2,drop=FALSE]
-								cn_mean1 <- paste0("meanDeviationZgrp", "1_", grp1name)
-								cn_mean2 <- paste0("meanDeviationZgrp", "2_", grp2name)
-								dm[,cn_mean1] <- rowMeans(m1, na.rm=TRUE)
-								dm[,cn_mean2] <- rowMeans(m2, na.rm=TRUE)
-								dm[,"zDiff"] <- dm[,cn_mean1] - dm[,cn_mean2]
-								dm[,"pvalue"] <- dd[,"p_value"]
-								dm[,"padj"] <- dd[,"p_value_adjusted"]
-								dm[,"negLog10padj"] <- -log10(dm[,"padj"])
-								rankMat <- cbind(
-									rank(-abs(dm[,"zDiff"]), na.last="keep", ties.method="min"),
-									rank(dm[,"pvalue"], na.last="keep", ties.method="min")
-								)
-								dm[,"cRank"] <- matrixStats::rowMaxs(rankMat, na.rm=FALSE)
-								dm[!is.finite(dm[,"cRank"]),"cRank"] <- NA
-								dm[,"cRank_rerank"] <- rank(dm[,"cRank"], na.last="keep", ties.method="min")
+			for (rt in intersect(regionTypes, regionTypes_cv)){
+				logger.start(c("Region type:", rt))
+					cvd <- chromVarObj$cvResL[[rt]]
+					cvdM <- chromVAR::deviationScores(cvd)
+					for (i in 1:nrow(compTab)){
+						logger.start(c("comparison", i, ":", compTab[i,"compName"]))
+							grp1name <- compTab[i,"grp1Name"]
+							grp2name <- compTab[i,"grp2Name"]
+							ggs <- rep(as.character(NA), ncol(cvd))
+							gV <- factor(SummarizedExperiment::colData(cvd)[,compTab[i,"compCol"]])
+							sidx.grp1 <- which(gV==grp1name)
+							if (grp1name==".ALL") sidx.grp1 <- which(gV!=grp2name)
+							sidx.grp2 <- which(gV==grp2name)
+							if (grp2name==".ALL") sidx.grp2 <- which(gV!=grp1name)
+							ggs[sidx.grp1] <- grp1name
+							ggs[sidx.grp2] <- grp2name
+							cvd_cur <- cvd[,!is.na(ggs)]
+							ggs <- ggs[!is.na(ggs)]
+							
+							dd <- chromVAR::differentialDeviations(cvd_cur, ggs, alternative="two.sided", parametric=TRUE)
+							dm <- data.frame(
+								motifName = rownames(cvdM),
+								stringsAsFactors = FALSE
+							)
+							m1 <- cvdM[,sidx.grp1,drop=FALSE]
+							m2 <- cvdM[,sidx.grp2,drop=FALSE]
+							cn_mean1 <- paste0("meanDeviationZgrp", "1_", grp1name)
+							cn_mean2 <- paste0("meanDeviationZgrp", "2_", grp2name)
+							dm[,cn_mean1] <- rowMeans(m1, na.rm=TRUE)
+							dm[,cn_mean2] <- rowMeans(m2, na.rm=TRUE)
+							dm[,"zDiff"] <- dm[,cn_mean1] - dm[,cn_mean2]
+							dm[,"pvalue"] <- dd[,"p_value"]
+							dm[,"padj"] <- dd[,"p_value_adjusted"]
+							dm[,"negLog10padj"] <- -log10(dm[,"padj"])
+							rankMat <- cbind(
+								rank(-abs(dm[,"zDiff"]), na.last="keep", ties.method="min"),
+								rank(dm[,"pvalue"], na.last="keep", ties.method="min")
+							)
+							dm[,"cRank"] <- matrixStats::rowMaxs(rankMat, na.rm=FALSE)
+							dm[!is.finite(dm[,"cRank"]),"cRank"] <- NA
+							dm[,"cRank_rerank"] <- rank(dm[,"cRank"], na.last="keep", ties.method="min")
 
-								fn <- file.path(rDir.data.abs, paste0("diffTabChromVar_", i, "_", normalize.str(rt, return.camel=TRUE), ".tsv"))
-								write.table(dm, fn, sep="\t", col.names=TRUE, row.names=FALSE, quote=FALSE)
+							fn <- file.path(rDir.data.abs, paste0("diffTabChromVar_", i, "_", normalize.str(rt, return.camel=TRUE), ".tsv"))
+							write.table(dm, fn, sep="\t", col.names=TRUE, row.names=FALSE, quote=FALSE)
 
-								df2p_labels <- dm[!is.na(dm[,"cRank_rerank"]) & dm[,"cRank_rerank"] <= 20,][,c("motifName", "zDiff", "pvalue", "padj", "negLog10padj")]
+							df2p_labels <- dm[!is.na(dm[,"cRank_rerank"]) & dm[,"cRank_rerank"] <= 20,][,c("motifName", "zDiff", "pvalue", "padj", "negLog10padj")]
 
-								pp <- ggplot(dm) + aes(x=zDiff, y=negLog10padj) + geom_point()
-								pp <- pp + ggrepel::geom_text_repel(aes(label=motifName), data=df2p_labels, size=4)
+							pp <- ggplot(dm) + aes(x=zDiff, y=negLog10padj) + geom_point()
+							pp <- pp + ggrepel::geom_text_repel(aes(label=motifName), data=df2p_labels, size=4)
 
-								plotFn <- paste0("volcanoChromVar_", i, "_", normalize.str(rt, return.camel=TRUE))
-								repPlot <- muReportR::createReportGgPlot(pp, plotFn, rr, width=7, height=7, create.pdf=TRUE, high.png=0L)
-								repPlot <- muReportR::off(repPlot, handle.errors=TRUE)
-								plotL.vo <- c(plotL.vo, list(repPlot))
-							logger.completed()
-						}
-					logger.completed()
-				}
+							plotFn <- paste0("volcanoChromVar_", i, "_", normalize.str(rt, return.camel=TRUE))
+							repPlot <- muReportR::createReportGgPlot(pp, plotFn, rr, width=7, height=7, create.pdf=TRUE, high.png=0L)
+							repPlot <- muReportR::off(repPlot, handle.errors=TRUE)
+							plotL.vo <- c(plotL.vo, list(repPlot))
+						logger.completed()
+					}
+				logger.completed()
 			}
 
 			doDiffChromVar <- length(regionTypes_cv) > 0

@@ -29,6 +29,7 @@
 .config$annotationMinGroupSize <- 2L
 .config$annotationMaxGroupCount <- NULL
 .config$doPeakCalling <- FALSE
+.config$peakCallingProfile <- NULL
 .config$addCellRangerPeaks <- TRUE
 .config$annotationPeakGroupColumn <- NULL
 .config$annotationPeakGroupAgreePerc <- 1
@@ -45,6 +46,7 @@
 .config$differentialColumns1vsAll <- NULL
 .config$differentialCompNames <- NULL
 .config$differentialAdjColumns <- NULL
+.config$differentialCutoffL2FC <- 2
 .config$lolaDbPaths <- NULL
 .config$scIterativeLsiRegType <- NULL
 .config$scIterativeLsiParams <- list(
@@ -113,6 +115,10 @@
 #'   \item{\bold{\code{doPeakCalling}}\code{ = FALSE}}{
 #'       Perform per-sample peak calling and retrieve consensus peak set. Requires that \code{macs2} is installed and can be called from the command line. [for bulk data analysis only]
 #'   }
+#'   \item{\bold{\code{peakCallingProfile}}\code{ = NULL}}{
+#'       If set to a string describing a valid profile, will apply a special profile for \code{macs2} peak calling.
+#'       [only valid in combination with the \code{doPeakCalling} option]
+#'   }
 #'   \item{\bold{\code{annotationPeakGroupColumn}}}{
 #'       Annotation column to base the consensus peak set replication filtering on.
 #'   }
@@ -157,6 +163,9 @@
 #'   }
 #'   \item{\bold{\code{differentialAdjColumns}}}{
 #'       Sample annotation columns to be adjusted for in differential testing
+#'   }
+#'   \item{\bold{\code{differentialCutoffL2FC}}}{
+#'       Cutoff on log2 fold-change to be used for reporting differential accessibility.
 #'   }
 #'   \item{\bold{\code{lolaDbPaths}}}{
 #'       Precomputed LOLA databases to be used for enrichment analysis. If \code{NULL} (default), ChrAccR will download an apropriate core database.

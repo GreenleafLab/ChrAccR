@@ -707,7 +707,7 @@ setMethod("getComparisonTable",
 			matchIdxMirror <- match(fixedCompInfo[,"compName"], compTabMirror[,"compName"])
 			noMatch <- is.na(matchIdx) & is.na(matchIdxMirror)
 			if (any(noMatch)){
-				logger.error(c("The following comparison names could not be matched:", paste(fixedCompInfo[noMatch], collapse=", ")))
+				logger.error(c("The following comparison names could not be matched:", paste(fixedCompInfo[noMatch, "compName"], collapse=", ")))
 			}
 			fixedCompTab <- rbind(compTab[na.omit(matchIdx),], compTabMirror[na.omit(matchIdxMirror),])
 
