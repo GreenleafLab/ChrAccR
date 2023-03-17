@@ -4,12 +4,14 @@
 \alias{run_atac_differential}
 \title{run_atac_differential}
 \usage{
-run_atac_differential(dsa, anaDir)
+run_atac_differential(dsa, anaDir, chromVarObj = NULL)
 }
 \arguments{
 \item{dsa}{\code{\linkS4class{DsATAC}} object}
 
 \item{anaDir}{analysis directory}
+
+\item{chromVarObj}{[optional] pre-computed result of a call to \code{run_atac_chromvar(...)}}
 }
 \value{
 \code{S3} object containing differential analysis results and an analysis report object

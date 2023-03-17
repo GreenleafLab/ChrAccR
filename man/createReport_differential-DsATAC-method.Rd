@@ -12,6 +12,8 @@
 \item{.object}{\code{\linkS4class{DsATAC}} object}
 
 \item{reportDir}{directory in which the report will be created}
+
+\item{chromVarObj}{[optional] pre-computed result of a call to \code{run_atac_chromvar(...)}}
 }
 \value{
 (invisible) \code{muReportR::Report} object containing the report
