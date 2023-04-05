@@ -2889,7 +2889,7 @@ setMethod("getDESeq2Dataset",
 		}
 		#remove columns from the design that do not have replicates
 		idx <- sapply(designCols, FUN=function(cc){
-			is.numeric(ph[,cc]) || all(table(ph[,cc]) > 1 | table(ph[,cc]) == 0)
+			is.numeric(ph[,cc]) || all(table(ph[,cc]) > 1 | table(ph[,cc]) != 0)
 		})
 		if (sum(idx) < length(designCols)){
 			logger.warning(c("The following design columns will not be considered because they do not have replicates:", paste(designCols[!idx], collapse=",")))
@@ -3049,10 +3049,11 @@ if (!isGeneric("exportCountTracks")) {
 #' @param .object    \code{\linkS4class{DsATAC}} object
 #' @param type       character string specifying the region type
 #' @param outDir     output directory. Must be existing.
+#' @param counts   counts obtained from ChrAccR::getCounts as a matrix format, 
+#' users can extract their own matrix and, transformed before exporting tracks from DsATAC object
 #' @param formats    browser format. Currently only bed and "igv" are supported
 #' @param groupBy    a column in the sample annotation table to group by (the mean will be computed)
 #' @return nothing of particular interest
-#' 
 #' @rdname exportCountTracks-DsATAC-method
 #' @docType methods
 #' @aliases exportCountTracks
@@ -3066,16 +3067,23 @@ setMethod("exportCountTracks",
 	function(
 		.object,
 		type,
+		counts=NULL,
 		outDir,
 		formats=c("bed", "igv"),
 		groupBy=NULL
 	) {
 		if (!is.element(type, getRegionTypes(.object))) logger.error(c("Unsupported region type:", type))
 		if (!dir.exists(outDir)) logger.error(c("Output directory:", outDir, "does not exist."))
-		#count matrix
-		cm <- ChrAccR::getCounts(.object, type, asMatrix=TRUE)
+		#get the count matrix if it's not imputted
+		if(is.null(counts) || !is.matrix(counts)){
+			cm <- ChrAccR::getCounts(.object, type, asMatrix=TRUE)
+		}else{
+			cm <- counts
+		}
+		
 		sampleNames <- getSamples(.object)
 		coords <- getCoord(.object, type)
+		GenomeInfoDb::genome(coords) <- ChrAccR::getGenome(.object)
 		if (!is.null(groupBy) && is.character(groupBy) && is.element(groupBy, colnames(getSampleAnnot(.object)))){
 			grps <- factor(getSampleAnnot(.object)[,groupBy])
 			cm <- do.call("cbind", tapply(getSamples(.object), grps, FUN=function(sids){

@@ -384,17 +384,24 @@ getMotifClustering <- function(k=0, distM=NULL, assembly="hg38", motifs="jaspar"
 #' @param assembly     genome assembly for which the motif clustering should be retrieved. Only required if for automatic mode (i.e. \code{motifClust=NULL}).
 #' @param motifs       a character string specifying the motif set (currently only "jaspar" is supported)
 #' @param aggrFun      function to use to aggregate values
+#' @param usePresent  if TRUE and, not all the motifClust motifs present within matrix it'll use only the present ones.
 #' @return list containing two elements: \code{X}: Collapsed matrix containing motif cluster aggregated values;
 #'         \code{clustering}: clustering result used for aggregation (see\code{\link{getMotifClustering}} for details)
 #' @author Fabian Mueller
 #' @export
-collapseMotifMatrix <- function(X, motifClust=NULL, assembly="hg38", motifs="jaspar", aggrFun=mean){
+collapseMotifMatrix <- function(X, motifClust=NULL, assembly="hg38", motifs="jaspar", aggrFun=mean,usePresent=FALSE){
 	if (motifs != "jaspar") logger.error(c("Currently motif clustering is only supported for JASPAR motifs"))
 
 	if (is.null(motifClust)){
 		motifClust <- getMotifClustering(k=0, distM=NULL, assembly=assembly, motifs=motifs, clusterMethod="pam")
 	}
-
+	
+	if(usePresent){
+		names <- rownames(X)[which(rownames(X) %in% names(motifClust$clustAssign))]
+		X <- X[which(rownames(X) %in% names),]
+		motifClust$clustAssig <- motifClust$clustAssign[which(names(motifClust$clustAssign) %in% names)]
+	}
+	
 	if (is.null(rownames(X)) || !all(rownames(X) %in% names(motifClust$clustAssign))){
 		logger.error("X must have valid rownames that are all contained in the clustering")
 	}
