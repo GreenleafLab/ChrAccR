@@ -432,6 +432,7 @@ setMethod("createReport_exploratory",
 			rr <- muReportR::addReportSection(rr, "chromVAR", txt, level=1L, collapsed=FALSE)
 
 			if (chromVarObj$useMotifClusters){
+				cvMot <- chromVarObj$cvMot
 				# save motif cluster annotation and add report text
 				cvMot$clusterOcc <- NULL
 				annotFn <- file.path(rDir.data.abs, paste0("motifCluster_annot", ".rds"))
