@@ -51,6 +51,4 @@ computes differential accessibility for NOMe datasets using \code{RnBeads} funct
 }
 \author{
 Fabian Mueller
-
-Fabian Mueller
 }

@@ -10,8 +10,8 @@
   .object,
   samples = getSamples(.object),
   method = "macs2_summit_fw_no",
-  methodOpts = list(macs2.exec = "macs2", macs2.params = c("--shift", "-75",
-    "--extsize", "150", "-p", "0.01"), fixedWidth = 250, genomeSizesFromObject = FALSE)
+  methodOpts = list(macs2.exec = "macs2", macs2.params = c("--shift", "-75", "--extsize",
+    "150", "-p", "0.01"), fixedWidth = 250, genomeSizesFromObject = FALSE)
 )
 }
 \arguments{

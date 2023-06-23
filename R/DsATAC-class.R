@@ -1154,7 +1154,7 @@ setMethod("undiskFragmentData",
 if (!isGeneric("subsampleFragmentData")) {
 	setGeneric(
 		"subsampleFragmentData",
-		function(.object, ...) standardGeneric("subsampleFragmentData"),
+		function(object, ...) standardGeneric("subsampleFragmentData"),
 		signature=c("object")
 	)
 }

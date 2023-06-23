@@ -6,7 +6,7 @@
 \alias{createReport_differential}
 \title{createReport_differential-methods}
 \usage{
-\S4method{createReport_differential}{DsATAC}(.object, reportDir)
+\S4method{createReport_differential}{DsATAC}(.object, reportDir, chromVarObj = NULL)
 }
 \arguments{
 \item{.object}{\code{\linkS4class{DsATAC}} object}
