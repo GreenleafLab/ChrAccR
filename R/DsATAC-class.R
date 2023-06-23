@@ -1150,6 +1150,51 @@ setMethod("undiskFragmentData",
 	}
 )
 #-------------------------------------------------------------------------------
+# EXPERIMENTAL
+if (!isGeneric("subsampleFragmentData")) {
+	setGeneric(
+		"subsampleFragmentData",
+		function(.object, ...) standardGeneric("subsampleFragmentData"),
+		signature=c("object")
+	)
+}
+#' subsampleFragmentData-methods
+#'
+#' subsample the fragment data to reduce object size
+#'
+#' @param object	\code{\linkS4class{DsATAC}} object
+#' @param nFragments	number of fragements each sample is subsampled to
+#' @return the modified object
+#'
+#' @rdname subsampleFragmentData-DsATAC-method
+#' @docType methods
+#' @aliases subsampleFragmentData
+#' @aliases subsampleFragmentData,DsATAC-method
+#' @author Fabian Mueller
+#' @noRd
+setMethod("subsampleFragmentData",
+	signature(
+		object="DsATAC"
+	),
+	function(
+		object,
+		nFragments=1e8L
+	) {
+		object <- undiskFragmentData(object)
+		#elementNROWS(object@fragments)
+		snames <- names(object@fragments)
+		object@fragments <- lapply(object@fragments, FUN=function(gr){
+			N <- length(gr)
+			if (N > nFragments) {
+				gr <- gr[sort(sample.int(N, nFragments))]
+			}
+			return(gr)
+		})
+		names(object@fragments) <- snames
+		return(object)
+	}
+)
+#-------------------------------------------------------------------------------
 if (!isGeneric("addCountDataFromBam")) {
 	setGeneric(
 		"addCountDataFromBam",
